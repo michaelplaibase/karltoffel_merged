@@ -13,12 +13,10 @@ export default function CustomersPage() {
       <div className="card">
         <div className="card-body">
           <div className="toolbar">
-            <Link href="/customers/new" className="btn btn-primary">
-              <i className="bi bi-plus-lg" /> Opret ny kontakt
-            </Link>
-            <div className="input-group">
+            <Link href="/customers/new" className="btn btn-outline-primary">Opret ny kontakt</Link>
+            <div className="searchbar">
               <input className="form-control" placeholder="Kundenr, navn, email, tlf, vejnavn, husnr., postnr." />
-              <button className="btn btn-primary">Søg</button>
+              <button className="btn btn-light">Søg</button>
             </div>
           </div>
 

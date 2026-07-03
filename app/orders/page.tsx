@@ -13,9 +13,9 @@ export default function OrdersPage() {
       <div className="card">
         <div className="card-body">
           <div className="toolbar">
-            <div className="input-group">
+            <div className="searchbar">
               <input className="form-control" placeholder="Ordrenr, dato, kundenavn, kundenr, email, tlf, vejnavn, husnr, postnr, opgave" />
-              <button className="btn btn-primary">Søg</button>
+              <button className="btn btn-light">Søg</button>
             </div>
           </div>
 

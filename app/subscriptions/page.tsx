@@ -13,10 +13,10 @@ export default function SubscriptionsPage() {
       <div className="card">
         <div className="card-body">
           <div className="toolbar">
-            <span className="btn btn-primary"><i className="bi bi-plus-lg" /> Opret nyt abonnement</span>
-            <div className="input-group">
+            <span className="btn btn-outline-primary">Opret nyt abonnement</span>
+            <div className="searchbar">
               <input className="form-control" placeholder="Abo. nr, dato, kundenavn, kundenr, email, tlf, vejnavn, husnr, postnr, opgave" />
-              <button className="btn btn-primary">Søg</button>
+              <button className="btn btn-light">Søg</button>
             </div>
           </div>
 

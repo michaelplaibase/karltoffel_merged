@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Poppins } from "next/font/google";
 import "bootstrap-icons/font/bootstrap-icons.css";
 import "./globals.css";
-import Navbar from "@/components/Navbar";
+import Shell from "@/components/Shell";
 
 const poppins = Poppins({
   variable: "--font-poppins",
@@ -22,8 +22,7 @@ export default function RootLayout({
   return (
     <html lang="da" className={poppins.variable}>
       <body>
-        <Navbar />
-        <div className="app-main">{children}</div>
+        <Shell>{children}</Shell>
       </body>
     </html>
   );
