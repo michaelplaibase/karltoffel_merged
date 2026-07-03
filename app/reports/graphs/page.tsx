@@ -1,4 +1,5 @@
-import { KPI_CUSTOMERS, KPI_REVENUE, KPI_SUBS, CHARTS, SERIES_COLORS, MAP_LEGEND, type Kpi, type ChartDef } from "@/lib/reports";
+import { getReportData, MAP_LEGEND, type Kpi } from "@/lib/reports-data";
+import BarChart from "@/components/BarChart";
 
 export const metadata = { title: "Grafer og nøgletal · Karltoffel" };
 
@@ -25,39 +26,23 @@ function PeriodToggle() {
   );
 }
 
-function Chart({ c }: { c: ChartDef }) {
-  const bars = Array.from({ length: 13 }, (_, i) => 28 + ((c.seed * 7 + i * i * 13) % 66));
-  return (
-    <div className="chartcard">
-      <h3>{c.title}</h3>
-      <div className="chart-toggles">
-        <span className="seg"><span className="on">Måned</span><span>Uge</span></span>
-        <span className="seg"><span className="on">Søjle</span><span>Linje</span></span>
-      </div>
-      <div className="bars">{bars.map((h, i) => <div className="bar" key={i} style={{ height: `${h}%` }} />)}</div>
-      <div className="axis-label">{c.yLabel} · pr. Måned</div>
-      <div className="series-legend">
-        {c.series.map((s, i) => <span key={i}><span className="dot2" style={{ background: SERIES_COLORS[i % SERIES_COLORS.length] }} />{s}</span>)}
-      </div>
-    </div>
-  );
-}
+export default async function GraphReportsPage() {
+  const { kpiCustomers, kpiRevenue, kpiSubs, charts } = await getReportData();
 
-export default function GraphReportsPage() {
   return (
     <div className="container-1140">
       <h1 className="page-title">Grafer og nøgletal</h1>
 
       <div className="report-head"><h4 className="section-title">Antal kunder</h4><PeriodToggle /></div>
-      <KpiCards items={KPI_CUSTOMERS} />
+      <KpiCards items={kpiCustomers} />
 
       <div className="report-head"><h4 className="section-title">Omsætning</h4><PeriodToggle /></div>
-      <KpiCards items={KPI_REVENUE} />
+      <KpiCards items={kpiRevenue} />
 
       <div className="report-head"><h4 className="section-title">Abonnementskunder</h4></div>
-      <KpiCards items={KPI_SUBS} />
+      <KpiCards items={kpiSubs} />
 
-      {CHARTS.map((c, i) => <Chart c={c} key={i} />)}
+      {charts.map((c, i) => <BarChart chart={c} key={i} />)}
 
       <div className="chartcard">
         <h3>{MAP_LEGEND.title}</h3>
