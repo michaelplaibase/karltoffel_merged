@@ -22,6 +22,8 @@ export type Job = {
   source: string;
   fixedWeekdays?: number[]; // 0=Mon … 6=Sun; undefined = any working day
   fixedEmployeeId?: number;
+  locked?: boolean;         // "Helt fastlåst" — planner may not move it to another day
+  lockedWeekday?: number;   // the day it is pinned to (0=Mon)
 };
 
 export type Employee = {
@@ -83,33 +85,55 @@ export function planWeek(jobs: Job[], weekMonday: string, employees: Employee[] 
   for (const emp of employees) {
     for (const weekday of emp.workdays) {
       const day: DayPlan = { employeeId: emp.id, weekday, stops: [], driveMin: 0, serviceMin: 0 };
-      let curAddr: string | null = null; // null = at home
-      let cursor = emp.workStartMin;
+      const st = { curAddr: null as string | null, cursor: emp.workStartMin };
       const hardEnd = emp.workEndMin + emp.flexMin;
 
-      // Keep adding the nearest feasible job to this day.
+      const drive = (j: Job) => (st.curAddr === null ? driveFromHomeMinutes(j.address, emp.home) : driveMinutes(st.curAddr, j.address));
+      const place = (idx: number, d: number) => {
+        const j = remaining.splice(idx, 1)[0];
+        const start = st.cursor + d;
+        const end = start + j.durationMin;
+        day.stops.push({ job: j, startMin: start, endMin: end, driveMin: d });
+        day.driveMin += d;
+        day.serviceMin += j.durationMin;
+        st.cursor = end;
+        st.curAddr = j.address;
+      };
+
+      // Pass 1: locked orders are pinned to this weekday (respecting fixed
+      // employee). They keep their day even if they overrun working hours;
+      // route them nearest-first, then fill the rest of the day around them.
       // eslint-disable-next-line no-constant-condition
       while (true) {
         let best: { idx: number; drive: number } | null = null;
         for (let i = 0; i < remaining.length; i++) {
-          const j: Job = remaining[i];
+          const j = remaining[i];
+          if (!j.locked || j.lockedWeekday !== weekday) continue;
           if (j.fixedEmployeeId && j.fixedEmployeeId !== emp.id) continue;
-          if (j.fixedWeekdays && !j.fixedWeekdays.includes(weekday)) continue;
-          const drive: number = curAddr === null ? driveFromHomeMinutes(j.address, emp.home) : driveMinutes(curAddr, j.address);
-          const arrival = cursor + drive;
-          if (arrival + j.durationMin > hardEnd) continue; // won't fit today
-          if (!best || drive < best.drive) best = { idx: i, drive };
+          const d = drive(j);
+          if (!best || d < best.drive) best = { idx: i, drive: d };
         }
         if (!best) break;
-        const j: Job = remaining.splice(best.idx, 1)[0];
-        const start = cursor + best.drive;
-        const end = start + j.durationMin;
-        day.stops.push({ job: j, startMin: start, endMin: end, driveMin: best.drive });
-        day.driveMin += best.drive;
-        day.serviceMin += j.durationMin;
-        cursor = end;
-        curAddr = j.address;
+        place(best.idx, best.drive);
       }
+
+      // Pass 2: greedily add the nearest feasible unlocked job that still fits.
+      // eslint-disable-next-line no-constant-condition
+      while (true) {
+        let best: { idx: number; drive: number } | null = null;
+        for (let i = 0; i < remaining.length; i++) {
+          const j = remaining[i];
+          if (j.locked) continue; // only placed on their pinned day (pass 1)
+          if (j.fixedEmployeeId && j.fixedEmployeeId !== emp.id) continue;
+          if (j.fixedWeekdays && !j.fixedWeekdays.includes(weekday)) continue;
+          const d = drive(j);
+          if (st.cursor + d + j.durationMin > hardEnd) continue; // won't fit today
+          if (!best || d < best.drive) best = { idx: i, drive: d };
+        }
+        if (!best) break;
+        place(best.idx, best.drive);
+      }
+
       if (day.stops.length) days.push(day);
     }
   }

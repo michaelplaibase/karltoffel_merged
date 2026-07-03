@@ -304,8 +304,16 @@ export async function getOrderDetail(id: number): Promise<OrderDetail | null> {
 
 // ---- Planner ---------------------------------------------------------------
 
+/** True if the week beginning `weekMonday` is closed by a holiday (Ferie). */
+export async function isHolidayWeek(weekMonday: string): Promise<boolean> {
+  const monday = new Date(`${weekMonday}T00:00:00Z`);
+  const count = await prisma.holidayWeek.count({ where: { startWeek: { lte: monday }, endWeek: { gte: monday } } });
+  return count > 0;
+}
+
 /** Jobs the auto-planner should route for the week beginning `weekMonday` (ISO date). */
 export async function getPlannerJobs(weekMonday: string): Promise<Job[]> {
+  if (await isHolidayWeek(weekMonday)) return []; // holiday week is closed
   const start = new Date(`${weekMonday}T00:00:00Z`);
   const end = new Date(start.getTime() + 7 * 864e5);
   const rows = await prisma.order.findMany({
@@ -325,6 +333,8 @@ export async function getPlannerJobs(weekMonday: string): Promise<Job[]> {
     // Hard planning constraints only — a subscription can pin fixed weekdays.
     // "Fast medarb." is "Ingen" in the demo, so no fixed-employee constraint.
     fixedWeekdays: o.subscription?.fixedWeekdays ? o.subscription.fixedWeekdays.split("").map(Number) : undefined,
+    locked: o.lockedFully,
+    lockedWeekday: o.lockedFully ? (o.plannedAt.getUTCDay() + 6) % 7 : undefined,
   }));
 }
 
@@ -350,8 +360,9 @@ async function buildWeekPlan(weekMonday: string) {
     }),
     prisma.user.findMany({ where: { activeCalendar: true }, orderBy: { id: "asc" } }),
   ]);
+  const holiday = await isHolidayWeek(weekMonday);
   const priceById = new Map<number, number>();
-  const jobs: Job[] = orders.map((o) => {
+  const jobs: Job[] = holiday ? [] : orders.map((o) => {
     priceById.set(o.id, o.tasks.reduce((a, t) => a + t.price, 0));
     return {
       id: o.id, contactId: o.contactId, customer: o.contact.name,
@@ -360,6 +371,8 @@ async function buildWeekPlan(weekMonday: string) {
       durationMin: o.tasks.reduce((a, t) => a + t.durationMin, 0) || 30,
       source: sourceLabel(o.sourceType, o.subscription?.displayNo),
       fixedWeekdays: o.subscription?.fixedWeekdays ? o.subscription.fixedWeekdays.split("").map(Number) : undefined,
+      locked: o.lockedFully,
+      lockedWeekday: o.lockedFully ? (o.plannedAt.getUTCDay() + 6) % 7 : undefined,
     };
   });
   const plan = planWeek(jobs, weekMonday);
@@ -390,11 +403,11 @@ export async function getCalendarWeek(weekMonday: string): Promise<CalendarWeek>
   }
 
   const events: CalEvent[] = plan.days.flatMap((d) =>
-    d.stops.map((s, i) => ({
+    d.stops.map((s) => ({
       id: s.job.id, day: d.weekday, start: s.startMin / 60, end: s.endMin / 60,
       postal: s.job.postal, customer: s.job.customer, category: s.job.category,
       status: "afventer" as CalStatus, type: sourceType(s.job.source),
-      lock: (i === 0 ? "fastlaast" : "delvist") as LockState, employeeId: d.employeeId,
+      lock: (s.job.locked ? "fastlaast" : "frigjort") as LockState, employeeId: d.employeeId,
     }))
   );
 

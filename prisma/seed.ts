@@ -35,6 +35,7 @@ async function main() {
   await prisma.fixedPriceAgreement.deleteMany();
   await prisma.contact.deleteMany();
   await prisma.standardTask.deleteMany();
+  await prisma.holidayWeek.deleteMany();
   await prisma.user.deleteMany();
   await prisma.company.deleteMany();
 
@@ -127,21 +128,33 @@ async function main() {
   // Five orders due in week 27 (Mon 2026-06-29) — the auto-planner's demo week.
   const week27 = new Date("2026-06-29T10:00:00Z");
   const weekOrders = [
-    { id: 1969863, contactId: 201482, address: "Ørnedvej 4, 8660 Skanderborg", source: "subscription", subId: 378378, task: { category: "Vinduespudsning", letter: "U", description: "Pudsning udvendig og indvendig", price: 940, durationMin: 60 } },
-    { id: 1969944, contactId: 201455, address: "Hospitalsgade 6, 8700 Horsens", source: "subscription", subId: 378201, task: { category: "Viceværtservice", letter: "V", description: "Fjern spindelvæv", price: 811, durationMin: 45 } },
-    { id: 1969951, contactId: 201391, address: "Vejlevej 120, 8700 Horsens", source: "manual", subId: null, task: { category: "Rentvandsvask", letter: "R", description: "Rentvandsvask facade", price: 620, durationMin: 30 } },
-    { id: 1969960, contactId: 201310, address: "Mejlgade 12, 8000 Aarhus C", source: "subscription", subId: 378150, task: { category: "Vinduespudsning", letter: "U", description: "Pudsning udvendig", price: 1200, durationMin: 90 } },
-    { id: 1969973, contactId: 201288, address: "Rosensgade 20, 8300 Odder", source: "online", subId: null, task: { category: "Overfladerens", letter: "O", description: "Afrensning af overflader", price: 560, durationMin: 40 } },
+    { id: 1969863, contactId: 201482, address: "Ørnedvej 4, 8660 Skanderborg", source: "subscription", subId: 378378, locked: true, task: { category: "Vinduespudsning", letter: "U", description: "Pudsning udvendig og indvendig", price: 940, durationMin: 60 } },
+    { id: 1969944, contactId: 201455, address: "Hospitalsgade 6, 8700 Horsens", source: "subscription", subId: 378201, locked: false, task: { category: "Viceværtservice", letter: "V", description: "Fjern spindelvæv", price: 811, durationMin: 45 } },
+    { id: 1969951, contactId: 201391, address: "Vejlevej 120, 8700 Horsens", source: "manual", subId: null, locked: false, task: { category: "Rentvandsvask", letter: "R", description: "Rentvandsvask facade", price: 620, durationMin: 30 } },
+    { id: 1969960, contactId: 201310, address: "Mejlgade 12, 8000 Aarhus C", source: "subscription", subId: 378150, locked: false, task: { category: "Vinduespudsning", letter: "U", description: "Pudsning udvendig", price: 1200, durationMin: 90 } },
+    { id: 1969973, contactId: 201288, address: "Rosensgade 20, 8300 Odder", source: "online", subId: null, locked: false, task: { category: "Overfladerens", letter: "O", description: "Afrensning af overflader", price: 560, durationMin: 40 } },
   ];
   for (const o of weekOrders) {
     await prisma.order.create({
       data: {
         id: o.id, contactId: o.contactId, deliveryAddress: o.address, plannedAt: week27,
-        sourceType: o.source, subscriptionId: o.subId, employeeId: 1535,
+        sourceType: o.source, subscriptionId: o.subId, employeeId: 1535, lockedFully: o.locked,
         tasks: { create: [line({ ...o.task, fromSubscription: o.source === "subscription" }, 0)] },
       },
     });
   }
+
+  // ---- Holiday week (Ferie): closes week 32 (Mon 2026-08-03). The order below
+  // falls inside it and is therefore suppressed by the planner. ----
+  const holidayMonday = new Date("2026-08-03T00:00:00Z");
+  await prisma.holidayWeek.create({ data: { startWeek: holidayMonday, endWeek: holidayMonday } });
+  await prisma.order.create({
+    data: {
+      id: 2080099, contactId: 201391, deliveryAddress: "Vejlevej 120, 8700 Horsens",
+      plannedAt: new Date("2026-08-03T10:00:00Z"), sourceType: "manual", employeeId: 1535,
+      tasks: { create: [line({ category: "Rentvandsvask", letter: "R", description: "Rentvandsvask facade", price: 620, durationMin: 30 }, 0)] },
+    },
+  });
 
   // ---- Standard tasks (catalogue) — the locked window-cleaning combos + a few per category ----
   const systemTasks = [
