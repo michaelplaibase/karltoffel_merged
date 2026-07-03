@@ -1,13 +1,15 @@
 import { NextResponse } from "next/server";
-import { planWeek, DEMO_JOBS, fmtTime, isoWeek } from "@/lib/planner";
+import { planWeek, fmtTime, isoWeek } from "@/lib/planner";
+import { getPlannerJobs } from "@/lib/queries";
 
 // GET /api/plan?week=YYYY-MM-DD
 // Runs the weekly auto-planner and returns the routed, time-slotted schedule.
 // A nightly cron hits this (see vercel.json) to re-plan every week.
-export function GET(req: Request) {
+export async function GET(req: Request) {
   const url = new URL(req.url);
   const week = url.searchParams.get("week") || "2026-06-29";
-  const plan = planWeek(DEMO_JOBS, week);
+  const jobs = await getPlannerJobs(week);
+  const plan = planWeek(jobs, week);
 
   return NextResponse.json({
     week: `Uge ${isoWeek(week)} (${plan.weekMonday})`,

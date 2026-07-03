@@ -1,10 +1,12 @@
 import Link from "next/link";
-import { SUBSCRIPTIONS, contactById } from "@/lib/data";
+import { getSubscriptions, getContacts } from "@/lib/queries";
 import { CatChip, CustomerCell, RowCaret, MapLink, money } from "@/components/ui";
 
 export const metadata = { title: "Abonnementer · Karltoffel" };
 
-export default function SubscriptionsPage() {
+export default async function SubscriptionsPage() {
+  const [subscriptions, contacts] = await Promise.all([getSubscriptions(), getContacts()]);
+  const contactById = (id: number) => contacts.find((c) => c.id === id);
   return (
     <div className="container-1140">
       <h1 className="page-title">Oversigt over abonnementer</h1>
@@ -29,7 +31,7 @@ export default function SubscriptionsPage() {
                 </tr>
               </thead>
               <tbody>
-                {SUBSCRIPTIONS.map((s) => {
+                {subscriptions.map((s) => {
                   const c = contactById(s.contactId);
                   return (
                     <tr key={s.id}>

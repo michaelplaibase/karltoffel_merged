@@ -1,10 +1,12 @@
 import Link from "next/link";
-import { ORDERS, contactById } from "@/lib/data";
+import { getOrders, getContacts } from "@/lib/queries";
 import { CatChip, CustomerCell, RowCaret, MapLink, StatusPill, money } from "@/components/ui";
 
 export const metadata = { title: "Ordrer · Karltoffel" };
 
-export default function OrdersPage() {
+export default async function OrdersPage() {
+  const [orders, contacts] = await Promise.all([getOrders(), getContacts()]);
+  const contactById = (id: number) => contacts.find((c) => c.id === id);
   return (
     <div className="container-1140">
       <h1 className="page-title">Oversigt over ordrer</h1>
@@ -28,7 +30,7 @@ export default function OrdersPage() {
                 </tr>
               </thead>
               <tbody>
-                {ORDERS.map((o) => {
+                {orders.map((o) => {
                   const c = contactById(o.contactId);
                   return (
                     <tr key={o.id}>

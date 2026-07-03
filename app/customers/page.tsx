@@ -1,10 +1,12 @@
 import Link from "next/link";
-import { CONTACTS, kr } from "@/lib/data";
+import { kr } from "@/lib/data";
+import { getContacts } from "@/lib/queries";
 import { CustomerCell, RowCaret } from "@/components/ui";
 
 export const metadata = { title: "Kunder · Karltoffel" };
 
-export default function CustomersPage() {
+export default async function CustomersPage() {
+  const contacts = await getContacts();
   return (
     <div className="container-1140">
       <h1 className="page-title">Oversigt over kunder</h1>
@@ -33,7 +35,7 @@ export default function CustomersPage() {
                 </tr>
               </thead>
               <tbody>
-                {CONTACTS.map((c) => (
+                {contacts.map((c) => (
                   <tr key={c.id}>
                     <td><RowCaret actions={["Se kundedetaljer", "Slet kunde…"]} /></td>
                     <td className="num">

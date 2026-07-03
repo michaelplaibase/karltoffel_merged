@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { CONTACTS, SUBSCRIPTIONS, ORDERS, contactById } from "@/lib/data";
+import { getContactById, getSubscriptionsForContact, getOrdersForContact } from "@/lib/queries";
 import { CatChip, MapLink, RowCaret, StatusPill, money } from "@/components/ui";
 
 export default async function CustomerDetail({
@@ -9,10 +9,12 @@ export default async function CustomerDetail({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const c = contactById(Number(id));
+  const c = await getContactById(Number(id));
   if (!c) notFound();
-  const subs = SUBSCRIPTIONS.filter((s) => s.contactId === c.id);
-  const orders = ORDERS.filter((o) => o.contactId === c.id);
+  const [subs, orders] = await Promise.all([
+    getSubscriptionsForContact(c.id),
+    getOrdersForContact(c.id),
+  ]);
 
   return (
     <div className="container-1140">

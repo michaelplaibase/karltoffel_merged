@@ -1,13 +1,14 @@
 // Data model for karltoffel_crm — derived from docs/fenster-blueprint/MASTER-BLUEPRINT.md.
-// Phase-1 UI runs on the mock layer (lib/data.ts); this schema backs later phases.
-// Provider is Postgres per the chosen stack; switch `provider`/DATABASE_URL to run.
+// Local dev runs on SQLite (zero-server); production would switch `provider` to
+// postgresql + a hosted DATABASE_URL. All scalar types are chosen to be portable
+// across both (no enums, no Json — status/tier are plain strings, settings is text).
 
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "sqlite"
   url      = env("DATABASE_URL")
 }
 
@@ -22,28 +23,28 @@ model Company {
   users         User[]
   contacts      Contact[]
   standardTasks StandardTask[]
-  settings      Json?
+  settings      String?   // JSON blob (SQLite has no native Json)
   createdAt     DateTime  @default(now())
 }
 
 model User {
-  id            Int       @id @default(autoincrement())
-  company       Company   @relation(fields: [companyId], references: [id])
-  companyId     Int
-  username      String    @unique
-  firstName     String
-  lastName      String
-  email         String?
-  calendarColor String?   // hex
-  activeCalendar Boolean  @default(true)
-  canReceiveOnline Boolean @default(false)
-  homeAddress   String?
-  isAdmin       Boolean   @default(false)
-  canSeePrices  Boolean   @default(true)
-  canEditOrders Boolean   @default(true)
-  canHandlePayment Boolean @default(true)
+  id               Int      @id @default(autoincrement())
+  company          Company  @relation(fields: [companyId], references: [id])
+  companyId        Int
+  username         String   @unique
+  firstName        String
+  lastName         String
+  email            String?
+  calendarColor    String?  // hex
+  activeCalendar   Boolean  @default(true)
+  canReceiveOnline Boolean  @default(false)
+  homeAddress      String?
+  isAdmin          Boolean  @default(false)
+  canSeePrices     Boolean  @default(true)
+  canEditOrders    Boolean  @default(true)
+  canHandlePayment Boolean  @default(true)
   canChangePaymentOption Boolean @default(true)
-  orders        Order[]
+  orders           Order[]
 }
 
 model Contact {
@@ -57,8 +58,13 @@ model Contact {
   name          String
   email         String?
   phone         String?
-  addressString String
+  street        String    // "Ørnedvej 4"
+  city          String    // "8660 Skanderborg" (postal + city)
+  att           String?   // attention / contact person
   note          String?   // internal address remark
+  // display figures shown on the customer list (seeded for parity; recomputed later)
+  revenueYtd         Int?  // "Omsætning ÅTD"; null renders as "-"
+  avgYearlyFromSubs  Int   @default(0) // "Gns. oms/år fra abo."
   // per-contact invoice overrides
   skipDeliveryAddressOnInvoice Boolean @default(false)
   showDeliveryNameOnInvoice    Boolean @default(false)
@@ -86,32 +92,36 @@ model TaskLine {
   id            Int      @id @default(autoincrement())
   category      String
   letter        String
-  color         String   // category hex
+  color         String   // category hex (denormalised for the formset)
   description   String
   price         Int      // incl. VAT (kr)
   durationMin   Int
   customerPresenceRequired Boolean @default(false)
-  intervalMultiplier String?  // subscriptions only
-  startWeek     String?        // subscriptions only
+  isStandardTask     Boolean @default(false)
+  fromSubscription   Boolean @default(false)
+  intervalMultiplier String?  // subscriptions/orders only — "Hver 2. gang (hver 4. uge)"
+  startWeek     String?        // subscriptions only — "Uge 29"
   subscription  Subscription? @relation(fields: [subscriptionId], references: [id])
   subscriptionId Int?
   fixedPrice    FixedPriceAgreement? @relation(fields: [fixedPriceId], references: [id])
   fixedPriceId  Int?
   order         Order?   @relation(fields: [orderId], references: [id])
   orderId       Int?
+  sort          Int      @default(0)
 }
 
 model Subscription {
-  id             Int       @id @default(autoincrement())
+  id             Int       @id @default(autoincrement()) // internal URL pk
   displayNo      Int       @unique // "Abo. nr." shown in lists (≠ id/pk)
   contact        Contact   @relation(fields: [contactId], references: [id])
   contactId      Int
   deliveryAddress String
   baseInterval   String    // "Hver 2. uge"
-  startWeek      String
+  startWeek      String?
+  nextWeek       String?   // "Fremtidige ordrer" label, e.g. "Uge 29"
   fixedWeekdays  String?   // digit string e.g. "1234560"
   fixedTimeOfDay String?
-  fixedEmployee  String?
+  fixedEmployee  String    @default("Ingen")
   notiOverride   Boolean   @default(false)
   active         Boolean   @default(true)
   tasks          TaskLine[]
