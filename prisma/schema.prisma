@@ -1,0 +1,164 @@
+// Data model for karltoffel_crm — derived from docs/fenster-blueprint/MASTER-BLUEPRINT.md.
+// Phase-1 UI runs on the mock layer (lib/data.ts); this schema backs later phases.
+// Provider is Postgres per the chosen stack; switch `provider`/DATABASE_URL to run.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Company {
+  id            Int       @id @default(autoincrement())
+  name          String
+  cvr           String?
+  phone         String?
+  email         String?
+  planTier      String    @default("Pro") // Free | Pro | Premium
+  hourlyPrice   Int       @default(600)   // DKK incl. VAT, excl. driving
+  users         User[]
+  contacts      Contact[]
+  standardTasks StandardTask[]
+  settings      Json?
+  createdAt     DateTime  @default(now())
+}
+
+model User {
+  id            Int       @id @default(autoincrement())
+  company       Company   @relation(fields: [companyId], references: [id])
+  companyId     Int
+  username      String    @unique
+  firstName     String
+  lastName      String
+  email         String?
+  calendarColor String?   // hex
+  activeCalendar Boolean  @default(true)
+  canReceiveOnline Boolean @default(false)
+  homeAddress   String?
+  isAdmin       Boolean   @default(false)
+  canSeePrices  Boolean   @default(true)
+  canEditOrders Boolean   @default(true)
+  canHandlePayment Boolean @default(true)
+  canChangePaymentOption Boolean @default(true)
+  orders        Order[]
+}
+
+model Contact {
+  id            Int       @id @default(autoincrement())
+  company       Company   @relation(fields: [companyId], references: [id])
+  companyId     Int
+  isCompany     Boolean   @default(false)
+  companyName   String?
+  cvr           String?
+  ean           String?
+  name          String
+  email         String?
+  phone         String?
+  addressString String
+  note          String?   // internal address remark
+  // per-contact invoice overrides
+  skipDeliveryAddressOnInvoice Boolean @default(false)
+  showDeliveryNameOnInvoice    Boolean @default(false)
+  skipInvoiceOverSms           Boolean @default(false)
+  invoiceChoicePreselect       String  @default("default")
+  subscriptions Subscription[]
+  fixedPrices   FixedPriceAgreement[]
+  orders        Order[]
+  createdAt     DateTime  @default(now())
+}
+
+model StandardTask {
+  id          Int      @id @default(autoincrement())
+  company     Company  @relation(fields: [companyId], references: [id])
+  companyId   Int
+  category    String
+  description String
+  letter      String?
+  customerPresenceRequired Boolean @default(false)
+  isSystem    Boolean  @default(false) // locked, cannot edit/deactivate
+  active      Boolean  @default(true)
+}
+
+model TaskLine {
+  id            Int      @id @default(autoincrement())
+  category      String
+  letter        String
+  color         String   // category hex
+  description   String
+  price         Int      // incl. VAT (kr)
+  durationMin   Int
+  customerPresenceRequired Boolean @default(false)
+  intervalMultiplier String?  // subscriptions only
+  startWeek     String?        // subscriptions only
+  subscription  Subscription? @relation(fields: [subscriptionId], references: [id])
+  subscriptionId Int?
+  fixedPrice    FixedPriceAgreement? @relation(fields: [fixedPriceId], references: [id])
+  fixedPriceId  Int?
+  order         Order?   @relation(fields: [orderId], references: [id])
+  orderId       Int?
+}
+
+model Subscription {
+  id             Int       @id @default(autoincrement())
+  displayNo      Int       @unique // "Abo. nr." shown in lists (≠ id/pk)
+  contact        Contact   @relation(fields: [contactId], references: [id])
+  contactId      Int
+  deliveryAddress String
+  baseInterval   String    // "Hver 2. uge"
+  startWeek      String
+  fixedWeekdays  String?   // digit string e.g. "1234560"
+  fixedTimeOfDay String?
+  fixedEmployee  String?
+  notiOverride   Boolean   @default(false)
+  active         Boolean   @default(true)
+  tasks          TaskLine[]
+  orders         Order[]
+  createdAt      DateTime  @default(now())
+}
+
+model FixedPriceAgreement {
+  id             Int       @id @default(autoincrement())
+  displayNo      Int       @unique
+  contact        Contact   @relation(fields: [contactId], references: [id])
+  contactId      Int
+  deliveryAddress String
+  tasks          TaskLine[]
+  orders         Order[]
+}
+
+model Order {
+  id            Int       @id @default(autoincrement())
+  contact       Contact   @relation(fields: [contactId], references: [id])
+  contactId     Int
+  deliveryAddress String
+  plannedAt     DateTime
+  status        String    @default("Afventer levering")
+  sourceType    String    // subscription | fixed | manual | online
+  subscription  Subscription? @relation(fields: [subscriptionId], references: [id])
+  subscriptionId Int?
+  fixedPrice    FixedPriceAgreement? @relation(fields: [fixedPriceId], references: [id])
+  fixedPriceId  Int?
+  employee      User?     @relation(fields: [employeeId], references: [id])
+  employeeId    Int?
+  lockedFully   Boolean   @default(false)
+  comment       String?
+  addressNote   String?
+  tasks         TaskLine[]
+  createdAt     DateTime  @default(now())
+}
+
+model DiscountCode {
+  id         Int      @id @default(autoincrement())
+  code       String
+  percent    Int
+  expiresAt  DateTime?
+}
+
+model HolidayWeek {
+  id         Int      @id @default(autoincrement())
+  startWeek  DateTime // Monday ISO date
+  endWeek    DateTime
+}
