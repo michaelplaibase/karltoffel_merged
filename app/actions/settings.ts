@@ -10,6 +10,8 @@ export type SaveState = { saved?: boolean };
 export async function saveSettings(route: string, _prev: SaveState, formData: FormData): Promise<SaveState> {
   const values: Record<string, string[]> = {};
   for (const key of new Set(formData.keys())) {
+    // Only our positional field keys (sNfM) — skip React's $ACTION_* form fields.
+    if (!/^s\d+f\d+$/.test(key)) continue;
     values[key] = formData.getAll(key).map(String);
   }
   await setSettingsValues(route, values);
