@@ -201,3 +201,70 @@ select.form-control-sm { background-position: right 10px center; padding-right: 
 .f2 > label { margin: 8px 0 0; }
 .f2 .field-help { margin-top: 5px; }
 @media (max-width: 640px){ .f2 { grid-template-columns: 1fr; } .f2 > label { margin-bottom: 4px; } }
+
+/* ============================ Calendar ============================ */
+.cal-wrap { max-width: none; padding: 0; }
+.cal { display: grid; grid-template-columns: 220px 1fr; }
+.cal-side { padding: 18px 16px; font-size: 14.4px; }
+.cal-side .grp { font-size: 11px; text-transform: uppercase; letter-spacing: .04em; color: var(--table-header);
+  font-weight: 400; margin: 18px 0 8px; }
+.cal-side .grp:first-child { margin-top: 0; }
+.cal-side .money-row { display: flex; justify-content: space-between; padding: 3px 0; }
+.cal-side .chk { margin: 6px 0; color: var(--primary); }
+.cal-side .subhint { color: var(--muted); font-size: 11.5px; margin: 6px 0 0; }
+
+.cal-main { border-left: 1px solid var(--table-border); min-width: 0; }
+.cal-toolbar { display: flex; align-items: center; gap: 8px; padding: 12px 16px; flex-wrap: wrap; }
+.cal-toolbar .title { font-family: var(--font-head); font-size: 20px; font-weight: 400; color: var(--heading); margin: 0 6px; }
+.cal-toolbar .spacer { flex: 1; }
+.calbtn { border: 1px solid #B0B0B0; background: #E8E8E8; color: #212529; font-size: 12px; font-family: var(--font-head);
+  font-weight: 300; padding: 6px 12px; border-radius: 6px; cursor: pointer; }
+.calbtn.on { background: var(--primary); border-color: var(--primary); color: #fff; }
+.calseg { display: inline-flex; }
+.calseg .calbtn { border-radius: 0; margin-left: -1px; }
+.calseg .calbtn:first-child { border-radius: 6px 0 0 6px; margin-left: 0; }
+.calseg .calbtn:last-child { border-radius: 0 6px 6px 0; }
+
+.cal-grid { display: grid; grid-template-columns: 52px repeat(7, 1fr); border-top: 1px solid var(--table-border); }
+.cal-corner { border-bottom: 1px solid var(--table-border); border-right: 1px solid var(--table-border); background: #fbfcfd; }
+.cal-dayhead { border-bottom: 1px solid var(--table-border); border-right: 1px solid var(--table-border);
+  padding: 6px 8px; text-align: center; background: #fbfcfd; }
+.cal-dayhead b { display: block; font-size: 12.8px; color: var(--heading); font-weight: 500; text-transform: capitalize; }
+.cal-dayhead .kr { font-size: 11.5px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.cal-axis { border-right: 1px solid var(--table-border); }
+.cal-hour { height: 44px; text-align: right; padding-right: 6px; font-size: 11px; color: var(--muted);
+  transform: translateY(-7px); }
+.cal-daycol { position: relative; border-right: 1px solid var(--table-border);
+  background-image: repeating-linear-gradient(to bottom, transparent 0, transparent 43px, var(--table-border) 43px, var(--table-border) 44px); }
+.cal-nonbiz { position: absolute; left: 0; right: 0; background: repeating-linear-gradient(45deg, #f4f6f8, #f4f6f8 6px, #eef1f5 6px, #eef1f5 12px); opacity: .6; }
+.cal-ev { position: absolute; left: 3px; right: 3px; border-radius: 5px; padding: 4px 6px; overflow: hidden;
+  border: 1px solid; border-left-width: 3px; font-size: 10.5px; line-height: 1.25; cursor: pointer; }
+.cal-ev .t { font-variant-numeric: tabular-nums; color: #33475a; display: block; }
+.cal-ev b { display: block; color: var(--heading); font-weight: 500; }
+.cal-ev.st-afventer { background: #e8f3fb; border-color: var(--primary); }
+.cal-ev.st-afsluttet { background: #e4f5ec; border-color: var(--success); }
+.cal-ev.st-mislykket { background: #fbe8e8; border-color: var(--danger); }
+.cal-ev.st-ikke_afsluttet { background: #eef1f5; border-color: var(--secondary); }
+
+.legend2 .grp { font-size: 11px; text-transform: uppercase; color: var(--table-header); margin: 12px 0 6px; }
+.legend-row { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--body-text); margin: 4px 0; }
+.legend-sw { width: 24px; height: 13px; border-radius: 3px; border-left: 3px solid; flex: 0 0 auto; }
+
+/* event context menu */
+.ctxmenu { position: fixed; z-index: 2000; background: #fff; border: 1px solid rgba(0,0,0,.05);
+  border-radius: 6px; box-shadow: var(--shadow-dropdown); padding: 6px 0; min-width: 232px; }
+.ctxmenu-item { display: flex; justify-content: space-between; gap: 12px; padding: 8px 18px; font-size: 14px;
+  color: var(--body-text); cursor: pointer; }
+.ctxmenu-item:hover { background: #F7F8FB; }
+.ctxmenu-sep { height: 1px; background: var(--light); margin: 6px 0; }
+
+/* ============================ Day program ============================ */
+.daycal-toolbar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 12px; }
+.daycal-toolbar .title { font-family: var(--font-head); font-size: 20px; color: var(--heading); margin: 0; }
+.daycal-summary { display: flex; flex-wrap: wrap; gap: 22px; padding: 12px 15px; background: #F7F8FB;
+  border: 1px solid #eef1f5; border-radius: 6px; margin-bottom: 14px; font-size: 13px; }
+.daycal-stop { display: flex; flex-wrap: wrap; gap: 14px; align-items: center; justify-content: space-between;
+  padding: 13px 15px; border: 1px solid var(--table-border); border-radius: 8px; margin-bottom: 10px; }
+.daycal-stop .when { font-weight: 600; font-variant-numeric: tabular-nums; }
+.daycal-icons { margin-top: 6px; font-size: 12px; color: var(--muted); display: flex; gap: 10px; flex-wrap: wrap; }
+.daycal-icons .bi { font-size: 14px; }
