@@ -148,3 +148,25 @@ export async function generateForSubscriptionId(id: number, ref: Date = new Date
   if (!sub || !sub.active) return 0;
   return generateForSubscription(sub, ref, horizonWeeks);
 }
+
+/**
+ * Propagate a subscription edit to its future orders: delete the sub's orders in
+ * NEXT week onward that are still pending and not locked (history, completed and
+ * locked orders, and the current week's plan, are left untouched), then
+ * regenerate from the updated template.
+ */
+export async function regenerateFutureOrders(id: number, ref: Date = new Date(), horizonWeeks = DEFAULT_HORIZON_WEEKS): Promise<number> {
+  const nextMonday = new Date(mondayOf(ref).getTime() + WEEK_MS);
+  const stale = await prisma.order.findMany({
+    where: { subscriptionId: id, plannedAt: { gte: nextMonday }, status: "Afventer levering", lockedFully: false },
+    select: { id: true },
+  });
+  const ids = stale.map((o) => o.id);
+  if (ids.length) {
+    await prisma.$transaction([
+      prisma.taskLine.deleteMany({ where: { orderId: { in: ids } } }),
+      prisma.order.deleteMany({ where: { id: { in: ids } } }),
+    ]);
+  }
+  return generateForSubscriptionId(id, ref, horizonWeeks);
+}

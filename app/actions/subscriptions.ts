@@ -4,7 +4,7 @@
 // the task-line formset (with interval + next-week per line).
 import { prisma } from "@/lib/db";
 import { categoryColor } from "@/lib/categories";
-import { generateForSubscriptionId, generateAllSubscriptionOrders } from "@/lib/recurrence";
+import { generateForSubscriptionId, generateAllSubscriptionOrders, regenerateFutureOrders } from "@/lib/recurrence";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
@@ -113,7 +113,7 @@ export async function updateSubscription(pk: number, _prev: SubscriptionState, f
     }),
   ]);
 
-  await generateForSubscriptionId(pk); // fill any new upcoming weeks with the updated template
+  await regenerateFutureOrders(pk); // propagate the edit to future (pending, unlocked) orders
   const sub = await prisma.subscription.findUnique({ where: { id: pk }, select: { displayNo: true, contactId: true } });
   revalidatePath("/subscriptions");
   revalidatePath("/orders");
