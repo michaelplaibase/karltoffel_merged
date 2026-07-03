@@ -122,6 +122,24 @@ export async function getContactById(id: number): Promise<Contact | null> {
   return c ? mapContact(c) : null;
 }
 
+/** Raw fields for the edit form (includes companyName/ean/note the view type omits). */
+export async function getContactEditData(id: number) {
+  const c = await prisma.contact.findUnique({ where: { id } });
+  if (!c) return null;
+  return {
+    isCompany: c.isCompany,
+    companyName: c.companyName ?? "",
+    cvr: c.cvr ?? "",
+    ean: c.ean ?? "",
+    name: c.name,
+    att: c.att ?? "",
+    email: c.email ?? "",
+    phone: c.phone ?? "",
+    address: c.city ? `${c.street}, ${c.city}` : c.street,
+    note: c.note ?? "",
+  };
+}
+
 // ---- Subscriptions ---------------------------------------------------------
 
 export async function getSubscriptions(): Promise<Subscription[]> {
