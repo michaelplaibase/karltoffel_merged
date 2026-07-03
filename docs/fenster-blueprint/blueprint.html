@@ -1,0 +1,883 @@
+<title>Fenster Portal — Interactive Blueprint</title>
+<style>
+:root{
+  --canvas:#eef2f6; --card:#ffffff; --ink:#0f2739; --muted:#5c6f7e; --faint:#8698a6;
+  --line:#dde5ec; --line2:#eaeff4; --brand:#1f7ac0; --brand-d:#155e97; --tint:#6ec0e5;
+  --tint-bg:#e8f3fb; --rail:#12344d; --rail-2:#0d2739; --rail-line:#1e4763; --rail-txt:#a9c4d6;
+  --ok:#2e9e6b; --ok-bg:#e4f5ec; --warn:#e0871c; --warn-bg:#fdf1e0; --dang:#d13f3f; --dang-bg:#fbe8e8;
+  --radius:10px; --radius-s:7px;
+  --f-ui:"Segoe UI",system-ui,-apple-system,Roboto,"Helvetica Neue",Arial,sans-serif;
+  --f-mono:ui-monospace,"SF Mono","Cascadia Mono","Roboto Mono",Consolas,monospace;
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%}
+body{background:var(--canvas);color:var(--ink);font-family:var(--f-ui);font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased}
+button{font-family:inherit}
+::selection{background:#bfe0f4}
+
+/* ---------- App shell ---------- */
+.app{display:grid;grid-template-columns:290px 1fr;grid-template-rows:56px 1fr;height:100vh;overflow:hidden}
+.topbar{grid-column:1/3;display:flex;align-items:center;gap:14px;padding:0 18px;background:var(--rail);color:#fff;border-bottom:1px solid var(--rail-2);z-index:5}
+.brand{display:flex;align-items:center;gap:10px;font-weight:700;letter-spacing:.02em}
+.brand .logo{display:inline-grid;grid-template-columns:repeat(2,9px);gap:2px}
+.brand .logo i{width:9px;height:9px;border-radius:2px;display:block}
+.brand .logo i:nth-child(1){background:var(--tint)}
+.brand .logo i:nth-child(2){background:#cfe8f6}
+.brand .logo i:nth-child(3){background:#2e6f9e}
+.brand .logo i:nth-child(4){background:var(--tint)}
+.brand small{font-weight:400;color:var(--rail-txt);letter-spacing:0}
+.topbar .spacer{flex:1}
+.topbar .modenote{font-size:12px;color:var(--rail-txt);display:flex;align-items:center;gap:7px}
+.topbar .modenote b{color:#dcebf5;font-weight:600}
+.acct{display:flex;align-items:center;gap:9px;padding:5px 10px;border:1px solid var(--rail-line);border-radius:20px;font-size:12.5px}
+.acct .av{width:22px;height:22px;border-radius:50%;background:linear-gradient(135deg,var(--tint),var(--brand));display:grid;place-items:center;font-size:11px;font-weight:700;color:#fff}
+
+/* ---------- Sidebar ---------- */
+.side{background:var(--rail-2);color:var(--rail-txt);overflow-y:auto;padding:10px 0 40px;border-right:1px solid var(--rail-2)}
+.side::-webkit-scrollbar{width:9px}.side::-webkit-scrollbar-thumb{background:#1c405a;border-radius:6px}
+.side .grp{padding:14px 18px 5px;font-size:10.5px;letter-spacing:.13em;text-transform:uppercase;color:#5f8199;font-weight:700}
+.side a{display:flex;align-items:center;gap:9px;justify-content:space-between;padding:7px 18px 7px 20px;color:var(--rail-txt);text-decoration:none;font-size:13px;border-left:3px solid transparent;cursor:pointer}
+.side a .lbl{display:flex;align-items:center;gap:9px}
+.side a .en{font-size:11px;color:#597c93}
+.side a:hover{background:#123449;color:#dcebf5}
+.side a.active{background:#123c56;color:#fff;border-left-color:var(--tint);font-weight:600}
+.side a.active .en{color:#89b3cc}
+.side .rt{font-family:var(--f-mono);font-size:10.5px;color:#4d7a99}
+.side .pill{font-size:9.5px;padding:1px 6px;border-radius:10px;background:#123c56;color:#7fb2d1;border:1px solid var(--rail-line)}
+
+/* ---------- Main ---------- */
+.main{overflow-y:auto;padding:0}
+.main::-webkit-scrollbar{width:11px}.main::-webkit-scrollbar-thumb{background:#c4d2dd;border-radius:7px}
+.wrap{max-width:1080px;margin:0 auto;padding:22px 30px 90px}
+.specstrip{display:flex;flex-wrap:wrap;align-items:baseline;gap:10px 14px;padding:14px 0 16px;border-bottom:1px solid var(--line);margin-bottom:22px}
+.specstrip h1{margin:0;font-size:22px;letter-spacing:-.01em;text-wrap:balance}
+.specstrip h1 .en{color:var(--faint);font-weight:500;font-size:15px;margin-left:8px}
+.route{font-family:var(--f-mono);font-size:12px;color:var(--brand-d);background:var(--tint-bg);border:1px solid #cde6f6;padding:2px 9px;border-radius:20px}
+.purpose{flex-basis:100%;color:var(--muted);font-size:13.5px;max-width:70ch}
+.gate{font-size:11px;font-weight:600;color:#7a5b12;background:var(--warn-bg);border:1px solid #f0d9ad;padding:2px 9px;border-radius:20px}
+
+/* ---------- Screen (mock UI) ---------- */
+.screen{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);box-shadow:0 1px 2px rgba(16,39,57,.04),0 10px 26px -18px rgba(16,39,57,.22);overflow:hidden}
+.screen .sc-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:15px 20px;border-bottom:1px solid var(--line2);background:linear-gradient(#fff,#fbfdfe)}
+.screen .sc-head h2{margin:0;font-size:16px}
+.screen .sc-head .desc{font-size:12.5px;color:var(--muted);margin-top:2px}
+.screen .sc-body{padding:20px}
+
+/* toolbar */
+.toolbar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:16px}
+.search{display:flex;align-items:center;gap:8px;border:1px solid var(--line);border-radius:8px;padding:7px 11px;color:var(--faint);font-size:13px;min-width:min(420px,60%);background:#fbfdfe}
+.search svg{flex:0 0 auto}
+
+/* buttons */
+.btn{display:inline-flex;align-items:center;gap:7px;border:1px solid var(--line);background:#fff;color:var(--ink);padding:7px 13px;border-radius:8px;font-size:13px;font-weight:600;cursor:default;white-space:nowrap}
+.btn.primary{background:var(--brand);border-color:var(--brand);color:#fff}
+.btn.primary:hover{background:var(--brand-d)}
+.btn.ghost{background:transparent}
+.btn.dang{color:var(--dang);border-color:#eec3c3;background:var(--dang-bg)}
+.btn.sm{padding:4px 9px;font-size:12px;border-radius:6px}
+.btn.sub{color:var(--brand-d);border-color:#cde6f6;background:var(--tint-bg)}
+.savebar{display:flex;justify-content:flex-end;gap:10px;margin-top:22px;padding-top:16px;border-top:1px solid var(--line2)}
+.actions-row{display:flex;flex-wrap:wrap;gap:10px}
+
+/* tables */
+.tblwrap{overflow-x:auto;border:1px solid var(--line);border-radius:var(--radius-s)}
+table.grid{width:100%;border-collapse:collapse;font-size:13px;min-width:640px}
+table.grid th{text-align:left;font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--faint);font-weight:700;padding:10px 12px;border-bottom:1px solid var(--line);background:#f7fafc;white-space:nowrap}
+table.grid td{padding:11px 12px;border-bottom:1px solid var(--line2);vertical-align:top}
+table.grid tr:last-child td{border-bottom:0}
+table.grid tbody tr:nth-child(even){background:#fbfdfe}
+.num{font-variant-numeric:tabular-nums;text-align:right;white-space:nowrap}
+.caret{display:inline-grid;place-items:center;width:26px;height:24px;border:1px solid var(--line);border-radius:6px;color:var(--muted);font-weight:700}
+.empty{padding:26px;text-align:center;color:var(--faint);font-size:13px;font-style:italic}
+.cust{line-height:1.35}.cust b{font-weight:600}.cust .mut{color:var(--muted);font-size:12px}
+.mapc{color:var(--brand);font-size:12px}
+
+/* fields */
+.panel{border:1px solid var(--line);border-radius:var(--radius-s);margin-bottom:16px;overflow:hidden}
+.panel>.ph{padding:11px 16px;background:#f7fafc;border-bottom:1px solid var(--line);font-weight:700;font-size:13.5px;display:flex;align-items:center;justify-content:space-between}
+.panel>.pb{padding:6px 16px 14px}
+.frow{padding:12px 0;border-bottom:1px solid var(--line2);display:grid;grid-template-columns:minmax(180px,240px) 1fr;gap:18px;align-items:start}
+.frow:last-child{border-bottom:0}
+.frow .fl{font-weight:600;font-size:13px}
+.frow .fl .en{display:block;color:var(--faint);font-weight:400;font-size:11.5px}
+.frow .help{color:var(--muted);font-size:12px;margin-top:5px;max-width:60ch}
+.ctrl{display:block;width:100%;max-width:440px;border:1px solid var(--line);border-radius:7px;padding:8px 11px;background:#fff;color:var(--ink);font-size:13px;min-height:36px}
+.ctrl.ta{min-height:74px;white-space:pre-wrap;color:#33475a}
+.ctrl.ro{background:#f5f8fa;color:var(--muted)}
+.ctrl.sel{display:flex;align-items:center;justify-content:space-between;color:#33475a}
+.ctrl.sel::after{content:"▾";color:var(--faint);margin-left:10px}
+.opts{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.opt{font-size:11.5px;border:1px solid var(--line);border-radius:20px;padding:3px 9px;color:var(--muted);background:#fbfdfe}
+.opt.on{border-color:var(--brand);color:var(--brand-d);background:var(--tint-bg);font-weight:600}
+.checks{display:flex;flex-wrap:wrap;gap:14px}
+.chk{display:flex;align-items:center;gap:8px;font-size:13px}
+.chk .box{width:16px;height:16px;border-radius:4px;border:1.5px solid var(--faint);display:inline-block}
+.chk .box.on{background:var(--brand);border-color:var(--brand);position:relative}
+.chk .box.on::after{content:"✓";color:#fff;font-size:11px;position:absolute;top:-2px;left:2px}
+.toggle{width:38px;height:22px;border-radius:20px;background:var(--brand);position:relative;flex:0 0 auto}
+.toggle::after{content:"";position:absolute;width:16px;height:16px;border-radius:50%;background:#fff;top:3px;right:3px}
+.toggle.off{background:#c4d2dd}.toggle.off::after{left:3px;right:auto}
+.radio{display:flex;flex-direction:column;gap:8px}
+.rad{display:flex;align-items:center;gap:9px;font-size:13px}
+.rad .dot{width:15px;height:15px;border-radius:50%;border:1.5px solid var(--faint);flex:0 0 auto}
+.rad.on .dot{border-color:var(--brand);border-width:4px}
+.swatch{width:20px;height:20px;border-radius:5px;border:1px solid rgba(0,0,0,.15);display:inline-block;vertical-align:-4px}
+.note{background:#f7fafc;border:1px solid var(--line2);border-left:3px solid var(--tint);border-radius:0 6px 6px 0;padding:10px 13px;color:var(--muted);font-size:12.5px;margin:4px 0 12px}
+
+/* task lines */
+.tlines{border:1px solid var(--line);border-radius:var(--radius-s);overflow:hidden}
+.tlines .tlh,.tline{display:grid;grid-template-columns:1fr 92px 78px auto;gap:12px;align-items:center;padding:10px 13px}
+.tlines .tlh{background:#f7fafc;border-bottom:1px solid var(--line);font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--faint);font-weight:700}
+.tline{border-bottom:1px solid var(--line2)}
+.tline .d{display:flex;align-items:center;gap:9px}
+.catchip{width:20px;height:20px;border-radius:5px;display:inline-grid;place-items:center;color:#fff;font-size:11px;font-weight:700;flex:0 0 auto}
+.tmini{font-size:11px;color:var(--faint);margin-top:2px}
+.tsum{display:flex;justify-content:flex-end;gap:26px;padding:11px 13px;font-size:13px;background:#fbfdfe}
+
+/* chips / pills */
+.pill{display:inline-flex;align-items:center;gap:5px;font-size:11.5px;font-weight:600;padding:2px 9px;border-radius:20px;white-space:nowrap}
+.pill.ok{background:var(--ok-bg);color:#1c6e49}
+.pill.warn{background:var(--warn-bg);color:#8a5410}
+.pill.dang{background:var(--dang-bg);color:#9e2b2b}
+.pill.neu{background:#eef2f6;color:var(--muted)}
+.pill.plan{background:#efe7fb;color:#5b3ba6}
+
+/* calendar */
+.calbar{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin-bottom:14px}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.seg span{padding:6px 11px;font-size:12.5px;color:var(--muted);border-right:1px solid var(--line)}
+.seg span:last-child{border-right:0}.seg span.on{background:var(--brand);color:#fff;font-weight:600}
+.calgrid{display:grid;grid-template-columns:52px repeat(7,1fr);border:1px solid var(--line);border-radius:var(--radius-s);overflow:hidden;font-size:11px}
+.calgrid .ch{background:#f7fafc;border-bottom:1px solid var(--line);border-left:1px solid var(--line2);padding:7px 6px;text-align:center}
+.calgrid .ch.tl{border-left:0}
+.calgrid .ch b{display:block;font-size:12px;color:var(--ink)}
+.calgrid .ch .kr{color:var(--faint);font-variant-numeric:tabular-nums}
+.calgrid .tcell{border-left:0;border-top:1px solid var(--line2);color:var(--faint);text-align:right;padding:4px 6px;min-height:44px}
+.calgrid .cell{border-left:1px solid var(--line2);border-top:1px solid var(--line2);min-height:44px;position:relative;padding:2px}
+.ev{border-radius:5px;padding:4px 6px;font-size:10.5px;line-height:1.25;border-left:3px solid;margin-bottom:2px}
+.ev .t{font-variant-numeric:tabular-nums;color:#33475a}
+.ev b{display:block}
+.ev.sub{background:#e8f3fb;border-color:var(--brand)}
+.ev.done{background:#e4f5ec;border-color:var(--ok)}
+.ev.fail{background:#fbe8e8;border-color:var(--dang)}
+.legend{display:flex;flex-wrap:wrap;gap:14px;margin-top:14px;font-size:11.5px;color:var(--muted)}
+.legend .li{display:flex;align-items:center;gap:6px}
+.legend .sw{width:22px;height:12px;border-radius:3px;border-left:3px solid}
+
+/* KPI */
+.kpigrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px}
+.kpi{border:1px solid var(--line);border-radius:var(--radius-s);padding:15px 16px;background:linear-gradient(#fff,#fbfdfe)}
+.kpi .k{font-size:26px;font-weight:700;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+.kpi .t{font-weight:600;font-size:13px;margin-top:3px}
+.kpi .s{color:var(--muted);font-size:11.5px;margin-top:5px}
+.charts{display:grid;grid-template-columns:1fr;gap:14px;margin-top:18px}
+.chartcard{border:1px solid var(--line);border-radius:var(--radius-s);padding:15px 16px}
+.chartcard h3{margin:0 0 4px;font-size:14px}
+.bars{display:flex;align-items:flex-end;gap:7px;height:120px;margin-top:14px;padding-top:6px;border-bottom:1px solid var(--line)}
+.bars .bar{flex:1;background:linear-gradient(var(--tint),var(--brand));border-radius:4px 4px 0 0;min-width:8px}
+
+/* wizard */
+.steps{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px}
+.step{display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--muted);border:1px solid var(--line);border-radius:20px;padding:5px 13px}
+.step .n{width:19px;height:19px;border-radius:50%;background:#eef2f6;display:grid;place-items:center;font-size:11px;font-weight:700;color:var(--muted)}
+.step.on{border-color:var(--brand);color:var(--brand-d);background:var(--tint-bg)}
+.step.on .n{background:var(--brand);color:#fff}
+
+/* misc */
+.subgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px}
+.varlist{display:grid;gap:7px}
+.var{font-family:var(--f-mono);font-size:12px;color:var(--brand-d);background:var(--tint-bg);border:1px solid #cde6f6;border-radius:6px;padding:6px 9px}
+.var .d{display:block;font-family:var(--f-ui);color:var(--muted);font-size:11.5px;margin-top:2px}
+.tag{font-family:var(--f-mono);font-size:12px;background:#f2f5f8;border:1px solid var(--line);border-radius:5px;padding:1px 6px;color:#3a5266}
+.hr{height:1px;background:var(--line2);margin:18px 0}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+@media(max-width:920px){.two{grid-template-columns:1fr}.frow{grid-template-columns:1fr;gap:6px}.app{grid-template-columns:74px 1fr}.side .lbl .txt,.side .en,.side .grp span{display:none}}
+
+/* overview */
+.ov-hero{background:linear-gradient(120deg,var(--rail),#17496b);color:#fff;border-radius:var(--radius);padding:26px 28px;margin-bottom:22px}
+.ov-hero h1{margin:0 0 8px;font-size:26px;letter-spacing:-.02em}
+.ov-hero p{margin:0;color:#bcd6e6;max-width:75ch;font-size:14px}
+.ov-hero .meta{display:flex;flex-wrap:wrap;gap:10px;margin-top:16px}
+.ov-hero .mchip{font-size:12px;background:rgba(255,255,255,.08);border:1px solid var(--rail-line);border-radius:20px;padding:4px 12px;color:#dcebf5}
+.mapgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:16px}
+.mapcard{border:1px solid var(--line);border-radius:var(--radius-s);background:#fff;overflow:hidden}
+.mapcard .mh{padding:11px 15px;background:#f7fafc;border-bottom:1px solid var(--line);font-weight:700;font-size:13px;display:flex;align-items:center;gap:8px}
+.mapcard ul{list-style:none;margin:0;padding:6px 0}
+.mapcard li a{display:flex;justify-content:space-between;gap:10px;padding:6px 15px;text-decoration:none;color:var(--ink);font-size:13px;cursor:pointer}
+.mapcard li a:hover{background:var(--tint-bg);color:var(--brand-d)}
+.mapcard li a .r{font-family:var(--f-mono);font-size:10.5px;color:var(--faint)}
+.flow{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:10px 0 0;font-size:12.5px;color:var(--muted)}
+.flow .fnode{background:#fff;border:1px solid var(--line);border-radius:20px;padding:4px 12px;font-weight:600;color:var(--ink)}
+.flow .fa{color:var(--tint)}
+</style>
+
+<div class="app">
+  <div class="topbar">
+    <div class="brand"><span class="logo"><i></i><i></i><i></i><i></i></span> Karltoffel <small>· inspired by Fenster</small></div>
+    <div class="spacer"></div>
+    <div class="modenote">🗺️ <b>Interactive blueprint</b> — reconstructed 1:1 from the live logged-in portal</div>
+    <div class="acct"><span class="av">KK</span> KRLTFL ApS ▾</div>
+  </div>
+  <nav class="side" id="side"></nav>
+  <main class="main"><div class="wrap" id="view"></div></main>
+</div>
+
+<script>
+/* ============================================================
+   Fenster Partner Portal — reconstructed page blueprint data
+   Every label/option/column is verbatim from the live portal.
+   ============================================================ */
+var CAT = { /* 15 task categories → real hex */
+ "Vinduespudsning":"#257BB6","Rentvandsvask":"#469990","Tagrenderens":"#911eb4","Overfladerens":"#e5c700",
+ "Algebehandling":"#f58231","Overfladebeskyttelse":"#e6194B","Privatrengøring":"#3cb44b","Ejendomsrengøring":"#f032e6",
+ "Viceværtservice":"#000075","Grøn service":"#acd542","Ukrudtsbekæmpelse":"#800000","Skadedyrsbekæmpelse":"#42d4f4",
+ "Bilpleje":"#c593fe","Administrativt":"#9A6324","Andet":"#000000"};
+
+/* helper to make a category letter chip */
+function chip(cat,letter){var c=CAT[cat]||"#888";return '<span class="catchip" style="background:'+c+'" title="Kategori: '+cat+'">'+(letter||cat[0])+'</span>';}
+
+var NAV = [
+ {grp:"", items:[["overview","Oversigt","Overview & sitemap","",""]]},
+ {grp:"Kalender", items:[
+   ["/calendar","Kalender","Calendar",""],
+   ["/daycalendar","Dagsprogram","Day program",""]]},
+ {grp:"Kartotek", items:[
+   ["/contact_list/","Kunder","Customers",""],
+   ["/contact_details","Kundedetaljer","Customer detail",""],
+   ["/subscription_list","Abonnementer","Subscriptions",""],
+   ["/subscription_edit","Abonnement (editor)","Subscription editor",""],
+   ["/fixed_prices_times_list/","Fastprisaftaler","Fixed-price agr.",""],
+   ["/order_event_list","Ordrer","Orders",""],
+   ["/order_edit","Ordre (editor)","Order editor",""],
+   ["/end_order","Afslut ordre","Complete order",""]]},
+ {grp:"Funktioner", items:[
+   ["/custom_message_list","Gruppebeskeder","Group messages",""],
+   ["/holiday_weeks_list/","Ferieplanlægning","Holiday planning",""],
+   ["/subscription_defragmentation/","Abonnementsoptimering","Sub. optimization","Premium"],
+   ["/price_adjustment_create/","Prisjustering","Price adjustment",""]]},
+ {grp:"Indstillinger", items:[
+   ["/settings","Generelt","General",""],
+   ["/funnel_settings","Udseende","Appearance",""],
+   ["/user_accounts","Brugere","Users",""],
+   ["/working_hours/","Arbejdstider","Working hours",""],
+   ["/planning_settings/","Planlægning","Planning",""],
+   ["/discount_codes","Rabatkoder","Discount codes",""],
+   ["/standard_task_list/","Standardopgaver","Standard tasks",""],
+   ["/dinero_settings","Regnskab","Accounting",""],
+   ["/templates","E-mail & SMS skabeloner","Templates (×8)",""]]},
+ {grp:"Rapportering", items:[
+   ["/graph_reports","Grafer og nøgletal","Charts & KPIs",""],
+   ["/report_download","Rapporter","Reports",""],
+   ["/daycalendar_export","Dagsprogram i PDF","Day PDF",""]]},
+ {grp:"Hjælp & konto", items:[
+   ["/account/","Fenster konto","Account",""],
+   ["/change_password/","Skift password","Change password",""],
+   ["/businesspartners/","Samarbejdspartnere","Partners",""],
+   ["/quiz/","Fenster quiz","Quiz",""],
+   ["/support/","Kontakt support","Support",""]]}
+];
+
+/* PAGES defined in next script block */
+</script>
+
+<script>
+function esc(s){return String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");}
+var META = {}; /* route -> {label,en,route,purpose,gate} */
+NAV.forEach(function(g){g.items.forEach(function(it){META[it[0]]={label:it[1],en:it[2],route:it[0],gate:it[3]||""};});});
+
+/* ---- reusable content fragments ---- */
+var SMS_TOOLTIP = "Afsender på SMS. Kan være tekst eller dit mobilnummer. Maks 11 karakterer. Kontakt Fenster Support for at få feltet ændret (kræver Fenster Premium abonnement)";
+var NOTI_OPTS = ["Nej, send ikke","Ja, med dato","Ja, med dato og tidsinterval (-1t → +2t)","Ja, med dato og tidsinterval (-1t → +1t)","Ja, med dato og klokkeslæt"];
+
+/* task-line sample sets */
+var TL_ORDER = [
+ {cat:"Vinduespudsning",l:"U",desc:"Pudsning udvendig",price:"470,00",dur:"15",badge:"Fra abonnementet",rate:"1880 kr/t"},
+ {cat:"Vinduespudsning",l:"I",desc:"Pudsning indvendig",price:"470,00",dur:"15",badge:"Fra abonnementet",rate:"1880 kr/t"},
+ {cat:"Andet",l:"A",desc:"Fjernelse af spindelvæv alle steder",price:"578,00",dur:"30",badge:"Fra abonnementet",rate:"1156 kr/t"}];
+
+/* ============================ PAGE DEFINITIONS ============================ */
+var PAGES = {
+
+"overview":{purpose:"", blocks:[{kind:"overview"}]},
+
+"/calendar":{purpose:"Uge-scheduler med automatisk natlig ruteplanlægning. Viser planlagte ordrer pr. medarbejder; farve = status, fyld = låsegrad.",
+ blocks:[{kind:"calendar"}]},
+
+"/daycalendar":{purpose:"Dagens arbejdsprogram / rute for én dag — ordnet liste af stop med tid, adresse, kunde, pris og handlinger (chaufførens visning).",
+ blocks:[{kind:"daycal"}]},
+
+"/contact_list/":{purpose:"Oversigt over kunder, dvs. kontakter med én eller flere ordrer eller abonnementer.",
+ blocks:[{kind:"list", h:"Oversigt over kunder", create:"Opret ny kontakt",
+   search:"Kundenr, navn, email, tlf, vejnavn, husnr., postnr.",
+   cols:["Kundenr.","Kunde","Omsætning ÅTD","Gns. oms/år fra abo.","Antal abo."],
+   rowActions:["Se kundedetaljer","Slet kunde…"],
+   rows:[
+    ["201482",{cust:["McDonald's Stilling","Ørnedvej 4, 8660 Skanderborg","+45 •• •• •• ••"]},"kr. 12.140","kr. 34.852","1"],
+    ["201455",{cust:["Nordic Sport Invest 2","Hospitalsgade 6, 8700 Horsens","+45 •• •• •• ••"]},"-","kr. 21.080","1"],
+    ["201391",{cust:["Bilhuset A/S","Vejlevej 120, 8700 Horsens","+45 •• •• •• ••"]},"kr. 4.300","kr. 0","0"]]}]},
+
+"/contact_details":{purpose:"Alt om én kunde på én scrollende side: kontaktinfo, indstillinger, abonnementer, fastprisaftaler og ordrer.",
+ blocks:[
+  {kind:"form", h:"Kundedetaljer", desc:"contact_details/{id}/", noSave:true, sections:[
+    {h:"Kundens kontaktinfo", fields:[
+      {t:"static", l:"", val:"McDonald's Stilling\nØrnedvej 4, 8660 Skanderborg\nAtt: —   ·   +45 •• •• •• ••   ·   ••••@••••.dk\nCVR: 38242520"},
+      {t:"picker", l:"Skift/opret kontakt"},
+      {t:"buttons", btns:[["Rediger kontaktinfo","sub"],["Opret ny kontakt","ghost"]]}]},
+    {h:"Kundens indstillinger", fields:[
+      {t:"note", val:"Klik for at redigere kundens indstillinger (fakturalinje-visning + forudindstilling for betaling/fakturering)."},
+      {t:"buttons", btns:[["Rediger indstillinger","sub"]]}]},
+    {h:"Kundens abonnementer", fields:[
+      {t:"buttons", btns:[["Opret nyt abonnement på kunden","primary"]]},
+      {t:"subtable", cols:["Abo. nr.","Leveringsadresse","Opgaver","Interval","Pris","Fast medarb.","Fremtidige ordrer"],
+       rowActions:["Rediger abonnement","Stop abonnement…"],
+       rows:[["235844","Ørnedvej 4, 8660 Skanderborg", chip("Vinduespudsning","U")+" Pudsning udvendig","Hver 2. uge","470 kr","Ingen","Uge 29 (uge 29, 31, 33 …)"]]}]},
+    {h:"Kundens fastprisaftaler", fields:[
+      {t:"subtable", cols:["Aftale nr.","Leveringsadresse","Opgaver","Pris"], rows:[], empty:"Ingen fastprisaftaler fundet for kunden"}]},
+    {h:"Kundens ordrer", fields:[
+      {t:"buttons", btns:[["Opret ny ordre på kunden","primary"]]},
+      {t:"subtable", cols:["Ordre nr.","Leverings-dato","Opgaver","Pris","Medarbejder","Ordrestatus","Kilde"],
+       rowActions:["Vis ordre i kalender","Rediger ordre","Afslut ordre…","Slet ordre…","Opret ny ordre","Rediger abonnement"],
+       rows:[["2080056","2026-07-13", chip("Vinduespudsning","U")+" Pudsning udvendig +2","1.518 kr","Kristian Klercke",'<span class="pill warn">Afventer levering</span>',"Abo. #235844"]]}]}
+  ]}]},
+
+"/subscription_list":{purpose:"Oversigt over alle aktive abonnementer (stoppede forsvinder fra listen).",
+ blocks:[{kind:"list", h:"Oversigt over abonnementer", create:"Opret nyt abonnement",
+   search:"Abo. nr, dato, kundenavn, kundenr, email, tlf, vejnavn, husnr, postnr, opgave",
+   cols:["Abo. nr.","Kunde","Leveringsadresse","Opgaver","Interval","Pris","Fast medarb.","Fremtidige ordrer"],
+   rowActions:["Rediger abonnement","Stop abonnement…"],
+   rows:[
+    ["235844",{cust:["McDonald's Stilling","Ørnedvej 4, 8660 Skanderborg"]},"Ørnedvej 4, 8660 Skanderborg", chip("Vinduespudsning","U")+" Pudsning udvendig", "Hver 2. uge","470 kr","Ingen","Uge 29 (29, 31, 33 …)"],
+    ["235837",{cust:["Nordic Sport Invest 2","Hospitalsgade 6, 8700 Horsens"]},"Hospitalsgade 6, 8700 Horsens", chip("Viceværtservice","V")+" Fjern spindelvæv","Hver uge","811 kr","Ingen","Uge 28 (28, 29, 30 …)"]]}]},
+
+"/subscription_edit":{purpose:"Abonnement-editor — den mest komplekse entitet. URL-pk ≠ vist Abo. nr. Create-tvilling: /subscription_create/ (+?for_contact=).",
+ blocks:[{kind:"form", h:"Rediger abonnement #235844", desc:"subscription_edit/{pk}", saveLabel:"Opdater abonnement", extraFooter:[["Stop abonnement","dang"]], sections:[
+   {h:"Status", fields:[{t:"note", val:"Næste ordre på dette abonnement er planlagt til uge 29. Næste ordre (uge 29) er ikke fastlåst endnu."}]},
+   {h:"Kunde", fields:[
+     {t:"picker", l:"Fakturerings- og leveringsadresse"},
+     {t:"buttons", btns:[["Rediger kontaktinfo","sub"]]},
+     {t:"toggle", l:"Anden leveringsadresse", en:"Different delivery address", on:false, help:"Slå til for at vælge en separat leveringsadresse (endnu en kontakt)."}]},
+   {h:"Opgaver på abonnementet", fields:[
+     {t:"static", l:"Basis-interval og startuge", val:"Basis-interval: Hver 2. uge med startuge 29"},
+     {t:"tasklines", sub:true, rows:[
+       {cat:"Vinduespudsning",l:"U",desc:"Pudsning udvendig",price:"470,00",dur:"15",interval:"Hver gang (hver 2. uge)",next:"Uge 29",badge:"Standardopgave",rate:"1880 kr/t"},
+       {cat:"Vinduespudsning",l:"I",desc:"Pudsning indvendig",price:"470,00",dur:"15",interval:"Hver 2. gang (hver 4. uge)",next:"Uge 31",badge:"Standardopgave",rate:"1880 kr/t"}]},
+     {t:"note", val:"Basis-interval: 17 muligheder (Hver uge → Hver 52. uge). Interval pr. opgave: 26 multiplikatorer inkl. to 'På anmodning'-værdier. Startuge = kommende uger (værdi = mandagens ISO-dato)."}]},
+   {h:"Billeder", fields:[{t:"note", val:"Der er ingen billeder på abonnementet."},{t:"buttons", btns:[["Tilføj/rediger billeder","ghost"]]}]},
+   {h:"Særlige betingelser for planlægning", fields:[
+     {t:"select", l:"Ugedage", val:"Vælges automatisk", opts:["Man","Tir","Ons","Tor","Fre","Lør","Søn"], help:"Valgfrit: vælg hvilke ugedage den automatiske planlægning må anvende."},
+     {t:"text", l:"Klokkeslæt", val:"", help:"Sæt fast tid, evt. som interval (checkbox 'til' → fra/til)."},
+     {t:"select", l:"Medarbejder", val:"Vælges automatisk", opts:["Vælges automatisk","Kristian Klercke"]},
+     {t:"checks", l:"", opts:["Betingelser gælder kun når kunden skal være tilstede"], on:[]}]},
+   {h:"Notifikationer", fields:[
+     {t:"toggle", l:"Overskriv standard-indstillinger", on:false, help:"Slå til for at overskrive de generelle notifikationsindstillinger for netop dette abonnement."},
+     {t:"select", l:"Når kunden skal være tilstede", val:"Nej, send ikke", opts:NOTI_OPTS},
+     {t:"select", l:"Når kunden ikke behøver være tilstede", val:"Nej, send ikke", opts:NOTI_OPTS}]},
+   {h:"Adressebemærkning", fields:[{t:"textarea", l:"", val:"Det er både nummer 6 og 8", help:"Valgfrit, internt notat, der relaterer sig til leveringsadressen."}]},
+   {h:"Abonnementsbekræftelse", fields:[{t:"checks", l:"", opts:["Send opdateret bekræftelse på email","Send opdateret bekræftelse på SMS","Vedhæft handelsbetingelser"], on:[]}]}
+ ]}]},
+
+"/fixed_prices_times_list/":{purpose:"En fastprisaftale er knyttet til en leveringsadresse; bruges til kunder uden abonnement (manuel ordre eller online bestilling).",
+ blocks:[{kind:"list", h:"Oversigt over fastprisaftaler", create:"Opret ny fastprisaftale",
+   search:"kundenavn, kundenr, email, tlf, vejnavn, husnr, postnr",
+   cols:["Aftale nr.","Leveringsadresse","Opgaver","Pris"], rows:[], empty:"Ingen fastprisaftaler fundet"}]},
+
+"/order_event_list":{purpose:"Oversigt over alle ordrer i kalenderen, fortid og fremtid. Ingen filter-dropdowns — kun fritekst-søgning (q). Deep-linkbar: ?q=%23id,%23id…",
+ blocks:[{kind:"list", h:"Oversigt over ordrer", search:"Ordrenr, dato, kundenavn, kundenr, email, tlf, vejnavn, husnr, postnr, opgave",
+   cols:["Ordre nr.","Kunde","Leverings-dato","Opgaver","Pris","Medarbejder","Ordrestatus","Kilde"],
+   rowActions:["Vis ordre i kalender","Rediger ordre","Afslut ordre…","Slet ordre…","Opret ny ordre","Rediger abonnement"],
+   rows:[
+    ["2080056",{cust:["McDonald's Stilling","Ørnedvej 4, 8660 Skanderborg"]},'<span class="pill warn">2026-07-13</span>', chip("Vinduespudsning","U")+" +2","1.518 kr","Kristian Klercke",'Afventer levering',"Abo. #235844"],
+    ["2079914",{cust:["Nordic Sport Invest 2","Hospitalsgade 6, 8700 Horsens"]},"2027-01-04", chip("Viceværtservice","V"),"811 kr","Kristian Klercke",'Afventer levering',"Abo. #235837"]]}]},
+
+"/order_edit":{purpose:"Editor for én ordre/besøg. Order-nr = URL-id. Create-tvilling: /order_create/ (+?for_contact=) med prisberegner.",
+ blocks:[{kind:"form", h:"Rediger ordre #1969863", desc:"order_edit/{id}", saveLabel:"Gem ordre", extraFooter:[["Andre handlinger ▾","ghost"]], sections:[
+   {h:"Kunde", fields:[
+     {t:"picker", l:"Fakturerings- og leveringsadresse"},
+     {t:"buttons", btns:[["Rediger kontaktinfo","sub"]]},
+     {t:"toggle", l:"Anden leveringsadresse", on:false}]},
+   {h:"Ordreinfo", fields:[
+     {t:"static", l:"Planlagt leveringstidspunkt", val:"Uge 27, mandag d. 29/6-26, kl. 8:30 – 9:30"},
+     {t:"static", l:"Ordrestatus", val:"Afventer levering, ikke afsluttet eller indmeldt"},
+     {t:"static", l:"Ordrehistorik og -kilde", val:"Kilde: Abo. #235837 (Hver uge)"},
+     {t:"static", l:"Notifikation", val:"Indstillingerne gør at denne ordre ikke skal have en notifikation."},
+     {t:"textarea", l:"Ordrekommentar", val:"", help:"Tilføj valgfri, intern kommentar vedr. denne ordre, f.eks. om leveringen."}]},
+   {h:"Opgaver på ordren", fields:[
+     {t:"tasklines", rows:TL_ORDER},
+     {t:"sum", price:"1.518,00", dur:"60", rate:"1518 kr/t"},
+     {t:"note", val:"Overskriv sum: valgfri manuel Pris (inkl. moms) + Varighed (min.) → Total."}]},
+   {h:"Planlægning i kalender", fields:[
+     {t:"toggle", l:"Skal ordren fastlåses helt?", on:true},
+     {t:"select", l:"Uge", val:"Uge 27, 29/6 - 5/7", opts:["… (abonnementets ugerytme)"], help:"Anvender abonnementets ugerytme (kan overskrives)."},
+     {t:"select", l:"Medarbejder", val:"Kristian Klercke", opts:["Vælg medarbejder","Kristian Klercke"]}]},
+   {h:"Andet", fields:[{t:"textarea", l:"Adressebemærkning", val:""}]}
+ ]}]},
+
+"/end_order":{purpose:"Afslut ordre — meld levering + betaling/fakturering (via Dinero). Forudindstillinger sættes i Generelt / pr. kunde.",
+ blocks:[{kind:"form", h:"Afslut ordre", desc:"end_order_feedback_view/{id}", noSave:true, footer:[["Tilbage","ghost"],["Rediger ordre","ghost"],["Meld status","sub"],["Meld status og redig. ordre","ghost"],["Afslut ordre","primary"]], sections:[
+   {h:"Kundeinfo", fields:[{t:"static", l:"", val:"McDonald's Stilling · Ørnedvej 4, 8660 Skanderborg"}]},
+   {h:"Pris", fields:[{t:"static", l:"", val:"Pris uden kørsel: 1.518 kr   ·   Kørselsgebyr: 0 kr   ·   I alt (inkl. moms): 1.518 kr"}]},
+   {h:"Leveringsstatus", fields:[{t:"radio", l:"", opts:["Udført","Ikke udført, spring over","Ikke udført, skal genplanlægges","Anden status"], on:0}]},
+   {h:"Betaling og fakturering", fields:[{t:"radio", l:"", opts:["Send faktura - ubetalt","Send faktura - betalt kontant","Send ikke faktura fra Fenster","Opret fakturakladde","Registrer på et senere tidspunkt"], on:0, help:"Faktura udstedes af Dinero."}]},
+   {h:"Kommentarer", fields:[{t:"textarea", l:"Ordrekommentar", val:""},{t:"textarea", l:"Adressebemærkning", val:""}]}
+ ]}]},
+
+"/custom_message_list":{purpose:"Historik over manuelt afsendte gruppebeskeder (email/SMS) til kundesegmenter. Selve afsendelsen sker på create-siden.",
+ blocks:[
+   {kind:"list", h:"Oversigt over gruppebeskeder", create:"Opret ny besked",
+     cols:["Besked-nr","Sendt som","Modtagere","E-mail emne","Besked","Tidspunkt","Status"], rows:[], empty:"No matching records found"},
+   {kind:"form", h:"Send gruppebesked", desc:"custom_message_create", saveLabel:"Send besked til kundegruppen", extraFooter:[["Vis liste over modtagere","ghost"]], sections:[
+     {h:"", fields:[
+       {t:"select", l:"Kundegruppe", val:"—", opts:["Alle ordrer på en bestemt dato","Alle ordrer i en bestemt uge","Alle ikke-afsluttede ordrer på en dato","Alle ikke-afsluttede ordrer i en uge","Alle abonnementskunder","Alle online kunder (uden abonnement)","Alle manuelle kunder (uden abonnement)","Alle manuelle og online kunder (uden abonnement)","Alle aktive kunder i kartotek"]},
+       {t:"date", l:"Dato", help:"Bruges af de dato-baserede grupper."},
+       {t:"select", l:"Uge", val:"Uge 27, 2026 (indeværende uge)", opts:["… 13 uger (4 tilbage → 8 frem)"]},
+       {t:"select", l:"Medarbejder", val:"Alle medarbejdere", opts:["Alle medarbejdere","Kristian Klercke"]},
+       {t:"select", l:"Send besked som", val:"—", opts:["Både SMS og e-mail","Kun som SMS","Kun som e-mail","Som e-mail hvis kunden har email, ellers SMS"]},
+       {t:"text", l:"E-mail emne", val:"", help:"(anvendes ikke til SMS)"},
+       {t:"textarea", l:"Besked", val:"", help:"Se liste over variable felter, du kan anvende."},
+       {t:"text", l:"Afsender på SMS", val:"Service SMS", ro:true, help:SMS_TOOLTIP}]}]}]},
+
+"/holiday_weeks_list/":{purpose:"Ferieplanlægning: luk kalenderen for hele uger og skub ALLE abonnementsordrer frem i tid fra ferietidspunktet.",
+ blocks:[
+   {kind:"form", h:"Ferieplanlægning", noSave:true, sections:[{h:"Forklaring", fields:[
+     {t:"note", val:"Vigtigt: ferieplanlægning påvirker direkte din kalender, alle abonnementer og relaterede ordrer. Kun abonnementsordrer skubbes frem (manuelle/online skal du selv håndtere). Kunder orienteres IKKE automatisk. Opret ferie min. 1 uge før start; kan ikke redigeres/slettes < 1 uge før. Gælder alle medarbejdere."}]}]},
+   {kind:"list", h:"Planlagte ferier", create:"Opret ny ferie",
+     cols:["Ferienr.","Ferieperiode (inklusiv)","Kan redigeres til og med"], rows:[], empty:"Ingen planlagte ferier"},
+   {kind:"form", h:"Opret ferie", desc:"holiday_week_details", saveLabel:"Gem ferie", sections:[{h:"", fields:[
+     {t:"select", l:"Startuge", val:"—", opts:["Uge 29, 2026 → Uge 26, 2027 (~50 uger; ≥1 uge frem)"]},
+     {t:"select", l:"Slutuge", val:"—", opts:["samme liste som Startuge"]}]}]}]},
+
+"/subscription_defragmentation/":{gate:"Premium", purpose:"Abonnementsoptimering: forskyd udvalgte abonnementers ugerytme (aldrig intervallet) for at samle ruter og jævne arbejdstid ud. Op til 10 flytninger ad gangen, hver bekræftes.",
+ blocks:[
+   {kind:"form", h:"Abonnementsoptimering", noSave:true, sections:[
+     {h:"Introduktion", fields:[{t:"note", val:"Venstre kort viser nuværende ugerytmer; højre kort efter optimering. Fenster ændrer aldrig intervaller — kun forskydning frem/tilbage. Efter flytning sendes besked til kunden (skabelon: Abonnementsflytning)."}]},
+     {h:"Optimeringspotentiale", fields:[
+       {t:"gatecard", val:"Abonnementsoptimering er deaktiveret. Det kræver et Fenster Premium abonnement OG min. 100 abonnementer. Der er pt. 5 abonnementer i kartoteket."}]},
+     {h:"Bekræft-dialog (aktiveret flow)", fields:[
+       {t:"select", l:"Informér kunderne via", val:"Både SMS og e-mail", opts:["Både SMS og e-mail","Kun som SMS","Kun som e-mail","Som e-mail hvis email, ellers SMS","Giv ikke besked"]},
+       {t:"note", val:"Denne handling kan ikke fortrydes. Knapper: Luk / Flyt abonnementer."}]}]}]},
+
+"/price_adjustment_create/":{purpose:"Prisjustering — 3-trins guide til bulk-prisregulering af abonnementer og/eller fastprisaftaler.",
+ blocks:[{kind:"wizard"}]},
+
+/* ---------------- Indstillinger ---------------- */
+"/settings":{purpose:"Central drift: SMS-godkendelse, kundenotifikationer, fakturering, 'Afslut ordre'-forudindstillinger, online bestilling, timepriser og beregner.",
+ blocks:[{kind:"form", h:"Indstillinger", saveLabel:"Gem alle ændringer", sections:[
+   {h:"Diverse", fields:[{t:"buttons", l:"Godkend brug af SMS", btns:[["Læs og godkend","sub"]], help:"Godkend at Fenster må afsende SMS'er og at du opkræves for forbruget på din Fenster faktura."}]},
+   {h:"Notifikationer", fields:[
+     {t:"checks", l:"Send notifikationer via", opts:["SMS","E-mail"], on:[1], help:"SMS er deaktiveret indtil brug af SMS er godkendt."},
+     {t:"select", l:"Før levering, når kunden skal være tilstede", val:"Nej, send ikke", opts:NOTI_OPTS},
+     {t:"number", l:"Antal dage før levering (tilstede)", val:"3"},
+     {t:"select", l:"Før levering, når kunden ikke behøver være tilstede", val:"Nej, send ikke", opts:NOTI_OPTS},
+     {t:"toggle", l:"Send notifikation efter levering", on:true}]},
+   {h:"Fakturering", fields:[{t:"checks", l:"Afsend faktura via", opts:["SMS","E-mail"], on:[1], help:"Faktura udstedes altid af Dinero."}]},
+   {h:"Afslut ordre (forudindstillinger)", fields:[
+     {t:"radio", l:"Leveringsstatus", opts:["Blank (ingen forudindstilling)","Udført","Anden status"], on:0},
+     {t:"radio", l:"Betaling og fakturering", opts:["Blank (ingen forudindstilling)","Send faktura - ubetalt","Send faktura - betalt kontant","Send ikke faktura fra Fenster","Opret fakturakladde","Registrer på et senere tidspunkt"], on:0},
+     {t:"text", l:"Trustpilot AFS e-mail", val:""}]},
+   {h:"Online bestilling", fields:[
+     {t:"toggle", l:"Anvend online bestilling", on:true},
+     {t:"text", l:"Web-adresse", val:"https://www.fenster.dk/krltfl", ro:true, help:"Følg adresse · Kopier adresse"},
+     {t:"number", l:"Bestillingsvarsel (timer)", val:"24"},
+     {t:"toggle", l:"Send påmindelse om genbestilling", on:true},
+     {t:"number", l:"Send påmindelse antal dage efter afsluttet ordre", val:"60"},
+     {t:"toggle", l:"Deltag i online kundehenvisning", on:true}]},
+   {h:"Timepriser", fields:[{t:"number", l:"Timepris i Lokalområde", val:"600", help:"DKK inkl. moms og eks. kørsel."}]},
+   {h:"Tilpasning af tids-/prisberegner", fields:[{t:"note", val:"Udfyld et spørgeskema (~10–15 min); Fenster Support tilpasser beregneren og giver besked pr. email."}]}
+ ]}]},
+
+"/funnel_settings":{purpose:"Branding og indhold på den kundevendte bestillingsside og e-mails — logo, farver, tekster, handelsbetingelser og konverteringstracking.",
+ blocks:[{kind:"form", h:"Udseende", saveLabel:"Gem alle ændringer", confirmSave:true, sections:[
+   {h:"Logo og grafik", fields:[
+     {t:"number", l:"Logo højde", val:"60", help:"Højden på dit logo i pixels. Anbefalet 50–150."},
+     {t:"buttons", l:"Logo upload", btns:[["Vælg fil …","ghost"]], help:"PNG/JPG/GIF < 500 kB. Fenster Support lægger logoet ind."},
+     {t:"toggle", l:"Fjern grafik fra e-mails", on:false}]},
+   {h:"Farver", fields:[
+     {t:"color", l:"Top farve", val:"#ffffff"},
+     {t:"color", l:"Primær farve", val:"#6ec0e5"},
+     {t:"color", l:"Sekundær farve", val:"#dae8f1"},
+     {t:"color", l:"Tips o.a.", val:"#2484c6"}]},
+   {h:"Tekster og kommentarer", fields:[
+     {t:"text", l:"Pris-kommentar", val:""},
+     {t:"text", l:"Betalings-kommentar", val:"Faktura fremsendes efter udført service"}]},
+   {h:"Handelsbetingelser", fields:[{t:"richtext", l:"", val:"Udfyld venligst dine Salg og leveringsbetingelser her.", help:"WYSIWYG-editor med 'Se resultat'-preview."}]},
+   {h:"Kører ikke på adressen", fields:[{t:"richtext", l:"", val:"Beklager, men vi kører desværre ikke på din adresse", help:"WYSIWYG-editor med preview."}]},
+   {h:"Konverteringstracking", fields:[
+     {t:"text", l:"Google Ads Global Site Tag", val:"", help:"Eksempel: AW-123456789."},
+     {t:"text", l:"Google Ads Conversion Label", val:""}]}
+ ]}]},
+
+"/user_accounts":{purpose:"Medarbejder-/brugerkonti: profil, kalenderfarve, rettigheder, planlægnings-adresse + login-værktøjer. Én bruger = 199 kr/mdr.",
+ blocks:[{kind:"form", h:"Brugere", saveLabel:"Gem alle ændringer", sections:[
+   {h:"Kristian Klercke", fields:[
+     {t:"text", l:"Brugernavn", val:"kristianklercke"},
+     {t:"text", l:"Fornavn", val:"Kristian"},
+     {t:"text", l:"Efternavn", val:"Klercke"},
+     {t:"text", l:"E-mail (valgfrit)", val:"••••@••••.dk"},
+     {t:"colorsel", l:"Kalenderfarve", val:"Blå", hex:"#a4d5ee", opts:["Blå","Brungrøn","Grøn","Lyserød","Lavendel","Beige","Grå","Lilla","Tyrkis","Lyselilla","Fersken","Gul","Rosa"]},
+     {t:"static", l:"Aktiv kalender", val:"Ja", help:"Brugere med aktiv kalender indgår i den automatiske planlægning."},
+     {t:"select", l:"Kan modtage online bestillinger", val:"Nej", opts:["Ja","Nej"]},
+     {t:"text", l:"Hjemmeadresse", val:"Mølbjerg 9, 8700 Horsens", help:"Bruges til planlægning af første/sidste ordre på dagen."},
+     {t:"select", l:"Adresser i dagsprogrammet åbnes som", val:"Rutevejledning", opts:["Adressesøgning","Rutevejledning"]},
+     {t:"checks", l:"Rettigheder", opts:["Portal admin (alle rettigheder)","Må se priser og omsætning","Må redigere ordrer og abonnementer","Må håndtere betaling / fakturering","Må ændre valgmulighed for betaling / fakturering"], on:[0,1,2,3,4]},
+     {t:"buttons", l:"Login & adgang", btns:[["Åbn login-genvej","ghost"],["Kopier link til at ændre kodeord","ghost"],["Se og kopier vejledning","ghost"]]}]},
+   {h:"Ny bruger", fields:[{t:"note", val:"Samme feltsæt. Pris for ekstra bruger: 199 kr/mdr. Husk arbejdstider efter oprettelse."},{t:"buttons", btns:[["Opret ny bruger","primary"]]}]}
+ ]}]},
+
+"/working_hours/":{purpose:"Kalenderens åbningstider pr. medarbejder pr. ugedag + globale toggles (luk på helligdage, fleksibel arbejdstid) der styrer planlæggeren.",
+ blocks:[{kind:"form", h:"Arbejdstider", saveLabel:"Gem alle ændringer", sections:[
+   {h:"Generelle indstillinger", fields:[
+     {t:"toggle", l:"Luk automatisk kalenderen på helligdage", on:true},
+     {t:"toggle", l:"Benyt fleksibel arbejdstid", on:true, help:"Lader Fenster tage ekstra arbejdstid i brug sidst på dagen ved rutebesparelse."}]},
+   {h:"Kristian Klercke", fields:[
+     {t:"subtable", cols:["Ugedag","Aktiv","Fra","Til","Flekstid"],
+       rows:[
+        ["Mandag","☑","08:00","16:00","—"],["Tirsdag","☑","08:00","16:00","—"],["Onsdag","☑","08:00","16:00","—"],
+        ["Torsdag","☑","08:00","16:00","—"],["Fredag","☑","08:00","16:00","—"],["Lørdag","☐","","",""],["Søndag","☐","","",""]]},
+     {t:"note", val:"Flekstid pr. dag: +30 min … +6 timer (30–360 min)."}]}
+ ]}]},
+
+"/planning_settings/":{purpose:"Indstillinger for den automatiske planlægning — kørsel ved dagens start/slut pr. medarbejder + tilladte opgavekategorier (Pro).",
+ blocks:[{kind:"form", h:"Planlægning", saveLabel:"Gem alle ændringer", sections:[
+   {h:"Kristian Klercke", fields:[
+     {t:"checks", l:"", opts:["Udelad kørsel før første ordre på dagen","Udelad kørsel efter sidste ordre på dagen","Tilstræb at starte dagen længst væk fra hjemmeadressen"], on:[0,1,2]},
+     {t:"select", l:"Tilladte opgavekategorier", val:"Alle", gate:"Pro", opts:Object.keys(CAT)}]}
+ ]}]},
+
+"/discount_codes":{purpose:"Rabatkoder kan anvendes af kunder ved online bestilling.",
+ blocks:[
+   {kind:"list", h:"Rabatkoder", create:"Opret ny rabatkode",
+     cols:["Rabatkode","Procentsats","Udløbsdato","Slet"], rows:[], empty:"No matching records found"},
+   {kind:"form", h:"Opret rabatkode", desc:"discount_code_add_new", saveLabel:"Gem rabatkode", sections:[{h:"", fields:[
+     {t:"text", l:"Rabatkode", val:""},{t:"number", l:"Procentsats", val:""},{t:"date", l:"Slutdato"}]}]}],},
+
+"/standard_task_list/":{purpose:"Søgbart katalog over alle standardopgaver (~146 i 15 kategorier). Redigering slår igennem alle steder opgaven bruges. System-opgaver er låst.",
+ blocks:[
+   {kind:"list", h:"Oversigt over standardopgaver", create:"Opret ny standardopgave",
+     search:"beskrivelse, kategori, bogstav",
+     cols:["","Kategori","Beskrivelse","Kunden skal være tilstede"],
+     rows:[
+      ["🔒", chip("Vinduespudsning","U")+" Vinduespudsning","Pudsning udvendig",""],
+      ["🔒", chip("Vinduespudsning","I")+" Vinduespudsning","Pudsning indvendig","Ja"],
+      ["✎", chip("Privatrengøring","F")+" Privatrengøring","Fjern spindelvæv",""],
+      ["✎", chip("Grøn service","H")+" Grøn service","Hækklipning",""]],
+     rowActions:["Rediger standardopgave","Deaktivér"]},
+   {kind:"form", h:"Opret / rediger standardopgave", desc:"standard_task_details/{id}", saveLabel:"Opret standardopgave", extraFooter:[["Deaktiver","dang"]], sections:[{h:"", fields:[
+     {t:"select", l:"Kategori", val:"Vinduespudsning", opts:Object.keys(CAT)},
+     {t:"text", l:"Beskrivelse", val:""},
+     {t:"text", l:"Bogstav til ikon (valgfrit)", val:""},
+     {t:"checks", l:"", opts:["Kunden skal være tilstede"], on:[]},
+     {t:"note", val:"'Opgavens udseende' viser live-preview af den farvede bogstav-chip."}]}]}]},
+
+"/dinero_settings":{purpose:"Status for Dinero-/Visma-regnskabsintegrationen: forbundet konto, kontoplan-mapping, samt forbind/opdater/afbryd.",
+ blocks:[{kind:"form", h:"Regnskab", noSave:true, sections:[
+   {h:"Dinero integration", fields:[{t:"subtable", cols:["Dinero indstilling","Dinero værdi"],
+     rows:[["Dinero firma ID","639460"],["Firmanavn","KRLTFL ApS"],["Momsfritaget","Nej"]]}]},
+   {h:"Dinero kontoplan", fields:[{t:"subtable", cols:["Kontonr.","Kontonavn","Fenster brug"],
+     rows:[["1000","Salg af varer/ydelser m/moms","Bogføring af afsendte fakturaer"],["55040","Kontanter (kasse)","Bogføring af kontante betalinger"],["Ikke konfigureret","—","MobilePay Get Paid"]]}]},
+   {h:"Handlinger", fields:[{t:"buttons", btns:[["Genopfrisk forbindelsen til Dinero","sub"],["Fjern forbindelsen til Dinero","dang"]]}]}
+ ]}]},
+
+"/templates":{purpose:"E-mail & SMS skabeloner (×8). Fælles editor: emne + ét fælles brødtekst-felt (e-mail + SMS) + {{variabler}} + test-afsendelse. Ingen WYSIWYG, ingen preview.",
+ blocks:[{kind:"templates"}]},
+
+/* ---------------- Rapportering ---------------- */
+"/graph_reports":{purpose:"Grafer & nøgletal: kundetal, omsætning, abonnementsøkonomi, leverede ordrer og kundekort.",
+ blocks:[{kind:"dashboard"}]},
+
+"/report_download":{purpose:"Download af data-eksporter (ingen rapport vises på skærmen).",
+ blocks:[{kind:"form", h:"Rapporter", noSave:true, sections:[
+   {h:"Hent ordrerapport (Excel)", fields:[
+     {t:"date", l:"Startdato", val:"2026-06-01"},{t:"date", l:"Slutdato", val:"2026-06-30"},
+     {t:"buttons", btns:[["Hent rapport","primary"]]}]},
+   {h:"Hent abonnementer (CSV)", fields:[{t:"note", val:"Alle aktive abonnementer i CSV-format. Ingen parametre."},{t:"buttons", btns:[["Hent rapport","primary"]]}]}
+ ]}]},
+
+"/daycalendar_export":{purpose:"Eksportér dagsprogram som PDF for én medarbejder og én dato.",
+ blocks:[{kind:"form", h:"Dagsprogram", noSave:true, sections:[{h:"Hent dagsprogram i PDF", fields:[
+   {t:"select", l:"Medarbejder", val:"Kristian Klercke", opts:["Kristian Klercke"]},
+   {t:"date", l:"Dato"},
+   {t:"buttons", btns:[["Hent dagsprogram","primary"]]}]}]}]},
+
+/* ---------------- Hjælp & konto ---------------- */
+"/account/":{purpose:"Virksomhedsprofil: firmaoplysninger, Fenster-abonnement & vilkår, forbrug vs. kapacitet, samt fakturering (Stripe).",
+ blocks:[{kind:"form", h:"Din Fenster konto", noSave:true, sections:[
+   {h:"Virksomhedsoplysninger", fields:[
+     {t:"static", l:"", val:"Virksomhedsnavn: KRLTFL ApS   ·   CVR: 40941894   ·   Telefon: •• •• •• ••   ·   Email: ••••@••••.dk"},
+     {t:"buttons", btns:[["Opdatér virksomhedsoplysninger…","ghost"]]}]},
+   {h:"Abonnement & vilkår", fields:[
+     {t:"static", l:"", val:"Virksomheden er tilmeldt et Fenster Pro abonnement."},
+     {t:"buttons", btns:[["Skift dit Fenster abonnement…","sub"],["Opsig dit Fenster abonnement","dang"]]}]},
+   {h:"Forbrug", fields:[{t:"meters", rows:[["Antal kunder i kartoteket","5","500"],["Antal abonnementsaftaler","5","250"],["Online bestillinger (juli)","0","50"]]}]},
+   {h:"Fakturering og betaling", fields:[
+     {t:"buttons", btns:[["Opdatér betalingskort og se fakturahistorik…","primary"]]},
+     {t:"note", val:"Forudbetales månedligt. SMS: 37,5 øre eks. moms pr. SMS. Betaling via Stripe."}]}
+ ]}]},
+
+"/change_password/":{purpose:"Skift den aktuelle brugers password (Django-formular).",
+ blocks:[{kind:"form", h:"Skift password", saveLabel:"Skift password", sections:[{h:"", fields:[
+   {t:"text", l:"Old password", val:"", pw:true},
+   {t:"text", l:"New password", val:"", pw:true, help:"Min. 8 tegn, ikke rent numerisk, ikke for almindeligt."},
+   {t:"text", l:"New password confirmation", val:"", pw:true}]}]}]},
+
+"/businesspartners/":{purpose:"Kuraterede samarbejdspartnere med rabatter til Fenster Partnere.",
+ blocks:[{kind:"cards", h:"Samarbejdspartnere", cards:[
+   ["Dinero","Regnskabsprogram til selvstændige — integrerer med Fenster.","33% på Dinero Pro i 12 mdr."],
+   ["Nordic Glass Repair","Professionel polering og reparation af glas.","10% rabat"],
+   ["Beckmann Vejledning","1-1 sparring, strategi og markedsføring.",""],
+   ["Borgholt","Skræddersyede vinduespudserbiler.",""]]}]},
+
+"/quiz/":{purpose:"Selvtest om brug af Fenster — 20 spørgsmål, flere rigtige svar mulige, ubegrænsede forsøg, øjeblikkelig feedback.",
+ blocks:[{kind:"form", h:"Fenster quiz", noSave:true, sections:[{h:"Hvor god er du til at bruge Fenster?", fields:[
+   {t:"note", val:"20 spørgsmål · ubegrænset tid · ubegrænset antal forsøg · hvert spørgsmål kan have flere rigtige svar · forkerte svar viser straks det rigtige."},
+   {t:"buttons", btns:[["Start quiz","primary"]]}]}]}]},
+
+"/support/":{purpose:"Support/kontakt. Ingen formular — kontakt via Intercom-widget eller e-mail.",
+ blocks:[{kind:"form", h:"Support", noSave:true, sections:[
+   {h:"Sådan kan du få hjælp", fields:[{t:"note", val:"Tjek først: Hjælpecenter · Kom godt i gang · Hjælpevideoer."}]},
+   {h:"Kontakt", fields:[{t:"static", l:"", val:"Intercom-knappen nederst til højre, eller support@fenster.dk"}]},
+   {h:"Åbningstid & svartid", fields:[{t:"static", l:"", val:"Man–fre 9–15 · normalt svar inden for et par timer."}]}
+ ]}]}
+
+};
+window.PAGES = PAGES; window.META = META;
+
+/* ============================ RENDER ENGINE ============================ */
+function btnRow(btns){return '<div class="actions-row">'+btns.map(function(b){return '<span class="btn '+(b[1]||'')+'">'+esc(b[0])+'</span>';}).join('')+'</div>';}
+function optChips(opts,on){if(!opts||!opts.length)return '';return '<div class="opts">'+opts.map(function(o,i){return '<span class="opt'+(on===i?' on':'')+'">'+esc(o)+'</span>';}).join('')+'</div>';}
+var WIDE={note:1,subtable:1,tasklines:1,sum:1,gatecard:1,meters:1};
+
+function fieldControl(f){
+ switch(f.t){
+  case 'text': case 'number': case 'date':
+    return '<div class="ctrl'+(f.ro?' ro':'')+'">'+(f.pw?'••••••••':(esc(f.val)|| (f.t==='date'?'<span style="color:#8698a6">dd-mm-åååå</span>':'<span style="color:#c2ced8">—</span>')))+'</div>';
+  case 'textarea': return '<div class="ctrl ta">'+(esc(f.val)||'<span style="color:#c2ced8">—</span>')+'</div>';
+  case 'richtext': return '<div class="ctrl ta" style="min-height:90px">'+esc(f.val)+'</div>';
+  case 'picker': return '<div class="ctrl ta" style="color:#8698a6;min-height:44px">Klik for at fremsøge eller oprette ny kontakt</div>';
+  case 'select': return '<div class="ctrl sel">'+esc(f.val||'—')+'</div>'+optChips(f.opts);
+  case 'colorsel': return '<div class="ctrl sel"><span><span class="swatch" style="background:'+esc(f.hex)+'"></span> '+esc(f.val)+'</span></div>'+optChips(f.opts);
+  case 'color': return '<div style="display:flex;align-items:center;gap:10px"><span class="swatch" style="width:34px;height:28px;background:'+esc(f.val)+'"></span><div class="ctrl" style="max-width:150px">'+esc(f.val)+'</div></div>';
+  case 'toggle': return '<div style="display:flex;align-items:center;gap:10px"><span class="toggle'+(f.on?'':' off')+'"></span><span style="font-size:13px;color:var(--muted)">'+(f.on?'Ja':'Nej')+'</span></div>';
+  case 'checks': return '<div class="checks">'+f.opts.map(function(o,i){var on=(f.on||[]).indexOf(i)>=0;return '<label class="chk"><span class="box'+(on?' on':'')+'"></span>'+esc(o)+'</label>';}).join('')+'</div>';
+  case 'radio': return '<div class="radio">'+f.opts.map(function(o,i){return '<div class="rad'+(f.on===i?' on':'')+'"><span class="dot"></span>'+esc(o)+'</div>';}).join('')+'</div>';
+  case 'static': return '<div class="ctrl ro" style="min-height:auto;white-space:pre-wrap">'+esc(f.val).replace(/\n/g,'<br>')+'</div>';
+  default: return '';
+ }
+}
+function renderField(f){
+ var help=f.help?'<div class="help">'+esc(f.help)+'</div>':'';
+ // full-width kinds
+ if(f.t==='note') return '<div class="note">'+esc(f.val)+'</div>';
+ if(f.t==='gatecard') return '<div class="note" style="border-left-color:var(--warn);background:var(--warn-bg);color:#7a5b12;font-weight:500">⚠ '+esc(f.val)+'</div>';
+ if(f.t==='tasklines') return renderTasklines(f)+help;
+ if(f.t==='sum') return '<div class="tlines" style="margin-top:10px"><div class="tsum"><span style="font-weight:600">Sum</span><span class="num">'+esc(f.price)+' kr</span><span class="num">'+esc(f.dur)+' min</span><span style="color:var(--muted)">Timepris '+esc(f.rate)+'</span></div></div>';
+ if(f.t==='subtable') return (f.l?'<div class="fl" style="margin:4px 0 8px">'+esc(f.l)+'</div>':'')+renderTable(f.cols,f.rows,f.rowActions,f.empty)+ (f.help?help:'');
+ if(f.t==='meters') return '<div style="display:grid;gap:13px">'+f.rows.map(function(r){var w=Math.max(2,Math.round(r[1]/r[2]*100));return '<div><div style="display:flex;justify-content:space-between;font-size:13px"><span>'+esc(r[0])+'</span><span class="num" style="color:var(--muted)">'+esc(r[1])+' af kapacitet på '+esc(r[2])+'</span></div><div style="height:8px;background:#eef2f6;border-radius:6px;margin-top:6px;overflow:hidden"><div style="height:100%;width:'+w+'%;background:var(--brand)"></div></div></div>';}).join('')+'</div>';
+ if(f.t==='buttons' && !f.l) return btnRow(f.btns)+help;
+ // two-column row
+ var lbl='<div class="fl">'+esc(f.l||'')+(f.en?'<span class="en">'+esc(f.en)+'</span>':'')+(f.gate?' <span class="gate">'+esc(f.gate)+'</span>':'')+'</div>';
+ var ctrl=(f.t==='buttons')?btnRow(f.btns):fieldControl(f);
+ return '<div class="frow">'+lbl+'<div>'+ctrl+help+'</div></div>';
+}
+function renderTasklines(f){
+ var head='<div class="tlh"><span>Opgavebeskrivelse</span><span class="num">Pris</span><span class="num">Min.</span><span></span></div>';
+ var body=f.rows.map(function(r){
+   var mini=[r.badge,r.rate?('Timepris '+r.rate):'',r.interval?('Interval: '+r.interval):'',r.next?('Næste: '+r.next):''].filter(Boolean).join(' · ');
+   return '<div class="tline"><div class="d">'+chip(r.cat,r.l)+'<div>'+esc(r.desc)+'<div class="tmini">'+esc(mini)+'</div></div></div><div class="num">'+esc(r.price)+'</div><div class="num">'+esc(r.dur)+'</div><div><span class="caret">⋯</span></div></div>';
+ }).join('');
+ return '<div class="tlines">'+head+body+'</div><div style="margin-top:9px"><span class="btn sm sub">+ Tilføj opgave</span></div>';
+}
+function renderTable(cols,rows,rowActions,empty){
+ var th='<tr>'+(rowActions?'<th style="width:34px"></th>':'')+cols.map(function(c){return '<th>'+esc(c)+'</th>';}).join('')+'</tr>';
+ var body='';
+ if(!rows||!rows.length){ body='<tr><td colspan="'+(cols.length+(rowActions?1:0))+'"><div class="empty">'+esc(empty||'Ingen data')+'</div></td></tr>'; }
+ else body=rows.map(function(r){
+   var tds=r.map(function(cell,i){
+     if(cell && typeof cell==='object' && cell.cust){ return '<td><div class="cust"><b>'+esc(cell.cust[0])+'</b>'+cell.cust.slice(1).map(function(x){return '<div class="mut">'+esc(x)+'</div>';}).join('')+'<div class="mapc">📍 Åbn i Google Maps</div></div></td>'; }
+     var isNum=/^[\d.\-]|kr|%/.test(String(cell))&&i>0&&String(cell).indexOf('<')<0&&String(cell).length<14;
+     return '<td'+(isNum?' class="num"':'')+'>'+(String(cell).indexOf('<')>=0?cell:esc(cell))+'</td>';
+   }).join('');
+   return '<tr>'+(rowActions?'<td><span class="caret" title="'+esc(rowActions.join(' · '))+'">⋯</span></td>':'')+tds+'</tr>';
+ }).join('');
+ return '<div class="tblwrap"><table class="grid"><thead>'+th+'</thead><tbody>'+body+'</tbody></table></div>'+
+  (rowActions?'<div style="margin-top:7px;font-size:11.5px;color:var(--faint)">Rækkehandlinger (⋯): '+esc(rowActions.join(' · '))+'</div>':'');
+}
+
+/* ---- block renderers ---- */
+function blkForm(b){
+ var head=b.h?'<div class="sc-head"><div><h2>'+esc(b.h)+'</h2>'+(b.desc?'<div class="desc"><span class="tag">/'+esc(b.desc)+'</span></div>':'')+'</div></div>':'';
+ var body=b.sections.map(function(s){
+   var fields=s.fields.map(renderField).join('');
+   if(s.h) return '<div class="panel"><div class="ph">'+esc(s.h)+'</div><div class="pb">'+fields+'</div></div>';
+   return '<div class="panel"><div class="pb">'+fields+'</div></div>';
+ }).join('');
+ var footer='';
+ if(b.footer){ footer='<div class="savebar">'+b.footer.map(function(x){return '<span class="btn '+(x[1]||'')+'">'+esc(x[0])+'</span>';}).join('')+'</div>'; }
+ else if(!b.noSave){ var extra=(b.extraFooter||[]).map(function(x){return '<span class="btn '+(x[1]||'')+'">'+esc(x[0])+'</span>';}).join(''); footer='<div class="savebar">'+extra+'<span class="btn primary">'+esc(b.saveLabel||'Gem alle ændringer')+'</span></div>'; }
+ return '<div class="screen">'+head+'<div class="sc-body">'+body+footer+'</div></div>';
+}
+function blkList(b){
+ var tools='<div class="toolbar">'+(b.create?'<span class="btn primary">+ '+esc(b.create)+'</span>':'')+(b.search?'<div class="search"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#8698a6" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4-4"/></svg>'+esc(b.search)+'</div><span class="btn sm">Søg</span>':'')+'</div>';
+ var head='<div class="sc-head"><div><h2>'+esc(b.h)+'</h2></div></div>';
+ var pag=(b.rows&&b.rows.length)?'<div style="display:flex;gap:6px;justify-content:flex-end;margin-top:12px;font-size:12.5px;color:var(--muted)"><span class="btn sm">forrige</span><span class="btn sm sub">1</span><span class="btn sm">næste</span></div>':'';
+ return '<div class="screen">'+head+'<div class="sc-body">'+tools+renderTable(b.cols,b.rows,b.rowActions,b.empty)+pag+'</div></div>';
+}
+function blkCalendar(){
+ var days=[["Man 29","Kr. 2.329"],["Tir 30","Kr. 0"],["Ons 1","Kr. 0"],["Tor 2","Kr. 0"],["Fre 3","Kr. 0"],["Lør 4","Kr. 0"],["Søn 5","Kr. 0"]];
+ var hdr='<div class="ch tl"></div>'+days.map(function(d){return '<div class="ch"><b>'+d[0]+'</b><span class="kr">'+d[1]+'</span></div>';}).join('');
+ var rows='';
+ for(var h=8;h<=16;h++){
+   rows+='<div class="tcell">'+h+':00</div>';
+   for(var c=0;c<7;c++){
+     var ev='';
+     if(c===0&&h===8) ev='<div class="ev sub"><span class="t">8:30 – 9:30</span><b>8660 Skanderborg</b>McDonald\'s Stilling '+chip("Vinduespudsning","A")+'</div>';
+     if(c===0&&h===9) ev='<div class="ev sub"><span class="t">9:56 – 10:41</span><b>8700 Horsens</b>Nordic Sport Invest 2 '+chip("Viceværtservice","A")+'</div>';
+     rows+='<div class="cell">'+ev+'</div>';
+   }
+ }
+ var legend='<div class="legend">'+
+   '<span class="li"><span class="sw" style="border-color:#3a3a3a;background:#eee"></span>Helt fastlåst</span>'+
+   '<span class="li"><span class="sw" style="border-color:var(--ok);background:var(--ok-bg)"></span>Afsluttet</span>'+
+   '<span class="li"><span class="sw" style="border-color:var(--dang);background:var(--dang-bg)"></span>Mislykket planl.</span>'+
+   '<span class="li"><span class="sw" style="border-color:var(--brand);background:var(--tint-bg)"></span>Afventer planl.</span>'+
+   '<span class="li">Ordretype: Abonnement · Online · Manuel</span></div>';
+ var sidebar='<div style="border:1px solid var(--line);border-radius:8px;padding:14px;font-size:12.5px;background:#fbfdfe">'+
+   '<span class="btn sub sm" style="width:100%;justify-content:center">↻ Genplanlæg uge</span>'+
+   '<div style="color:var(--faint);font-size:11px;margin:8px 0 14px">Planlagt i dag kl. 03:01</div>'+
+   '<div class="ph" style="background:none;padding:0;border:0;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--faint)">Planlagt omsætning</div>'+
+   '<div style="display:flex;justify-content:space-between;margin:6px 0"><span>Uge 27</span><b class="num">kr. 2.329</b></div>'+
+   '<div style="display:flex;justify-content:space-between;margin-bottom:12px"><span>Juni</span><b class="num">kr. 20.849</b></div>'+
+   '<div class="ph" style="background:none;padding:0;border:0;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--faint)">Medarbejdere</div>'+
+   '<label class="chk" style="margin-top:6px"><span class="box on"></span>Kristian Klercke</label>'+
+   '<div style="margin-top:12px" class="checks"><label class="chk"><span class="box on"></span>Vis arbejdstider</label><label class="chk"><span class="box on"></span>Vis kørsel</label></div></div>';
+ var calbar='<div class="calbar"><span class="btn sm">‹</span><span class="btn sm">Idag</span><span class="btn sm">›</span><b style="margin:0 6px">Jun. – Jul. 2026</b><span class="pill neu">UGE 27</span><div style="flex:1"></div><div class="seg"><span>Dag</span><span>5 dg</span><span class="on">7 dg</span></div></div>';
+ var ctx='<div class="note" style="margin-top:16px">Klik på en ordre → kontekstmenu: <b>Rediger ordre</b> · Lås helt op · Lås op, fastgør til ugedag · <b>Flyt til anden uge ▸</b> (1/2 uger frem/tilbage, evt. + lås helt op) · <b>Mere ▸</b> (Gå til kundedetaljer · Rediger abonnement · Rediger næste ordre på abo. · Send notifikation nu · Afslut ordre · Slet ordre).</div>';
+ return '<div class="screen"><div class="sc-body">'+calbar+'<div style="display:grid;grid-template-columns:230px 1fr;gap:16px">'+sidebar+'<div><div class="calgrid" style="grid-template-columns:52px repeat(7,1fr)">'+hdr+rows+'</div>'+legend+'</div></div>'+ctx+'</div></div>';
+}
+function blkDaycal(){
+ var stops=[
+  ["08:30 - 09:00","Ørstedsvej 4, 8660 Skanderborg","McDonald's Stilling","Kr. 940"],
+  ["09:44 - 11:14","Hospitalsgade 6, 8700 Horsens","Nordic Sport Invest 2","Kr. 811"],
+  ["12:10 - 12:40","Vejlevej 120, 8700 Horsens","Bilhuset A/S","Kr. 620"]];
+ var rows=stops.map(function(s){return '<div style="display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;padding:13px 15px;border:1px solid var(--line2);border-radius:8px;margin-bottom:10px;background:#fff">'+
+   '<div><div class="num" style="font-weight:700">'+s[0]+'</div><div style="font-size:12px;color:var(--brand)">📍 '+esc(s[1])+'</div><div style="font-weight:600;margin-top:2px">'+esc(s[2])+' · <span class="num">'+s[3]+'</span></div><div style="margin-top:6px;font-size:12px;color:var(--faint)">🧾 opgaver · 🖼 fotos · ℹ bemærkninger · 🗒 ordrehistorik · 🔔 notifikation</div></div>'+
+   '<div class="actions-row"><span class="btn sm primary">Afslut ordre</span><span class="btn sm">Rediger ordre</span><span class="btn sm">Rediger abo.</span><span class="btn sm ghost">Mere ▾</span></div></div>';}).join('');
+ var head='<div class="calbar"><span class="btn sm">‹</span><b>16. nov. 2026</b><span class="pill neu">mandag (uge 47)</span><div style="flex:1"></div><span class="btn sm">›</span><span class="btn sm ghost">Gå til ugen i kalender ▾</span></div>';
+ var summary='<div class="note" style="display:flex;flex-wrap:wrap;gap:20px;border-left-color:var(--brand)"><span>Planlagt omsætning (dag/uge/måned): <b>Kr. 2.898 / 2.898 / 14.849</b></span><span>Planlagt kørsel: <b>1 t 14 min</b></span></div>';
+ return '<div class="screen"><div class="sc-body">'+head+summary+rows+'<div class="note">Beta: «Optimér tilbageværende ordrer på dagen» — vælg medarbejder + nuværende GPS/adresse; kan ikke fortrydes.</div></div></div>';
+}
+function kpi(k,t,s){return '<div class="kpi"><div class="k">'+esc(k)+'</div><div class="t">'+esc(t)+'</div><div class="s">'+esc(s)+'</div></div>';}
+function blkDashboard(){
+ var bars=function(seed){var h='';for(var i=0;i<13;i++){var v=25+((seed*7+i*i*13)%70);h+='<div class="bar" style="height:'+v+'%"></div>';}return h;};
+ var g1='<div class="panel"><div class="ph">Antal kunder <span class="seg"><span class="on">Sidste 12 mdr</span><span>År til dato</span></span></div><div class="pb"><div class="kpigrid">'+
+   kpi("4","Antal unikke kunder totalt","Unikke kunder med omsætning i perioden")+kpi("5","Abonnementskunder","Inkl. stoppede abonnementer")+kpi("2","Online kunder","Bestilt online med omsætning")+kpi("1","Manuelt oprettede kunder","Manuelle ordrer med omsætning")+'</div></div></div>';
+ var g2='<div class="panel"><div class="ph">Omsætning <span class="seg"><span class="on">Sidste 12 mdr</span><span>År til dato</span></span></div><div class="pb"><div class="kpigrid">'+
+   kpi("DKK 163.480","Omsætning totalt","Alle kundetyper")+kpi("DKK 141.900","Fra abonnementskunder","Inkl. stoppede")+kpi("DKK 12.100","Fra online kunder","")+kpi("DKK 9.480","Fra manuelle kunder","")+'</div></div></div>';
+ var g3='<div class="panel"><div class="ph">Abonnementskunder</div><div class="pb"><div class="kpigrid">'+
+   kpi("DKK 13.623","Gns. månedlig omsætning","")+kpi("DKK 13.623","Vækst i gns. månedlig oms.","I indeværende kalenderår")+kpi("5","Aktive abonnementskunder","")+kpi("5","Vækst i aktive abo.","")+'</div></div></div>';
+ var charts='<div class="charts">'+
+   ['Omsætning per kundetype','Antal leverede ordrer','Gns. timepris og ordrestørrelse'].map(function(t,i){
+     return '<div class="chartcard"><h3>'+t+'</h3><div style="display:flex;gap:8px;margin-top:2px"><span class="seg"><span class="on">Måned</span><span>Uge</span></span><span class="seg"><span class="on">Søjle</span><span>Linje</span></span></div><div class="bars">'+bars(i+2)+'</div></div>';}).join('')+'</div>';
+ var map='<div class="chartcard" style="margin-top:14px"><h3>Kort over kunder med omsætning de sidste 12 mdr.</h3><div class="legend" style="margin-top:8px"><span class="li">Bolig: Lejlighed · Hus · Rækkehus · Ukendt</span><span class="li">Omsætning: $ 0–500 · $$ 500–1000 · $$$ 1000+ DKK</span></div><div style="height:120px;border:1px dashed var(--line);border-radius:8px;margin-top:10px;display:grid;place-items:center;color:var(--faint);background:#f7fafc">🗺️ interaktivt kundekort</div></div>';
+ return '<div class="screen"><div class="sc-body">'+g1+g2+g3+charts+map+'</div></div>';
+}
+function blkWizard(){
+ var steps='<div class="steps"><span class="step on"><span class="n">1</span>Indstillinger</span><span class="step"><span class="n">2</span>Tilpas opgaver</span><span class="step"><span class="n">3</span>Bekræft og sæt i gang</span></div>';
+ var secs=[
+  {h:"Tidspunkt", fields:[{t:"select", l:"Hvornår skal prisjusteringen træde i kraft", val:"—", opts:["Mandag uge 29 (13/7-2026) … ~52 uger"]}]},
+  {h:"Størrelse", fields:[
+    {t:"radio", l:"", opts:["Procentuel justering (%)","Procentuel justering baseret på opgavens timepris (tier-tabel)"], on:1},
+    {t:"note", val:"Tier-bånd (redigerbare grænser 400/600/800/1000 kr/time): Mindre end 400 · 400–600 · 600–800 · 800–1000 · Mere end 1000 — hver med sin egen %."}]},
+  {h:"Afrunding", fields:[{t:"select", l:"Afrund ny pris", val:"Ingen afrunding", opts:["Ingen afrunding","50 øre","1 kr.","2 kr.","5 kr.","Slut på 9,00 kr.","Slut på 9,95 kr.","10 kr."]}]},
+  {h:"Kundegrundlag", fields:[
+    {t:"select", l:"Aftaletype", val:"—", opts:["Juster både abonnementer og fastprisaftaler","Kun abonnementer","Kun fastprisaftaler"]},
+    {t:"select", l:"Ekskludér: prisjusteret inden for", val:"—", opts:["sidste måned … 36 mdr."]},
+    {t:"select", l:"Ekskludér: oprettet inden for", val:"—", opts:["sidste måned … 36 mdr."]},
+    {t:"select", l:"Ekskludér: manuelt prisændret inden for", val:"—", opts:["sidste måned … 36 mdr."]}]},
+  {h:"Kundekommunikation", fields:[
+    {t:"select", l:"Send besked som", val:"—", opts:["Både SMS og e-mail","Kun som SMS","Kun som e-mail","Som e-mail hvis email, ellers SMS","Send ikke besked"]},
+    {t:"radio", l:"Detaljer i beskeden", opts:["Prisændring pr. opgave (+25,00 kr.)","Pris før og efter (før 250, ny 275)","Kun ny pris (ny pris 275 kr.)"], on:0}]}
+ ];
+ var body=secs.map(function(s){return '<div class="panel"><div class="ph">'+s.h+'</div><div class="pb">'+s.fields.map(renderField).join('')+'</div></div>';}).join('');
+ return '<div class="screen"><div class="sc-head"><div><h2>Prisjustering</h2><div class="desc"><span class="tag">/price_adjustment_create</span></div></div></div><div class="sc-body">'+steps+body+'<div class="savebar"><span class="btn primary">Gå videre (kan ikke fortrydes)</span></div></div></div>';
+}
+var MVARS=[["{{kunde_fornavn}}","Kundens fornavn — Peter"],["{{kunde_fuldt_navn}}","Kundens fulde navn — Peter Petersen"],["{{leveringstidspunkt}}","Leveringstidspunkt (afhænger af notifikationsindstilling)"],["{{leverings_adresse}}","Ordrens/abonnementets leveringsadresse"],["{{opgave_liste}}","Liste over opgaver (format afhænger af side)"],["{{dit_firmanavn}}","Din virksomheds navn — KRLTFL ApS"],["{{dit_telefonnummer}}","Din virksomheds telefon"],["{{din_email}}","Din virksomheds e-mail"],["{{naeste_gang_uge_med_dato_interval}}","Næste uge med dato-interval"],["{{ikrafttraedelse_dato}}","Prisjusteringens ikrafttrædelsesdato"]];
+function blkTemplates(){
+ var list=[["Notifikation før levering","/email_and_sms_settings_before_delivery","redigerbar"],["Notifikation efter levering","/email_and_sms_settings_after_delivery","redigerbar"],["Abonnementsbekræftelse","/email_and_sms_settings_subscription_confirmation","redigerbar · 2 emner"],["Abonnementsflytning","/email_and_sms_settings_subscription_defrag_notification","redigerbar"],["Ordrebekræftelse","/email_and_sms_settings_order_confirmation","stub (ikke redigerbar)"],["Påmindelse om genbestilling","/email_and_sms_settings_order_reminder","stub"],["Fakturaafsendelse","/email_and_sms_settings_invoice","styres i Dinero"],["Prisjustering","/email_and_sms_settings_price_adjustment_notification","redigerbar"]];
+ var listHtml='<div class="panel"><div class="ph">8 skabeloner</div><div class="pb" style="padding-top:8px">'+list.map(function(x){return '<div style="display:flex;justify-content:space-between;gap:10px;padding:8px 0;border-bottom:1px solid var(--line2)"><div><b style="font-size:13px">'+esc(x[0])+'</b><div class="tag" style="margin-top:3px">'+esc(x[1])+'</div></div><span class="pill '+(x[2].indexOf('stub')>=0||x[2].indexOf('Dinero')>=0?'neu':'ok')+'">'+esc(x[2])+'</span></div>';}).join('')+'</div></div>';
+ var editor='<div class="panel"><div class="ph">Fælles editor (redigerbare sider)</div><div class="pb">'+
+   renderField({t:"text",l:"E-mail emne",val:"Vi kommer og udfører service",help:"Maks 50 karakterer."})+
+   renderField({t:"textarea",l:"Besked (email + SMS)",val:"Kære {{kunde_fornavn}}\n\nVi kommer {{leveringstidspunkt}} og udfører følgende opgaver iht. aftale.\n\n{{opgave_liste}}\n\nDe bedste hilsner\n{{dit_firmanavn}}",help:"Ét felt til både e-mail og SMS. Ingen WYSIWYG, ingen preview."})+
+   renderField({t:"text",l:"Afsender på SMS",val:"Service SMS",ro:true,help:SMS_TOOLTIP})+
+   renderField({t:"buttons",l:"Send en test",btns:[["Send test e-mail","sub"],["Send test SMS (deaktiveret)","ghost"]]})+
+   '<div class="savebar"><span class="btn primary">Gem alle ændringer</span></div></div></div>';
+ var vars='<div class="panel"><div class="ph">Liste over variable felter (uddrag)</div><div class="pb"><div class="varlist">'+MVARS.map(function(v){return '<div class="var">'+esc(v[0])+'<span class="d">'+esc(v[1])+'</span></div>';}).join('')+'</div></div></div>';
+ return '<div class="screen"><div class="sc-body"><div class="two">'+listHtml+editor+'</div>'+vars+'</div></div>';
+}
+function blkCards(b){
+ return '<div class="screen"><div class="sc-head"><div><h2>'+esc(b.h)+'</h2></div></div><div class="sc-body"><div class="mapgrid">'+b.cards.map(function(c){return '<div class="mapcard"><div class="mh">'+esc(c[0])+(c[2]?' <span class="pill ok" style="margin-left:auto">'+esc(c[2])+'</span>':'')+'</div><div style="padding:12px 15px;color:var(--muted);font-size:13px">'+esc(c[1])+'<div style="margin-top:10px"><span class="btn sm sub">Læs mere…</span></div></div></div>';}).join('')+'</div></div></div>';
+}
+function blkOverview(){
+ var hero='<div class="ov-hero"><h1>Fenster Partner Portal — funktioner &amp; subsider</h1><p>En komplet, navigerbar rekonstruktion af hele det indloggede portal: en dansk SaaS til vinduespudser-virksomheder, der samler kunder, abonnementer, automatisk ruteplanlægning, fakturering (Dinero) og kunde­kommunikation (e-mail/SMS). Klik dig gennem hver eneste subside herunder — hver er gengivet med de rigtige felter, kolonner og handlinger.</p><div class="meta"><span class="mchip">35+ subsider</span><span class="mchip">7 hovedmenuer</span><span class="mchip">Konto: KRLTFL ApS · Fenster Pro</span><span class="mchip">Kortlagt live 2026-07-03</span></div></div>';
+ var flow='<div class="panel"><div class="ph">Kerneflow</div><div class="pb"><div class="flow"><span class="fnode">Kunde</span><span class="fa">→</span><span class="fnode">Abonnement / Fastpris / Manuel / Online</span><span class="fa">→</span><span class="fnode">Ordre</span><span class="fa">→</span><span class="fnode">Auto-planlagt kalender</span><span class="fa">→</span><span class="fnode">Dagsprogram</span><span class="fa">→</span><span class="fnode">Afslut ordre</span><span class="fa">→</span><span class="fnode">Faktura (Dinero)</span><span class="fa">→</span><span class="fnode">Notifikation</span></div></div></div>';
+ var maps='<div class="mapgrid">'+NAV.filter(function(g){return g.grp;}).map(function(g){
+   return '<div class="mapcard"><div class="mh">'+esc(g.grp)+'</div><ul>'+g.items.map(function(it){return '<li><a data-route="'+esc(it[0])+'"><span>'+esc(it[1])+' <span style="color:var(--faint);font-size:11px">'+esc(it[2])+'</span></span><span class="r">'+esc(it[0])+'</span></a></li>';}).join('')+'</ul></div>';
+ }).join('')+'</div>';
+ var patterns='<div class="panel" style="margin-top:16px"><div class="ph">Gennemgående mønstre (byg én gang, genbrug overalt)</div><div class="pb"><ul style="margin:6px 0 0;padding-left:18px;color:var(--muted);font-size:13px;line-height:1.7">'+
+   ['Global chrome: mørk topnav med 7 dropdowns + konto-menu.','Listeside: H1 + beskrivelse + opret-knap + fritekst-søgning (q) + tabel med ⋯-rækkemenu + paginering. Ingen kolonnefiltre.','Formularside: panels + label/kontrol/hjælp + ét «Gem alle ændringer».','Kontakt-vælger (genbruges overalt) + universelle opgavelinjer (task_form-formset) med farvet kategori-chip.','Destruktive handlinger er 2-trins: ⋯ → bekræft-modal (grå Luk + rød handling); irreversible siger «kan ikke fortrydes».','?back_url= på alle drill-downs · hver adresse får «Åbn i Google Maps» · plan-gating via global upgrade-modal.'].map(function(x){return '<li>'+esc(x)+'</li>';}).join('')+'</ul></div></div>';
+ return hero+flow+'<div style="margin:18px 0 10px;font-weight:700;font-size:15px">Alle subsider</div>'+maps+patterns;
+}
+
+function renderBlock(b){
+ switch(b.kind){
+  case 'form': return blkForm(b);
+  case 'list': return blkList(b);
+  case 'calendar': return blkCalendar();
+  case 'daycal': return blkDaycal();
+  case 'dashboard': return blkDashboard();
+  case 'wizard': return blkWizard();
+  case 'templates': return blkTemplates();
+  case 'cards': return blkCards(b);
+  case 'overview': return blkOverview();
+  default: return '';
+ }
+}
+function renderPage(route){
+ var p=PAGES[route]; var m=META[route]||{}; var view=document.getElementById('view');
+ if(!p){ view.innerHTML='<div class="specstrip"><h1>'+esc(m.label||route)+'</h1></div><div class="note">Side under kortlægning.</div>'; return; }
+ var strip='';
+ if(route!=='overview'){
+   strip='<div class="specstrip"><h1>'+esc(m.label||'')+(m.en?'<span class="en">'+esc(m.en)+'</span>':'')+'</h1>'+(route.indexOf('/')===0?'<span class="route">'+esc(route)+'</span>':'')+((p.gate||m.gate)?'<span class="gate">Kræver '+esc(p.gate||m.gate)+'</span>':'')+(p.purpose?'<div class="purpose">'+esc(p.purpose)+'</div>':'')+'</div>';
+ }
+ view.innerHTML=strip+p.blocks.map(renderBlock).join('<div style="height:16px"></div>');
+ document.querySelector('.main').scrollTop=0;
+ view.querySelectorAll('a[data-route]').forEach(function(a){a.addEventListener('click',function(){go(a.getAttribute('data-route'));});});
+}
+
+/* ---- sidebar + router ---- */
+function buildSide(){
+ var s=document.getElementById('side'); var html='';
+ NAV.forEach(function(g){
+   if(g.grp) html+='<div class="grp"><span>'+esc(g.grp)+'</span></div>';
+   g.items.forEach(function(it){
+     html+='<a data-route="'+esc(it[0])+'" title="'+esc(it[0])+'"><span class="lbl"><span class="txt">'+esc(it[1])+'</span></span>'+(it[3]?'<span class="pill">'+esc(it[3])+'</span>':'')+'</a>';
+   });
+ });
+ s.innerHTML=html;
+ s.querySelectorAll('a[data-route]').forEach(function(a){a.addEventListener('click',function(){go(a.getAttribute('data-route'));});});
+}
+var current='overview';
+function go(route){
+ current=route;
+ try{location.hash=encodeURIComponent(route);}catch(e){}
+ document.querySelectorAll('#side a').forEach(function(a){a.classList.toggle('active',a.getAttribute('data-route')===route);});
+ renderPage(route);
+}
+function init(){
+ buildSide();
+ var h=''; try{h=decodeURIComponent((location.hash||'').replace(/^#/,''));}catch(e){}
+ go(PAGES[h]?h:'overview');
+}
+window.addEventListener('hashchange',function(){var h='';try{h=decodeURIComponent((location.hash||'').replace(/^#/,''));}catch(e){} if(h&&h!==current&&PAGES[h])go(h);});
+init();
+</script>
+
