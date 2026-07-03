@@ -8,7 +8,7 @@ import {
 } from "@/lib/calendar";
 import { categoryColor } from "@/lib/categories";
 
-const HOUR = 44; // px per hour row
+const HOUR = 75; // px per hour row
 const bodyHeight = (GRID_END - GRID_START) * HOUR;
 const hours = Array.from({ length: GRID_END - GRID_START }, (_, i) => GRID_START + i);
 const fmt = (h: number) => `${Math.floor(h)}:${String(Math.round((h % 1) * 60)).padStart(2, "0")}`;
@@ -37,7 +37,7 @@ export default function CalendarPage() {
         {/* ---------- sidebar ---------- */}
         <aside className="cal-side">
           <div className="grp">Planlægning</div>
-          <button className="btn btn-outline-primary btn-block btn-sm">Genplanlæg uge</button>
+          <button className="genbtn">Genplanlæg uge</button>
           <div className="subhint">Planlagt i dag kl. 03:01</div>
 
           <div className="grp">Medarbejdere</div>

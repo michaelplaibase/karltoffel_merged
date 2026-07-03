@@ -40,10 +40,10 @@ export default function DayCalendarPage() {
                 </div>
               </div>
               <div className="row-actions">
-                <button className="btn btn-primary btn-sm">Afslut ordre</button>
-                <button className="btn btn-light btn-sm">Rediger ordre</button>
-                <button className="btn btn-light btn-sm">Rediger abo.</button>
-                <button className="btn btn-light btn-sm">Mere ▾</button>
+                <button className="btn btn-outline-primary btn-sm">Afslut ordre</button>
+                <button className="btn btn-outline-primary btn-sm">Rediger ordre</button>
+                <button className="btn btn-outline-primary btn-sm">Rediger abo.</button>
+                <button className="btn btn-outline-primary btn-sm">Mere ▾</button>
               </div>
             </div>
           ))}
