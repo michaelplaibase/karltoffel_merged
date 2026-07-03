@@ -9,13 +9,14 @@ import TaskLineEditor, { type TaskRow } from "@/components/TaskLineEditor";
 export type FixedPriceInitial = { contactId: number; tasks: TaskRow[] };
 
 export default function FixedPriceForm({
-  action, contacts, initial, title, submitLabel,
+  action, contacts, initial, title, submitLabel, danger,
 }: {
   action: (state: FixedPriceState, formData: FormData) => Promise<FixedPriceState>;
   contacts: ContactOption[];
   initial?: FixedPriceInitial;
   title: string;
   submitLabel: string;
+  danger?: React.ReactNode;
 }) {
   const [state, formAction, pending] = useActionState(action, {});
 
@@ -50,6 +51,7 @@ export default function FixedPriceForm({
 
       <div className="savebar">
         <Link href="/fixed-prices" className="btn btn-light">Luk</Link>
+        {danger}
         <button type="submit" className="btn btn-primary" disabled={pending}>
           {pending ? "Gemmer…" : submitLabel}
         </button>

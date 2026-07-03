@@ -48,6 +48,14 @@ function parse(formData: FormData): Fields | { error: string } {
   };
 }
 
+/** Stop a subscription (soft): mark inactive so no further orders are created. */
+export async function stopSubscription(pk: number): Promise<void> {
+  const sub = await prisma.subscription.update({ where: { id: pk }, data: { active: false }, select: { contactId: true } });
+  revalidatePath("/subscriptions");
+  revalidatePath(`/customers/${sub.contactId}`);
+  redirect("/subscriptions");
+}
+
 export async function createSubscription(_prev: SubscriptionState, formData: FormData): Promise<SubscriptionState> {
   const p = parse(formData);
   if ("error" in p) return p;

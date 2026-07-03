@@ -66,6 +66,18 @@ const STATUS: Record<string, string> = {
   other: "Anden status",
 };
 
+/** Delete an order and its task lines. */
+export async function deleteOrder(orderId: number): Promise<void> {
+  await prisma.$transaction([
+    prisma.taskLine.deleteMany({ where: { orderId } }),
+    prisma.order.delete({ where: { id: orderId } }),
+  ]);
+  revalidatePath("/orders");
+  revalidatePath("/calendar");
+  revalidatePath("/daycalendar");
+  redirect("/orders");
+}
+
 export async function completeOrder(orderId: number, _prev: CompleteOrderState, formData: FormData): Promise<CompleteOrderState> {
   const leveringsstatus = String(formData.get("leveringsstatus") ?? "");
   if (!leveringsstatus || !(leveringsstatus in STATUS)) return { error: "Vælg en leveringsstatus." };

@@ -1,7 +1,9 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getOrderDetail } from "@/lib/queries";
+import { deleteOrder } from "@/app/actions/orders";
 import { CatChip, MapLink, StatusPill, money } from "@/components/ui";
+import ConfirmButton from "@/components/ConfirmButton";
 
 export const metadata = { title: "Rediger ordre · Karltoffel" };
 
@@ -99,6 +101,11 @@ export default async function OrderDetail({ params }: { params: Promise<{ id: st
 
       <div className="savebar">
         <Link href="/orders" className="btn btn-light">Luk</Link>
+        <ConfirmButton
+          action={deleteOrder.bind(null, o.id)}
+          label="Slet ordre" title="Bekræftelse"
+          body="Er du sikker på, at du vil slette ordren?" confirmLabel="Slet ordre"
+        />
         <Link href={`/orders/${o.id}/complete`} className="btn btn-primary">Afslut ordre</Link>
       </div>
     </div>

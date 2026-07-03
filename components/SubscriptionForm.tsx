@@ -17,7 +17,7 @@ export type SubscriptionInitial = {
 };
 
 export default function SubscriptionForm({
-  action, contacts, employees, initial, title, submitLabel,
+  action, contacts, employees, initial, title, submitLabel, danger,
 }: {
   action: (state: SubscriptionState, formData: FormData) => Promise<SubscriptionState>;
   contacts: ContactOption[];
@@ -25,6 +25,7 @@ export default function SubscriptionForm({
   initial?: SubscriptionInitial;
   title: string;
   submitLabel: string;
+  danger?: React.ReactNode;
 }) {
   const [state, formAction, pending] = useActionState(action, {});
   const baseOptions = initial?.baseInterval && !BASE_INTERVALS.includes(initial.baseInterval)
@@ -78,6 +79,7 @@ export default function SubscriptionForm({
 
       <div className="savebar">
         <Link href="/subscriptions" className="btn btn-light">Luk</Link>
+        {danger}
         <button type="submit" className="btn btn-primary" disabled={pending}>
           {pending ? "Gemmer…" : submitLabel}
         </button>

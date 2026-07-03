@@ -10,6 +10,18 @@ import { redirect } from "next/navigation";
 
 export type FixedPriceState = { error?: string };
 
+/** Delete a fixed-price agreement and its task lines. */
+export async function deleteFixedPrice(pk: number): Promise<void> {
+  const fp = await prisma.fixedPriceAgreement.findUnique({ where: { id: pk }, select: { contactId: true } });
+  await prisma.$transaction([
+    prisma.taskLine.deleteMany({ where: { fixedPriceId: pk } }),
+    prisma.fixedPriceAgreement.delete({ where: { id: pk } }),
+  ]);
+  revalidatePath("/fixed-prices");
+  if (fp) revalidatePath(`/customers/${fp.contactId}`);
+  redirect("/fixed-prices");
+}
+
 /** Read the repeated task-line fields (aligned by index) from the form. */
 function readTaskLines(formData: FormData) {
   const descs = formData.getAll("taskDescription").map(String);

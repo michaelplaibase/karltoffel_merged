@@ -1,7 +1,8 @@
 import { notFound } from "next/navigation";
 import { getSubscriptionEditData, getContactOptions, getEmployeeNames } from "@/lib/queries";
-import { updateSubscription } from "@/app/actions/subscriptions";
+import { updateSubscription, stopSubscription } from "@/app/actions/subscriptions";
 import SubscriptionForm from "@/components/SubscriptionForm";
+import ConfirmButton from "@/components/ConfirmButton";
 
 export const metadata = { title: "Rediger abonnement · Karltoffel" };
 
@@ -27,6 +28,14 @@ export default async function EditSubscription({ params }: { params: Promise<{ i
         }}
         title={`Rediger abonnement #${sub.displayNo}`}
         submitLabel="Opdater abonnement"
+        danger={
+          <ConfirmButton
+            action={stopSubscription.bind(null, sub.pk)}
+            label="Stop abonnement" title="Stop abonnement"
+            body="Er du sikker på, at du vil stoppe abonnementet? Der oprettes ikke flere ordrer på abonnementet."
+            confirmLabel="Stop abonnement"
+          />
+        }
       />
     </div>
   );
