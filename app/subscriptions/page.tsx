@@ -15,7 +15,7 @@ export default async function SubscriptionsPage() {
       <div className="card">
         <div className="card-body">
           <div className="toolbar">
-            <span className="btn btn-outline-primary">Opret nyt abonnement</span>
+            <Link href="/subscriptions/new" className="btn btn-outline-primary">Opret nyt abonnement</Link>
             <div className="searchbar">
               <input className="form-control" placeholder="Abo. nr, dato, kundenavn, kundenr, email, tlf, vejnavn, husnr, postnr, opgave" />
               <button className="btn btn-light">Søg</button>

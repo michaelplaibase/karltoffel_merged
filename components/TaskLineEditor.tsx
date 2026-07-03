@@ -1,22 +1,36 @@
 "use client";
 
 // Reusable task-line editor (the "Opgaver" formset). Rows submit via repeated
-// field names (taskDescription/taskCategory/taskPrice/taskDuration) that the
-// server action reads with formData.getAll, aligned by index. Used by order
-// create now; subscription / fixed-price editors reuse it later.
+// field names (taskDescription/taskCategory/taskPrice/taskDuration, plus
+// taskInterval/taskNextWeek in subscription mode) that the server action reads
+// with formData.getAll, aligned by index. Used by order create and the
+// subscription editor.
 import { useState } from "react";
 import { CATEGORIES, categoryColor } from "@/lib/categories";
 
-export type TaskRow = { description: string; price: string; duration: string; category: string };
+export type TaskRow = {
+  description: string; price: string; duration: string; category: string;
+  interval?: string; nextWeek?: string;
+};
 
 const CAT_NAMES = Object.keys(CATEGORIES);
-const blank = (): TaskRow => ({ description: "", price: "", duration: "", category: "Vinduespudsning" });
+const INTERVALS = [
+  "Hver gang", "Hver 2. gang", "Hver 3. gang", "Hver 4. gang", "Hver 5. gang",
+  "Hver 6. gang", "Hver 8. gang", "Hver 12. gang", "På anmodning",
+];
+const blank = (): TaskRow => ({ description: "", price: "", duration: "", category: "Vinduespudsning", interval: "Hver gang", nextWeek: "" });
 const timepris = (r: TaskRow) => {
   const p = Number(r.price) || 0, d = Number(r.duration) || 0;
   return d > 0 ? Math.round((p / d) * 60) : 0;
 };
 
-export default function TaskLineEditor({ initial }: { initial?: TaskRow[] }) {
+export default function TaskLineEditor({
+  initial, mode = "order",
+}: {
+  initial?: TaskRow[];
+  mode?: "order" | "subscription";
+}) {
+  const sub = mode === "subscription";
   const [rows, setRows] = useState<TaskRow[]>(initial?.length ? initial : [blank()]);
   const update = (i: number, patch: Partial<TaskRow>) =>
     setRows((rs) => rs.map((r, j) => (j === i ? { ...r, ...patch } : r)));
@@ -26,6 +40,11 @@ export default function TaskLineEditor({ initial }: { initial?: TaskRow[] }) {
   const sum = rows.reduce((a, r) => a + (Number(r.price) || 0), 0);
   const dur = rows.reduce((a, r) => a + (Number(r.duration) || 0), 0);
 
+  // In subscription mode a persisted interval may not be in the short list
+  // (e.g. "Hver gang (hver 2. uge)"); make sure it's still selectable.
+  const intervalOptions = (r: TaskRow) =>
+    r.interval && !INTERVALS.includes(r.interval) ? [r.interval, ...INTERVALS] : INTERVALS;
+
   return (
     <div>
       <div className="table-wrap">
@@ -33,9 +52,11 @@ export default function TaskLineEditor({ initial }: { initial?: TaskRow[] }) {
           <thead>
             <tr>
               <th>Opgavebeskrivelse</th>
-              <th style={{ width: 190 }}>Kategori</th>
-              <th style={{ width: 150 }}>Pris (inkl. moms)</th>
-              <th style={{ width: 130 }}>Varighed (min.)</th>
+              <th style={{ width: 170 }}>Kategori</th>
+              <th style={{ width: 140 }}>Pris (inkl. moms)</th>
+              <th style={{ width: 120 }}>Varighed (min.)</th>
+              {sub && <th style={{ width: 190 }}>Interval</th>}
+              {sub && <th style={{ width: 110 }}>Næste gang</th>}
               <th style={{ width: 40 }} />
             </tr>
           </thead>
@@ -70,6 +91,20 @@ export default function TaskLineEditor({ initial }: { initial?: TaskRow[] }) {
                   <input name="taskDuration" type="number" min="0" value={r.duration}
                     onChange={(e) => update(i, { duration: e.target.value })} className="form-control form-control-sm num" />
                 </td>
+                {sub && (
+                  <td>
+                    <select name="taskInterval" value={r.interval ?? "Hver gang"}
+                      onChange={(e) => update(i, { interval: e.target.value })} className="form-control form-control-sm">
+                      {intervalOptions(r).map((o) => <option key={o} value={o}>{o}</option>)}
+                    </select>
+                  </td>
+                )}
+                {sub && (
+                  <td>
+                    <input name="taskNextWeek" value={r.nextWeek ?? ""} placeholder="Uge 29"
+                      onChange={(e) => update(i, { nextWeek: e.target.value })} className="form-control form-control-sm" />
+                  </td>
+                )}
                 <td>
                   <button type="button" onClick={() => remove(i)} className="btn btn-light btn-sm" title="Fjern opgave">
                     <i className="bi bi-trash" />
@@ -82,6 +117,8 @@ export default function TaskLineEditor({ initial }: { initial?: TaskRow[] }) {
               <td />
               <td className="num" style={{ fontWeight: 600 }}>{sum.toLocaleString("da-DK")} kr</td>
               <td className="num" style={{ fontWeight: 600 }}>{dur}</td>
+              {sub && <td />}
+              {sub && <td />}
               <td />
             </tr>
           </tbody>

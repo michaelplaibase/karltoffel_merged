@@ -166,6 +166,31 @@ export async function getSubscriptionsForContact(contactId: number): Promise<Sub
   return rows.map(mapSubscription);
 }
 
+/** Editor data for a subscription, keyed by its display no ("Abo. nr."). */
+export async function getSubscriptionEditData(displayNo: number) {
+  const s = await prisma.subscription.findUnique({ where: { displayNo }, include: { tasks: true } });
+  if (!s) return null;
+  return {
+    pk: s.id,
+    displayNo: s.displayNo,
+    contactId: s.contactId,
+    baseInterval: s.baseInterval,
+    startWeek: s.startWeek ?? "",
+    fixedEmployee: s.fixedEmployee,
+    deliveryAddress: s.deliveryAddress,
+    tasks: [...s.tasks].sort((a, b) => a.sort - b.sort).map((t) => ({
+      description: t.description, price: String(t.price), duration: String(t.durationMin),
+      category: t.category, interval: t.intervalMultiplier ?? "Hver gang", nextWeek: t.startWeek ?? "",
+    })),
+  };
+}
+
+/** Fixed-employee options: "Ingen" + each active employee's name. */
+export async function getEmployeeNames(): Promise<string[]> {
+  const users = await prisma.user.findMany({ orderBy: { id: "asc" } });
+  return ["Ingen", ...users.map((u) => `${u.firstName} ${u.lastName}`)];
+}
+
 // ---- Orders ----------------------------------------------------------------
 
 const orderInclude = { tasks: true, subscription: true, employee: true } as const;
