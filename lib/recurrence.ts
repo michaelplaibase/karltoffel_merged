@@ -47,13 +47,6 @@ function parseWeekLabel(label: string | null): number | null {
   return m ? Number(m[1]) : null;
 }
 
-/** Monday of the subscription's/task's start week, in the reference year's week grid. */
-function anchorMonday(weekLabel: string | null, ref: Date): Date | null {
-  const wk = parseWeekLabel(weekLabel);
-  if (wk == null) return null;
-  return mondayOfIsoWeek(ref.getUTCFullYear(), wk);
-}
-
 type SubWithTasks = Awaited<ReturnType<typeof loadActiveSubs>>[number];
 function loadActiveSubs() {
   return prisma.subscription.findMany({ where: { active: true }, include: { tasks: true } });
@@ -71,11 +64,28 @@ async function defaultEmployeeId(fixedEmployee: string): Promise<number | null> 
 /** Generate the upcoming orders for one subscription. Returns the count created. */
 export async function generateForSubscription(sub: SubWithTasks, ref: Date = new Date(), horizonWeeks = DEFAULT_HORIZON_WEEKS): Promise<number> {
   const base = parseBaseInterval(sub.baseInterval);
-  const subAnchor = anchorMonday(sub.startWeek, ref);
-  if (!subAnchor) return 0;
+  const subWeek = parseWeekLabel(sub.startWeek);
+  if (subWeek == null) return 0;
 
+  const step = base * WEEK_MS;
   const thisMonday = mondayOf(ref).getTime();
   const horizonEnd = thisMonday + horizonWeeks * WEEK_MS;
+  const refYear = ref.getUTCFullYear();
+
+  // Anchor at week N. The label is year-less, so if this year's occurrence is
+  // beyond the planning horizon the subscription is an ongoing one carried over
+  // from a previous year — anchor there so the rhythm continues without a
+  // year-boundary gap. (The rhythm phase is week-N, independent of which year.)
+  let anchor = mondayOfIsoWeek(refYear, subWeek).getTime();
+  if (anchor > horizonEnd) anchor = mondayOfIsoWeek(refYear - 1, subWeek).getTime();
+
+  // Per task: its multiplier m and the visit offset j0 from the subscription
+  // start, derived purely from the week-number difference (year-independent).
+  const tasks = sub.tasks.map((t) => ({
+    t,
+    m: parseMultiplier(t.intervalMultiplier),
+    j0: Math.round(((parseWeekLabel(t.startWeek) ?? subWeek) - subWeek) / base),
+  }));
 
   // Existing orders for this subscription, keyed by their week's Monday (dedup).
   const existing = await prisma.order.findMany({ where: { subscriptionId: sub.id }, select: { plannedAt: true } });
@@ -87,23 +97,17 @@ export async function generateForSubscription(sub: SubWithTasks, ref: Date = new
   const employeeId = await defaultEmployeeId(sub.fixedEmployee);
 
   // First visit at or after the current week, keeping the base rhythm.
-  const step = base * WEEK_MS;
-  let v = subAnchor.getTime();
+  let v = anchor;
   if (v < thisMonday) v += Math.ceil((thisMonday - v) / step) * step;
 
   let created = 0;
   for (; v <= horizonEnd; v += step) {
     if (isHoliday(v) || existingWeeks.has(v)) continue;
 
-    // Tasks due at this visit: on the (multiplier × base)-week rhythm from their start.
-    const due = sub.tasks.filter((t) => {
-      const m = parseMultiplier(t.intervalMultiplier);
-      if (m == null) return false; // "På anmodning" — not auto-scheduled
-      const ta = (anchorMonday(t.startWeek ?? sub.startWeek, ref) ?? subAnchor).getTime();
-      if (v < ta) return false;
-      const weeksSince = Math.round((v - ta) / WEEK_MS);
-      return weeksSince % (m * base) === 0;
-    });
+    // Tasks due at this visit index (i base-steps from the anchor): a task recurs
+    // every m visits from its own offset j0. "På anmodning" (m == null) is skipped.
+    const i = Math.round((v - anchor) / step);
+    const due = tasks.filter((x) => x.m != null && i >= x.j0 && (i - x.j0) % x.m === 0).map((x) => x.t);
     if (!due.length) continue;
 
     await prisma.order.create({

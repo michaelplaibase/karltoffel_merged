@@ -15,7 +15,9 @@ export function Control({ f, name, value }: { f: SField; name?: string; value?: 
       case "select":
         return <><select name={name} className="form-control form-control-sm" defaultValue={v0 ?? f.val ?? ""}>{(f.opts ?? []).map((o, i) => <option key={i}>{o}</option>)}</select>{help}</>;
       case "checks":
-        return <><div style={{ paddingTop: 4 }}>{(f.opts ?? []).map((o, i) => {
+        // Hidden sentinel keeps the key present even when every box is unchecked,
+        // so "clear all" persists instead of reverting to the config default.
+        return <><div style={{ paddingTop: 4 }}><input type="hidden" name={name} value="" />{(f.opts ?? []).map((o, i) => {
           const on = value ? value.includes(o) : (Array.isArray(f.on) ? f.on.includes(i) : false);
           return <label className="form-check-inline" key={i}><input type="checkbox" name={name} value={o} defaultChecked={on} /> {o}</label>;
         })}</div>{help}</>;
