@@ -44,7 +44,7 @@ export default async function OrdersPage() {
                       <td>{o.tasks.map((t, i) => <div key={i}><CatChip category={t.category} letter={t.letter} /> {t.description}</div>)}</td>
                       <td className="num">{money(o.tasks.reduce((a, t) => a + t.price, 0))}</td>
                       <td>{o.employee}</td>
-                      <td><StatusPill status="Afventer levering" /></td>
+                      <td><StatusPill status={o.status} /></td>
                       <td>{o.source}</td>
                     </tr>
                   );

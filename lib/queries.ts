@@ -174,6 +174,48 @@ export async function getOrdersForContact(contactId: number): Promise<Order[]> {
   return rows.map(mapOrder);
 }
 
+/** "Uge 29, mandag d. 13/7-26" — the planned delivery day, without the routed clock slot. */
+function plannedLabel(d: Date): string {
+  const weekdayIdx = (d.getUTCDay() + 6) % 7;
+  const yy = String(d.getUTCFullYear()).slice(2);
+  return `Uge ${isoWeek(ymd(d))}, ${WEEKDAYS_FULL[weekdayIdx]} d. ${d.getUTCDate()}/${d.getUTCMonth() + 1}-${yy}`;
+}
+
+export type OrderDetail = {
+  id: number; status: string; comment: string; addressNote: string; lockedFully: boolean;
+  deliveryAddress: string; plannedLabel: string; source: string; employee: string;
+  contact: { name: string; street: string; city: string; att: string; phone: string; email: string; cvr: string };
+  tasks: TaskLine[]; sumPrice: number; sumDuration: number;
+};
+
+export async function getOrderDetail(id: number): Promise<OrderDetail | null> {
+  const o = await prisma.order.findUnique({
+    where: { id },
+    include: { tasks: true, subscription: true, employee: true, contact: true },
+  });
+  if (!o) return null;
+  const tasks = [...o.tasks].sort((a, b) => a.sort - b.sort);
+  const src = sourceLabel(o.sourceType, o.subscription?.displayNo);
+  return {
+    id: o.id,
+    status: o.status,
+    comment: o.comment ?? "",
+    addressNote: o.addressNote ?? "",
+    lockedFully: o.lockedFully,
+    deliveryAddress: o.deliveryAddress,
+    plannedLabel: plannedLabel(o.plannedAt),
+    source: o.subscription ? `${src} (${o.subscription.baseInterval})` : src,
+    employee: o.employee ? `${o.employee.firstName} ${o.employee.lastName}` : "Ingen",
+    contact: {
+      name: o.contact.name, street: o.contact.street, city: o.contact.city,
+      att: o.contact.att ?? "", phone: o.contact.phone ?? "", email: o.contact.email ?? "", cvr: o.contact.cvr ?? "",
+    },
+    tasks: tasks.map(mapTask),
+    sumPrice: tasks.reduce((a, t) => a + t.price, 0),
+    sumDuration: tasks.reduce((a, t) => a + t.durationMin, 0),
+  };
+}
+
 // ---- Planner ---------------------------------------------------------------
 
 /** Jobs the auto-planner should route for the week beginning `weekMonday` (ISO date). */
