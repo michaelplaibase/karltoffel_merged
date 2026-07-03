@@ -140,6 +140,19 @@ export async function getContactEditData(id: number) {
   };
 }
 
+/** Per-contact invoicing overrides for the contact-settings page. */
+export async function getContactSettings(id: number) {
+  const c = await prisma.contact.findUnique({ where: { id } });
+  if (!c) return null;
+  return {
+    id: c.id, name: c.name,
+    skipDeliveryAddressOnInvoice: c.skipDeliveryAddressOnInvoice,
+    showDeliveryNameOnInvoice: c.showDeliveryNameOnInvoice,
+    skipInvoiceOverSms: c.skipInvoiceOverSms,
+    invoiceChoicePreselect: c.invoiceChoicePreselect,
+  };
+}
+
 /** All contacts as lightweight picker options (id, name, one-line address). */
 export async function getContactOptions() {
   const rows = await prisma.contact.findMany({ orderBy: { name: "asc" } });

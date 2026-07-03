@@ -61,6 +61,20 @@ export async function createContact(_prev: ContactFormState, formData: FormData)
   redirect(`/customers/${created.id}`);
 }
 
+export async function updateContactSettings(id: number, _prev: ContactFormState, formData: FormData): Promise<ContactFormState> {
+  await prisma.contact.update({
+    where: { id },
+    data: {
+      skipDeliveryAddressOnInvoice: formData.get("skipDeliveryAddressOnInvoice") === "on",
+      showDeliveryNameOnInvoice: formData.get("showDeliveryNameOnInvoice") === "on",
+      skipInvoiceOverSms: formData.get("skipInvoiceOverSms") === "on",
+      invoiceChoicePreselect: String(formData.get("invoiceChoicePreselect") ?? "Anvend standardindstilling"),
+    },
+  });
+  revalidatePath(`/customers/${id}`);
+  redirect(`/customers/${id}`);
+}
+
 export async function updateContact(id: number, _prev: ContactFormState, formData: FormData): Promise<ContactFormState> {
   const f = parse(formData);
   const data = toData(f);
