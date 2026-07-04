@@ -377,6 +377,23 @@ export async function getOrderDetail(id: number): Promise<OrderDetail | null> {
 
 // ---- Planner ---------------------------------------------------------------
 
+// ---- Catalogs: discount codes + standard tasks -----------------------------
+
+export async function getDiscountCodes() {
+  const rows = await prisma.discountCode.findMany({ orderBy: { id: "desc" } });
+  return rows.map((d) => ({ id: d.id, code: d.code, percent: d.percent, expiresAt: d.expiresAt ? ymd(d.expiresAt) : "" }));
+}
+
+export async function getStandardTasks(q?: string, includeInactive = false) {
+  const term = q?.trim();
+  const where: Prisma.StandardTaskWhereInput = {
+    ...(includeInactive ? {} : { active: true }),
+    ...(term ? { OR: [{ description: { contains: term } }, { category: { contains: term } }, { letter: { contains: term } }] } : {}),
+  };
+  const rows = await prisma.standardTask.findMany({ where, orderBy: [{ category: "asc" }, { description: "asc" }] });
+  return rows.map((t) => ({ id: t.id, category: t.category, description: t.description, letter: t.letter ?? "", presence: t.customerPresenceRequired, isSystem: t.isSystem, active: t.active }));
+}
+
 /** Planned holidays (Ferier) with display labels for the /holidays list. */
 export async function getHolidays() {
   const rows = await prisma.holidayWeek.findMany({ orderBy: { startWeek: "asc" } });
