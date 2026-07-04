@@ -1,5 +1,6 @@
 import { getDayProgram } from "@/lib/queries";
 import { WEEK_MONDAY } from "@/lib/calendar";
+import { requireSession, unauthorized } from "@/lib/api-auth";
 import type { NextRequest } from "next/server";
 
 // "Hent dagsprogram" (PDF) on /reports/day-pdf. Builds a minimal, valid single-
@@ -40,6 +41,7 @@ function buildPdf(lines: string[]): string {
 }
 
 export async function GET(req: NextRequest) {
+  if ((await requireSession()) == null) return unauthorized();
   const sp = req.nextUrl.searchParams;
   const date = /^\d{4}-\d{2}-\d{2}$/.test(sp.get("date") ?? "") ? sp.get("date")! : WEEK_MONDAY;
   const employee = sp.get("employee") || "Alle medarbejdere";

@@ -1,9 +1,28 @@
 // Signed session token, using Web Crypto HMAC so it works in BOTH the Node
 // runtime (server actions) and the Edge runtime (middleware). The token is
-// `<userId>.<hmac(userId)>`; there is no server-side session store.
+// `<userId>.<iat>.<exp>.<hmac(payload)>`; there is no server-side session store.
+// IMPORTANT: keep this file Edge-safe — Web Crypto only, no node:crypto,
+// no @prisma/client, no next/headers.
 export const SESSION_COOKIE = "kt_session";
 
-const SECRET = process.env.SESSION_SECRET || "karltoffel-dev-secret-change-me";
+/** Session lifetime in seconds (7 days). The login cookie maxAge must match. */
+export const SESSION_TTL_SECONDS = 604800;
+
+const SECRET = (() => {
+  const s = process.env.SESSION_SECRET;
+  // Enforce a strong secret at RUNTIME in production, but not during `next build`
+  // (which sets NODE_ENV=production and evaluates modules) so CI/build without the
+  // prod secret still compiles. The signing key is never exercised during build.
+  const isBuild = process.env.NEXT_PHASE === "phase-production-build";
+  if (process.env.NODE_ENV === "production" && !isBuild) {
+    if (!s || s.length < 32) {
+      throw new Error("SESSION_SECRET must be set to at least 32 random characters in production.");
+    }
+    return s;
+  }
+  return s || "karltoffel-dev-secret-change-me";
+})();
+
 const enc = new TextEncoder();
 
 function b64url(bytes: Uint8Array): string {
@@ -18,23 +37,30 @@ async function hmac(data: string): Promise<string> {
   return b64url(new Uint8Array(sig));
 }
 
-export async function signSession(userId: number): Promise<string> {
-  const data = String(userId);
-  return `${data}.${await hmac(data)}`;
+export async function signSession(userId: number, ttlSeconds: number = SESSION_TTL_SECONDS): Promise<string> {
+  const iat = Math.floor(Date.now() / 1000);
+  const exp = iat + ttlSeconds;
+  const payload = `${userId}.${iat}.${exp}`;
+  return `${payload}.${await hmac(payload)}`;
 }
 
-/** Returns the userId if the token's signature is valid, else null. */
+/** Returns the userId if the token's signature is valid and it has not expired, else null. */
 export async function verifySession(token: string | undefined): Promise<number | null> {
   if (!token) return null;
   const i = token.lastIndexOf(".");
   if (i < 0) return null;
-  const data = token.slice(0, i);
+  const payload = token.slice(0, i);
   const sig = token.slice(i + 1);
-  const expected = await hmac(data);
+  const expected = await hmac(payload);
   if (sig.length !== expected.length) return null;
   let diff = 0;
   for (let j = 0; j < sig.length; j++) diff |= sig.charCodeAt(j) ^ expected.charCodeAt(j);
   if (diff !== 0) return null;
-  const id = Number(data);
-  return Number.isFinite(id) ? id : null;
+  const parts = payload.split(".");
+  if (parts.length !== 3) return null;
+  const id = Number(parts[0]);
+  const exp = Number(parts[2]);
+  if (!Number.isFinite(id) || !Number.isFinite(exp)) return null;
+  if (exp <= Math.floor(Date.now() / 1000)) return null;
+  return id;
 }

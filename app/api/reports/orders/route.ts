@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/db";
+import { requireSession, unauthorized } from "@/lib/api-auth";
 import type { NextRequest } from "next/server";
 
 // Order report (CSV, Excel-openable) for a date range — the "Hent rapport"
@@ -13,6 +14,7 @@ function ymd(d: Date): string {
 }
 
 export async function GET(req: NextRequest) {
+  if ((await requireSession()) == null) return unauthorized();
   const sp = req.nextUrl.searchParams;
   const startStr = sp.get("start");
   const endStr = sp.get("end");

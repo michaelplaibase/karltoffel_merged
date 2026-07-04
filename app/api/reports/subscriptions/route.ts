@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/db";
+import { requireSession, unauthorized } from "@/lib/api-auth";
 
 // Subscription report (CSV) — the "Hent rapport" button under "Hent abonnementer"
 // on /reports/download. Exports all active subscriptions.
@@ -9,6 +10,7 @@ function csvCell(v: string | number): string {
 }
 
 export async function GET() {
+  if ((await requireSession()) == null) return unauthorized();
   const subs = await prisma.subscription.findMany({
     where: { active: true },
     include: { tasks: true, contact: true },

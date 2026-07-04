@@ -2,8 +2,9 @@
 
 import { prisma } from "@/lib/db";
 import { verifyPassword, hashPassword } from "@/lib/auth";
-import { signSession, verifySession, SESSION_COOKIE } from "@/lib/session";
-import { cookies } from "next/headers";
+import { signSession, verifySession, SESSION_COOKIE, SESSION_TTL_SECONDS } from "@/lib/session";
+import { underLimit, recordHit } from "@/lib/rate-limit";
+import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
 
 export type LoginState = { error?: string };
@@ -29,14 +30,22 @@ export async function login(_prev: LoginState, formData: FormData): Promise<Logi
   const password = String(formData.get("password") ?? "");
   if (!username || !password) return { error: "Udfyld brugernavn og adgangskode." };
 
+  // Rate-limit by username+IP; only FAILED attempts count, so a valid login is
+  // never penalised and one user can't be locked out by another's junk requests.
+  const ip = (await headers()).get("x-forwarded-for")?.split(",")[0]?.trim() || "local";
+  const rlKey = `login:${username}:${ip}`;
+  if (!underLimit(rlKey, 5)) return { error: "For mange forsøg. Prøv igen om lidt." };
+
   const user = await prisma.user.findUnique({ where: { username } });
   if (!user || !user.passwordHash || !verifyPassword(password, user.passwordHash)) {
+    recordHit(rlKey, 60_000);
     return { error: "Forkert brugernavn eller adgangskode." };
   }
 
   const token = await signSession(user.id);
   (await cookies()).set(SESSION_COOKIE, token, {
-    httpOnly: true, sameSite: "lax", path: "/", maxAge: 60 * 60 * 24 * 7,
+    httpOnly: true, sameSite: "lax", path: "/", maxAge: SESSION_TTL_SECONDS,
+    secure: process.env.NODE_ENV === "production",
   });
   redirect("/calendar");
 }
