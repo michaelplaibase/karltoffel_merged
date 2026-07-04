@@ -11,12 +11,13 @@ export default function OptimizationRunner({ dialogNote }: { dialogNote: string 
   const [pending, start] = useTransition();
   const [res, setRes] = useState<OptimizationResult | null>(null);
   const [confirm, setConfirm] = useState(false);
+  const [notify, setNotify] = useState("Både SMS og e-mail");
   const [done, setDone] = useState<string | null>(null);
 
   const run = () => start(async () => { setDone(null); setRes(await computeOptimization()); });
   const apply = () => start(async () => {
     if (!res) return;
-    const r = await applyOptimization(res.proposals.map((p) => p.pk), res.proposals[0]?.toWeek ?? 0);
+    const r = await applyOptimization(res.proposals.map((p) => p.pk), res.proposals[0]?.toWeek ?? 0, notify);
     setConfirm(false); setDone(r.message ?? r.error ?? null); setRes(await computeOptimization());
   });
 
@@ -69,7 +70,7 @@ export default function OptimizationRunner({ dialogNote }: { dialogNote: string 
             <div className="card-body">
               <h4 className="section-title">Bekræft flytning af abonnementer</h4>
               <div className="f2"><label className="col-label">Giv kunderne besked</label><div>
-                <select className="form-control form-control-sm" defaultValue="Både SMS og e-mail">
+                <select className="form-control form-control-sm" value={notify} onChange={(e) => setNotify(e.target.value)}>
                   {["Både SMS og e-mail", "Kun som SMS", "Kun som e-mail", "Som e-mail, hvis kunden har en email-adr., ellers som SMS", "Giv ikke besked"].map((o) => <option key={o}>{o}</option>)}
                 </select></div></div>
               <p style={{ color: "#c0392b", fontSize: 13 }}>Denne handling kan ikke fortrydes.</p>

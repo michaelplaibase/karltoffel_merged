@@ -119,8 +119,9 @@ export async function computeOptimization(): Promise<OptimizationResult> {
 }
 
 /** Apply the optimization proposals: move each subscription's start week and
- *  regenerate its future orders. Notification to the customer is stubbed. */
-export async function applyOptimization(pks: number[], toWeek: number): Promise<ActionState> {
+ *  regenerate its future orders. Customer notification (via `notify` channel) is
+ *  stubbed and reflected in the returned message. */
+export async function applyOptimization(pks: number[], toWeek: number, notify = "Både SMS og e-mail"): Promise<ActionState> {
   if (!pks.length) return { error: "Ingen abonnementer at flytte." };
   for (const pk of pks) {
     await prisma.subscription.update({ where: { id: pk }, data: { startWeek: `Uge ${toWeek}`, nextWeek: `Uge ${toWeek}` } });
@@ -130,7 +131,9 @@ export async function applyOptimization(pks: number[], toWeek: number): Promise<
   revalidatePath("/subscriptions");
   revalidatePath("/orders");
   revalidatePath("/calendar");
-  return { ok: true, message: `${pks.length} abonnement${pks.length === 1 ? "" : "er"} flyttet til uge ${toWeek}. Kunderne er orienteret (simuleret).` };
+  const n = pks.length;
+  const notice = notify === "Giv ikke besked" ? "Kunderne er ikke orienteret." : `Kunderne er orienteret via ${notify.toLowerCase()} (simuleret).`;
+  return { ok: true, message: `${n} abonnement${n === 1 ? "" : "er"} flyttet til uge ${toWeek}. ${notice}` };
 }
 
 // ---- Price adjustment (Prisjustering) --------------------------------------
