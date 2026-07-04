@@ -134,9 +134,10 @@
 .tm-flow .addons{display:flex;flex-direction:column;gap:18px}
 .tm-flow .addon-cat{font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--gul);opacity:.85;margin-bottom:9px}
 .tm-flow .addon-list{display:flex;flex-wrap:wrap;gap:10px}
-.tm-flow .addon{display:flex;align-items:center;gap:11px;background:rgba(255,248,123,.06);border:1.5px solid var(--bronze);border-radius:12px;padding:10px 14px;cursor:pointer;transition:background .15s,border-color .15s}
+/* pointer-events:auto ophæver sidens globale label{pointer-events:none} (vores chips er <label>). */
+.tm-flow .addon{display:flex;align-items:center;gap:11px;background:rgba(255,248,123,.06);border:1.5px solid var(--bronze);border-radius:12px;padding:10px 14px;cursor:pointer;pointer-events:auto;transition:background .15s,border-color .15s}
 .tm-flow .addon:hover{background:rgba(255,248,123,.15);border-color:var(--gul)}
-.tm-flow .addon input[type=checkbox]{width:20px;height:20px;accent-color:var(--gul);flex:none}
+.tm-flow .addon input[type=checkbox]{width:20px;height:20px;accent-color:var(--gul);flex:none;pointer-events:auto}
 .tm-flow .addon b{display:block;font-size:14px;color:var(--ivory)}
 .tm-flow .addon small{display:block;font-size:12px;color:var(--gul);opacity:.75}
 
