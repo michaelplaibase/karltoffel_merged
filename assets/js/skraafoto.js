@@ -37,14 +37,77 @@
     ]).then(function (res) {
       var a = res[0] && res[0][0], b = res[1] && res[1][0];
       if (!a || !b) throw new Error("Ingen adresse-match");
-      return { lon: a.x, lat: a.y, X: b.x, Y: b.y, betegnelse: a.betegnelse || adresse };
+      return { id: a.id, lon: a.x, lat: a.y, X: b.x, Y: b.y, betegnelse: a.betegnelse || adresse };
     });
   }
 
+  /* ---- 1b) Adresse-id → matrikel-polygon (grund) i EPSG:25832 ----
+     Adgangspunktet kan ligge på en fælles-/nabobygning; matriklen viser den
+     faktiske grund. Returnerer null hvis noget fejler → falder tilbage til punkt. */
+  function getParcel(id) {
+    if (!id) return Promise.resolve(null);
+    return fetch(CFG.dawaBase + "/adgangsadresser/" + id)
+      .then(function (r) { if (!r.ok) throw 0; return r.json(); })
+      .then(function (adr) {
+        var j = adr.jordstykke || {};
+        var ejerlav = j.ejerlav && j.ejerlav.kode, matr = j.matrikelnr;
+        if (!ejerlav || !matr) return null;
+        return fetch(CFG.dawaBase + "/jordstykker/" + ejerlav + "/" + matr + "?format=geojson&srid=25832")
+          .then(function (r) { if (!r.ok) throw 0; return r.json(); })
+          .then(function (gj) {
+            var g = gj.geometry || (gj.features && gj.features[0] && gj.features[0].geometry);
+            if (!g) return null;
+            var ring = g.type === "MultiPolygon" ? g.coordinates[0][0] : g.coordinates[0];
+            var cx = 0, cy = 0;
+            ring.forEach(function (p) { cx += p[0]; cy += p[1]; });
+            return { ring: ring, centroid: [cx / ring.length, cy / ring.length], matrikelnr: matr };
+          });
+      })
+      .catch(function () { return null; });
+  }
+
+  /* ---- 1c) Adresse-id → bygningens fodaftryk + visueltcenter (EPSG:25832) ----
+     Åben DAWA-kilde (GeoDanmark). Mere robust end matriklen ved lange indkørsler
+     og lejligheder, hvor adgangspunkt/matrikel-centroide kan ligge skævt.
+     Vælger den største bygning (hovedhuset) hvis flere returneres. Null ved fejl. */
+  function ringArea(ring) {
+    var a = 0;
+    for (var i = 0, n = ring.length; i < n; i++) {
+      var p = ring[i], q = ring[(i + 1) % n];
+      a += p[0] * q[1] - q[0] * p[1];
+    }
+    return Math.abs(a / 2);
+  }
+  function getBuilding(id) {
+    if (!id) return Promise.resolve(null);
+    return fetch(CFG.dawaBase + "/bygninger?adgangsadresseid=" + id + "&format=geojson&srid=25832")
+      .then(function (r) { if (!r.ok) throw 0; return r.json(); })
+      .then(function (gj) {
+        var feats = (gj && gj.features) || [];
+        if (!feats.length) return null;
+        var best = null, bestA = -1, bestRing = null;
+        feats.forEach(function (f) {
+          var g = f.geometry; if (!g) return;
+          var ring = g.type === "MultiPolygon" ? g.coordinates[0][0] : g.coordinates[0];
+          var a = ringArea(ring);
+          if (a > bestA) { bestA = a; best = f; bestRing = ring; }
+        });
+        if (!bestRing) return null;
+        var pr = best.properties || {};
+        var cx = pr.visueltcenter_x, cy = pr.visueltcenter_y;
+        if (cx == null || cy == null) {
+          cx = 0; cy = 0; bestRing.forEach(function (p) { cx += p[0]; cy += p[1]; });
+          cx /= bestRing.length; cy /= bestRing.length;
+        }
+        return { ring: bestRing, center: [cx, cy], area: bestA };
+      })
+      .catch(function () { return null; });
+  }
+
   /* ---- 2) Koordinat → bedste skråfoto-item via STAC /search (intersects i WGS84) ---- */
-  function findItem(lon, lat) {
+  function findItem(lon, lat, direction) {
     var collections = CFG.collections || [];
-    var want = CFG.direction || "north";
+    var want = direction || CFG.direction || "north";
 
     function tryCollection(i) {
       if (i >= collections.length) throw new Error("Ingen skråfoto-dækning");
@@ -130,6 +193,15 @@
     ];
   }
 
+  /* saul's getImageXY returnerer rækken med BUND-origo (OpenLayers y-op, som
+     Dataforsyningens egen viewer bruger). geotiff.js/canvas er TOP-origo, så
+     rækken skal spejles: row_raster = H - row_saul. Uden dette lander alt
+     spejlet om billedets vandrette midterlinje → forkert hus. */
+  function projectRaster(item, X, Y, Z) {
+    var p = getImageXY(item.props, X, Y, Z);
+    return [p[0], item.H - p[1]];
+  }
+
   /* ---- 5) COG → canvas. Med opts.center croppes et udsnit om huset og der
              tegnes en markør; ellers renderes hele rammen (fallback). ---- */
   function yiq(raster, k, rgba, j) {
@@ -137,6 +209,25 @@
     rgba[j] = Y + 1.402 * Cr;
     rgba[j + 1] = Y - 0.344136 * Cb - 0.714136 * Cr;
     rgba[j + 2] = Y + 1.772 * Cb;
+  }
+
+  function drawShape(ctx, pts, W, bold) {
+    if (!pts || pts.length < 3) return;
+    ctx.save();
+    ctx.lineJoin = "round";
+    ctx.beginPath();
+    pts.forEach(function (p, i) { i ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y); });
+    ctx.closePath();
+    if (bold) {                                   // bygningen — fyldt, kraftig gul
+      ctx.fillStyle = "rgba(255,248,123,0.15)"; ctx.fill();
+      ctx.lineWidth = Math.max(4.5, W * 0.008); ctx.strokeStyle = "rgba(76,55,24,0.85)"; ctx.stroke();
+      ctx.lineWidth = Math.max(2.5, W * 0.005); ctx.strokeStyle = "rgba(255,248,123,0.98)"; ctx.stroke();
+    } else {                                      // grunden — stiplet, diskret
+      ctx.setLineDash([Math.max(7, W * 0.014), Math.max(6, W * 0.011)]);
+      ctx.lineWidth = Math.max(2, W * 0.0045); ctx.strokeStyle = "rgba(76,55,24,0.55)"; ctx.stroke();
+      ctx.lineWidth = Math.max(1.5, W * 0.003); ctx.strokeStyle = "rgba(255,248,123,0.85)"; ctx.stroke();
+    }
+    ctx.restore();
   }
 
   function drawMarker(ctx, x, y, W) {
@@ -171,7 +262,15 @@
 
           // Vindue i fuld-opløsnings-koordinater.
           var win;
-          if (opts.center) {
+          if (opts.frame && opts.frame.length >= 3) {
+            // Ram huset/grunden ind med margin.
+            var oxs = opts.frame.map(function (p) { return p.col; });
+            var oys = opts.frame.map(function (p) { return p.row; });
+            var mnx = Math.min.apply(null, oxs), mxx = Math.max.apply(null, oxs);
+            var mny = Math.min.apply(null, oys), mxy = Math.max.apply(null, oys);
+            var pad = Math.max(mxx - mnx, mxy - mny) * 0.65 + 60;
+            win = [mnx - pad, mny - pad, mxx + pad, mxy + pad];
+          } else if (opts.center) {
             var half = Math.round((opts.spanPx || 1400) / 2), halfV = Math.round(half * 3 / 4);
             win = [opts.center.col - half, opts.center.row - halfV,
                    opts.center.col + half, opts.center.row + halfV];
@@ -211,10 +310,17 @@
             ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = "high";
             ctx.drawImage(offc, 0, 0, outW, outH);
 
-            if (opts.center) {
-              var mx = (opts.center.col / dec - ow[0]) / bw * outW;
-              var my = (opts.center.row / dec - ow[1]) / bh * outH;
-              if (mx > 0 && mx < outW && my > 0 && my < outH) drawMarker(ctx, mx, my, outW);
+            var toCanvas = function (col, row) {
+              return { x: (col / dec - ow[0]) / bw * outW, y: (row / dec - ow[1]) / bh * outH };
+            };
+            var proj = function (poly) { return poly.map(function (p) { return toCanvas(p.col, p.row); }); };
+            var hasB = opts.building && opts.building.length >= 3;
+            var hasP = opts.parcel && opts.parcel.length >= 3;
+            if (hasP) drawShape(ctx, proj(opts.parcel), outW, !hasB); // grund: stiplet hvis bygning vises, ellers kraftig
+            if (hasB) drawShape(ctx, proj(opts.building), outW, true);
+            if (!hasB && !hasP && opts.center) {
+              var m = toCanvas(opts.center.col, opts.center.row);
+              if (m.x > 0 && m.x < outW && m.y > 0 && m.y < outH) drawMarker(ctx, m.x, m.y, outW);
             }
             return { bw: bw, bh: bh };
           });
@@ -225,7 +331,7 @@
 
   /* ---- Orkestrering: kaldes fra tilbudsmotor.js ved adressevalg ---- */
   var lastReq = 0;
-  function skraafotoRender(adresse) {
+  function skraafotoRender(adresse, direction) {
     var card = ROOT && ROOT.querySelector(".foto-card");
     var canvas = el("sf-canvas");
     var badge = el("sf-badge");
@@ -240,40 +346,73 @@
     if (badge) badge.textContent = "Henter skråfoto …";
 
     var outW = Math.min(1024, Math.round((card.clientWidth || 640) * (window.devicePixelRatio || 1)));
-    var geo, item;
+    var geo, item, parcel, building;
 
     return geocode(adresse)
-      .then(function (g) { if (stale()) throw new Error("stale"); geo = g; return findItem(g.lon, g.lat); })
-      .then(function (it) {
+      .then(function (g) {
         if (stale()) throw new Error("stale");
-        if (!it.href) throw new Error("Item uden billed-URL");
-        item = it;
-        return terrainZ(geo.X, geo.Y);
+        geo = g;
+        return Promise.all([findItem(g.lon, g.lat, direction), getParcel(g.id), getBuilding(g.id)]);
+      })
+      .then(function (res) {
+        if (stale()) throw new Error("stale");
+        item = res[0]; parcel = res[1]; building = res[2];
+        if (!item.href) throw new Error("Item uden billed-URL");
+        // Terrænhøjde ved bygningen (ellers grund-centroide, ellers adgangspunkt).
+        var zc = building ? building.center : (parcel ? parcel.centroid : [geo.X, geo.Y]);
+        return terrainZ(zc[0], zc[1]);
       })
       .then(function (Z) {
         if (stale()) throw new Error("stale");
-        var center = null;
+        var inBounds = function (px) { return px[0] > 0 && px[0] < item.W && px[1] > 0 && px[1] < item.H; };
+        var projPoly = function (ring) {
+          return ring.map(function (c) { var px = projectRaster(item, c[0], c[1], Z); return { col: px[0], row: px[1] }; });
+        };
+        var buildingPx = null, parcelPx = null, center = null, frame = null;
         try {
-          var px = getImageXY(item.props, geo.X, geo.Y, Z);
-          if (px[0] > 0 && px[0] < item.W && px[1] > 0 && px[1] < item.H) {
-            center = { col: px[0], row: px[1] };
+          // Foretrukket: bygningens fodaftryk (tæt indramning, kraftigt omrids).
+          if (building) {
+            var bc = projectRaster(item, building.center[0], building.center[1], Z);
+            if (inBounds(bc)) { buildingPx = projPoly(building.ring); center = { col: bc[0], row: bc[1] }; frame = buildingPx; }
+          }
+          // Grunden tegnes altid (stiplet hvis bygning vises, ellers som hovedomrids).
+          if (parcel) {
+            parcelPx = projPoly(parcel.ring);
+            if (!center) {
+              var pc = projectRaster(item, parcel.centroid[0], parcel.centroid[1], Z);
+              if (inBounds(pc)) { center = { col: pc[0], row: pc[1] }; }
+            }
+            if (!frame) frame = parcelPx;
+          }
+          // Sidste udvej: adgangspunkt som markør.
+          if (!frame && !center) {
+            var apx = projectRaster(item, geo.X, geo.Y, Z);
+            if (inBounds(apx)) center = { col: apx[0], row: apx[1] };
           }
         } catch (e) { /* projektion fejlede → hele rammen */ }
         return renderCOG(item.href, canvas, {
-          center: center, spanPx: CFG.cropSpanPx || 1400, canvasW: outW
-        }).then(function () { return center; });
+          frame: frame, building: buildingPx, parcel: parcelPx, center: center,
+          spanPx: CFG.cropSpanPx || 1400, canvasW: outW
+        }).then(function () { return { building: buildingPx, parcel: parcelPx, center: center }; });
       })
-      .then(function (center) {
+      .then(function (r) {
         if (stale()) return false;
         card.classList.remove("sf-loading");
         card.classList.add("has-photo");
         var year = (item.collection.match(YEAR_RE) || [])[1] || "";
         var dir = DIR_DA[item.direction] || item.direction;
+        var matr = parcel && parcel.matrikelnr ? " (matr. " + parcel.matrikelnr + ")" : "";
         if (badge) badge.textContent = "Skråfoto " + year + " · set mod " + dir;
         if (note) {
-          note.textContent = center
-            ? "Rigtigt skråfoto fra Dataforsyningen (" + item.collection + "). Din ejendom er markeret."
-            : "Rigtigt skråfoto fra Dataforsyningen (" + item.collection + ").";
+          if (r.building) {
+            note.textContent = "Rigtigt skråfoto fra Dataforsyningen (" + item.collection + "). Din bygning er markeret, grunden" + matr + " stiplet.";
+          } else if (r.parcel) {
+            note.textContent = "Rigtigt skråfoto fra Dataforsyningen (" + item.collection + "). Din grund" + matr + " er markeret.";
+          } else if (r.center) {
+            note.textContent = "Rigtigt skråfoto fra Dataforsyningen (" + item.collection + "). Adressen er markeret.";
+          } else {
+            note.textContent = "Rigtigt skråfoto fra Dataforsyningen (" + item.collection + ").";
+          }
         }
         return true;
       })

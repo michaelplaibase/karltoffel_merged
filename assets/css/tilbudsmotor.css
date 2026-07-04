@@ -87,6 +87,7 @@
 .tm-flow .btn-nej{background:transparent;color:var(--ivory);border:2px solid var(--bronze)}
 .tm-flow .btn-ja:hover{filter:brightness(1.05)}
 .tm-flow .verify small{display:block;margin-top:16px;opacity:.65;font-size:13px}
+.tm-flow .sf-angle-hint{display:none;margin-top:14px;color:var(--gul);font-size:14px;opacity:.9}
 
 /* STEP 3: LØSNINGSLISTE */
 .tm-flow .losning{padding:28px 0 0}

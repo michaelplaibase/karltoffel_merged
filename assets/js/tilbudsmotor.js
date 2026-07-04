@@ -110,12 +110,35 @@ document.addEventListener("click",(e)=>{ if(!e.target.closest(".adr-wrap")) lukL
 /* ============ FLOW ============ */
 const DIG_MSGS = ["Graver din matrikel frem...","Måler grunden op...","Kigger på taget fra oven...","Tæller hækmeter...","Regner på det..."];
 
+/* "Nej, prøv igen" cykler gennem skråfotoets 4 optageretninger, så kunden kan
+   genkende sin ejendom fra en anden vinkel, før vi sender dem tilbage til
+   adressefeltet. Ejendommens data (og dermed prisen) afhænger ikke af fotoet. */
+const VERIFY_DIRS = ["north", "east", "south", "west"];
+let verifyDir = 0;
+const btnNej = $("btn-nej");
+const verifyHint = document.createElement("p");
+verifyHint.id = "sf-angle-hint";
+verifyHint.className = "sf-angle-hint";
+verifyHint.setAttribute("role", "status");
+verifyHint.setAttribute("aria-live", "polite");
+(function(){ const vb = ROOT.querySelector("#step-verify .verify-btns"); if(vb) vb.insertAdjacentElement("afterend", verifyHint); })();
+function setVerifyHint(t){ verifyHint.textContent = t || ""; verifyHint.style.display = t ? "block" : "none"; }
+setVerifyHint("");
+
+function renderSkraafoto(dir){
+  if(window.KARLTOFFEL && window.KARLTOFFEL.skraafotoRender){
+    window.KARLTOFFEL.skraafotoRender(state.adresse, dir);
+  }
+}
+
 function vaelgAdresse(titel){
   state.adresse = titel;
   lukListe();
   adrInput.value = titel;
+  verifyDir = 0; setVerifyHint("");
+  if(btnNej) btnNej.textContent = "Nej, prøv igen";
   /* Hent skråfoto parallelt med grave-animationen (fejler stille → SVG-fallback). */
-  if(window.KARLTOFFEL && window.KARLTOFFEL.skraafotoRender){ window.KARLTOFFEL.skraafotoRender(titel); }
+  renderSkraafoto(VERIFY_DIRS[0]);
   koerGravning(()=> visStep("step-verify"));
 }
 
@@ -150,7 +173,19 @@ function visStep(id){
 }
 
 $("btn-ja").addEventListener("click", ()=> visStep("step-losning"));
-$("btn-nej").addEventListener("click", ()=>{ adrInput.value = ""; visStep("step-adresse"); adrInput.focus(); });
+btnNej.addEventListener("click", ()=>{
+  verifyDir++;
+  if(verifyDir < VERIFY_DIRS.length){
+    /* Vis samme ejendom fra næste vinkel — bliv på verify-trinnet. */
+    renderSkraafoto(VERIFY_DIRS[verifyDir]);
+    setVerifyHint("Vi viser din ejendom fra en anden vinkel ("+(verifyDir+1)+" af "+VERIFY_DIRS.length+"). Genkender du den nu?");
+    btnNej.textContent = (verifyDir === VERIFY_DIRS.length-1) ? "Nej, skriv adressen igen" : "Nej, vis en anden vinkel";
+  } else {
+    /* Alle vinkler prøvet → tilbage til adressefeltet. */
+    verifyDir = 0; setVerifyHint(""); btnNej.textContent = "Nej, prøv igen";
+    adrInput.value = ""; visStep("step-adresse"); adrInput.focus();
+  }
+});
 $("btn-kontakt").addEventListener("click", ()=>{ $("cta-bar").classList.remove("on"); visStep("step-kontakt"); });
 $("btn-tilbage").addEventListener("click", ()=> visStep("step-losning"));
 
