@@ -1,4 +1,5 @@
 import { OPTIMIZATION as O } from "@/lib/funktioner";
+import OptimizationRunner from "@/components/OptimizationRunner";
 
 export const metadata = { title: "Abonnementsoptimering · Karltoffel" };
 
@@ -17,19 +18,7 @@ export default function OptimizationPage() {
         </div>
       </div>
 
-      <div className="card">
-        <div className="card-body">
-          <h4 className="section-title">Optimeringspotentiale</h4>
-          <div className="help-note">
-            <b>{O.availableTitle}</b>
-            <div style={{ marginTop: 6 }}>{O.availableMsg}</div>
-          </div>
-          <div className="row-actions" style={{ marginTop: 12 }}>
-            <button className="btn btn-primary" type="button">Kør optimering</button>
-          </div>
-          <div className="help-note" style={{ marginTop: 12 }}>{O.dialogNote}</div>
-        </div>
-      </div>
+      <OptimizationRunner dialogNote={O.dialogNote} />
     </div>
   );
 }
