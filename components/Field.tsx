@@ -1,4 +1,5 @@
 import type { SField } from "@/lib/settings-config";
+import SettingsButtons from "@/components/SettingsButtons";
 
 // Renders one settings field. Two modes:
 //  • display-only (no `name`) — used by the Funktioner pages that just show a config.
@@ -40,7 +41,7 @@ export function Control({ f, name, value }: { f: SField; name?: string; value?: 
   // Display-only rendering.
   switch (f.t) {
     case "buttons":
-      return <><div className="row-actions">{(f.btns ?? []).map(([txt, v], i) => <button key={i} className={`btn btn-${v} btn-sm`} type="button">{txt}</button>)}</div>{help}</>;
+      return <><SettingsButtons btns={f.btns ?? []} />{help}</>;
     case "toggle":
       return <><div style={{ display: "flex", alignItems: "center", gap: 10, paddingTop: 4 }}><span className={`toggle${f.on ? "" : " off"}`} /><span style={{ color: "var(--muted)", fontSize: 13 }}>{f.on ? "Ja" : "Nej"}</span></div>{help}</>;
     case "checks":
