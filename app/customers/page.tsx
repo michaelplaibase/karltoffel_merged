@@ -1,12 +1,19 @@
 import Link from "next/link";
 import { kr } from "@/lib/data";
 import { getContacts } from "@/lib/queries";
-import { CustomerCell, RowCaret } from "@/components/ui";
+import { deleteContact } from "@/app/actions/contacts";
+import { CustomerCell } from "@/components/ui";
+import RowMenu from "@/components/RowMenu";
+import { SearchBar, Pagination, paginate } from "@/components/ListControls";
 
 export const metadata = { title: "Kunder · Karltoffel" };
 
-export default async function CustomersPage() {
-  const contacts = await getContacts();
+export default async function CustomersPage({ searchParams }: { searchParams: Promise<{ q?: string; page?: string }> }) {
+  const sp = await searchParams;
+  const q = sp.q?.trim() || undefined;
+  const all = await getContacts(q);
+  const { slice, page, totalPages } = paginate(all, Number(sp.page) || 1);
+
   return (
     <div className="container-1140">
       <h1 className="page-title">Oversigt over kunder</h1>
@@ -16,10 +23,7 @@ export default async function CustomersPage() {
         <div className="card-body">
           <div className="toolbar">
             <Link href="/customers/new" className="btn btn-outline-primary">Opret ny kontakt</Link>
-            <div className="searchbar">
-              <input className="form-control" placeholder="Kundenr, navn, email, tlf, vejnavn, husnr., postnr." />
-              <button className="btn btn-light">Søg</button>
-            </div>
+            <SearchBar placeholder="Kundenr, navn, email, tlf, vejnavn, husnr., postnr." q={q} />
           </div>
 
           <div className="table-wrap">
@@ -35,9 +39,15 @@ export default async function CustomersPage() {
                 </tr>
               </thead>
               <tbody>
-                {contacts.map((c) => (
+                {slice.length === 0 ? (
+                  <tr><td colSpan={6}><div className="table-empty">Ingen kunder fundet</div></td></tr>
+                ) : slice.map((c) => (
                   <tr key={c.id}>
-                    <td><RowCaret actions={["Se kundedetaljer", "Slet kunde…"]} /></td>
+                    <td><RowMenu items={[
+                      { label: "Se kundedetaljer", href: `/customers/${c.id}` },
+                      { label: "Slet kunde…", danger: true, action: deleteContact.bind(null, c.id),
+                        confirm: { title: "Slet kunde", body: `Er du sikker på, at du vil slette ${c.name}? Alle kundens abonnementer, fastprisaftaler og ordrer slettes også.`, confirmLabel: "Slet kunde", note: "Denne handling kan ikke fortrydes." } },
+                    ]} /></td>
                     <td className="num">
                       <Link href={`/customers/${c.id}`}>{c.id}</Link>
                     </td>
@@ -51,11 +61,7 @@ export default async function CustomersPage() {
             </table>
           </div>
 
-          <div className="row-actions" style={{ justifyContent: "flex-end", marginTop: 14 }}>
-            <span className="btn btn-sm btn-light">forrige</span>
-            <span className="btn btn-sm btn-primary">1</span>
-            <span className="btn btn-sm btn-light">næste</span>
-          </div>
+          <Pagination path="/customers" page={page} totalPages={totalPages} q={q} />
         </div>
       </div>
     </div>

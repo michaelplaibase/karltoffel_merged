@@ -1,11 +1,17 @@
 import Link from "next/link";
 import { getFixedPrices } from "@/lib/queries";
-import { CatChip, RowCaret, MapLink, money } from "@/components/ui";
+import { deleteFixedPrice } from "@/app/actions/fixed-prices";
+import { CatChip, MapLink, money } from "@/components/ui";
+import RowMenu from "@/components/RowMenu";
+import { SearchBar, Pagination, paginate } from "@/components/ListControls";
 
 export const metadata = { title: "Fastprisaftaler · Karltoffel" };
 
-export default async function FixedPricesPage() {
-  const agreements = await getFixedPrices();
+export default async function FixedPricesPage({ searchParams }: { searchParams: Promise<{ q?: string; page?: string }> }) {
+  const sp = await searchParams;
+  const q = sp.q?.trim() || undefined;
+  const all = await getFixedPrices(q);
+  const { slice: agreements, page, totalPages } = paginate(all, Number(sp.page) || 1);
   return (
     <div className="container-1140">
       <h1 className="page-title">Oversigt over fastprisaftaler</h1>
@@ -18,10 +24,7 @@ export default async function FixedPricesPage() {
         <div className="card-body">
           <div className="toolbar">
             <Link href="/fixed-prices/new" className="btn btn-outline-primary">Opret ny fastprisaftale</Link>
-            <div className="searchbar">
-              <input className="form-control" placeholder="kundenavn, kundenr, email, tlf, vejnavn, husnr, postnr" />
-              <button className="btn btn-light">Søg</button>
-            </div>
+            <SearchBar placeholder="kundenavn, kundenr, email, tlf, vejnavn, husnr, postnr" q={q} />
           </div>
 
           <div className="table-wrap">
@@ -36,7 +39,11 @@ export default async function FixedPricesPage() {
                   <tr><td colSpan={5}><div className="table-empty">Ingen fastprisaftaler fundet</div></td></tr>
                 ) : agreements.map((f) => (
                   <tr key={f.id}>
-                    <td><RowCaret actions={["Rediger fastprisaftale", "Slet fastprisaftale…"]} /></td>
+                    <td><RowMenu items={[
+                      { label: "Rediger fastprisaftale", href: `/fixed-prices/${f.id}` },
+                      { label: "Slet fastprisaftale…", danger: true, action: deleteFixedPrice.bind(null, f.pk),
+                        confirm: { title: "Slet fastprisaftale", body: `Er du sikker på, at du vil slette fastprisaftale #${f.id}?`, confirmLabel: "Slet fastprisaftale", note: "Denne handling kan ikke fortrydes." } },
+                    ]} /></td>
                     <td className="num"><Link href={`/fixed-prices/${f.id}`}>{f.id}</Link></td>
                     <td>{f.deliveryAddress}<div><MapLink address={f.deliveryAddress} /></div></td>
                     <td>{f.tasks.map((t, i) => <div key={i}><CatChip category={t.category} letter={t.letter} /> {t.description}</div>)}</td>
@@ -46,6 +53,8 @@ export default async function FixedPricesPage() {
               </tbody>
             </table>
           </div>
+
+          <Pagination path="/fixed-prices" page={page} totalPages={totalPages} q={q} />
         </div>
       </div>
     </div>

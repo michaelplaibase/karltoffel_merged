@@ -1,7 +1,11 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getContactById, getSubscriptionsForContact, getFixedPricesForContact, getOrdersForContact } from "@/lib/queries";
-import { CatChip, MapLink, RowCaret, StatusPill, money } from "@/components/ui";
+import { CatChip, MapLink, StatusPill, money } from "@/components/ui";
+import RowMenu, { type RowMenuItem } from "@/components/RowMenu";
+import { stopSubscription } from "@/app/actions/subscriptions";
+import { deleteFixedPrice } from "@/app/actions/fixed-prices";
+import { deleteOrder } from "@/app/actions/orders";
 
 export default async function CustomerDetail({
   params,
@@ -69,7 +73,11 @@ export default async function CustomerDetail({
                   <tr><td colSpan={8}><div className="table-empty">Ingen abonnementer</div></td></tr>
                 ) : subs.map((s) => (
                   <tr key={s.id}>
-                    <td><RowCaret actions={["Rediger abonnement", "Stop abonnement…"]} /></td>
+                    <td><RowMenu items={[
+                      { label: "Rediger abonnement", href: `/subscriptions/${s.id}` },
+                      { label: "Stop abonnement…", danger: true, action: stopSubscription.bind(null, s.pk),
+                        confirm: { title: "Stop abonnement", body: `Vil du stoppe abonnement #${s.id}? Der oprettes ikke flere ordrer på abonnementet.`, confirmLabel: "Stop abonnement", note: "Denne handling kan ikke fortrydes." } },
+                    ]} /></td>
                     <td className="num"><Link href={`/subscriptions/${s.id}`}>{s.id}</Link></td>
                     <td>{s.deliveryAddress}</td>
                     <td>{s.tasks.map((t, i) => <div key={i}><CatChip category={t.category} letter={t.letter} /> {t.description}</div>)}</td>
@@ -99,7 +107,11 @@ export default async function CustomerDetail({
                   <tr><td colSpan={5}><div className="table-empty">Ingen fastprisaftaler fundet for kunden</div></td></tr>
                 ) : fixedPrices.map((f) => (
                   <tr key={f.id}>
-                    <td><RowCaret actions={["Rediger fastprisaftale", "Slet fastprisaftale…"]} /></td>
+                    <td><RowMenu items={[
+                      { label: "Rediger fastprisaftale", href: `/fixed-prices/${f.id}` },
+                      { label: "Slet fastprisaftale…", danger: true, action: deleteFixedPrice.bind(null, f.pk),
+                        confirm: { title: "Slet fastprisaftale", body: `Er du sikker på, at du vil slette fastprisaftale #${f.id}?`, confirmLabel: "Slet fastprisaftale", note: "Denne handling kan ikke fortrydes." } },
+                    ]} /></td>
                     <td className="num"><Link href={`/fixed-prices/${f.id}`}>{f.id}</Link></td>
                     <td>{f.deliveryAddress}</td>
                     <td>{f.tasks.map((t, i) => <div key={i}><CatChip category={t.category} letter={t.letter} /> {t.description}</div>)}</td>
@@ -122,18 +134,31 @@ export default async function CustomerDetail({
             <table className="data-table">
               <thead><tr><th style={{ width: 34 }} /><th>Ordre nr.</th><th>Leverings-dato</th><th>Opgaver</th><th>Pris</th><th>Medarbejder</th><th>Ordrestatus</th><th>Kilde</th></tr></thead>
               <tbody>
-                {orders.map((o) => (
+                {orders.length === 0 ? (
+                  <tr><td colSpan={8}><div className="table-empty">Ingen ordrer</div></td></tr>
+                ) : orders.map((o) => {
+                  const items: RowMenuItem[] = [
+                    { label: "Vis ordre i kalender", href: `/calendar?week=${o.weekMonday}` },
+                    { label: "Rediger ordre", href: `/orders/${o.id}` },
+                    { label: "Afslut ordre…", href: `/orders/${o.id}/complete` },
+                    { label: "Opret ny ordre", href: `/orders/new?for_contact=${o.contactId}` },
+                    ...(o.subscriptionNo ? [{ label: "Rediger abonnement", href: `/subscriptions/${o.subscriptionNo}` }] : []),
+                    { label: "Slet ordre…", danger: true, action: deleteOrder.bind(null, o.id),
+                      confirm: { title: "Slet ordre", body: `Er du sikker på, at du vil slette ordre #${o.id}?`, confirmLabel: "Slet ordre", note: "Denne handling kan ikke fortrydes." } },
+                  ];
+                  return (
                   <tr key={o.id}>
-                    <td><RowCaret actions={["Vis ordre i kalender", "Rediger ordre", "Afslut ordre…", "Slet ordre…", "Opret ny ordre", "Rediger abonnement"]} /></td>
+                    <td><RowMenu items={items} /></td>
                     <td className="num"><Link href={`/orders/${o.id}`}>{o.id}</Link></td>
                     <td className="num">{o.overdue ? <span className="badge badge-soft-warning">{o.deliveryDate}</span> : o.deliveryDate}</td>
                     <td>{o.tasks.map((t, i) => <div key={i}><CatChip category={t.category} letter={t.letter} /> {t.description}</div>)}</td>
                     <td className="num">{money(o.tasks.reduce((a, t) => a + t.price, 0))}</td>
                     <td>{o.employee}</td>
-                    <td><StatusPill status="Afventer levering" /></td>
-                    <td>{o.source}</td>
+                    <td><StatusPill status={o.status} /></td>
+                    <td>{o.subscriptionNo ? <Link href={`/subscriptions/${o.subscriptionNo}`}>{o.source}</Link> : o.source}</td>
                   </tr>
-                ))}
+                  );
+                })}
               </tbody>
             </table>
           </div>

@@ -1,13 +1,18 @@
 import Link from "next/link";
 import { getSubscriptions, getContacts } from "@/lib/queries";
-import { regenerateOrders } from "@/app/actions/subscriptions";
-import { CatChip, CustomerCell, RowCaret, MapLink, money } from "@/components/ui";
+import { regenerateOrders, stopSubscription } from "@/app/actions/subscriptions";
+import { CatChip, CustomerCell, MapLink, money } from "@/components/ui";
+import RowMenu from "@/components/RowMenu";
+import { SearchBar, Pagination, paginate } from "@/components/ListControls";
 
 export const metadata = { title: "Abonnementer · Karltoffel" };
 
-export default async function SubscriptionsPage() {
-  const [subscriptions, contacts] = await Promise.all([getSubscriptions(), getContacts()]);
+export default async function SubscriptionsPage({ searchParams }: { searchParams: Promise<{ q?: string; page?: string }> }) {
+  const sp = await searchParams;
+  const q = sp.q?.trim() || undefined;
+  const [all, contacts] = await Promise.all([getSubscriptions(q), getContacts()]);
   const contactById = (id: number) => contacts.find((c) => c.id === id);
+  const { slice: subscriptions, page, totalPages } = paginate(all, Number(sp.page) || 1);
   return (
     <div className="container-1140">
       <h1 className="page-title">Oversigt over abonnementer</h1>
@@ -20,10 +25,7 @@ export default async function SubscriptionsPage() {
             <form action={regenerateOrders} style={{ display: "inline" }}>
               <button type="submit" className="btn btn-light" title="Opret kommende ordrer for alle abonnementer">Generér kommende ordrer</button>
             </form>
-            <div className="searchbar">
-              <input className="form-control" placeholder="Abo. nr, dato, kundenavn, kundenr, email, tlf, vejnavn, husnr, postnr, opgave" />
-              <button className="btn btn-light">Søg</button>
-            </div>
+            <SearchBar placeholder="Abo. nr, dato, kundenavn, kundenr, email, tlf, vejnavn, husnr, postnr, opgave" q={q} />
           </div>
 
           <div className="table-wrap">
@@ -35,11 +37,17 @@ export default async function SubscriptionsPage() {
                 </tr>
               </thead>
               <tbody>
-                {subscriptions.map((s) => {
+                {subscriptions.length === 0 ? (
+                  <tr><td colSpan={9}><div className="table-empty">Ingen abonnementer fundet</div></td></tr>
+                ) : subscriptions.map((s) => {
                   const c = contactById(s.contactId);
                   return (
                     <tr key={s.id}>
-                      <td><RowCaret actions={["Rediger abonnement", "Stop abonnement…"]} /></td>
+                      <td><RowMenu items={[
+                        { label: "Rediger abonnement", href: `/subscriptions/${s.id}` },
+                        { label: "Stop abonnement…", danger: true, action: stopSubscription.bind(null, s.pk),
+                          confirm: { title: "Stop abonnement", body: `Vil du stoppe abonnement #${s.id}? Der oprettes ikke flere ordrer på abonnementet.`, confirmLabel: "Stop abonnement", note: "Denne handling kan ikke fortrydes." } },
+                      ]} /></td>
                       <td className="num"><Link href={`/subscriptions/${s.id}`}>{s.id}</Link></td>
                       <td>{c ? <CustomerCell contact={c} withMap={false} /> : null}</td>
                       <td>{s.deliveryAddress}<div><MapLink address={s.deliveryAddress} /></div></td>
@@ -54,6 +62,8 @@ export default async function SubscriptionsPage() {
               </tbody>
             </table>
           </div>
+
+          <Pagination path="/subscriptions" page={page} totalPages={totalPages} q={q} />
         </div>
       </div>
     </div>

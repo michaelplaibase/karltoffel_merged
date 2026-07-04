@@ -52,6 +52,8 @@ export type Order = {
   employee: string;
   status: string;
   source: string;
+  weekMonday?: string;         // Monday (ISO) of the order's week — for "Vis ordre i kalender"
+  subscriptionNo?: number | null; // source subscription "Abo. nr." — for "Rediger abonnement"
 };
 
 export const kr = (n: number | null) => (n == null ? "-" : "kr. " + n.toLocaleString("da-DK"));

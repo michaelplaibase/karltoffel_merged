@@ -1,12 +1,18 @@
 import Link from "next/link";
 import { getOrders, getContacts } from "@/lib/queries";
-import { CatChip, CustomerCell, RowCaret, MapLink, StatusPill, money } from "@/components/ui";
+import { deleteOrder } from "@/app/actions/orders";
+import { CatChip, CustomerCell, MapLink, StatusPill, money } from "@/components/ui";
+import RowMenu, { type RowMenuItem } from "@/components/RowMenu";
+import { SearchBar, Pagination, paginate } from "@/components/ListControls";
 
 export const metadata = { title: "Ordrer · Karltoffel" };
 
-export default async function OrdersPage() {
-  const [orders, contacts] = await Promise.all([getOrders(), getContacts()]);
+export default async function OrdersPage({ searchParams }: { searchParams: Promise<{ q?: string; page?: string }> }) {
+  const sp = await searchParams;
+  const q = sp.q?.trim() || undefined;
+  const [all, contacts] = await Promise.all([getOrders(q), getContacts()]);
   const contactById = (id: number) => contacts.find((c) => c.id === id);
+  const { slice: orders, page, totalPages } = paginate(all, Number(sp.page) || 1);
   return (
     <div className="container-1140">
       <h1 className="page-title">Oversigt over ordrer</h1>
@@ -15,10 +21,7 @@ export default async function OrdersPage() {
       <div className="card">
         <div className="card-body">
           <div className="toolbar">
-            <div className="searchbar">
-              <input className="form-control" placeholder="Ordrenr, dato, kundenavn, kundenr, email, tlf, vejnavn, husnr, postnr, opgave" />
-              <button className="btn btn-light">Søg</button>
-            </div>
+            <SearchBar placeholder="Ordrenr, dato, kundenavn, kundenr, email, tlf, vejnavn, husnr, postnr, opgave" q={q} />
           </div>
 
           <div className="table-wrap">
@@ -30,11 +33,22 @@ export default async function OrdersPage() {
                 </tr>
               </thead>
               <tbody>
-                {orders.map((o) => {
+                {orders.length === 0 ? (
+                  <tr><td colSpan={10}><div className="table-empty">Ingen ordrer fundet</div></td></tr>
+                ) : orders.map((o) => {
                   const c = contactById(o.contactId);
+                  const items: RowMenuItem[] = [
+                    { label: "Vis ordre i kalender", href: `/calendar?week=${o.weekMonday}` },
+                    { label: "Rediger ordre", href: `/orders/${o.id}` },
+                    { label: "Afslut ordre…", href: `/orders/${o.id}/complete` },
+                    { label: "Opret ny ordre", href: `/orders/new?for_contact=${o.contactId}` },
+                    ...(o.subscriptionNo ? [{ label: "Rediger abonnement", href: `/subscriptions/${o.subscriptionNo}` }] : []),
+                    { label: "Slet ordre…", danger: true, action: deleteOrder.bind(null, o.id),
+                      confirm: { title: "Slet ordre", body: `Er du sikker på, at du vil slette ordre #${o.id}?`, confirmLabel: "Slet ordre", note: "Denne handling kan ikke fortrydes." } },
+                  ];
                   return (
                     <tr key={o.id}>
-                      <td><RowCaret actions={["Vis ordre i kalender", "Rediger ordre", "Afslut ordre…", "Slet ordre…", "Opret ny ordre", "Rediger abonnement"]} /></td>
+                      <td><RowMenu items={items} /></td>
                       <td className="num"><Link href={`/orders/${o.id}`}>{o.id}</Link></td>
                       <td>{c ? <CustomerCell contact={c} withMap={false} /> : null}</td>
                       <td>{o.deliveryAddress}<div><MapLink address={o.deliveryAddress} /></div></td>
@@ -45,13 +59,15 @@ export default async function OrdersPage() {
                       <td className="num">{money(o.tasks.reduce((a, t) => a + t.price, 0))}</td>
                       <td>{o.employee}</td>
                       <td><StatusPill status={o.status} /></td>
-                      <td>{o.source}</td>
+                      <td>{o.subscriptionNo ? <Link href={`/subscriptions/${o.subscriptionNo}`}>{o.source}</Link> : o.source}</td>
                     </tr>
                   );
                 })}
               </tbody>
             </table>
           </div>
+
+          <Pagination path="/orders" page={page} totalPages={totalPages} q={q} />
         </div>
       </div>
     </div>

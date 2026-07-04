@@ -61,6 +61,24 @@ export async function createContact(_prev: ContactFormState, formData: FormData)
   redirect(`/customers/${created.id}`);
 }
 
+/** Delete a customer and everything attached to it (orders, subscriptions,
+ *  fixed-price agreements and their task lines) in one transaction. */
+export async function deleteContact(id: number): Promise<void> {
+  await prisma.$transaction([
+    prisma.taskLine.deleteMany({ where: { OR: [
+      { order: { contactId: id } },
+      { subscription: { contactId: id } },
+      { fixedPrice: { contactId: id } },
+    ] } }),
+    prisma.order.deleteMany({ where: { contactId: id } }),
+    prisma.subscription.deleteMany({ where: { contactId: id } }),
+    prisma.fixedPriceAgreement.deleteMany({ where: { contactId: id } }),
+    prisma.contact.delete({ where: { id } }),
+  ]);
+  revalidatePath("/customers");
+  redirect("/customers");
+}
+
 export async function updateContactSettings(id: number, _prev: ContactFormState, formData: FormData): Promise<ContactFormState> {
   await prisma.contact.update({
     where: { id },

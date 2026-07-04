@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { categoryColor } from "@/lib/categories";
 import type { Contact, TaskLine } from "@/lib/data";
 
@@ -28,18 +29,10 @@ export function StatusPill({ status }: { status: string }) {
   return <span className={`badge ${cls}`}>{status}</span>;
 }
 
-export function RowCaret({ actions }: { actions: string[] }) {
-  return (
-    <span className="rowcaret" title={actions.join(" · ")}>
-      <i className="bi bi-three-dots-vertical" />
-    </span>
-  );
-}
-
 export function CustomerCell({ contact, withMap = true }: { contact: Contact; withMap?: boolean }) {
   return (
     <div className="cust">
-      <b className="l">{contact.name}</b>
+      <b className="l"><Link href={`/customers/${contact.id}`} style={{ color: "inherit" }}>{contact.name}</Link></b>
       <span className="l muted">{contact.street}, {contact.city}</span>
       {contact.att && contact.att !== "—" ? <span className="l muted">Att: {contact.att}</span> : null}
       <span className="l muted">{contact.phone} · {contact.email}</span>

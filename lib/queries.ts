@@ -82,7 +82,26 @@ function mapOrder(o: OrderRow): Order {
     employee,
     status: o.status,
     source,
+    weekMonday: mondayISOOf(o.plannedAt),
+    subscriptionNo: o.subscription?.displayNo ?? null,
   };
+}
+
+// ---- free-text search (single `q` param, like the portal's list search) -----
+
+/** Contact-field OR clause reused by every list that joins a contact. */
+function contactOr(q: string): Prisma.ContactWhereInput {
+  return { OR: [
+    { name: { contains: q } }, { companyName: { contains: q } },
+    { email: { contains: q } }, { phone: { contains: q } },
+    { street: { contains: q } }, { city: { contains: q } }, { att: { contains: q } },
+  ] };
+}
+/** Parse "#123, #124" style id lists (used by subscription→orders deep links). */
+function parseIdList(q: string): number[] | null {
+  if (!q.includes("#")) return null;
+  const ids = q.split(/[\s,]+/).filter((t) => t.startsWith("#")).map((t) => Number(t.slice(1))).filter((n) => Number.isFinite(n) && n > 0);
+  return ids.length ? ids : null;
 }
 
 // ---- date helpers (UTC-stable so display doesn't drift with server TZ) ------
@@ -90,6 +109,12 @@ function mapOrder(o: OrderRow): Order {
 /** Order dates are stored at UTC midday; format the calendar date from UTC parts. */
 function ymd(d: Date): string {
   return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}-${String(d.getUTCDate()).padStart(2, "0")}`;
+}
+/** Monday (ISO yyyy-mm-dd, UTC) of the week containing `d` — for "Vis ordre i kalender". */
+function mondayISOOf(d: Date): string {
+  const wd = (d.getUTCDay() + 6) % 7; // 0 = Monday
+  const midnight = Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate());
+  return ymd(new Date(midnight - wd * 864e5));
 }
 function isOverdue(plannedAt: Date, status: string): boolean {
   if (status === "Afsluttet") return false;
@@ -105,9 +130,15 @@ function postalOf(address: string): string {
 // ---- Contacts --------------------------------------------------------------
 
 /** Customers = contacts with ≥1 order or subscription (per the portal's rule). */
-export async function getContacts(): Promise<Contact[]> {
+export async function getContacts(q?: string): Promise<Contact[]> {
+  const has = { OR: [{ orders: { some: {} } }, { subscriptions: { some: {} } }] };
+  const term = q?.trim();
+  const num = term && /^\d+$/.test(term) ? Number(term) : null;
+  const search: Prisma.ContactWhereInput | undefined = term
+    ? { OR: [...contactOr(term).OR!, ...(num ? [{ id: num }] : [])] }
+    : undefined;
   const rows = await prisma.contact.findMany({
-    where: { OR: [{ orders: { some: {} } }, { subscriptions: { some: {} } }] },
+    where: search ? { AND: [has, search] } : has,
     include: { _count: { select: { subscriptions: true } } },
     orderBy: { id: "desc" },
   });
@@ -161,9 +192,17 @@ export async function getContactOptions() {
 
 // ---- Subscriptions ---------------------------------------------------------
 
-export async function getSubscriptions(): Promise<Subscription[]> {
+export async function getSubscriptions(q?: string): Promise<Subscription[]> {
+  const term = q?.trim();
+  const num = term && /^\d+$/.test(term) ? Number(term) : null;
+  const search: Prisma.SubscriptionWhereInput | undefined = term ? { OR: [
+    ...(num ? [{ displayNo: num }] : []),
+    { deliveryAddress: { contains: term } }, { nextWeek: { contains: term } }, { baseInterval: { contains: term } },
+    { contact: contactOr(term) },
+    { tasks: { some: { description: { contains: term } } } },
+  ] } : undefined;
   const rows = await prisma.subscription.findMany({
-    where: { active: true },
+    where: search ? { AND: [{ active: true }, search] } : { active: true },
     include: { tasks: true },
     orderBy: { displayNo: "desc" },
   });
@@ -227,8 +266,17 @@ function mapFixedPrice(f: FixedRow): FixedPrice {
   };
 }
 
-export async function getFixedPrices(): Promise<FixedPrice[]> {
+export async function getFixedPrices(q?: string): Promise<FixedPrice[]> {
+  const term = q?.trim();
+  const num = term && /^\d+$/.test(term) ? Number(term) : null;
+  const where: Prisma.FixedPriceAgreementWhereInput | undefined = term ? { OR: [
+    ...(num ? [{ displayNo: num }] : []),
+    { deliveryAddress: { contains: term } },
+    { contact: contactOr(term) },
+    { tasks: { some: { description: { contains: term } } } },
+  ] } : undefined;
   const rows = await prisma.fixedPriceAgreement.findMany({
+    where,
     include: { tasks: true, contact: true },
     orderBy: { displayNo: "desc" },
   });
@@ -263,8 +311,19 @@ export async function getFixedPriceEditData(displayNo: number) {
 
 const orderInclude = { tasks: true, subscription: true, employee: true } as const;
 
-export async function getOrders(): Promise<Order[]> {
-  const rows = await prisma.order.findMany({ include: orderInclude, orderBy: { id: "desc" } });
+export async function getOrders(q?: string): Promise<Order[]> {
+  const term = q?.trim();
+  const idList = term ? parseIdList(term) : null;
+  const num = term && /^\d+$/.test(term) ? Number(term) : null;
+  const where: Prisma.OrderWhereInput | undefined = idList
+    ? { id: { in: idList } }
+    : term ? { OR: [
+        ...(num ? [{ id: num }] : []),
+        { deliveryAddress: { contains: term } }, { status: { contains: term } },
+        { contact: contactOr(term) },
+        { tasks: { some: { description: { contains: term } } } },
+      ] } : undefined;
+  const rows = await prisma.order.findMany({ where, include: orderInclude, orderBy: { id: "desc" } });
   return rows.map(mapOrder);
 }
 
