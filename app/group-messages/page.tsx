@@ -1,9 +1,14 @@
-import { Field } from "@/components/Field";
 import { GROUP_MESSAGES as G } from "@/lib/funktioner";
+import { getEmployeeNames } from "@/lib/queries";
+import { weekOptions } from "@/lib/weeks";
+import GroupMessageForm from "@/components/GroupMessageForm";
 
 export const metadata = { title: "Gruppebeskeder · Karltoffel" };
 
-export default function GroupMessagesPage() {
+export default async function GroupMessagesPage() {
+  const employees = (await getEmployeeNames()).filter((n) => n !== "Ingen");
+  const weekOpts = weekOptions(new Date(), 13, -4); // 4 weeks back → ~2 months ahead
+
   return (
     <div className="container-1140" style={{ maxWidth: 900 }}>
       <h1 className="page-title">{G.title}</h1>
@@ -20,18 +25,7 @@ export default function GroupMessagesPage() {
         </div>
       </div>
 
-      <div className="card">
-        <div className="card-body">
-          <h4 className="section-title">{G.createTitle}</h4>
-          <p className="muted" style={{ marginBottom: 20 }}>{G.createIntro}</p>
-          {G.fields.map((f, i) => <Field key={i} f={f} />)}
-          <hr className="section-hr" />
-          <div className="row-actions">
-            <button className="btn btn-primary">{G.sendLabel}</button>
-            <button className="btn btn-outline-secondary">Vis liste over modtagere</button>
-          </div>
-        </div>
-      </div>
+      <GroupMessageForm weekOpts={weekOpts} employees={employees} />
     </div>
   );
 }
