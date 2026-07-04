@@ -105,20 +105,21 @@
 
 .tm-flow .socio{margin:30px 4px 12px;font-size:15px;color:var(--gul)}
 .tm-flow .rows{display:flex;flex-direction:column;gap:12px}
-.tm-flow .row{display:grid;grid-template-columns:auto 1fr auto auto;gap:16px;align-items:center;background:#5a4322;border-radius:16px;padding:16px 18px;transition:opacity .2s}
-.tm-flow .row.off{opacity:.45}
-.tm-flow .row input[type=checkbox]{width:24px;height:24px;accent-color:var(--gul)}
+.tm-flow .row{display:grid;grid-template-columns:auto 1fr auto auto;gap:16px;align-items:center;background:var(--gul);color:var(--brun);border-radius:16px;padding:16px 18px}
+.tm-flow .row--incl{background:#fbf3ad}
+.tm-flow .row input[type=checkbox]{width:24px;height:24px;accent-color:var(--brun)}
 .tm-flow .row .navn b{font-size:17px}
-.tm-flow .row .navn small{display:block;font-size:12.5px;opacity:.75;margin-top:2px}
+.tm-flow .row .navn small{display:block;font-size:12.5px;color:var(--bronze);margin-top:2px}
 .tm-flow .qty{display:flex;align-items:center;gap:6px;font-size:13px}
-.tm-flow .qty input{width:64px;padding:7px 8px;border-radius:8px;border:0;background:var(--ivory);color:var(--brun);font-size:14px;text-align:right}
+.tm-flow .qty input{width:64px;padding:7px 8px;border-radius:8px;border:1.5px solid var(--bronze);background:#fff;color:var(--brun);font-size:14px;text-align:right}
 .tm-flow .freq{display:flex;align-items:center;gap:10px;justify-self:end}
-.tm-flow .freq button{width:34px;height:34px;border-radius:10px;border:0;background:var(--gul);color:var(--brun);font-size:19px;font-weight:700;line-height:1}
-.tm-flow .freq button:disabled{opacity:.35;cursor:default}
+.tm-flow .freq button{width:34px;height:34px;border-radius:10px;border:0;background:var(--brun);color:var(--gul);font-size:19px;font-weight:700;line-height:1}
+.tm-flow .freq button:disabled{opacity:.3;cursor:default}
 .tm-flow .freq .fv{min-width:74px;text-align:center;font-size:14px}
 .tm-flow .row .pris{justify-self:end;text-align:right;min-width:110px}
 .tm-flow .row .pris b{font-size:17px}
-.tm-flow .row .pris small{display:block;font-size:11.5px;opacity:.7}
+.tm-flow .row .pris small{display:block;font-size:11.5px;color:var(--bronze)}
+.tm-flow .row--incl .pris b{font-size:13px;font-weight:600;color:var(--bronze)}
 @media (max-width:720px){
   .tm-flow .row{grid-template-columns:auto 1fr;grid-template-areas:"chk navn" "chk qty" "freq pris"}
   .tm-flow .row input[type=checkbox]{grid-area:chk}
@@ -127,6 +128,17 @@
   .tm-flow .fakta,.tm-flow .regnestrimmel{grid-template-columns:repeat(2,1fr)}
 }
 .tm-flow .gaps{margin:26px 4px 0;font-size:13px;opacity:.7}
+
+/* "Vi tilbyder også" — tilvalg som kompakte chips */
+.tm-flow .addons-intro{margin:30px 4px 14px;font-size:15px;color:var(--gul)}
+.tm-flow .addons{display:flex;flex-direction:column;gap:18px}
+.tm-flow .addon-cat{font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--gul);opacity:.85;margin-bottom:9px}
+.tm-flow .addon-list{display:flex;flex-wrap:wrap;gap:10px}
+.tm-flow .addon{display:flex;align-items:center;gap:11px;background:rgba(255,248,123,.06);border:1.5px solid var(--bronze);border-radius:12px;padding:10px 14px;cursor:pointer;transition:background .15s,border-color .15s}
+.tm-flow .addon:hover{background:rgba(255,248,123,.15);border-color:var(--gul)}
+.tm-flow .addon input[type=checkbox]{width:20px;height:20px;accent-color:var(--gul);flex:none}
+.tm-flow .addon b{display:block;font-size:14px;color:var(--ivory)}
+.tm-flow .addon small{display:block;font-size:12px;color:var(--gul);opacity:.75}
 
 /* fixed pris-bar — kun synlig på løsnings-trinnet */
 .tm-flow .cta-bar{position:fixed;left:0;right:0;bottom:0;background:var(--gul);color:var(--brun);display:none;z-index:60}
