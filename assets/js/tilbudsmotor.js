@@ -11,36 +11,45 @@ if(!ROOT) return;
 const $ = (id) => ROOT.querySelector("#" + id);
 
 /* ============ DATA: priser fra WorkMaker Produkter ============ */
-/* De prissatte linjer matcher WorkMaker-CSV (04.07.2026). pris:null = enten
-   "Indeholdt" (pakke:true) eller "Pris ved besøg" (pakke:false). robot/husgarage/
-   stub/drivhus/fliserens/sne findes endnu ikke som produkter i WorkMaker. */
+/* De prissatte linjer matcher WorkMaker-CSV (04.07.2026). wm = verbatimt
+   produktnavn i WorkMaker-CSV (eneste join-nøgle — kun R0–R3 har Varenr),
+   inkl. CSV'ens stavefejl: "Tagrenerens 2-plans hus", "Vindeuspudsning
+   Indvendig pr glas", "Ukrudt bekæmpelse på belægningsarealer".
+   wm = null ⇒ findes endnu ikke i WorkMaker; opret som 0-kr placeholder
+   (mønster: "Soignering af bede = 0 kr."): robot, husgarage, stub,
+   drivhus, fliserens, sne.
+   alge → CSV "Algebehandling af tag"; algeflis → CSV "Algebehandling af
+   belægning". beskaering er prissat fra CSV "Beskæring Små træer /
+   Frugttræer" (500 kr). pris:null = "Indeholdt" (pakke:true) eller
+   "Pris ved besøg" (pakke:false). */
 /*PRICING-START*/
 const PRODUCTS = [
   /* ---- Villapakken (standard) ---- */
-  {id:"vinduer",  navn:"Vinduespudsning udvendig",       enhed:"glas",       pris:15.30, note:"Udvendige ruder",                 qty:14,  freq:6,  fmax:12, on:true,  pakke:true, kat:"pakke"},
-  {id:"haek",     navn:"Hækklipning",                    enhed:"m hæk",      pris:27.50, note:"1 side, under 220 cm",            qty:65,  freq:1,  fmax:3,  on:true,  pakke:true, kat:"pakke"},
-  {id:"green",    navn:"Greenkeeper græspleje",          enhed:"m² græs",    pris:2.30,  note:"Gødning og pleje af plænen",      qty:450, freq:4,  fmax:6,  on:true,  pakke:true, kat:"pakke"},
-  {id:"alge",     navn:"Algerens tag, facade & fliser",  enhed:"m² tag",     pris:4.20,  note:"Tag, facade, fliser og terrasse", qty:120, freq:1,  fmax:2,  on:true,  pakke:true, kat:"pakke"},
-  {id:"tagrender",navn:"Tagrenderens",                   enhed:"m tagrende", pris:18.00, note:"Stueplan / 1-plans hus",          qty:24,  freq:1,  fmax:2,  on:true,  pakke:true, kat:"pakke"},
-  {id:"robot",    navn:"Robotplæneklipper service",      enhed:"",           pris:null,  note:"Indeholdt i pakken",              qty:1,   freq:2,  fmax:4,  on:true,  pakke:true, kat:"pakke"},
-  {id:"husgarage",navn:"Vask af hus/garage ned",         enhed:"",           pris:null,  note:"Indeholdt i pakken",              qty:1,   freq:1,  fmax:2,  on:true,  pakke:true, kat:"pakke"},
-  {id:"service",  navn:"Servicering af vinduer og døre", enhed:"",           pris:null,  note:"Indeholdt i pakken",              qty:1,   freq:1,  fmax:2,  on:true,  pakke:true, kat:"pakke"},
+  {id:"vinduer",  navn:"Vinduespudsning udvendig",       enhed:"glas",       pris:15.30, note:"Udvendige ruder",                 qty:14,  freq:6,  fmax:12, on:true,  pakke:true, kat:"pakke", wm:"Vinduespudsning udvendig pr glas"},
+  {id:"haek",     navn:"Hækklipning",                    enhed:"m hæk",      pris:27.50, note:"1 side, under 220 cm",            qty:65,  freq:1,  fmax:3,  on:true,  pakke:true, kat:"pakke", wm:"Hækklipning 1 side pr meter Under 220 cm"},
+  {id:"green",    navn:"Greenkeeper græspleje",          enhed:"m² plæne",   pris:2.30,  note:"Gødning og pleje af plænen",      qty:450, freq:4,  fmax:6,  on:true,  pakke:true, kat:"pakke", wm:"Greenkeeper græspleje"},
+  {id:"alge",     navn:"Algebehandling af tag",          enhed:"m² tag",     pris:4.20,  note:"Mos og alger, beregnet på skråt tagareal", qty:120, freq:1, fmax:2, on:true, pakke:true, kat:"pakke", wm:"Algebehandling af tag"},
+  {id:"tagrender",navn:"Tagrenderens",                   enhed:"m tagrende", pris:18.00, note:"Stueplan / 1-plans hus",          qty:24,  freq:1,  fmax:2,  on:true,  pakke:true, kat:"pakke", wm:"Tagrenderens Stueplan / 1-plans hus"},
+  {id:"robot",    navn:"Robotplæneklipper service",      enhed:"",           pris:null,  note:"Indeholdt i pakken",              qty:1,   freq:2,  fmax:4,  on:true,  pakke:true, kat:"pakke", wm:null},
+  {id:"husgarage",navn:"Vask af hus/garage ned",         enhed:"",           pris:null,  note:"Indeholdt i pakken",              qty:1,   freq:1,  fmax:2,  on:true,  pakke:true, kat:"pakke", wm:null},
+  {id:"service",  navn:"Servicering af vinduer og døre", enhed:"",           pris:null,  note:"Indeholdt i pakken",              qty:1,   freq:1,  fmax:2,  on:true,  pakke:true, kat:"pakke", wm:"Service af vinduer og døre"},
 
   /* ---- Tilvalg: "Vi tilbyder også" (off som standard, gruppe = kat) ---- */
-  {id:"ukrudt",    navn:"Ukrudtsbekæmpelse på belægning",         enhed:"m² fliser", pris:1.50,   note:"Vi holder fugerne rene",  qty:60,  freq:5,  fmax:8,  on:false, pakke:false, kat:"groen"},
-  {id:"graes",     navn:"Græsslåning",                            enhed:"m² græs",   pris:1.60,   note:"Klip i sæsonen",          qty:450, freq:16, fmax:26, on:false, pakke:false, kat:"groen"},
-  {id:"beskaering",navn:"Beskæring af buske, træer og planter",   enhed:"",          pris:null,   note:"Pris ved besøg",          qty:1,   freq:1,  fmax:2,  on:false, pakke:false, kat:"groen"},
-  {id:"soignering",navn:"Soignering af bede",                     enhed:"",          pris:null,   note:"Pris ved besøg",          qty:1,   freq:4,  fmax:12, on:false, pakke:false, kat:"groen"},
-  {id:"stub",      navn:"Stubfræsning",                           enhed:"",          pris:null,   note:"Pris ved besøg",          qty:1,   freq:1,  fmax:1,  on:false, pakke:false, kat:"groen"},
-  {id:"vinduerind",navn:"Vinduesvask indvendigt",                 enhed:"glas",      pris:19.87,  note:"Indvendige ruder",        qty:14,  freq:1,  fmax:6,  on:false, pakke:false, kat:"vinduer"},
-  {id:"ovenlys",   navn:"Ovenlysvinduesvask",                     enhed:"stk",       pris:25.00,  note:"Pr. ovenlysvindue",       qty:2,   freq:1,  fmax:4,  on:false, pakke:false, kat:"vinduer"},
-  {id:"solcelle",  navn:"Solcellevask",                           enhed:"paneler",   pris:25.00,  note:"Pr. solcellepanel",       qty:0,   freq:1,  fmax:4,  on:false, pakke:false, kat:"vinduer", prisEnh:"panel"},
-  {id:"drivhus",   navn:"Drivhusvask",                            enhed:"",          pris:null,   note:"Pris ved besøg",          qty:1,   freq:1,  fmax:2,  on:false, pakke:false, kat:"vinduer"},
-  {id:"fliserens", navn:"Fliserens",                              enhed:"",          pris:null,   note:"Pris ved besøg",          qty:1,   freq:1,  fmax:2,  on:false, pakke:false, kat:"tag"},
-  {id:"sedum",     navn:"Gødning af Sedumtag",                    enhed:"m² tag",    pris:21.00,  note:"Pr. m² sedumtag",         qty:0,   freq:1,  fmax:2,  on:false, pakke:false, kat:"tag"},
-  {id:"haveaffald",navn:"Haveaffald (genbrugsafgift)",           enhed:"gang",      pris:600.00, note:"Pr. bortskaffelse",       qty:1,   freq:1,  fmax:6,  on:false, pakke:false, kat:"affald"},
-  {id:"sammenriv", navn:"Sammenrivning & bortskaffelse af affald",enhed:"m² græs",   pris:3.00,   note:"Åbne arealer",            qty:450, freq:2,  fmax:4,  on:false, pakke:false, kat:"affald"},
-  {id:"sne",       navn:"Snerydning og saltning",                 enhed:"",          pris:null,   note:"Pris ved besøg",          qty:1,   freq:1,  fmax:20, on:false, pakke:false, kat:"vinter"}
+  {id:"ukrudt",    navn:"Ukrudtsbekæmpelse på belægning",         enhed:"m² fliser", pris:1.50,   note:"Vi holder fugerne rene",  qty:60,  freq:5,  fmax:8,  on:false, pakke:false, kat:"groen",   wm:"Ukrudt bekæmpelse på belægningsarealer"},
+  {id:"graes",     navn:"Græsslåning",                            enhed:"m² plæne",  pris:1.60,   note:"Klip i sæsonen",          qty:450, freq:16, fmax:26, on:false, pakke:false, kat:"groen",   wm:"Græsslåning"},
+  {id:"beskaering",navn:"Beskæring af buske, træer og planter",   enhed:"træer",     pris:500.00, note:"Små træer/frugttræer — større træer efter besøg", qty:3, freq:1, fmax:2, on:false, pakke:false, kat:"groen", prisEnh:"træ", wm:"Beskæring Små træer / Frugttræer"},
+  {id:"soignering",navn:"Soignering af bede",                     enhed:"",          pris:null,   note:"Pris ved besøg",          qty:1,   freq:4,  fmax:12, on:false, pakke:false, kat:"groen",   wm:"Soignering af bede"},
+  {id:"stub",      navn:"Stubfræsning",                           enhed:"",          pris:null,   note:"Pris ved besøg",          qty:1,   freq:1,  fmax:1,  on:false, pakke:false, kat:"groen",   wm:null},
+  {id:"vinduerind",navn:"Vinduesvask indvendigt",                 enhed:"glas",      pris:19.87,  note:"Indvendige ruder",        qty:14,  freq:1,  fmax:6,  on:false, pakke:false, kat:"vinduer", wm:"Vindeuspudsning Indvendig pr glas"},
+  {id:"ovenlys",   navn:"Ovenlysvinduesvask",                     enhed:"stk",       pris:25.00,  note:"Pr. ovenlysvindue",       qty:2,   freq:1,  fmax:4,  on:false, pakke:false, kat:"vinduer", wm:"Ovenlys vinduesvask pr stk"},
+  {id:"solcelle",  navn:"Solcellevask",                           enhed:"paneler",   pris:25.00,  note:"Pr. solcellepanel",       qty:0,   freq:1,  fmax:4,  on:false, pakke:false, kat:"vinduer", prisEnh:"panel", wm:"Solcellevask pr solcelle"},
+  {id:"drivhus",   navn:"Drivhusvask",                            enhed:"",          pris:null,   note:"Pris ved besøg",          qty:1,   freq:1,  fmax:2,  on:false, pakke:false, kat:"vinduer", wm:null},
+  {id:"algeflis",  navn:"Algebehandling af belægning",            enhed:"m² fliser", pris:3.30,   note:"Alger på fliser, terrasse og indkørsel", qty:60, freq:1, fmax:2, on:false, pakke:false, kat:"tag", wm:"Algebehandling af belægning"},
+  {id:"fliserens", navn:"Fliserens",                              enhed:"",          pris:null,   note:"Dybderens med maskine — pris ved besøg", qty:1, freq:1, fmax:2, on:false, pakke:false, kat:"tag", wm:null},
+  {id:"sedum",     navn:"Gødning af Sedumtag",                    enhed:"m² tag",    pris:21.00,  note:"Pr. m² sedumtag",         qty:0,   freq:1,  fmax:2,  on:false, pakke:false, kat:"tag",     wm:"Gødning af sedumtag"},
+  {id:"haveaffald",navn:"Haveaffald (genbrugsafgift)",           enhed:"gang",      pris:600.00, note:"Pr. bortskaffelse",       qty:1,   freq:1,  fmax:6,  on:false, pakke:false, kat:"affald",  wm:"Genbrugsafgift"},
+  {id:"sammenriv", navn:"Sammenrivning & bortskaffelse af affald",enhed:"m² plæne",  pris:3.00,   note:"Åbne arealer / plæne",    qty:450, freq:2,  fmax:4,  on:false, pakke:false, kat:"affald",  wm:"Opsamling af løvfald til efteråret Åbne arealer / Græsplæne"},
+  {id:"sne",       navn:"Snerydning og saltning",                 enhed:"",          pris:null,   note:"Pris ved besøg",          qty:1,   freq:1,  fmax:20, on:false, pakke:false, kat:"vinter",  wm:null}
 ];
 /* Uberørt kopi til at nulstille pakken når en ny adresse vælges. */
 const DEFAULTS = PRODUCTS.map(function(p){ return Object.assign({}, p); });
@@ -160,23 +169,30 @@ function applyMeasurements(m){
   if(m.haekLangde) state.ejendom.haek = DKK0.format(m.haekLangde) + " m";
   /* Forudfyld kun mængder kunden ikke selv har rettet (touched). */
   const put = (id,v)=>{ if(v>0){ const p = PRODUCTS.find(x=>x.id===id); if(p && !p.touched) p.qty = v; } };
-  put("graes", m.haveAreal); put("green", m.haveAreal); put("sammenriv", m.haveAreal);
+  /* Plænefaktor: haven (grund − bygninger) rummer også indkørsel, terrasse,
+     bede og stier. I danske parcelhushaver udgør plænen typisk 60–75 % af
+     det åbne areal — vi bruger 70 % som rundt standardtal, afrundet til 10 m². */
+  const PLAENE_FAKTOR = 0.70;
+  const plaeneAreal = m.haveAreal > 0 ? Math.max(10, Math.round(m.haveAreal * PLAENE_FAKTOR / 10) * 10) : 0;
+  put("graes", plaeneAreal); put("green", plaeneAreal); put("sammenriv", plaeneAreal);
   put("haek", m.haekLangde); put("tagrender", m.tagrendeLangde);
   put("alge", m.tagArealSkraat || m.tagAreal);           /* skråt tagareal hvor muligt */
-  /* Højde-baserede pris-tiers ud fra målingen. */
+  /* Træantal kan ikke måles — skøn ~1 træ/busk pr. 150 m² have, clamp 2–8. */
+  if(m.haveAreal) put("beskaering", Math.min(8, Math.max(2, Math.round(m.haveAreal / 150))));
+  /* Højde-baserede pris-tiers ud fra målingen (skifter også WorkMaker-produkt, wm). */
   const haek = PRODUCTS.find(x=>x.id==="haek");
   if(haek && m.haekHojde != null){
-    if(m.haekHojde > 2.2){ haek.pris = 38.50; haek.note = "1 side, over 220 cm"; }
-    else { haek.pris = 27.50; haek.note = "1 side, under 220 cm"; }
+    if(m.haekHojde > 2.2){ haek.pris = 38.50; haek.note = "1 side, over 220 cm"; haek.wm = "Hækklipning 1 side pr meter Over 220 cm"; }
+    else { haek.pris = 27.50; haek.note = "1 side, under 220 cm"; haek.wm = "Hækklipning 1 side pr meter Under 220 cm"; }
   }
   const tr = PRODUCTS.find(x=>x.id==="tagrender");
   if(tr && m.rygHojde != null){
-    if(m.rygHojde > 5){ tr.pris = 28.00; tr.note = "2-plans hus"; }
-    else { tr.pris = 18.00; tr.note = "Stueplan / 1-plans hus"; }
+    if(m.rygHojde > 5){ tr.pris = 28.00; tr.note = "2-plans hus"; tr.wm = "Tagrenerens 2-plans hus"; }
+    else { tr.pris = 18.00; tr.note = "Stueplan / 1-plans hus"; tr.wm = "Tagrenderens Stueplan / 1-plans hus"; }
   }
   const hint = ROOT.querySelector(".demo-hint");
   if(hint){
-    let t = "Målt automatisk fra matrikel + skråfoto/DHM: grund " + m2(m.grundAreal) + ", have " + m2(m.haveAreal);
+    let t = "Målt automatisk fra matrikel + skråfoto/DHM: grund " + m2(m.grundAreal) + ", have " + m2(m.haveAreal) + (plaeneAreal > 0 ? " (heraf plæne ca. " + m2(plaeneAreal) + ", 70 % af haven)" : "");
     if(m.tagAreal) t += ", tag " + m2(m.tagArealSkraat || m.tagAreal) + (m.taghaeldning ? " (hældn. " + m.taghaeldning + "°)" : "");
     t += ", hæk-omkreds " + DKK0.format(m.haekLangde) + " m" + (m.haekHojde ? " (~" + String(m.haekHojde).replace(".",",") + " m høj)" : "");
     t += ". Mængderne er ca.-tal — ret dem direkte i listen.";
@@ -408,7 +424,7 @@ function opdater(){
     el.innerHTML = (p.pris == null)
       ? (p.pakke ? "<b>Indeholdt</b>" : "<b>Pris ved besøg</b>")
       : (!p.qty ? "<b>Angiv antal</b><small>pris følger mængde</small>"
-                : "<b>" + kr(linjeMd(p)) + "/md</b><small>" + kr(p.pris * p.qty * p.freq) + " pr. år</small>");
+                : "<b>" + kr(p.pris * p.qty) + "</b><small>" + p.freq + (p.freq === 1 ? " gang" : " gange") + " om året</small>");
   });
   const r = beregn(PRODUCTS);
   $("t-count").textContent = r.count;
