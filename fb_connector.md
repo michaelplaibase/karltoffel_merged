@@ -175,7 +175,7 @@ All transitions are driven by server actions in `app/actions/leads.ts`, each gua
 |---|---|---|
 | `markLeadContacted(id)` | `status = "contacted"` | `/leads` |
 | `rejectLead(id)` | `status = "rejected"` | `/leads` |
-| `convertLead(id)` | `status = "converted"` + Contact creation/linking (below) | `/leads`, `/customers` |
+| `convertLead(id)` | `status = "converted"` + Contact creation/linking (below) | `/leads` (+ `/customers` on the create path) |
 
 The actions themselves impose no state-machine preconditions (any lead can be updated); the allowed transitions are enforced by which menu items the UI renders (see RowMenu rules below). Practically: `converted` is terminal (the UI offers no further status actions), while a `rejected` lead can still be marked contacted or converted.
 
@@ -228,7 +228,7 @@ How automatic should the tilbudsmotor → CRM link be? Three variants, ordered b
 
 | Piece | File | Behaviour |
 |---|---|---|
-| Intake endpoint | `app/api/leads/route.ts` | Validates `name` (required) + `email` or `phone` (at least one), normalises email (lowercase) and phone (digits only, leading `45`/`0045` stripped from 11/12-digit numbers), caps payload at 10 KiB, rate-limits per IP (20/min failed auth, 10/min accepted) |
+| Intake endpoint | `app/api/leads/route.ts` | Validates `name` (required) + `email` or `phone` (at least one), normalises email (lowercase) and phone (digits only, leading `45`/`0045` stripped only when exactly 8 digits follow — i.e. from 10-digit `45…` / 12-digit `0045…` numbers), caps payload at 10 KiB, rate-limits per IP (20/min failed auth, 10/min accepted) |
 | Dedup | same file | Merges into an open lead (status `new`/`contacted`, ≤ 30 days) with the same normalised email/phone → `200 {id, deduplicated: true}`; otherwise creates → `201 {id, deduplicated: false}` |
 | Existing-customer pre-link | same file | Sets `Lead.contactId` when a `Contact` with the same email/phone exists, so the UI can badge the lead as an existing customer |
 | Convert action | `app/actions/leads.ts` (`convertLead`) | If pre-linked, just marks `converted`; else creates the Contact (free-text `address` split into `street`/`city` on the first comma) and links it |
@@ -269,7 +269,7 @@ The richest "quote engine → CRM" flow: the quote the customer configured arriv
 
 `price` is an integer in whole kroner incl. VAT and `durationMin` an integer — matching `TaskLine.price Int` / `TaskLine.durationMin Int` in `prisma/schema.prisma`. An optional `category` per task can map onto `TaskLine.category`; default it to `"Andet"` like `readTaskLines` does in `app/actions/orders.ts`.
 
-**Why the data model is already there:** `Order` and `TaskLine` exist and `Order.sourceType` already enumerates `subscription | fixed | manual | online` in `prisma/schema.prisma` — `"online"` is a reserved-but-unused value waiting for exactly this. The nested create in `createOrder` (`app/actions/orders.ts`) is the template: per line set `category`, `letter` (first char of category, uppercased), `color` via `categoryColor` from `lib/categories.ts`, `description`, `price`, `durationMin`, `sort` index; on the order set `deliveryAddress` from the contact's `street`/`city`, `plannedAt` (required, no default — use the enquiry date or a requested week), `status: "Afventer levering"`.
+**Why the data model is already there:** `Order` and `TaskLine` exist and `Order.sourceType` already enumerates `subscription | fixed | manual | online` in `prisma/schema.prisma` — no app **write** path creates `"online"` orders yet (the read side — reports, calendar labels, group messages, seed — already handles them), so it is waiting for exactly this. The nested create in `createOrder` (`app/actions/orders.ts`) is the template: per line set `category`, `letter` (first char of category, uppercased), `color` via `categoryColor` from `lib/categories.ts`, `description`, `price`, `durationMin`, `sort` index; on the order set `deliveryAddress` from the contact's `street`/`city`, `plannedAt` (required, no default — use the enquiry date or a requested week), `status: "Afventer levering"`.
 
 **Concrete changes:**
 1. **Schema:** add `tasksJson String?` to `Lead` (the schema deliberately avoids the `Json` type — same convention as `Lead.utm` and `Company.settings`). One nullable column, one migration.
