@@ -29,7 +29,7 @@ export default function DiscountCodeManager({ codes }: { codes: Code[] }) {
               <thead><tr><th>Rabatkode</th><th>Procentsats</th><th>Udløbsdato</th><th style={{ width: 80 }}>Slet</th></tr></thead>
               <tbody>
                 {codes.length === 0 ? (
-                  <tr><td colSpan={4}><div className="table-empty">No matching records found</div></td></tr>
+                  <tr><td colSpan={4}><div className="table-empty">Ingen rabatkoder fundet</div></td></tr>
                 ) : codes.map((c) => (
                   <tr key={c.id}>
                     <td>{c.code}</td><td className="num">{c.percent}%</td><td>{c.expiresAt || "—"}</td>

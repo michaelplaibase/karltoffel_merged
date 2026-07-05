@@ -24,7 +24,7 @@ export function StatusPill({ status }: { status: string }) {
   const cls = s.includes("afsluttet") || s.includes("udført")
     ? "badge-soft-success"
     : s.includes("mislykk") || s.includes("fejl")
-      ? "badge-danger"
+      ? "badge-soft-danger"
       : "badge-soft-warning";
   return <span className={`badge ${cls}`}>{status}</span>;
 }
