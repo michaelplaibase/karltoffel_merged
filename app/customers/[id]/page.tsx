@@ -45,6 +45,7 @@ export default async function CustomerDetail({
             <div style={{ marginTop: 10 }}><MapLink address={`${c.street}, ${c.city}`} /></div>
             <div className="row-actions" style={{ marginTop: 16 }}>
               <Link href={`/customers/${c.id}/edit`} className="btn btn-outline-primary btn-sm">Rediger kontaktinfo</Link>
+              <Link href={`/customers/${c.id}/send-tilbud`} className="btn btn-outline-primary btn-sm">Send tilbud</Link>
               <Link href="/customers/new" className="btn btn-light btn-sm">Opret ny kontakt</Link>
             </div>
           </div>
@@ -141,6 +142,7 @@ export default async function CustomerDetail({
                     { label: "Vis ordre i kalender", href: `/calendar?week=${o.weekMonday}` },
                     { label: "Rediger ordre", href: `/orders/${o.id}` },
                     { label: "Afslut ordre…", href: `/orders/${o.id}/complete` },
+                    { label: "Send tilbud på ordren…", href: `/orders/${o.id}/send-tilbud` },
                     { label: "Opret ny ordre", href: `/orders/new?for_contact=${o.contactId}` },
                     ...(o.subscriptionNo ? [{ label: "Rediger abonnement", href: `/subscriptions/${o.subscriptionNo}` }] : []),
                     { label: "Slet ordre…", danger: true, action: deleteOrder.bind(null, o.id),

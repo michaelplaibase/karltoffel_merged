@@ -106,6 +106,7 @@ export default async function OrderDetail({ params }: { params: Promise<{ id: st
           label="Slet ordre" title="Bekræftelse"
           body="Er du sikker på, at du vil slette ordren?" confirmLabel="Slet ordre"
         />
+        <Link href={`/orders/${o.id}/send-tilbud`} className="btn btn-outline-primary">Send tilbud</Link>
         <Link href={`/orders/${o.id}/complete`} className="btn btn-primary">Afslut ordre</Link>
       </div>
     </div>
