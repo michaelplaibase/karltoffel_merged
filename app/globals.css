@@ -351,3 +351,197 @@ select.form-control-sm { background-position: right 10px center; padding-right: 
 .guide-tips { background: #F7F8FB; border: 1px solid #eef1f5; border-left: 3px solid var(--primary);
   border-radius: 0 8px 8px 0; padding: 12px 16px; margin-top: 18px; }
 .guide-tips-title { font-size: 14px; margin: 0 0 6px; }
+
+/* ============================ Team calendar (Medarbejder-tavle) ============================
+   Colleague swimlane board + month views, ported from the approved mockup
+   (medarbejder-kalender-mockup.html). Everything is scoped under a .teamcal ancestor so
+   nothing leaks into other pages (which keep using .calbtn / .calseg / .badge / .daycal-*).
+   Light theme only — the mockup's local tokens are mapped onto the existing design-system
+   variables above via --tc-* locals (no dark-mode block on purpose).
+   Colour model:
+     - WHO   : per-employee colour arrives as an inline `--emp` custom property on the
+               element (from User.calendarColor). Cards/chips mix it 14% into white;
+               avatars, dots and bars use it solid.
+     - STATUS: .s-ok / .s-wait / .s-warn / .s-fail set `--st`, which drives the card's
+               left border (ok=success, wait=primary, warn=warning, fail=danger).
+     - TYPE  : the small letter chip (.cat) gets `--cat` inline from categoryColor(). */
+.teamcal {
+  /* token map: mockup name -> app variable */
+  --tc-ground: #fff;
+  --tc-panel-2: #fbfcfd;              /* header strips (same literal as .cal-corner) */
+  --tc-sink: #eef1f5;
+  --tc-line: var(--table-border);     /* #DEE2E6 */
+  --tc-line-soft: var(--card-border); /* #E9ECEF */
+  --tc-ink: var(--heading);
+  --tc-body: var(--body-text);
+  --tc-muted: var(--muted);
+  --tc-faint: var(--faint);
+  --tc-accent: var(--primary);
+  --tc-accent-ink: #fff;
+  --tc-ok: var(--success);
+  --tc-wait: var(--primary);
+  --tc-warn: var(--warning);
+  --tc-fail: var(--danger);
+  --tc-weekend: #f8fafb;
+  --tc-today: #eef6fc;
+  color: var(--tc-body);
+  font-size: 15px;
+}
+
+/* page frame: constrain width + breathe (the app shell only offsets the navbar) */
+.teamcal .stage { max-width: 1240px; margin: 0 auto; padding: 24px 22px 56px; }
+@media (max-width: 720px) { .teamcal .stage { padding: 16px 12px 40px; } }
+
+/* card shell around a board/month view */
+.teamcal .app { background: var(--tc-ground); border: 1px solid var(--tc-line-soft); border-radius: var(--radius-card);
+  box-shadow: var(--shadow-card); overflow: hidden; }
+
+/* ---------- toolbar / panel header ---------- */
+.teamcal .panel-hd { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 13px 16px;
+  border-bottom: 1px solid var(--tc-line); }
+.teamcal .panel-hd .title { font-family: var(--font-head); font-size: 19px; color: var(--tc-ink);
+  margin: 0 4px 0 2px; font-weight: 500; }
+.teamcal .sp { flex: 1; }
+
+/* pill badge (overrides the global .badge inside .teamcal — higher specificity) */
+.teamcal .badge { display: inline-flex; align-items: center; font-family: var(--font-base); font-size: 11px;
+  letter-spacing: .08em; font-weight: 600; text-transform: uppercase; color: var(--tc-muted);
+  background: var(--tc-sink); border-radius: 20px; padding: 3px 9px; }
+.teamcal .badge.acc { color: var(--tc-accent); background: color-mix(in srgb, var(--tc-accent) 13%, #fff); }
+
+/* buttons + segmented switches (same look as .calbtn / .calseg) */
+.teamcal .cbtn { border: 1px solid var(--tc-line-soft); background: var(--tc-sink); color: var(--tc-ink);
+  font: inherit; font-size: 12.5px; padding: 6px 11px; border-radius: 6px; cursor: pointer; line-height: 1; }
+.teamcal .cbtn:hover { border-color: var(--tc-faint); }
+.teamcal .cbtn.on { background: var(--tc-accent); border-color: var(--tc-accent); color: var(--tc-accent-ink); }
+.teamcal .cbtn.on:focus-visible { outline-color: #fff; } /* blue ring invisible on filled control */
+.teamcal .seg { display: inline-flex; border: 0; border-radius: 0; overflow: visible; /* reset global .seg */
+  font-family: inherit; font-size: inherit; }
+.teamcal .seg .cbtn { border-radius: 0; margin-left: -1px; }
+.teamcal .seg .cbtn:first-child { border-radius: 6px 0 0 6px; margin-left: 0; }
+.teamcal .seg .cbtn:last-child { border-radius: 0 6px 6px 0; }
+.teamcal .seg.tabs .cbtn { font-size: 13px; padding: 7px 14px; font-weight: 500; }
+.teamcal .navlead { display: flex; align-items: center; gap: 2px; }
+.teamcal .navlead .cbtn { padding: 6px 9px; }
+
+/* ---------- week board: employees x weekdays ---------- */
+.teamcal .board-scroll { overflow-x: auto; }
+.teamcal .board { display: grid; grid-template-columns: 196px repeat(7, minmax(122px, 1fr)); min-width: 900px; }
+.teamcal .cell { border-right: 1px solid var(--tc-line-soft); border-bottom: 1px solid var(--tc-line-soft);
+  min-height: 86px; padding: 6px 6px 8px; }
+.teamcal .cell.wknd { background: var(--tc-weekend); }
+.teamcal .cell.today { background: var(--tc-today); }
+.teamcal .corner { position: sticky; left: 0; z-index: 6; background: var(--tc-panel-2);
+  border-bottom: 1px solid var(--tc-line); border-right: 1px solid var(--tc-line);
+  display: flex; align-items: flex-end; padding: 8px 12px; font-size: 12px; color: var(--tc-muted); }
+.teamcal .dhead { border-bottom: 1px solid var(--tc-line); border-right: 1px solid var(--tc-line-soft);
+  padding: 8px 10px; background: var(--tc-panel-2); text-align: left; }
+.teamcal .dhead b { display: block; color: var(--tc-accent); font-size: 14px; font-weight: 600; }
+.teamcal .dhead .kr { font-size: 11px; color: var(--tc-muted); font-variant-numeric: tabular-nums; }
+.teamcal .dhead.wknd b { color: var(--tc-muted); }
+.teamcal .dhead.today { background: var(--tc-today); box-shadow: inset 0 2px 0 var(--tc-accent); }
+
+/* sticky employee label column */
+.teamcal .lbl { position: sticky; left: 0; z-index: 5; background: var(--tc-ground);
+  border-right: 1px solid var(--tc-line); border-bottom: 1px solid var(--tc-line-soft);
+  display: flex; align-items: center; gap: 10px; padding: 10px 12px; }
+.teamcal .ava { width: 30px; height: 30px; border-radius: 50%; flex: none; display: grid; place-items: center;
+  color: #fff; font-size: 12px; font-weight: 600; background: var(--emp); letter-spacing: .02em; }
+.teamcal .lbl .who { min-width: 0; }
+.teamcal .lbl .who b { display: block; color: var(--tc-ink); font-size: 13.5px; font-weight: 500;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.teamcal .lbl .who span { font-size: 11.5px; color: var(--tc-muted); font-variant-numeric: tabular-nums; }
+.teamcal .lbl .me { font-size: 9.5px; letter-spacing: .06em; text-transform: uppercase; color: var(--tc-accent);
+  border: 1px solid color-mix(in srgb, var(--tc-accent) 34%, #fff); border-radius: 4px; padding: 1px 4px; margin-left: 6px; }
+
+/* ---------- job cards ---------- */
+.teamcal .stack { display: flex; flex-direction: column; gap: 5px; }
+.teamcal .ev { position: relative; background: color-mix(in srgb, var(--emp) 14%, #fff);
+  border: 1px solid var(--tc-line-soft); border-left: 3px solid var(--st, var(--tc-wait)); border-radius: 4px;
+  padding: 4px 6px 5px; cursor: default; }
+.teamcal .ev .t { display: block; font-size: 10.5px; color: var(--tc-muted); font-variant-numeric: tabular-nums; }
+.teamcal .ev .h { display: block; color: var(--tc-ink); font-size: 12px; font-weight: 600; line-height: 1.25;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.teamcal .ev .s { display: flex; align-items: center; gap: 4px; font-size: 11px; color: var(--tc-body); margin-top: 1px; }
+.teamcal .cat { flex: none; width: 14px; height: 14px; border-radius: 3px; background: var(--cat); color: #fff;
+  font-size: 9px; font-weight: 700; display: grid; place-items: center; line-height: 1; font-style: normal; }
+.teamcal .ev .s .txt { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.teamcal .idle { color: var(--tc-faint); font-size: 11.5px; font-style: italic; padding-top: 4px; }
+
+/* status -> left-border colour */
+.teamcal .s-ok   { --st: var(--tc-ok); }
+.teamcal .s-wait { --st: var(--tc-wait); }
+.teamcal .s-warn { --st: var(--tc-warn); }
+.teamcal .s-fail { --st: var(--tc-fail); }
+
+/* ---------- unplanned lane ---------- */
+.teamcal .lane { display: grid; grid-template-columns: 196px 1fr; border-top: 2px solid var(--tc-line); }
+.teamcal .lane .lbl { border-bottom: none; }
+.teamcal .lane .lbl .who b { color: var(--tc-fail); }
+.teamcal .lane .bin { border-bottom: none; padding: 9px 10px; display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.teamcal .lane .hint { font-size: 11.5px; color: var(--tc-muted); margin-left: 2px; }
+
+/* ---------- legend strip ---------- */
+.teamcal .legend { display: flex; flex-wrap: wrap; gap: 6px 20px; padding: 11px 16px;
+  border-top: 1px solid var(--tc-line); background: var(--tc-panel-2); }
+.teamcal .legend .grp { display: flex; flex-wrap: wrap; gap: 6px 14px; align-items: center; }
+.teamcal .legend .k { font-size: 11px; text-transform: uppercase; letter-spacing: .07em; color: var(--tc-muted);
+  font-weight: 600; margin-right: 2px; }
+.teamcal .lg { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: var(--tc-body); }
+.teamcal .lg .sw { width: 22px; height: 12px; border-radius: 3px; border: 1px solid var(--tc-line);
+  border-left: 3px solid var(--c); }
+.teamcal .lg .dot { width: 12px; height: 12px; border-radius: 3px; background: var(--c, var(--emp)); }
+
+/* ---------- month view chrome ---------- */
+.teamcal .split { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; margin-top: 14px; }
+@media (max-width: 900px) { .teamcal .split { grid-template-columns: 1fr; } }
+.teamcal .vlabel { display: flex; align-items: center; gap: 9px; margin: 0 2px 9px; }
+.teamcal .vlabel .pill { font-size: 11px; font-weight: 700; letter-spacing: .05em; color: var(--tc-accent-ink);
+  background: var(--tc-accent); border-radius: 5px; padding: 3px 8px; }
+.teamcal .vlabel h3 { font-size: 15px; margin: 0; }
+.teamcal .vlabel .rec { font-size: 11px; color: var(--tc-ok); font-weight: 600;
+  border: 1px solid color-mix(in srgb, var(--tc-ok) 40%, #fff); border-radius: 20px; padding: 2px 8px; }
+
+/* month variant A: classic date grid (week-number rail + 7 day columns) */
+.teamcal .mgrid { display: grid; grid-template-columns: 34px repeat(7, 1fr); }
+.teamcal .mgrid .mh { background: var(--tc-panel-2); border-bottom: 1px solid var(--tc-line);
+  border-right: 1px solid var(--tc-line-soft); font-size: 11px; color: var(--tc-muted); padding: 6px;
+  text-align: center; font-weight: 600; }
+.teamcal .mgrid .wk { background: var(--tc-panel-2); border-right: 1px solid var(--tc-line);
+  border-bottom: 1px solid var(--tc-line-soft); font-size: 10.5px; color: var(--tc-muted);
+  display: grid; place-items: center; font-weight: 600; font-variant-numeric: tabular-nums; }
+.teamcal .mgrid .md { border-right: 1px solid var(--tc-line-soft); border-bottom: 1px solid var(--tc-line-soft);
+  min-height: 70px; padding: 4px 5px; display: flex; flex-direction: column; gap: 3px; }
+.teamcal .mgrid .md .dn { font-size: 11px; color: var(--tc-muted); text-align: right; font-variant-numeric: tabular-nums; }
+.teamcal .mgrid .md.out .dn { color: var(--tc-faint); }
+.teamcal .mgrid .md.today { background: var(--tc-today); }
+.teamcal .mgrid .md.today .dn { color: var(--tc-accent); font-weight: 700; }
+.teamcal .mgrid .md.wknd { background: var(--tc-weekend); }
+.teamcal .chip { display: flex; align-items: center; gap: 5px; font-size: 10.5px; color: var(--tc-ink);
+  background: color-mix(in srgb, var(--emp) 14%, #fff); border-left: 3px solid var(--emp); border-radius: 3px;
+  padding: 1px 5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.teamcal .more { font-size: 10px; color: var(--tc-muted); }
+/* company-wide holiday week: one hatched band across all 7 day columns */
+.teamcal .ferie { grid-column: 2 / span 7;
+  background: repeating-linear-gradient(45deg, var(--tc-sink), var(--tc-sink) 7px, transparent 7px, transparent 14px);
+  border-bottom: 1px solid var(--tc-line-soft); display: flex; align-items: center; justify-content: center;
+  font-size: 11.5px; color: var(--tc-muted); font-weight: 600; min-height: 34px; letter-spacing: .03em; }
+
+/* month variant B: employee x week table */
+.teamcal .mtable { width: 100%; border-collapse: collapse; font-size: 13px; }
+.teamcal .mtable th, .teamcal .mtable td { border-bottom: 1px solid var(--tc-line-soft); padding: 9px 10px; text-align: center; }
+.teamcal .mtable thead th { background: var(--tc-panel-2); color: var(--tc-muted); font-size: 11px;
+  text-transform: uppercase; letter-spacing: .06em; font-weight: 600; border-bottom: 1px solid var(--tc-line); }
+.teamcal .mtable th.emp, .teamcal .mtable td.emp { text-align: left; }
+.teamcal .mtable td.emp { color: var(--tc-ink); }
+.teamcal .mtable .mini { display: inline-flex; align-items: center; gap: 8px; }
+.teamcal .mtable .cnt { font-variant-numeric: tabular-nums; font-weight: 600; color: var(--tc-ink); }
+.teamcal .mtable .bar { height: 7px; border-radius: 4px; background: var(--emp); display: inline-block; }
+.teamcal .mtable .empc { width: 18px; height: 18px; border-radius: 50%; background: var(--emp); color: #fff;
+  font-size: 9.5px; font-weight: 700; display: inline-grid; place-items: center; }
+.teamcal .mtable tbody tr:hover { background: var(--row-striped); }
+.teamcal .mtable td.ferie-col {
+  background: repeating-linear-gradient(45deg, var(--tc-sink), var(--tc-sink) 6px, transparent 6px, transparent 12px);
+  color: var(--tc-muted); font-size: 11px; }
+.teamcal .mtable tfoot td { border-top: 1px solid var(--tc-line); border-bottom: 0; font-weight: 600;
+  color: var(--tc-ink); background: var(--tc-panel-2); font-variant-numeric: tabular-nums; }

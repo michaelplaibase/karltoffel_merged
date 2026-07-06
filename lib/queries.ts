@@ -4,11 +4,14 @@
 // Prisma client in lib/db.ts.
 import { prisma } from "./db";
 import type { Contact, Subscription, Order, TaskLine } from "./data";
-import { planWeek, isoWeek, fmtTime, type Job } from "./planner";
+import { planWeek, isoWeek, fmtTime, type Job, type Employee as PlannerEmployee } from "./planner";
 import { weekLabel } from "./weeks";
+import { coordFor } from "./geo";
 import {
   sourceType, type CalEvent, type CalStatus, type LockState,
   type WeekDay, type Employee, type CalendarWeek, type DayProgram, type DayStop,
+  type UnplannedJob, type MonthChip, type MonthDay, type MonthWeek,
+  type MonthCell, type MonthMatrixRow, type CalendarMonth,
 } from "./calendar";
 import type { Prisma } from "@prisma/client";
 
@@ -450,6 +453,21 @@ const WEEKDAYS_FULL = ["mandag", "tirsdag", "onsdag", "torsdag", "fredag", "lør
 const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 const fmtDrive = (min: number) => `${Math.floor(min / 60)} t ${min % 60} min`;
 
+/** Map active users to the planner's Employee shape (standard 08–16 Mon–Fri day). */
+function plannerEmployeesFrom(
+  users: { id: number; firstName: string; lastName: string; homeAddress: string | null }[]
+): PlannerEmployee[] {
+  return users.map((u) => ({
+    id: u.id,
+    name: `${u.firstName} ${u.lastName}`,
+    home: coordFor(u.homeAddress ?? ""),
+    workStartMin: 8 * 60,
+    workEndMin: 16 * 60,
+    flexMin: 60,
+    workdays: [0, 1, 2, 3, 4],
+  }));
+}
+
 /** Fetch the week's orders, derive planner jobs, and route them. Shared by the
  *  week calendar and the day program so both agree on times, revenue and driving. */
 async function buildWeekPlan(weekMonday: string) {
@@ -480,13 +498,24 @@ async function buildWeekPlan(weekMonday: string) {
       durationMin: o.tasks.reduce((a, t) => a + t.durationMin, 0) || 30,
       source: sourceLabel(o.sourceType, o.subscription?.displayNo),
       fixedWeekdays: o.subscription?.fixedWeekdays ? o.subscription.fixedWeekdays.split("").map(Number) : undefined,
+      fixedEmployeeId: o.employeeId ?? undefined,
       locked: o.lockedFully,
       lockedWeekday: o.lockedFully ? (o.plannedAt.getUTCDay() + 6) % 7 : undefined,
     };
   });
-  const plan = planWeek(jobs, weekMonday);
+  // Only jobs pinned to an ACTIVE employee go through the router — everything
+  // else lands in "unplanned" (they must never be dumped on the first lane).
+  const plannerEmps = plannerEmployeesFrom(users);
+  const activeIds = new Set(users.map((u) => u.id));
+  const placeable = jobs.filter((j) => j.fixedEmployeeId != null && activeIds.has(j.fixedEmployeeId));
+  const unassigned = jobs.filter((j) => j.fixedEmployeeId == null || !activeIds.has(j.fixedEmployeeId));
+  const plan = planWeek(placeable, weekMonday, plannerEmps);
+  const unplanned: { job: Job; reason: "unassigned" | "overflow" }[] = [
+    ...plan.unplanned.map((job) => ({ job, reason: "overflow" as const })),
+    ...unassigned.map((job) => ({ job, reason: "unassigned" as const })),
+  ];
   const empName = new Map(users.map((u) => [u.id, `${u.firstName} ${u.lastName}`]));
-  return { start, plan, priceById, metaById, users, empName };
+  return { start, plan, priceById, metaById, users, empName, holiday, unplanned };
 }
 
 /** Map a stored order status to the calendar's status class. */
@@ -508,7 +537,7 @@ async function monthRevenue(year: number, monthIdx0: number): Promise<number> {
 }
 
 export async function getCalendarWeek(weekMonday: string): Promise<CalendarWeek> {
-  const { start, plan, priceById, metaById, users } = await buildWeekPlan(weekMonday);
+  const { start, plan, priceById, metaById, users, unplanned: rawUnplanned } = await buildWeekPlan(weekMonday);
   const year = start.getUTCFullYear();
 
   const dayRevenue = Array<number>(7).fill(0);
@@ -546,8 +575,17 @@ export async function getCalendarWeek(weekMonday: string): Promise<CalendarWeek>
     id: u.id, name: `${u.firstName} ${u.lastName}`, color: u.calendarColor ?? "#a4d5ee", active: u.activeCalendar,
   }));
 
+  const unplanned: UnplannedJob[] = rawUnplanned.map(({ job, reason }) => {
+    const meta = metaById.get(job.id);
+    return {
+      id: job.id, postal: job.postal, customer: job.customer, category: job.category,
+      status: calStatusOf(meta?.status ?? "Afventer levering"), contactId: job.contactId,
+      subscriptionNo: meta?.subNo ?? null, reason,
+    };
+  });
+
   return {
-    weekNo, weekLabel, monday: weekMonday, employees, days, events,
+    weekNo, weekLabel, monday: weekMonday, employees, days, events, unplanned,
     planned: { weekLabel: `Uge ${weekNo}`, week, monthLabel: MONTHS[monMonth], month },
   };
 }
@@ -557,22 +595,26 @@ export async function getDayProgram(dateISO: string): Promise<DayProgram> {
   const weekdayIdx = (date.getUTCDay() + 6) % 7; // 0 = Monday
   const mondayISO = ymd(new Date(date.getTime() - weekdayIdx * 864e5));
   const { plan, priceById, metaById, empName } = await buildWeekPlan(mondayISO);
-  const dayPlan = plan.days.find((d) => d.weekday === weekdayIdx);
+  // Aggregate across ALL employees working this weekday (one DayPlan per employee).
+  const dayPlans = plan.days.filter((d) => d.weekday === weekdayIdx);
 
-  const stops: DayStop[] = (dayPlan?.stops ?? []).map((s) => {
-    const meta = metaById.get(s.job.id);
-    return {
-      from: fmtTime(s.startMin), to: fmtTime(s.endMin),
-      address: s.job.address, customer: s.job.customer,
-      price: priceById.get(s.job.id) ?? 0,
-      employee: empName.get(dayPlan!.employeeId) ?? "Ingen",
-      source: s.job.source,
-      orderId: s.job.id, contactId: s.job.contactId,
-      subscriptionNo: meta?.subNo ?? null, status: meta?.status ?? "Afventer levering",
-      tasks: (meta?.tasks ?? []).map((t) => ({ category: t.category, letter: t.letter, description: t.description, price: t.price, durationMin: t.durationMin })),
-      comment: meta?.comment ?? "", addressNote: meta?.addressNote ?? "",
-    };
-  });
+  const stops: DayStop[] = dayPlans
+    .flatMap((dp) => dp.stops.map((s) => ({ dp, s })))
+    .sort((a, b) => a.s.startMin - b.s.startMin)
+    .map(({ dp, s }) => {
+      const meta = metaById.get(s.job.id);
+      return {
+        from: fmtTime(s.startMin), to: fmtTime(s.endMin),
+        address: s.job.address, customer: s.job.customer,
+        price: priceById.get(s.job.id) ?? 0,
+        employee: empName.get(dp.employeeId) ?? "Ingen",
+        source: s.job.source,
+        orderId: s.job.id, contactId: s.job.contactId,
+        subscriptionNo: meta?.subNo ?? null, status: meta?.status ?? "Afventer levering",
+        tasks: (meta?.tasks ?? []).map((t) => ({ category: t.category, letter: t.letter, description: t.description, price: t.price, durationMin: t.durationMin })),
+        comment: meta?.comment ?? "", addressNote: meta?.addressNote ?? "",
+      };
+    });
 
   let revenueWeek = 0;
   for (const d of plan.days) for (const s of d.stops) revenueWeek += priceById.get(s.job.id) ?? 0;
@@ -586,7 +628,96 @@ export async function getDayProgram(dateISO: string): Promise<DayProgram> {
     revenueDay: stops.reduce((a, s) => a + s.price, 0),
     revenueWeek,
     revenueMonth: await monthRevenue(date.getUTCFullYear(), date.getUTCMonth()),
-    driving: fmtDrive(dayPlan?.driveMin ?? 0),
+    driving: fmtDrive(dayPlans.reduce((a, d) => a + d.driveMin, 0)),
     stops,
+  };
+}
+
+// ---- Month view --------------------------------------------------------------
+
+/** Month overview for the calendar's month mode: a date grid (variant A) and a
+ *  week × employee matrix (variant B), both derived from the same week plans so
+ *  they agree with the week/day views. `monthParam` is "YYYY-MM". */
+export async function getCalendarMonth(monthParam: string): Promise<CalendarMonth> {
+  let year: number;
+  let monthIdx: number;
+  const m = /^(\d{4})-(\d{2})$/.exec(monthParam ?? "");
+  if (m && Number(m[2]) >= 1 && Number(m[2]) <= 12) {
+    year = Number(m[1]);
+    monthIdx = Number(m[2]) - 1;
+  } else {
+    const now = new Date();
+    year = now.getUTCFullYear();
+    monthIdx = now.getUTCMonth();
+  }
+
+  const first = new Date(Date.UTC(year, monthIdx, 1));
+  const last = new Date(Date.UTC(year, monthIdx + 1, 0)); // last day of month (UTC midnight)
+  const gridStart = new Date(first.getTime() - ((first.getUTCDay() + 6) % 7) * 864e5); // Monday of week containing the 1st
+  const todayISO = ymd(new Date());
+
+  const weeks: MonthWeek[] = [];
+  const weekPlans: Awaited<ReturnType<typeof buildWeekPlan>>[] = [];
+  for (let wm = gridStart; wm.getTime() <= last.getTime(); wm = new Date(wm.getTime() + 7 * 864e5)) {
+    const mondayISO = ymd(wm);
+    const wp = await buildWeekPlan(mondayISO);
+    weekPlans.push(wp);
+    const days: MonthDay[] = Array.from({ length: 7 }, (_, i) => {
+      const dt = new Date(wm.getTime() + i * 864e5);
+      const dateISO = ymd(dt);
+      const chips: MonthChip[] = wp.plan.days
+        .filter((dp) => dp.weekday === i)
+        .flatMap((dp) => dp.stops.map((s) => {
+          const meta = wp.metaById.get(s.job.id);
+          return {
+            id: s.job.id, weekday: i, employeeId: dp.employeeId,
+            label: s.job.customer || s.job.postal,
+            postal: s.job.postal, category: s.job.category,
+            status: calStatusOf(meta?.status ?? "Afventer levering"),
+            contactId: s.job.contactId,
+          };
+        }));
+      return {
+        dateISO, dateNum: dt.getUTCDate(), weekday: i,
+        inMonth: dt.getUTCMonth() === monthIdx, isToday: dateISO === todayISO, chips,
+      };
+    });
+    weeks.push({ weekNo: isoWeek(mondayISO), monday: mondayISO, holiday: wp.holiday, days });
+  }
+
+  // Active users: every buildWeekPlan fetched the same set — reuse the first.
+  const users = weekPlans[0]!.users;
+  const employees: Employee[] = users.map((u) => ({
+    id: u.id, name: `${u.firstName} ${u.lastName}`, color: u.calendarColor ?? "#a4d5ee", active: u.activeCalendar,
+  }));
+
+  // Variant B: week × employee matrix (counts + planned revenue).
+  const zero = (): MonthCell => ({ count: 0, revenue: 0 });
+  const add = (a: MonthCell, b: MonthCell): MonthCell => ({ count: a.count + b.count, revenue: a.revenue + b.revenue });
+  const weekNos = weeks.map((w) => w.weekNo);
+  const matrix: MonthMatrixRow[] = users.map((u) => {
+    const cells = weekPlans.map((wp) => {
+      const cell = zero();
+      for (const dp of wp.plan.days) {
+        if (dp.employeeId !== u.id) continue;
+        for (const s of dp.stops) {
+          cell.count += 1;
+          cell.revenue += wp.priceById.get(s.job.id) ?? 0;
+        }
+      }
+      return cell;
+    });
+    return { employeeId: u.id, cells, total: cells.reduce(add, zero()) };
+  });
+  const colTotals: MonthCell[] = weekNos.map((_, k) => matrix.reduce((acc, r) => add(acc, r.cells[k]), zero()));
+  const grandTotal = colTotals.reduce(add, zero());
+
+  const mp = (d: Date) => `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}`;
+  return {
+    year, monthIdx, monthLabel: `${MONTHS[monthIdx]} ${year}`,
+    monthParam: mp(first),
+    prevMonth: mp(new Date(Date.UTC(year, monthIdx - 1, 1))),
+    nextMonth: mp(new Date(Date.UTC(year, monthIdx + 1, 1))),
+    employees, weeks, weekNos, matrix, colTotals, grandTotal,
   };
 }

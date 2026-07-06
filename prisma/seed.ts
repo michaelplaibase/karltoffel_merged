@@ -53,6 +53,21 @@ async function main() {
     },
   });
 
+  // Colleagues — extra calendar lanes so the swimlane board shows several employees.
+  const colleagues = [
+    { id: 1536, username: "bjarnehansen", firstName: "Bjarne", lastName: "Schmidt Hansen", calendarColor: "#2e7d5b", homeAddress: "8000 Aarhus C" },
+    { id: 1537, username: "teddypedersen", firstName: "Teddy", lastName: "Pedersen", calendarColor: "#8b5cc4", homeAddress: "8600 Silkeborg" },
+    { id: 1538, username: "danielaneculaita", firstName: "Daniela", lastName: "Neculaita", calendarColor: "#c2506e", homeAddress: "8300 Odder" },
+  ];
+  for (const u of colleagues) {
+    await prisma.user.create({
+      data: {
+        ...u, companyId: company.id, passwordHash: null, email: null,
+        activeCalendar: true, isAdmin: false,
+      },
+    });
+  }
+
   // ---- Contacts (a contact becomes a "customer" once it has an order/subscription) ----
   const contacts = [
     { id: 201482, name: "McDonald's Stilling", isCompany: true, cvr: "38242520", street: "Ørnedvej 4", city: "8660 Skanderborg", att: "—", revenueYtd: 12140, avgYearlyFromSubs: 34852 },
@@ -107,7 +122,7 @@ async function main() {
   await prisma.order.create({
     data: {
       id: 2080056, contactId: 201482, deliveryAddress: "Ørnedvej 4, 8660 Skanderborg",
-      plannedAt: new Date("2026-07-13T10:00:00Z"), sourceType: "subscription", subscriptionId: 378378, employeeId: 1535,
+      plannedAt: new Date("2026-07-13T10:00:00Z"), sourceType: "subscription", subscriptionId: 378378, employeeId: 1536,
       tasks: { create: [
         line({ category: "Vinduespudsning", letter: "U", description: "Pudsning udvendig", price: 470, durationMin: 15, fromSubscription: true }, 0),
         line({ category: "Vinduespudsning", letter: "I", description: "Pudsning indvendig", price: 470, durationMin: 15, fromSubscription: true }, 1),
@@ -118,7 +133,7 @@ async function main() {
   await prisma.order.create({
     data: {
       id: 2079914, contactId: 201455, deliveryAddress: "Hospitalsgade 6, 8700 Horsens",
-      plannedAt: new Date("2027-01-04T10:00:00Z"), sourceType: "subscription", subscriptionId: 378201, employeeId: 1535,
+      plannedAt: new Date("2027-01-04T10:00:00Z"), sourceType: "subscription", subscriptionId: 378201, employeeId: 1537,
       tasks: { create: [
         line({ category: "Viceværtservice", letter: "V", description: "Fjern spindelvæv", price: 811, durationMin: 45, fromSubscription: true }, 0),
       ] },
@@ -134,11 +149,13 @@ async function main() {
     { id: 1969960, contactId: 201310, address: "Mejlgade 12, 8000 Aarhus C", source: "subscription", subId: 378150, locked: false, task: { category: "Vinduespudsning", letter: "U", description: "Pudsning udvendig", price: 1200, durationMin: 90 } },
     { id: 1969973, contactId: 201288, address: "Rosensgade 20, 8300 Odder", source: "online", subId: null, locked: false, task: { category: "Overfladerens", letter: "O", description: "Afrensning af overflader", price: 560, durationMin: 40 } },
   ];
-  for (const o of weekOrders) {
+  // Round-robin the week's orders across the four lanes so each is populated.
+  const LANE_IDS = [1535, 1536, 1537, 1538];
+  for (const [i, o] of weekOrders.entries()) {
     await prisma.order.create({
       data: {
         id: o.id, contactId: o.contactId, deliveryAddress: o.address, plannedAt: week27,
-        sourceType: o.source, subscriptionId: o.subId, employeeId: 1535, lockedFully: o.locked,
+        sourceType: o.source, subscriptionId: o.subId, employeeId: LANE_IDS[i % LANE_IDS.length], lockedFully: o.locked,
         tasks: { create: [line({ ...o.task, fromSubscription: o.source === "subscription" }, 0)] },
       },
     });
@@ -151,7 +168,7 @@ async function main() {
   await prisma.order.create({
     data: {
       id: 2080099, contactId: 201391, deliveryAddress: "Vejlevej 120, 8700 Horsens",
-      plannedAt: new Date("2026-08-03T10:00:00Z"), sourceType: "manual", employeeId: 1535,
+      plannedAt: new Date("2026-08-03T10:00:00Z"), sourceType: "manual", employeeId: 1538,
       tasks: { create: [line({ category: "Rentvandsvask", letter: "R", description: "Rentvandsvask facade", price: 620, durationMin: 30 }, 0)] },
     },
   });

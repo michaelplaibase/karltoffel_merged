@@ -28,6 +28,13 @@ export type CalEvent = {
 
 export type WeekDay = { label: string; date: string; revenue: number; driving?: string };
 
+/** A job the auto-planner could not place on the board this week. */
+export type UnplannedJob = {
+  id: number; postal: string; customer: string; category: string;
+  status: CalStatus; contactId: number; subscriptionNo: number | null;
+  reason: "unassigned" | "overflow"; // no employee vs. didn't fit the week
+};
+
 export type CalendarWeek = {
   weekNo: number;
   weekLabel: string;
@@ -35,7 +42,33 @@ export type CalendarWeek = {
   employees: Employee[];
   days: WeekDay[];
   events: CalEvent[];
+  unplanned: UnplannedJob[];
   planned: { weekLabel: string; week: number; monthLabel: string; month: number };
+};
+
+// ---------- Month view ----------
+export type MonthChip = {
+  id: number; weekday: number;            // 0=Mon..6=Sun within its week
+  employeeId: number; label: string;      // customer (fallback postal)
+  postal: string; category: string; status: CalStatus; contactId: number;
+};
+export type MonthDay = {
+  dateISO: string; dateNum: number; weekday: number; // 0..6
+  inMonth: boolean; isToday: boolean; chips: MonthChip[];
+};
+export type MonthWeek = { weekNo: number; monday: string; holiday: boolean; days: MonthDay[] }; // days length 7 Mon..Sun
+export type MonthCell = { count: number; revenue: number };
+export type MonthMatrixRow = { employeeId: number; cells: MonthCell[]; total: MonthCell };
+export type CalendarMonth = {
+  year: number; monthIdx: number; monthLabel: string;   // monthLabel e.g. "Juli 2026"
+  monthParam: string;                                    // "YYYY-MM" of this month
+  prevMonth: string; nextMonth: string;                  // "YYYY-MM" for nav
+  employees: Employee[];                                 // the lib/calendar Employee shape (id,name,color,active)
+  weeks: MonthWeek[];                                    // variant A date grid (4-6 weeks)
+  weekNos: number[];                                     // variant B columns
+  matrix: MonthMatrixRow[];                              // variant B rows, ONE per employee (same order as employees)
+  colTotals: MonthCell[];                                // per-week totals (aligned to weekNos)
+  grandTotal: MonthCell;
 };
 
 // The demo week the calendar/day-program open on (Monday of ISO week 27, 2026).
