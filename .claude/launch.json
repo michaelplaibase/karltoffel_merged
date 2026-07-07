@@ -1,6 +1,7 @@
 {
   "version": "0.0.1",
   "configurations": [
-    { "name": "karltoffel", "runtimeExecutable": "python3", "runtimeArgs": ["-m", "http.server", "8099"], "port": 8099 }
+    { "name": "karltoffel", "runtimeExecutable": "python3", "runtimeArgs": ["-m", "http.server", "8099"], "port": 8099 },
+    { "name": "crm", "runtimeExecutable": "npm", "runtimeArgs": ["run", "dev", "--prefix", "/Users/michaelplaibase/karltoffel_crm"], "port": 3000, "autoPort": true }
   ]
 }
