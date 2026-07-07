@@ -3,9 +3,16 @@ import { notFound } from "next/navigation";
 import { getContactById, getSubscriptionsForContact, getFixedPricesForContact, getOrdersForContact } from "@/lib/queries";
 import { CatChip, MapLink, StatusPill, money } from "@/components/ui";
 import RowMenu, { type RowMenuItem } from "@/components/RowMenu";
+import SkraafotoCard from "@/components/SkraafotoCard";
 import { stopSubscription } from "@/app/actions/subscriptions";
 import { deleteFixedPrice } from "@/app/actions/fixed-prices";
 import { deleteOrder } from "@/app/actions/orders";
+
+// Dataforsyningen webservice-token til skråfoto/DHM/DAWA. Læses KUN fra miljøet
+// (DATAFORSYNINGEN_TOKEN) — aldrig hardkodet i kildekoden. Er den ikke sat,
+// viser kortet en "ikke konfigureret"-besked (fail-closed, som andre secrets).
+// Serveres kun til indloggede medarbejdere; bør domæne-låses på dataforsyningen.dk.
+const SKRAAFOTO_TOKEN = process.env.DATAFORSYNINGEN_TOKEN || "";
 
 export default async function CustomerDetail({
   params,
@@ -59,6 +66,8 @@ export default async function CustomerDetail({
           </div>
         </div>
       </div>
+
+      <SkraafotoCard address={`${c.street}, ${c.city}`} token={SKRAAFOTO_TOKEN} />
 
       <div className="card">
         <div className="card-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
