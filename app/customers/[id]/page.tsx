@@ -8,11 +8,11 @@ import { stopSubscription } from "@/app/actions/subscriptions";
 import { deleteFixedPrice } from "@/app/actions/fixed-prices";
 import { deleteOrder } from "@/app/actions/orders";
 
-// Dataforsyningen webservice-token til skråfoto/DHM/DAWA. Læses KUN fra miljøet
-// (DATAFORSYNINGEN_TOKEN) — aldrig hardkodet i kildekoden. Er den ikke sat,
-// viser kortet en "ikke konfigureret"-besked (fail-closed, som andre secrets).
-// Serveres kun til indloggede medarbejdere; bør domæne-låses på dataforsyningen.dk.
-const SKRAAFOTO_TOKEN = process.env.DATAFORSYNINGEN_TOKEN || "";
+// Skråfoto-verifikationen bruger Dataforsyningen-tokenet, men tokenet når ALDRIG
+// browseren: kaldene går gennem CRM-proxyen (app/api/skraafoto/*), som injicerer
+// tokenet serverside. Her sendes kun en boolean om tokenet er sat, så kortet kan
+// vise "ikke konfigureret" hvis DATAFORSYNINGEN_TOKEN mangler.
+const SKRAAFOTO_CONFIGURED = !!(process.env.DATAFORSYNINGEN_TOKEN || "").trim();
 
 export default async function CustomerDetail({
   params,
@@ -67,7 +67,7 @@ export default async function CustomerDetail({
         </div>
       </div>
 
-      <SkraafotoCard address={`${c.street}, ${c.city}`} token={SKRAAFOTO_TOKEN} />
+      <SkraafotoCard address={`${c.street}, ${c.city}`} configured={SKRAAFOTO_CONFIGURED} />
 
       <div className="card">
         <div className="card-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>

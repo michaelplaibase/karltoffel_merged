@@ -18,27 +18,27 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 export type SkraafotoConfig = {
-  token: string;
-  stacBase: string;
-  dawaBase: string;
-  dhmWcsBase: string;
+  dawaBase: string;   // tokenløst → kaldes direkte fra browseren
+  searchUrl: string;  // STAC-proxy på CRM'et (token injiceres serverside)
+  dhmUrl: string;     // DHM-proxy på CRM'et (token injiceres serverside)
   collections: string[];
   direction: string;
   cropSpanPx: number;
 };
 
-/** Endpoints verificeret live 03.07.2026 (samme som sitets tilbudsmotor). */
-export const SKRAAFOTO_ENDPOINTS = {
-  stacBase: "https://api.dataforsyningen.dk/rest/skraafoto_api/v2",
+/** DAWA er tokenløst og kaldes direkte; STAC + DHM går gennem CRM-proxyen
+    (app/api/skraafoto/*), så Dataforsyningen-tokenet aldrig rammer browseren. */
+export const SKRAAFOTO_DEFAULTS: SkraafotoConfig = {
   dawaBase: "https://api.dataforsyningen.dk",
-  dhmWcsBase: "https://api.dataforsyningen.dk/dhm_wcs_DAF",
+  searchUrl: "/api/skraafoto/search",
+  dhmUrl: "/api/skraafoto/dhm",
   collections: ["skraafotos2025", "skraafotos2023", "skraafotos2021"],
   direction: "north",
   cropSpanPx: 1400,
 };
 
-export function makeConfig(token: string, over: Partial<SkraafotoConfig> = {}): SkraafotoConfig {
-  return { token, ...SKRAAFOTO_ENDPOINTS, ...over };
+export function clientConfig(over: Partial<SkraafotoConfig> = {}): SkraafotoConfig {
+  return { ...SKRAAFOTO_DEFAULTS, ...over };
 }
 
 export const DIR_DA: Record<string, string> = {
@@ -70,8 +70,6 @@ function GT(): any {
   if (!w.GeoTIFF) throw new Error("GeoTIFF mangler");
   return w.GeoTIFF;
 }
-
-function tokenParam(cfg: SkraafotoConfig) { return "token=" + encodeURIComponent(cfg.token || ""); }
 
 /* ================== GEO-TYPER ================== */
 type Ring = number[][];
@@ -189,9 +187,7 @@ type Grid = { data: any; w: number; h: number; bbox: Bbox };
 function fetchGrid(coverage: string, bbox: Bbox, cfg: SkraafotoConfig): Promise<Grid> {
   const w = Math.max(16, Math.min(300, Math.round((bbox[2] - bbox[0]) / 0.4)));
   const h = Math.max(16, Math.min(300, Math.round((bbox[3] - bbox[1]) / 0.4)));
-  const url = cfg.dhmWcsBase + "?SERVICE=WCS&VERSION=1.0.0&REQUEST=GetCoverage&COVERAGE=" + coverage +
-    "&CRS=epsg:25832&RESPONSE_CRS=epsg:25832&FORMAT=GTiff&WIDTH=" + w + "&HEIGHT=" + h +
-    "&BBOX=" + bbox.join(",") + "&" + tokenParam(cfg);
+  const url = cfg.dhmUrl + "?coverage=" + coverage + "&bbox=" + bbox.join(",") + "&width=" + w + "&height=" + h;
   return fetch(url)
     .then((r) => { if (!r.ok) throw new Error("DHM " + r.status); return r.arrayBuffer(); })
     .then((buf) => GT().fromArrayBuffer(buf))
@@ -238,7 +234,6 @@ export type Measurement = {
 };
 
 export function measureProperty(adresse: string, cfg: SkraafotoConfig): Promise<Measurement | null> {
-  if (!cfg.token) return Promise.resolve(null);
   // Højde-/tag-målingerne kræver GeoTIFF (DHM-gitre). Load den først; fejler den,
   // fortsætter vi med de rene polygon-mål (grund/have/bygning) via .catch i grid-kaldene.
   return loadGeoTIFF().catch(() => null).then(() => geocode(adresse, cfg)).then((geo) => {
@@ -329,12 +324,16 @@ function findItem(lon: number, lat: number, direction: string | undefined, cfg: 
   function tryCollection(i: number): Promise<Item> {
     if (i >= collections.length) throw new Error("Ingen skråfoto-dækning");
     const body = { collections: [collections[i]], intersects: { type: "Point", coordinates: [lon, lat] }, limit: 40 };
-    return fetch(cfg.stacBase + "/search?" + tokenParam(cfg), {
+    return fetch(cfg.searchUrl, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body),
     })
-      .then((r) => { if (!r.ok) throw new Error("STAC " + r.status); return r.json(); })
+      .then((r) => {
+        if (r.status === 503) throw new Error("unconfigured"); // token ikke sat på serveren
+        if (!r.ok) throw new Error("STAC " + r.status);
+        return r.json();
+      })
       .then((fc: any) => {
         const feats = (fc && fc.features) || [];
         const oblique = feats.filter((f: any) => f.properties && f.properties.direction && f.properties.direction !== "nadir");
@@ -357,12 +356,8 @@ function findItem(lon: number, lat: number, direction: string | undefined, cfg: 
 
 /* ---- 3) Terrænhøjde Z (m, DVR90) via DHM WCS — falder tilbage til 0 ---- */
 function terrainZ(X: number, Y: number, cfg: SkraafotoConfig): Promise<number> {
-  if (!cfg.dhmWcsBase) return Promise.resolve(0);
   const d = 3, bbox = [Math.round(X) - d, Math.round(Y) - d, Math.round(X) + d, Math.round(Y) + d].join(",");
-  const url = cfg.dhmWcsBase +
-    "?SERVICE=WCS&VERSION=1.0.0&REQUEST=GetCoverage&COVERAGE=dhm_terraen" +
-    "&CRS=epsg:25832&RESPONSE_CRS=epsg:25832&FORMAT=GTiff&WIDTH=3&HEIGHT=3&BBOX=" + bbox +
-    "&" + tokenParam(cfg);
+  const url = cfg.dhmUrl + "?coverage=dhm_terraen&bbox=" + bbox + "&width=3&height=3";
   return fetch(url)
     .then((r) => { if (!r.ok) throw new Error("DHM " + r.status); return r.arrayBuffer(); })
     .then((buf) => GT().fromArrayBuffer(buf))
@@ -459,7 +454,10 @@ function drawMarker(ctx: CanvasRenderingContext2D, x: number, y: number, W: numb
 }
 
 function renderCOG(href: string, canvas: HTMLCanvasElement, opts: RenderOpts): Promise<{ bw: number; bh: number }> {
-  return GT().fromUrl(href).then((tiff: any) => {
+  // href peger på cog-proxyen (relativ "/api/skraafoto/cog?u=…"). geotiff.js kan
+  // finde på at lave new URL(href) uden base → gør den absolut for en sikkerheds skyld.
+  const url = (href.charAt(0) === "/" && typeof location !== "undefined") ? location.origin + href : href;
+  return GT().fromUrl(url).then((tiff: any) => {
     return tiff.getImageCount().then((count: number) => {
       const reqs = [];
       for (let i = 0; i < count; i++) reqs.push(tiff.getImage(i));

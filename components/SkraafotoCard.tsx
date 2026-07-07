@@ -8,20 +8,22 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
-  makeConfig, renderSkraafoto, measureProperty, VERIFY_DIRS, DIR_DA,
+  clientConfig, renderSkraafoto, measureProperty, VERIFY_DIRS, DIR_DA,
   type Measurement, type RenderResult,
 } from "@/lib/skraafoto";
 
 type Props = {
   address: string;
-  token: string;
+  /** True når serveren har DATAFORSYNINGEN_TOKEN sat. Tokenet selv når aldrig
+   *  browseren — kaldene går gennem CRM-proxyen (/api/skraafoto/*). */
+  configured: boolean;
   showMeasurements?: boolean;
 };
 
 const DKK = new Intl.NumberFormat("da-DK", { maximumFractionDigits: 0 });
 const m2 = (v?: number) => (v != null ? DKK.format(v) + " m²" : "—");
 
-export default function SkraafotoCard({ address, token, showMeasurements = true }: Props) {
+export default function SkraafotoCard({ address, configured, showMeasurements = true }: Props) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const wrapRef = useRef<HTMLDivElement | null>(null);
 
@@ -33,7 +35,6 @@ export default function SkraafotoCard({ address, token, showMeasurements = true 
 
   const addr = address.trim();
   const hasAddr = addr.length >= 3;
-  const configured = !!token;
 
   /* --- Tegn skråfotoet (kører ved adresse-/retnings-/retry-skift). All setState
          sker inde i den async-funktion (ikke synkront i effekt-kroppen), så vi
@@ -43,7 +44,7 @@ export default function SkraafotoCard({ address, token, showMeasurements = true 
     const canvas = canvasRef.current;
     if (!canvas) return;
     let active = true; // sættes false i cleanup → superseder in-flight ved re-run/unmount
-    const cfg = makeConfig(token);
+    const cfg = clientConfig();
     const outW = Math.min(1024, Math.round((wrapRef.current?.clientWidth || 640) * (window.devicePixelRatio || 1)));
 
     (async () => {
@@ -63,7 +64,7 @@ export default function SkraafotoCard({ address, token, showMeasurements = true 
     })();
 
     return () => { active = false; };
-  }, [addr, dirIdx, retry, token, hasAddr, configured]);
+  }, [addr, dirIdx, retry, hasAddr, configured]);
 
   /* --- Auto-mål (retnings-uafhængigt; kun ved adresseskift) --- */
   useEffect(() => {
@@ -71,11 +72,11 @@ export default function SkraafotoCard({ address, token, showMeasurements = true 
     let active = true;
     (async () => {
       setMaal(null);
-      const m = await measureProperty(addr, makeConfig(token));
+      const m = await measureProperty(addr, clientConfig());
       if (active) setMaal(m);
     })();
     return () => { active = false; };
-  }, [addr, token, hasAddr, configured, showMeasurements]);
+  }, [addr, hasAddr, configured, showMeasurements]);
 
   const nextAngle = useCallback(() => setDirIdx((i) => (i + 1) % VERIFY_DIRS.length), []);
 
