@@ -53,14 +53,14 @@ export const TOP_NAV: NavMenu[] = [
     items: [
       { label: "Vejledninger", en: "Guides", href: "/guides" },
       { label: "Samarbejdspartnere", en: "Partners", href: "/partners" },
-      { label: "Fenster quiz", en: "Quiz", href: "/quiz" },
+      { label: "Karltoffel quiz", en: "Quiz", href: "/quiz" },
       { label: "Kontakt support", en: "Support", href: "/support" },
     ],
   },
 ];
 
 export const ACCOUNT_MENU: NavItem[] = [
-  { label: "Fenster konto", en: "Account", href: "/account" },
+  { label: "Karltoffel konto", en: "Account", href: "/account" },
   { label: "Skift password", en: "Change password", href: "/change-password" },
   { label: "Log ud", en: "Log out", href: "/logout" },
 ];
