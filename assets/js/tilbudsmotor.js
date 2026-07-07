@@ -253,7 +253,6 @@ function visStep(id, skipScroll){
   if(!skipScroll) ROOT.scrollIntoView({ block:"start", behavior:"auto" });
   if(id === "step-verify") $("verify-adr").textContent = state.adresse;
   if(id === "step-losning") renderTop();
-  if(id === "step-kontakt") renderRecap();
   /* Fremdrift: "Trin N af 5" + dots (skjules på tak-trinnet). */
   const prog = $("tm-progress");
   if(prog){
@@ -287,16 +286,6 @@ function gemState(stepId){
   } catch(e){ /* private mode / kvote — persistens er best-effort */ }
 }
 function rydState(){ try { sessionStorage.removeItem(PERSIST_KEY); } catch(e){} }
-
-/* Pris-recap i commitment-øjeblikket: kunden skal kunne se pakken, mens de
-   udfylder kontaktfelterne. */
-function renderRecap(){
-  const el = $("k-recap"); if(!el) return;
-  const r = beregn(PRODUCTS);
-  el.innerHTML = r.count
-    ? "Din pakke: <b>" + kr(r.snit) + " pr. besøg</b> · " + r.count + " services · " + r.visits + " besøg om året — vi bekræfter tallene, når vi ringer."
-    : "Ingen services valgt endnu — vi sammensætter løsningen med dig i telefonen.";
-}
 
 /* ============ KUNDETYPE (privat/erhverv) ============ */
 const ktPrivat = $("kt-privat"), ktErhverv = $("kt-erhverv"),

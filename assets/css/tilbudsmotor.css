@@ -224,9 +224,6 @@
 .tm-flow .kontakt input,.tm-flow .kontakt textarea{width:100%;padding:15px 16px;border-radius:12px;border:0;background:var(--ivory);color:var(--brun);font-size:16px}
 .tm-flow .kontakt .err{color:var(--ivory);background:var(--roed-moerk);border-radius:10px;padding:10px 14px;margin-top:16px;font-size:14px;display:none}   /* ivory på mørk rød ≈7.1:1 (AA) */
 .tm-flow .kontakt .err.show{display:block}
-/* Pris-recap over kontaktfelterne */
-.tm-flow .k-recap{margin-top:16px;background:#5a4322;border-radius:12px;padding:12px 16px;font-size:14.5px;line-height:1.5}
-.tm-flow .k-recap b{color:var(--gul)}
 /* Konkret opkaldstidspunkt på tak-siden */
 .tm-flow .tak-ring{display:none;margin-top:14px;font-size:19px;font-weight:700;color:var(--gul)}
 .tm-flow .tak-ring.show{display:block}
