@@ -4,6 +4,9 @@ import { getContactById, getSubscriptionsForContact, getFixedPricesForContact, g
 import { CatChip, MapLink, StatusPill, money } from "@/components/ui";
 import RowMenu, { type RowMenuItem } from "@/components/RowMenu";
 import SkraafotoCard from "@/components/SkraafotoCard";
+import Timeline from "@/components/Timeline";
+import TimelineNoteForm from "@/components/TimelineNoteForm";
+import { getContactTimeline } from "@/lib/timeline";
 import { stopSubscription } from "@/app/actions/subscriptions";
 import { deleteFixedPrice } from "@/app/actions/fixed-prices";
 import { deleteOrder } from "@/app/actions/orders";
@@ -20,12 +23,15 @@ export default async function CustomerDetail({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const c = await getContactById(Number(id));
+  const cid = Number(id);
+  if (!Number.isInteger(cid)) notFound();
+  const c = await getContactById(cid);
   if (!c) notFound();
-  const [subs, fixedPrices, orders] = await Promise.all([
+  const [subs, fixedPrices, orders, events] = await Promise.all([
     getSubscriptionsForContact(c.id),
     getFixedPricesForContact(c.id),
     getOrdersForContact(c.id),
+    getContactTimeline(c.id),
   ]);
 
   return (
@@ -68,6 +74,14 @@ export default async function CustomerDetail({
       </div>
 
       <SkraafotoCard address={`${c.street}, ${c.city}`} configured={SKRAAFOTO_CONFIGURED} />
+
+      <div className="card">
+        <div className="card-header"><h4 className="section-title">Kundens tidslinje</h4></div>
+        <div className="card-body tight">
+          <TimelineNoteForm contactId={c.id} />
+          <Timeline items={events} />
+        </div>
+      </div>
 
       <div className="card">
         <div className="card-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>

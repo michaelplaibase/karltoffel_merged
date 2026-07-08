@@ -2,6 +2,10 @@ import { prisma } from "@/lib/db";
 import { unauthorized } from "@/lib/api-auth";
 import { underLimit, recordHit } from "@/lib/rate-limit";
 import { bookCallEvent } from "@/lib/gcal";
+import { tryLogEvent } from "@/lib/timeline";
+import { renderLeadConfirmation } from "@/lib/lead-confirmation";
+import { sendEmail } from "@/lib/email";
+import { after } from "next/server";
 import type { NextRequest } from "next/server";
 
 // Inbound lead webhook for the public website form. No session cookie —
@@ -40,8 +44,9 @@ const num = (v: unknown, max: number) => (typeof v === "number" && Number.isFini
 
 /** Tilbudsmotorens payload: valgte services + estimat + kundetype. Alt er
  *  valgfrit og valideres felt for felt — ukendte/ugyldige rækker droppes. */
-type TmService = { id: string; navn: string; wm: string | null; qty: number; enhed: string; freq: number; pris: number | null };
-function parseTmPayload(body: Record<string, unknown>): { payloadJson: string | null; kundetype: string | null; services: TmService[]; estimatMd: number } {
+type TmService = { id: string; navn: string; wm: string | null; qty: number; enhed: string; freq: number; pris: number | null; pakke: boolean };
+type TmEstimat = { md: number; aar: number; visits: number; count: number };
+function parseTmPayload(body: Record<string, unknown>): { payloadJson: string | null; kundetype: string | null; services: TmService[]; estimat: TmEstimat } {
   const kt = str(body.kundetype, 10).toLowerCase();
   const kundetype = kt === "privat" || kt === "erhverv" ? kt : null;
 
@@ -58,6 +63,7 @@ function parseTmPayload(body: Record<string, unknown>): { payloadJson: string | 
       enhed: str(s.enhed, 40),
       freq: num(s.freq, 366),
       pris: typeof s.pris === "number" && Number.isFinite(s.pris) && s.pris >= 0 ? Math.min(s.pris, 1_000_000) : null,
+      pakke: s.pakke === true,              // del af Villapakken → "indeholdt" i bekræftelsesmailen
     }];
   });
 
@@ -67,7 +73,7 @@ function parseTmPayload(body: Record<string, unknown>): { payloadJson: string | 
   const payloadJson = kundetype || services.length
     ? JSON.stringify({ kundetype, services, estimat })
     : null;
-  return { payloadJson, kundetype, services, estimatMd: estimat.md };
+  return { payloadJson, kundetype, services, estimat };
 }
 
 const DKK = new Intl.NumberFormat("da-DK", { maximumFractionDigits: 0 });
@@ -136,7 +142,16 @@ export async function POST(req: NextRequest) {
         payload: tm.payloadJson ?? existing.payload,   // nyeste pakkevalg vinder
       },
     });
-    // Ingen ny kalender-booking ved dedup — det åbne lead har allerede sit opkalds-slot.
+    // Tidslinje: gen-henvendelse på et åbent emne, så kunderejsen ikke taber
+    // den. Ingen ny kalender-booking eller mail ved dedup (slot/kvittering findes
+    // allerede — undgår dobbelt-opkald og dobbelt-mail).
+    await tryLogEvent(prisma, {
+      companyId: company.id, leadId: existing.id, contactId: existing.contactId, type: "lead_updated",
+      title: "Ny henvendelse via tilbudsmotoren",
+      body: tm.services.length
+        ? `Opdateret valg: ${tm.services.map((s) => s.navn).slice(0, 20).join(", ")}`
+        : "Kunden sendte formularen igen (ingen ydelser valgt).",
+    });
     return json({ id: existing.id, deduplicated: true }, 200);
   }
 
@@ -155,6 +170,23 @@ export async function POST(req: NextRequest) {
     },
   });
 
+  // Tidslinje: første skridt i kunderejsen — "takkede ja tak til at blive
+  // kontaktet" + de valgte ydelser. Best-effort (må aldrig vælte lead-svaret).
+  const svcLinjer = tm.services.slice(0, 20).map((s) =>
+    `• ${s.navn}${s.qty ? ` — ${DKK.format(s.qty)} ${s.enhed}` : ""}${s.freq ? ` × ${s.freq}/år` : ""}`);
+  if (tm.services.length > 20) svcLinjer.push(`… og ${tm.services.length - 20} mere`);
+  const ktLabel = tm.kundetype === "erhverv" ? "Erhverv" : tm.kundetype === "privat" ? "Privat" : null;
+  await tryLogEvent(prisma, {
+    companyId: company.id, leadId: lead.id, contactId: known?.id ?? null, type: "lead_created",
+    title: "Kunde takkede ja tak til at blive kontaktet",
+    body: [
+      ktLabel ? `Kundetype: ${ktLabel}` : null,
+      tm.services.length ? "Ønskede ydelser:" : "Ingen ydelser valgt endnu.",
+      ...svcLinjer,
+      tm.estimat.md ? `Estimat: ~${DKK.format(tm.estimat.md)} kr/md` : null,
+    ].filter(Boolean).join("\n"),
+  });
+
   // Book 15-min opkalds-slot i den fælles kalender — hurtigst muligt (lead
   // 15:00 → slot 15:15). Må ALDRIG vælte lead-oprettelsen: fejl logges og
   // rapporteres i svaret, men leadet er allerede gemt.
@@ -171,7 +203,7 @@ export async function POST(req: NextRequest) {
       email ? `E-mail: ${email}` : null,
       address ? `Adresse: ${address}` : null,
       tm.kundetype ? `Kundetype: ${tm.kundetype === "erhverv" ? "Erhverv" : "Privat"}` : null,
-      tm.estimatMd ? `Estimat: ${DKK.format(tm.estimatMd)} kr/md` : null,
+      tm.estimat.md ? `Estimat: ${DKK.format(tm.estimat.md)} kr/md` : null,
       lines.length ? `` : null,
       ...lines,
       ``,
@@ -183,6 +215,44 @@ export async function POST(req: NextRequest) {
   } catch (e) {
     call = "failed";
     console.error(`[leads] kalender-booking exception for lead ${lead.id}:`, e);
+  }
+
+  // Tidslinje: opkalds-slottet (hvis det blev lagt i kalenderen).
+  const slot = /^booked (\d{4}-\d{2}-\d{2})T(\d{2}:\d{2})/.exec(call);
+  if (slot) {
+    await tryLogEvent(prisma, {
+      companyId: company.id, leadId: lead.id, contactId: known?.id ?? null, type: "call_booked",
+      title: "Opkald booket i kalenderen", body: `Ring-slot: ${slot[1]} kl. ${slot[2]}`,
+    });
+  }
+
+  // Bekræftelsesmail til kunden + tidslinje-hændelse med NØJAGTIGT indhold, så
+  // en medarbejder kan se præcis hvad kunden modtog. Best-effort: sender kun
+  // hvis kunden har oplyst e-mail. Kører via after() EFTER svaret er sendt, så
+  // Resend-kaldet (op til 8s) ikke ligger på webhookens svar-kritiske vej.
+  if (email) {
+    const mailCall = slot ? `booked ${slot[1]}T${slot[2]}:00` : null;
+    after(async () => {
+      try {
+        const mail = renderLeadConfirmation({
+          name, address, kundetype: tm.kundetype, services: tm.services,
+          estimat: { aar: tm.estimat.aar, visits: tm.estimat.visits }, call: mailCall,
+        });
+        const res = await sendEmail({ to: email, subject: mail.subject, text: mail.text, html: mail.html });
+        if (res.ok) {
+          await tryLogEvent(prisma, {
+            companyId: company.id, leadId: lead.id, contactId: known?.id ?? null, type: "email_sent",
+            title: "Bekræftelsesmail på tilbud sendt",
+            body: res.simulated ? "Simuleret (ingen mail-nøgle sat — mailen blev IKKE sendt)." : `Sendt til ${email}`,
+            meta: { to: email, subject: mail.subject, text: mail.text, html: mail.html, simulated: !!res.simulated, resendId: res.id ?? null },
+          });
+        } else {
+          console.error(`[leads] bekræftelsesmail fejlede for lead ${lead.id}: ${res.error}`);
+        }
+      } catch (e) {
+        console.error(`[leads] bekræftelsesmail exception for lead ${lead.id}:`, e);
+      }
+    });
   }
 
   return json({ id: lead.id, deduplicated: false, call }, 201);
