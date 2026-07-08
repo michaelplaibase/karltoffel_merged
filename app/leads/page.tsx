@@ -56,6 +56,7 @@ export default async function LeadsPage({ searchParams }: { searchParams: Promis
                 ) : leads.map((l) => {
                   const tm = parsePayload(l.payload);
                   const items: RowMenuItem[] = [
+                    { label: "Åbn emne", href: `/leads/${l.id}` },
                     ...(l.contactId ? [{ label: "Vis kunde", href: `/customers/${l.contactId}` }] : []),
                     ...(l.status !== "converted"
                       ? [{ label: "Markér som kontaktet", action: markLeadContacted.bind(null, l.id) }]
@@ -79,7 +80,7 @@ export default async function LeadsPage({ searchParams }: { searchParams: Promis
                       <td>{items.length ? <RowMenu items={items} /> : null}</td>
                       <td className="num">{l.createdAt.toISOString().slice(0, 10)}</td>
                       <td>
-                        {l.name}
+                        <Link href={`/leads/${l.id}`}>{l.name}</Link>
                         {l.contactId ? <span className="badge badge-soft-muted" style={{ marginLeft: 6 }}>eksisterende kunde</span> : null}
                         {tm?.kundetype === "erhverv" ? <span className="badge badge-soft-warning" style={{ marginLeft: 6 }}>Erhverv</span> : null}
                       </td>

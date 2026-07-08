@@ -5,12 +5,21 @@
 // tilbudsmotorens payload (godkendes efter bekræftelses-opkaldet). All guarded —
 // anonymous callers bounce to /login (see lib/api-auth).
 import { prisma, isUniqueViolation } from "@/lib/db";
-import { guardAction } from "@/lib/api-auth";
+import { requireSession } from "@/lib/api-auth";
+import { logEvent, tryLogEvent } from "@/lib/timeline";
 import { categoryColor } from "@/lib/categories";
 import { isoWeek } from "@/lib/planner";
 import { weekMondayToday } from "@/lib/calendar";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+
+/** Som guardAction(), men returnerer den indloggede medarbejders id, så vi kan
+ *  tilskrive en handling/note en forfatter (guardAction smider userId'et væk). */
+async function requireUserId(): Promise<number> {
+  const userId = await requireSession();
+  if (userId == null) redirect("/login");
+  return userId;
+}
 
 /** Tilbudsmotor-service-id → CRM-kategori (styrer farve-chippen på opgavelinjer). */
 const TM_KATEGORI: Record<string, string> = {
@@ -102,15 +111,67 @@ function splitAddress(addr: string): { street: string; city: string } {
 }
 
 export async function markLeadContacted(id: number): Promise<void> {
-  await guardAction();
+  const userId = await requireUserId();
+  const lead = await prisma.lead.findUnique({ where: { id }, select: { companyId: true, contactId: true } });
+  if (!lead) return;
   await prisma.lead.update({ where: { id }, data: { status: "contacted" } });
+  await tryLogEvent(prisma, {
+    companyId: lead.companyId, leadId: id, contactId: lead.contactId, type: "status_changed",
+    title: "Markeret som kontaktet", authorId: userId,
+  });
+  if (lead.contactId) revalidatePath(`/customers/${lead.contactId}`);
   revalidatePath("/leads");
+  revalidatePath(`/leads/${id}`);
 }
 
 export async function rejectLead(id: number): Promise<void> {
-  await guardAction();
+  const userId = await requireUserId();
+  const lead = await prisma.lead.findUnique({ where: { id }, select: { companyId: true, contactId: true } });
+  if (!lead) return;
   await prisma.lead.update({ where: { id }, data: { status: "rejected" } });
+  await tryLogEvent(prisma, {
+    companyId: lead.companyId, leadId: id, contactId: lead.contactId, type: "status_changed",
+    title: "Emne afvist", authorId: userId,
+  });
+  if (lead.contactId) revalidatePath(`/customers/${lead.contactId}`);
   revalidatePath("/leads");
+  revalidatePath(`/leads/${id}`);
+}
+
+/** Tilføj en fri-tekst-note til tidslinjen (fra en medarbejder). Kan hænges på
+ *  et emne (leadId) og/eller en kunde (contactId) via skjulte formfelter. */
+// body ekkoes tilbage ved fejl, så React 19's automatiske form-reset ikke tømmer
+// medarbejderens indtastede note når vi returnerer en fejl (kun succes rydder).
+export type NoteState = { error?: string; body?: string };
+export async function addTimelineNote(_prev: NoteState, formData: FormData): Promise<NoteState> {
+  const userId = await requireUserId();
+  const body = String(formData.get("body") ?? "").trim();
+  const leadId = Number(formData.get("leadId")) || null;
+  const contactId = Number(formData.get("contactId")) || null;
+  if (!body) return { error: "Skriv en note, før du gemmer." };
+  if (!leadId && !contactId) return { error: "Noten mangler en reference til emne eller kunde.", body };
+
+  let companyId: number | null = null;
+  let stampContactId: number | null = contactId;
+  if (leadId) {
+    const lead = await prisma.lead.findUnique({ where: { id: leadId }, select: { companyId: true, contactId: true } });
+    if (!lead) return { error: "Emnet findes ikke længere.", body };
+    companyId = lead.companyId;
+    stampContactId = stampContactId ?? lead.contactId; // note på et konverteret emne vises også på kunden
+  } else if (contactId) {
+    const contact = await prisma.contact.findUnique({ where: { id: contactId }, select: { companyId: true } });
+    if (!contact) return { error: "Kunden findes ikke længere.", body };
+    companyId = contact.companyId;
+  }
+  if (companyId == null) return { error: "Noten mangler en reference.", body };
+
+  await logEvent(prisma, {
+    companyId, leadId, contactId: stampContactId, type: "note",
+    title: "Note", body: body.slice(0, 4000), authorId: userId,
+  });
+  if (leadId) revalidatePath(`/leads/${leadId}`);
+  if (stampContactId) revalidatePath(`/customers/${stampContactId}`);
+  return {};
 }
 
 /** Convert a lead into a customer + et AFVENTENDE abonnement fra payloaden.
@@ -118,7 +179,7 @@ export async function rejectLead(id: number): Promise<void> {
  *  the Contact and link it. Abonnementet godkendes (aktiveres + ordrer
  *  materialiseres) særskilt efter bekræftelses-opkaldet. */
 export async function convertLead(id: number): Promise<void> {
-  await guardAction();
+  const userId = await requireUserId();
   const lead = await prisma.lead.findUnique({ where: { id } });
   if (!lead) return;
 
@@ -145,6 +206,13 @@ export async function convertLead(id: number): Promise<void> {
     });
     contactId = contact.id;
   }
+
+  // Tidslinje: konverteringen — stemples med contactId, så den (og resten af
+  // emnets forløb) fremover også vises på kundesiden.
+  await tryLogEvent(prisma, {
+    companyId: lead.companyId, leadId: id, contactId, type: "converted",
+    title: "Emne konverteret til kunde", authorId: userId,
+  });
 
   // Payload → afventende abonnement (ingen ordrer før godkendelse).
   const deliveryAddress = city ? `${street}, ${city}` : street || lead.address || "";

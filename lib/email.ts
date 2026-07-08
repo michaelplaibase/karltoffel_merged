@@ -5,10 +5,15 @@
 // unset, it logs and returns { ok:true, simulated:true } instead of sending.
 // That preserves the app's current stubbed behaviour in dev/preview and means
 // nothing is ever sent until the key + verified sender are configured on Vercel.
-export type SendEmailInput = { to: string; subject: string; text: string; replyTo?: string };
+export type SendEmailInput = { to: string; subject: string; text: string; html?: string; replyTo?: string };
 export type SendEmailResult = { ok: boolean; simulated?: boolean; id?: string; error?: string };
 
-export async function sendEmail({ to, subject, text, replyTo }: SendEmailInput): Promise<SendEmailResult> {
+// Loft på Resend-kaldet: mails afsendes ofte på en request-kritisk vej (fx
+// lead-webhooken), så en langsom udbyder må ikke hænge funktionen ud over
+// Vercels maxDuration.
+const SEND_TIMEOUT_MS = 8000;
+
+export async function sendEmail({ to, subject, text, html, replyTo }: SendEmailInput): Promise<SendEmailResult> {
   const key = process.env.RESEND_API_KEY;
   const from = process.env.EMAIL_FROM;
   const reply = replyTo ?? process.env.EMAIL_REPLY_TO;
@@ -22,7 +27,8 @@ export async function sendEmail({ to, subject, text, replyTo }: SendEmailInput):
     const res = await fetch("https://api.resend.com/emails", {
       method: "POST",
       headers: { Authorization: `Bearer ${key}`, "content-type": "application/json" },
-      body: JSON.stringify({ from, to, subject, text, ...(reply ? { reply_to: reply } : {}) }),
+      body: JSON.stringify({ from, to, subject, text, ...(html ? { html } : {}), ...(reply ? { reply_to: reply } : {}) }),
+      signal: AbortSignal.timeout(SEND_TIMEOUT_MS),
     });
     if (!res.ok) {
       const detail = await res.text().catch(() => "");

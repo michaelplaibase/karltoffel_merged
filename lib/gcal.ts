@@ -67,6 +67,7 @@ async function accessToken(saEmail: string, saKey: string): Promise<string> {
     method: "POST",
     headers: { "content-type": "application/x-www-form-urlencoded" },
     body: new URLSearchParams({ grant_type: "urn:ietf:params:oauth:grant-type:jwt-bearer", assertion: `${unsigned}.${sig}` }),
+    signal: AbortSignal.timeout(4000), // opkaldet ligger på lead-webhookens kritiske vej — bind ventetiden
   });
   if (!res.ok) throw new Error(`Google token ${res.status}: ${(await res.text().catch(() => "")).slice(0, 200)}`);
   const data = (await res.json()) as { access_token?: string };
@@ -93,6 +94,7 @@ export async function bookCallEvent(input: { summary: string; description: strin
     const res = await fetch(`https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(calId)}/events`, {
       method: "POST",
       headers: { Authorization: `Bearer ${token}`, "content-type": "application/json" },
+      signal: AbortSignal.timeout(5000), // som ovenfor: bind kalender-kaldet så webhooken ikke hænger
       body: JSON.stringify({
         summary: input.summary,
         description: input.description,
