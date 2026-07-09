@@ -12,6 +12,9 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // The static marketing site (buildless, browser-global JS) lives here and
+    // is deployed as its own Vercel project — it is not part of the CRM lint.
+    "site/**",
   ]),
 ]);
 
