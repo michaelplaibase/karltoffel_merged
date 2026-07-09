@@ -206,6 +206,41 @@ function applyMeasurements(m){
   if(active && active.id === "step-losning") renderTop();
 }
 
+/* AI-vinduestælling: send det renderede skråfoto til /api/windows (Anthropic-nøglen
+   bor på serveren) og brug estimatet som glasantal for udvendig vinduespudsning.
+   Alt er best-effort og fejler stille — uden svar (eller uden ANTHROPIC_API_KEY)
+   beholder motoren sit standard-glasantal. Respekterer kundens egne rettelser. */
+let windowsReq = 0;
+function taelVinduerAI(){
+  try{
+    const canvas = ROOT.querySelector("#sf-canvas");
+    if(!canvas || !canvas.width || typeof canvas.toDataURL !== "function") return;
+    let dataUrl;
+    try{ dataUrl = canvas.toDataURL("image/jpeg", 0.85); }
+    catch(e){ return; }   /* tainted canvas → kan ikke læses ud, drop */
+    if(!dataUrl || dataUrl.length < 800) return;
+    const req = ++windowsReq;
+    fetch("/api/windows", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ imageBase64: dataUrl, address: state.adresse })
+    })
+    .then(r => r.ok ? r.json() : null)
+    .then(d => {
+      if(!d || !d.ok || req !== windowsReq) return;   /* forældet/tomt svar → ignorer */
+      const panes = Math.round(d.panes);
+      if(!(panes >= 1 && panes <= 300)) return;
+      ["vinduer", "vinduerind"].forEach(id => {
+        const p = PRODUCTS.find(x => x.id === id);
+        if(p && !p.touched) p.qty = panes;            /* rør ikke mængder kunden selv har rettet */
+      });
+      const active = ROOT.querySelector(".step.active");
+      if(active && active.id === "step-losning") renderTop(); else opdater();
+    })
+    .catch(()=>{});
+  }catch(e){}
+}
+
 let measureReq = 0;
 function resetProducts(){
   PRODUCTS.forEach(function(p,i){ Object.assign(p, DEFAULTS[i]); p.touched = false; });
@@ -349,7 +384,7 @@ $("ls-skift").addEventListener("click", ()=>{
   adrInput.focus();
 });
 
-$("btn-ja").addEventListener("click", ()=> visStep("step-losning"));
+$("btn-ja").addEventListener("click", ()=>{ visStep("step-losning"); taelVinduerAI(); });
 btnNej.addEventListener("click", ()=>{
   verifyDir++;
   if(verifyDir < VERIFY_DIRS.length){
