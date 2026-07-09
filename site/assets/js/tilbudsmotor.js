@@ -54,16 +54,26 @@ const PRODUCTS = [
 /* Uberørt kopi til at nulstille pakken når en ny adresse vælges. */
 const DEFAULTS = PRODUCTS.map(function(p){ return Object.assign({}, p); });
 
+/* Mængderabat: "jo mere du vælger, jo mere sparer du" — 3% pr. valgt service,
+   loft på 15% (5+ services = fuld rabat). Rabatten lægges på den prissatte
+   årssum; uprisede "indeholdt/pris ved besøg"-linjer tæller med i antallet
+   men trækker naturligvis 0 kr. */
+var RABAT_PR_SERVICE = 3, RABAT_MAX = 15;
+function rabatPct(count){ return Math.min(RABAT_MAX, RABAT_PR_SERVICE * count); }
+
 function beregn(products){
-  var aar = 0, count = 0, visits = 0;
+  var brutto = 0, count = 0, visits = 0;
   for (var i=0;i<products.length;i++){
     var p = products[i];
     if(!p.on) continue;
     count += 1;                                   /* uprisede ("indeholdt") tæller også med */
     if(p.freq > visits) visits = p.freq;          /* ydelser bundtes på samme besøg */
-    if(p.pris != null && p.qty > 0) aar += p.pris * p.qty * p.freq;
+    if(p.pris != null && p.qty > 0) brutto += p.pris * p.qty * p.freq;
   }
-  return { aar: aar, md: aar/12, snit: visits>0 ? aar/visits : 0, count: count, visits: visits };
+  var pct = rabatPct(count);
+  var aar = brutto * (1 - pct/100);
+  return { aar: aar, aarBrutto: brutto, rabatPct: pct, rabatKr: brutto - aar,
+           md: aar/12, snit: visits>0 ? aar/visits : 0, count: count, visits: visits };
 }
 
 function linjeMd(p){ return (p.pris == null || !p.qty) ? 0 : (p.pris * p.qty * p.freq) / 12; }
@@ -377,7 +387,7 @@ $("btn-send").addEventListener("click", ()=>{
     kundetype: state.kundetype,
     source: "tilbudsmotor",
     services: valgt.map(p=>({ id:p.id, navn:p.navn, wm:p.wm, qty:p.qty, enhed:p.enhed, freq:p.freq, pris:p.pris })),
-    estimat: { md: Math.round(r.md), snit: Math.round(r.snit), aar: Math.round(r.aar), visits: r.visits, count: r.count }
+    estimat: { md: Math.round(r.md), snit: Math.round(r.snit), aar: Math.round(r.aar), aarBrutto: Math.round(r.aarBrutto), rabatPct: r.rabatPct, rabatKr: Math.round(r.rabatKr), visits: r.visits, count: r.count }
   };
 
   const btnSend = $("btn-send");
@@ -409,9 +419,13 @@ $("btn-send").addEventListener("click", ()=>{
                      : (!p.qty ? " (angiv antal)" : " (" + p.freq + "x/år)");
         return esc(p.navn) + suffix;
       }).join(", ");
+      var rabatLinje = r.rabatPct > 0
+        ? "Mængderabat: <b>−" + r.rabatPct + "%</b> (du sparer ca. " + kr(r.rabatKr) + " om året)<br>"
+        : "";
       opsum.innerHTML =
         "<b>" + esc(state.adresse) + ktLabel + "</b><br>" +
         "Valgt: " + linjer + "<br>" +
+        rabatLinje +
         "Estimeret: <b>" + kr(r.snit) + " pr. besøg</b> ved " + r.visits + " besøg om året.";
     }
     rydState();   /* leadet er sendt — intet at gendanne længere */
@@ -534,6 +548,25 @@ function renderAddons(){
   });
 }
 
+/* Live mængderabat-banner på løsnings-trinnet — svar på "hvor fremgår det?". */
+function opdaterRabat(){
+  var el = $("tm-rabat");
+  if(!el) return;
+  var r = beregn(PRODUCTS);
+  if(r.rabatPct > 0 && r.rabatKr > 0){
+    el.innerHTML = 'Du har valgt <b>' + r.count + ' services</b> og sparer <b>' + r.rabatPct +
+      '%</b> (ca. ' + kr(r.rabatKr) + ' om året). Jo flere du vælger, jo mere sparer du' +
+      (r.rabatPct < RABAT_MAX ? ' — helt op til ' + RABAT_MAX + '%.' : '.');
+    el.hidden = false;
+  } else if(r.rabatPct > 0){
+    el.innerHTML = 'Jo flere services du vælger, jo mere sparer du — <b>' + RABAT_PR_SERVICE +
+      '% pr. service</b>, op til ' + RABAT_MAX + '%.';
+    el.hidden = false;
+  } else {
+    el.hidden = true;
+  }
+}
+
 function opdater(){
   PRODUCTS.forEach(p => {
     const el = ROOT.querySelector('.pw[data-id="' + p.id + '"]');
@@ -546,6 +579,7 @@ function opdater(){
       el.innerHTML = '<b class="pw-val">' + kr(p.pris * p.qty) + '</b><span class="pw-unit">pr. gang</span>';
     }
   });
+  opdaterRabat();
   gemState("step-losning");   /* hver frekvens-/til-fravalgs-ændring overlever refresh */
 }
 
