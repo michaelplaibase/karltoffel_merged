@@ -1,0 +1,233 @@
+/* ==========================================================================
+   Karltoffel Tilbudsmotor (lead flow) — indlejret som sektion på forsiden.
+   Al CSS er scopet under .tm-flow, så den globale reset/body-styles fra den
+   oprindelige standalone-demo IKKE lækker ud på resten af siden.
+   ========================================================================== */
+
+/* DM Sans (self-hostet variabel font — brødtekst i flowet) */
+@font-face{
+  font-family:"DM Sans";
+  font-style:normal;
+  font-weight:100 1000;
+  font-display:swap;
+  src:url(../fonts/google/dm-sans-latin.woff2) format("woff2");
+}
+
+/* --- scope-rod: variabler + "body"-styles fra demoen ---------------------- */
+.tm-flow{
+  --brun:#4C3718; --gul:#FFF87B; --ivory:#FFFFF0; --bronze:#86612A;
+  --roed:#CC4B37; --roed-moerk:#9E3322; --graa:#CACACA;
+  --display:"snaga-unicase-display","DM Sans",sans-serif;
+  --body:"DM Sans",system-ui,sans-serif;
+
+  position:relative;
+  font-family:var(--body);
+  background:var(--brun);
+  color:var(--ivory);
+  /* Ingen fast højde: sektionen følger indholdet på det aktive trin. */
+}
+.tm-flow *{box-sizing:border-box;margin:0;padding:0}
+.tm-flow img,.tm-flow svg{display:block;max-width:100%}
+.tm-flow button{font-family:inherit;cursor:pointer}
+.tm-flow input,.tm-flow select{font-family:inherit}
+.tm-flow :focus-visible{outline:3px solid var(--gul);outline-offset:2px}
+/* Klik virker på ALLE labels i flowet (ophæver sidens globale label{pointer-events:none}). */
+.tm-flow label{pointer-events:auto}
+/* Mørk fokus-ring på lyse flader (gul-på-gul ellers usynlig). */
+.tm-flow .row :focus-visible,.tm-flow .topbar :focus-visible,.tm-flow .qty input:focus-visible,.tm-flow .kontakt input:focus-visible,.tm-flow .kontakt textarea:focus-visible,.tm-flow .cta-bar :focus-visible,.tm-flow .adr-list :focus-visible{outline-color:var(--brun)}
+
+.tm-flow .tm-main{max-width:1040px;margin:0 auto;padding:48px 24px 64px}
+.tm-flow .step{display:none}
+.tm-flow .step.active{display:block;animation:tm-stepin .45s ease both}
+@keyframes tm-stepin{from{opacity:0;transform:translateX(24px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){
+  .tm-flow .step.active{animation:none}
+  .tm-flow *{transition:none!important;animation-duration:.01ms!important}
+}
+
+/* STEP 1: HERO */
+.tm-flow .hero{padding:40px 0 48px;text-align:center}
+/* h2 (ikke h1): sidens dokument-outline må kun have ét h1 — hero-overskriften her er sektionens */
+.tm-flow .hero h2{font-family:var(--display);font-weight:700;font-size:clamp(34px,6vw,64px);line-height:1.04;color:var(--gul);letter-spacing:.01em}
+.tm-flow .hero p.sub{margin:18px auto 0;max-width:520px;font-size:18px;color:var(--ivory);opacity:.92}
+.tm-flow .adr-wrap{position:relative;max-width:640px;margin:40px auto 0;text-align:left}
+.tm-flow .adr-label{display:block;font-size:13px;letter-spacing:.1em;text-transform:uppercase;color:var(--gul);margin:0 0 8px 4px}
+.tm-flow #adr-input{width:100%;padding:20px 22px;font-size:19px;border:0;border-radius:14px;background:var(--ivory);color:var(--brun)}
+.tm-flow #adr-input::placeholder{color:#7d7052}   /* ≥4.5:1 på ivory (AA) */
+.tm-flow .adr-list{position:absolute;left:0;right:0;top:calc(100% + 8px);background:var(--ivory);color:var(--brun);border-radius:14px;overflow:hidden;box-shadow:0 18px 40px rgba(0,0,0,.35);z-index:30;display:none}
+.tm-flow .adr-list.open{display:block}
+.tm-flow .adr-list button{display:block;width:100%;text-align:left;padding:15px 20px;background:none;border:0;font-size:16px;color:var(--brun)}   /* ≈46px rækker (touch) */
+.tm-flow .adr-list button:hover,.tm-flow .adr-list button:focus-visible{background:var(--gul)}
+.tm-flow .adr-list .hint{padding:10px 20px;font-size:13px;color:var(--bronze);border-top:1px dashed var(--graa)}
+.tm-flow .adr-note{margin:14px 4px 0;font-size:13px;color:var(--gul);opacity:.85;display:none}
+.tm-flow .adr-note.show{display:block}
+
+/* FETCH OVERLAY (signatur: gravesekvensen) — dækker sektionen */
+/* .digging: sektionen har ingen fast højde længere — garantér plads til overlay-indholdet */
+.tm-flow.digging{min-height:440px}
+.tm-flow #dig{position:absolute;inset:0;background:var(--brun);display:none;align-items:center;justify-content:center;z-index:100}
+.tm-flow #dig.on{display:flex}
+.tm-flow .dig-inner{text-align:center;padding:24px;max-width:480px}
+.tm-flow .spade{width:74px;height:74px;margin:0 auto 26px;animation:tm-digbob 1s ease-in-out infinite}
+@keyframes tm-digbob{0%,100%{transform:rotate(-9deg) translateY(0)}50%{transform:rotate(7deg) translateY(9px)}}
+.tm-flow #dig-msg{font-family:var(--display);font-size:26px;color:var(--gul);min-height:1.4em}
+.tm-flow .dig-adr{margin-top:10px;font-size:15px;opacity:.8}
+.tm-flow .dig-bar{height:6px;background:#3a2a12;border-radius:99px;margin-top:26px;overflow:hidden}
+.tm-flow .dig-fill{height:100%;width:0;background:var(--gul);border-radius:99px;transition:width .5s ease}
+
+/* Fremdrift: "Trin N af 5" + dots */
+.tm-flow .tm-progress{display:flex;align-items:center;justify-content:center;gap:12px;padding:2px 0 10px}
+.tm-flow .tm-progress.done{display:none}
+.tm-flow .tm-progress-txt{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--gul);opacity:.85}
+.tm-flow .tm-progress-dots{display:flex;gap:7px}
+.tm-flow .tm-progress-dots i{width:8px;height:8px;border-radius:50%;background:var(--bronze);opacity:.5;transition:background .2s,opacity .2s}
+.tm-flow .tm-progress-dots i.on{background:var(--gul);opacity:1}
+
+/* Gennemgående "Tilbage"/"Videre"-navigation */
+.tm-flow .tm-nav{display:flex;gap:14px;justify-content:center;margin-top:34px;flex-wrap:wrap}
+.tm-flow .btn[disabled]{opacity:.35;cursor:default}
+.tm-flow .btn[disabled]:hover{filter:none}
+
+/* STEP 2: PRIVAT/ERHVERV */
+.tm-flow .ktype{padding:36px 0;text-align:center}
+.tm-flow .ktype h2{font-family:var(--display);font-size:clamp(26px,4vw,40px);color:var(--gul)}
+.tm-flow .ktype .ktype-sub{margin-top:10px;font-size:16px;opacity:.9}
+.tm-flow .ktype-cards{display:flex;gap:16px;justify-content:center;flex-wrap:wrap;margin-top:30px}
+.tm-flow .ktype-card{display:block;min-width:220px;padding:24px 28px;background:rgba(255,248,123,.06);border:2px solid var(--bronze);border-radius:16px;color:var(--ivory);text-align:center;transition:background .15s,border-color .15s}
+.tm-flow .ktype-card:hover{background:rgba(255,248,123,.15);border-color:var(--gul)}
+.tm-flow .ktype-card svg{width:44px;height:44px;margin:0 auto 12px}
+.tm-flow .ktype-card b{display:block;font-size:19px}
+.tm-flow .ktype-card small{display:block;margin-top:4px;font-size:13px;color:var(--gul);opacity:.75}
+.tm-flow .ktype-card.selected{background:var(--gul);border-color:var(--gul);color:var(--brun)}
+.tm-flow .ktype-card.selected small{color:var(--bronze);opacity:1}
+.tm-flow .ktype-card.selected svg path,.tm-flow .ktype-card.selected svg rect{stroke:var(--brun)}
+.tm-flow .ktype-note{display:none;margin-top:18px;font-size:14px;color:var(--gul);opacity:.9}
+.tm-flow .ktype-note.show{display:block}
+
+/* STEP 3: VERIFY */
+.tm-flow .verify{padding:36px 0;text-align:center}
+.tm-flow .verify h2{font-family:var(--display);font-size:clamp(26px,4vw,40px);color:var(--gul)}
+.tm-flow .verify .adr{margin-top:8px;font-size:17px;opacity:.9}
+.tm-flow .foto-card{position:relative;max-width:640px;margin:28px auto 0;border-radius:18px;overflow:hidden;background:var(--ivory)}
+.tm-flow .foto-badge{position:absolute;top:14px;left:14px;z-index:2;background:var(--brun);color:var(--gul);font-size:12px;letter-spacing:.12em;padding:6px 10px;border-radius:999px;text-transform:uppercase}
+.tm-flow .sf-canvas{display:none;width:100%;height:auto;vertical-align:top}
+.tm-flow .foto-card.has-photo .sf-canvas{display:block}
+.tm-flow .foto-card.has-photo>svg{display:none}
+.tm-flow .foto-card.sf-loading{position:relative}
+.tm-flow .foto-card.sf-loading::after{content:"";position:absolute;inset:0;background:linear-gradient(100deg,transparent 30%,rgba(255,255,255,.35) 50%,transparent 70%);background-size:200% 100%;animation:sfShimmer 1.1s linear infinite}
+@keyframes sfShimmer{from{background-position:180% 0}to{background-position:-80% 0}}
+@media (prefers-reduced-motion: reduce){.tm-flow .foto-card.sf-loading::after{animation:none}}
+.tm-flow .verify-btns{display:flex;gap:14px;justify-content:center;margin-top:28px;flex-wrap:wrap}
+.tm-flow .btn{border:2px solid transparent;border-radius:12px;padding:16px 30px;font-size:17px;font-weight:700}   /* transparent border = højde-paritet med btn-nej's bronze-border */
+.tm-flow .btn-ja{background:var(--gul);color:var(--brun)}
+.tm-flow .btn-nej{background:transparent;color:var(--ivory);border-color:var(--bronze)}
+.tm-flow .btn-ja:hover{filter:brightness(1.05)}
+.tm-flow .verify small{display:block;margin-top:16px;opacity:.65;font-size:13px}
+.tm-flow .sf-angle-hint{display:none;margin-top:14px;color:var(--gul);font-size:14px;opacity:.9}
+
+/* STEP 4: LØSNINGSLISTE — todelt udvælgelse (mobile-first) */
+.tm-flow .losning{padding:24px 0 48px}
+
+/* Adresseboks — kun adressen + "Skift adresse" */
+.tm-flow .topbar{display:flex;align-items:center;gap:11px;background:var(--ivory);color:var(--brun);border-radius:18px;padding:15px 18px;box-shadow:0 14px 34px rgba(0,0,0,.3)}
+.tm-flow .topbar .adr-line{display:flex;align-items:center;gap:9px;min-width:0}
+.tm-flow .pin{width:18px;height:18px;flex:none}
+.tm-flow .adr-txt{min-width:0}
+.tm-flow .adr-txt .lbl{display:block;font-size:11px;letter-spacing:.13em;text-transform:uppercase;color:var(--bronze);font-weight:600;margin-bottom:1px}
+.tm-flow #t-adr{display:block;font-size:17px;font-weight:700;line-height:1.2}   /* fuld adresse — wrapper på smalle skærme frem for at klippe */
+.tm-flow .ls-skift{margin-left:auto;flex:none;background:none;border:0;color:var(--bronze);font-size:13px;font-weight:600;text-decoration:underline;text-underline-offset:3px;white-space:nowrap}
+
+.tm-flow .socio{margin:22px 2px 4px;font-size:15px;color:var(--gul)}
+
+/* Todelt skærm — base = stakket (mobil) */
+.tm-flow .split{display:grid;grid-template-columns:1fr;gap:6px;margin-top:14px}
+.tm-flow .col{min-width:0;padding:14px 2px 4px}
+.tm-flow .col-head{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin:0 4px 12px}
+.tm-flow .col-head h3{font-size:13px;letter-spacing:.14em;text-transform:uppercase;color:var(--gul);font-weight:700}
+.tm-flow .col-head .meta{font-size:12px;color:rgba(255,255,240,.6)}
+
+/* Venstre: service-kort som ÉN række på ALLE skærme (samme layout som desktop).
+   Navnet (1fr) ombryder lange navne til 2 linjer; pris + frekvens holdes til højre. */
+.tm-flow .rows{display:flex;flex-direction:column;gap:9px}
+.tm-flow .row{display:grid;grid-template-columns:auto minmax(0,1fr) 44px auto;grid-template-areas:"chk navn pw fw";column-gap:7px;align-items:center;background:var(--gul);color:var(--brun);border-radius:13px;padding:10px 11px}
+.tm-flow .row--incl{background:#fbf3ad}
+.tm-flow .row input[type=checkbox]{grid-area:chk;width:21px;height:21px;accent-color:var(--brun);cursor:pointer}
+.tm-flow .row .navn{grid-area:navn;min-width:0;white-space:normal;overflow-wrap:break-word;font-size:12.5px;font-weight:700;line-height:1.25;cursor:pointer}
+/* Pris pr. gang — label over tallet (kompakt; indhold styrer bredden på mobil) */
+.tm-flow .pw{grid-area:pw;display:flex;flex-direction:column;align-items:center;gap:2px}
+.tm-flow .pw-lbl{font-size:9.5px;letter-spacing:.05em;text-transform:uppercase;color:var(--bronze);font-weight:700;white-space:nowrap}
+.tm-flow .pw-val{font-size:13px;font-weight:800;color:var(--brun);font-variant-numeric:tabular-nums;white-space:nowrap}
+.tm-flow .pw-note{font-size:12.5px;color:var(--bronze);font-weight:600;white-space:nowrap;text-align:center}
+/* Frekvens — "Besøg om året" over stepperen */
+.tm-flow .fw{grid-area:fw;display:flex;flex-direction:column;align-items:center;gap:3px}
+.tm-flow .fw-lbl{font-size:9.5px;letter-spacing:.05em;text-transform:uppercase;color:var(--bronze);font-weight:700;white-space:nowrap}
+.tm-flow .fw-ctl{display:flex;align-items:center;gap:4px}
+.tm-flow .fw-ctl button{width:26px;height:26px;border-radius:8px;border:0;background:var(--brun);color:var(--gul);font-size:16px;font-weight:700;line-height:1;display:grid;place-items:center}
+.tm-flow .fw-ctl button:disabled{opacity:.3;cursor:default}
+.tm-flow .fw-ctl b{min-width:14px;text-align:center;font-size:14px;font-weight:800;font-variant-numeric:tabular-nums}
+
+/* Højre: kun-navn tilvalg */
+.tm-flow .addons{display:flex;flex-direction:column;gap:14px}
+.tm-flow .addon-cat{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--gul);opacity:.7;margin-bottom:8px}
+.tm-flow .addon-list{display:flex;flex-direction:column;gap:8px}
+/* pointer-events:auto ophæver sidens globale label{pointer-events:none} (chips er <label>). */
+.tm-flow .addon{display:flex;align-items:center;gap:10px;background:rgba(255,248,123,.05);border:1.5px solid var(--bronze);border-radius:12px;padding:11px 14px;cursor:pointer;pointer-events:auto;transition:background .15s,border-color .15s}
+.tm-flow .addon:hover{background:rgba(255,248,123,.12);border-color:var(--gul)}
+.tm-flow .addon:focus-within{outline:3px solid var(--gul);outline-offset:2px}
+/* Ægte checkbox (state + tastatur/skærmlæser) skjules visuelt; "+"-cirklen er den synlige affordance. */
+.tm-flow .addon input[type=checkbox]{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none}
+.tm-flow .addon-navn{flex:1;min-width:0;font-size:14px;color:var(--ivory);font-weight:600}
+.tm-flow .addon-add{width:26px;height:26px;flex:none;border-radius:50%;border:1.5px solid var(--bronze);color:var(--gul);font-size:17px;line-height:1;display:grid;place-items:center;transition:background .15s,color .15s,border-color .15s}
+.tm-flow .addon:hover .addon-add{background:var(--gul);color:var(--brun);border-color:var(--gul)}
+
+/* Flash når et felt skifter kolonne */
+@keyframes tm-flash{0%{box-shadow:0 0 0 3px var(--gul)}100%{box-shadow:0 0 0 0 transparent}}
+.tm-flow .flash{animation:tm-flash .6s ease}
+
+/* Tablet/desktop: todelt med lodret skille */
+@media (min-width:760px){
+  .tm-flow .split{grid-template-columns:1fr 1fr;gap:0}
+  .tm-flow .col.left{padding-left:2px;padding-right:22px}
+  .tm-flow .col.right{padding-left:22px;padding-right:2px;border-left:1px solid rgba(255,248,123,.16)}
+}
+/* Bred desktop: mere luft + linede steppere på tværs af rækker (den godkendte visning) */
+@media (min-width:1024px){
+  .tm-flow .row{grid-template-columns:auto 1fr auto auto;column-gap:16px;padding:10px 16px}
+  .tm-flow .row .navn{font-size:15px}
+  .tm-flow .pw{min-width:84px}
+  .tm-flow .pw-val{font-size:15px}
+  .tm-flow .fw{min-width:112px}
+  .tm-flow .fw-ctl{gap:8px}
+  .tm-flow .fw-ctl button{width:36px;height:36px;font-size:19px}
+  .tm-flow .fw-ctl b{min-width:20px;font-size:15px}
+}
+/* Mobil: mindre side-margin på sektionen → mere bredde til kortene */
+@media (max-width:600px){ .tm-flow .tm-main{padding-left:16px;padding-right:16px} }
+/* Under desktop: skjul mikro-labels så navnet får plads (værdi + stepper er selvforklarende).
+   "Indeholdt i pakken"-noten ombrydes i den smalle pris-kolonne i stedet for at æde navnets plads. */
+@media (max-width:1023px){
+  .tm-flow .pw-lbl,.tm-flow .fw-lbl{display:none}
+  .tm-flow .pw-note{white-space:normal;font-size:10.5px;line-height:1.12;text-align:center}
+}
+
+/* Kundetype-kortene (trin 2) skal have ENS bredde, når de stakker */
+@media (max-width:720px){ .tm-flow .ktype-card{width:100%} }
+
+.tm-flow .gaps{margin:22px 0 0;font-size:13px;opacity:.7}
+
+
+/* STEP 5: KONTAKT + TAK */
+.tm-flow .kontakt{max-width:560px;margin:0 auto;padding:36px 0}
+.tm-flow .kontakt h2{font-family:var(--display);color:var(--gul);font-size:clamp(26px,4vw,38px)}
+.tm-flow .kontakt p{margin-top:10px;opacity:.9}
+.tm-flow .kontakt label{display:block;margin:20px 0 6px;font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:var(--gul)}
+.tm-flow .kontakt input,.tm-flow .kontakt textarea{width:100%;padding:15px 16px;border-radius:12px;border:0;background:var(--ivory);color:var(--brun);font-size:16px}
+.tm-flow .kontakt .err{color:var(--ivory);background:var(--roed-moerk);border-radius:10px;padding:10px 14px;margin-top:16px;font-size:14px;display:none}   /* ivory på mørk rød ≈7.1:1 (AA) */
+.tm-flow .kontakt .err.show{display:block}
+/* Konkret opkaldstidspunkt på tak-siden */
+.tm-flow .tak-ring{display:none;margin-top:14px;font-size:19px;font-weight:700;color:var(--gul)}
+.tm-flow .tak-ring.show{display:block}
+.tm-flow .tak{max-width:560px;margin:0 auto;padding:56px 0;text-align:center}
+.tm-flow .tak h2{font-family:var(--display);color:var(--gul);font-size:clamp(30px,5vw,46px)}
+.tm-flow .tak p{margin-top:14px;font-size:17px;opacity:.92}
+.tm-flow .tak .opsum{margin-top:26px;background:#5a4322;border-radius:16px;padding:18px;text-align:left;font-size:14.5px;line-height:1.7}

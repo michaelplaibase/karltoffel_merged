@@ -1,0 +1,122 @@
+
+	<!-- ============ TILBUDSMOTOR (lead flow) ============ -->
+	<section class="tm-flow" id="tilbudsmotor" aria-label="Tilbudsmotor – få din pris">
+	<div class="tm-main">
+	  <!-- STEP 1 -->
+	  <section class="step active hero" id="step-adresse" aria-labelledby="tm-h1">
+	    <h1 id="tm-h1">Hvad koster din have?</h1>
+	    <p class="sub">Tast din adresse. Så graver vi tallene frem og giver dig en fast månedspris, mens du venter.</p>
+	    <div class="adr-wrap">
+	      <label class="adr-label" for="adr-input">Din adresse</label>
+	      <input id="adr-input" type="text" autocomplete="off" placeholder="F.eks. Sundvej 8, 8700 Horsens" aria-describedby="adr-note">
+	      <div class="adr-list" id="adr-list" role="listbox" aria-label="Adresseforslag"></div>
+	      <p class="adr-note" id="adr-note">Live adresseopslag svarer ikke her. Vælg en demo-adresse i listen.</p>
+	    </div>
+	  </section>
+
+	  <!-- STEP 2 -->
+	  <section class="step verify" id="step-verify" aria-labelledby="tm-h2v">
+	    <h2 id="tm-h2v">Er det her din ejendom?</h2>
+	    <div class="adr" id="verify-adr"></div>
+	    <div class="foto-card">
+	      <span class="foto-badge">Skråfoto demo</span>
+	      <svg viewBox="0 0 640 380" role="img" aria-label="Luftfoto af ejendom, demo-illustration">
+	        <rect width="640" height="380" fill="#FFFFF0"/>
+	        <rect x="0" y="0" width="640" height="380" fill="#e9e4c6"/>
+	        <path d="M0 300 Q160 260 320 300 T640 290 V380 H0 Z" fill="#d8d2ad"/>
+	        <rect x="70" y="60" width="500" height="270" fill="none" stroke="#86612A" stroke-width="3" stroke-dasharray="10 8"/>
+	        <rect x="120" y="120" width="180" height="120" fill="#4C3718"/>
+	        <polygon points="120,120 210,80 300,120" fill="#5a4322"/>
+	        <rect x="230" y="150" width="30" height="30" fill="#FFF87B"/>
+	        <rect x="150" y="150" width="30" height="30" fill="#FFF87B"/>
+	        <rect x="330" y="140" width="90" height="70" fill="#6b5227"/>
+	        <circle cx="480" cy="140" r="34" fill="#9aa06b"/>
+	        <circle cx="520" cy="200" r="24" fill="#9aa06b"/>
+	        <circle cx="450" cy="230" r="20" fill="#9aa06b"/>
+	        <rect x="120" y="270" width="300" height="26" fill="#c9c39f"/>
+	        <text x="88" y="52" font-family="DM Sans, sans-serif" font-size="15" fill="#86612A">Matrikelgrænse (demo)</text>
+	      </svg>
+	    </div>
+	    <div class="verify-btns">
+	      <button class="btn btn-ja" id="btn-ja">Ja, det er min</button>
+	      <button class="btn btn-nej" id="btn-nej">Nej, prøv igen</button>
+	    </div>
+	    <small>Rigtige skråfotos kobles på via Dataforsyningens Skraafoto-API.</small>
+	  </section>
+
+	  <!-- STEP 3 -->
+	  <section class="step losning" id="step-losning" aria-labelledby="tm-h2l">
+	    <h2 id="tm-h2l" style="position:absolute;left:-9999px">Din løsning</h2>
+	    <div class="topbar">
+	      <div class="adr-line">
+	        <svg class="pin" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 21s-7-6.1-7-11a7 7 0 1 1 14 0c0 4.9-7 11-7 11Z" stroke="#4C3718" stroke-width="2"/><circle cx="12" cy="10" r="2.6" fill="#4C3718"/></svg>
+	        <span id="t-adr"></span>
+	      </div>
+	      <div class="fakta">
+	        <div><b>Boligtype</b><span id="t-type"></span></div>
+	        <div><b>Grundareal ca.</b><span id="t-grund"></span></div>
+	        <div><b>Opført ca.</b><span id="t-opfoert"></span></div>
+	        <div><b>Hæk ca.</b><span id="t-haek"></span></div>
+	      </div>
+	      <div class="regnestrimmel">
+	        <div><b>Valgte services</b><span id="t-count">0</span></div>
+	        <div><b>Besøg om året</b><span id="t-visits">0</span></div>
+	        <div><b>Pris pr. md</b><span id="t-pris">0 kr</span></div>
+	      </div>
+	      <p class="demo-hint">Ejendomstal er demo-værdier. I produktion hentes de fra BBR, Matriklen og skråfoto. Ret mængderne direkte i listen herunder.</p>
+	    </div>
+
+	    <p class="socio">Det typiske valg til en ejendom som din. Slå til og fra, og skru på hvor tit vi kommer.</p>
+	    <div class="rows" id="rows"></div>
+	    <p class="gaps">Priser hentet fra WorkMaker Produkter 02.07.2026. Fliserens, soignering af bede og robotplæneklipper-service mangler pris i WorkMaker og vises derfor ikke endnu.</p>
+	  </section>
+
+	  <!-- STEP 4 -->
+	  <section class="step kontakt" id="step-kontakt" aria-labelledby="tm-h2k">
+	    <h2 id="tm-h2k">Næsten i mål</h2>
+	    <p>Vi ringer og bekræfter tallene, før noget koster dig en krone.</p>
+	    <label for="k-navn">Fulde navn</label>
+	    <input id="k-navn" type="text" autocomplete="name">
+	    <label for="k-mail">E-mail</label>
+	    <input id="k-mail" type="email" autocomplete="email">
+	    <label for="k-tlf">Telefon</label>
+	    <input id="k-tlf" type="tel" autocomplete="tel">
+	    <label for="k-note">Noget vi skal vide? (valgfrit)</label>
+	    <textarea id="k-note" rows="3"></textarea>
+	    <div class="err" id="k-err">Udfyld navn og e-mail, så vi kan få fat i dig.</div>
+	    <div class="verify-btns" style="justify-content:flex-start">
+	      <button class="btn btn-ja" id="btn-send">Send og bliv kontaktet</button>
+	      <button class="btn btn-nej" id="btn-tilbage">Tilbage</button>
+	    </div>
+	  </section>
+
+	  <!-- STEP 5 -->
+	  <section class="step tak" id="step-tak" aria-labelledby="tm-h2t">
+	    <h2 id="tm-h2t">Tak, heldige karltoffel</h2>
+	    <p>Vi ringer inden for 24 timer og bekræfter din pris. Naboen bliver grøn af misundelse.</p>
+	    <div class="opsum" id="tak-opsum"></div>
+	  </section>
+	</div>
+
+	<div class="cta-bar" id="cta-bar">
+	  <div class="cta-inner">
+	    <div class="sum"><b id="cta-pris">0 kr/md</b><small id="cta-detalje"></small></div>
+	    <button class="btn-cta" id="btn-kontakt">Bliv kontaktet</button>
+	  </div>
+	</div>
+
+	<div id="dig" role="status" aria-live="polite">
+	  <div class="dig-inner">
+	    <svg class="spade" viewBox="0 0 64 64" aria-hidden="true">
+	      <rect x="29" y="4" width="6" height="30" rx="3" fill="#FFF87B"/>
+	      <rect x="22" y="2" width="20" height="7" rx="3.5" fill="#FFF87B"/>
+	      <path d="M20 34 h24 v10 a12 12 0 0 1 -24 0 Z" fill="#FFF87B"/>
+	    </svg>
+	    <div id="dig-msg">Graver din matrikel frem...</div>
+	    <div class="dig-adr" id="dig-adr"></div>
+	    <div class="dig-bar"><div class="dig-fill" id="dig-fill"></div></div>
+	  </div>
+	</div>
+	</section>
+	<!-- ============ /TILBUDSMOTOR ============ -->
+

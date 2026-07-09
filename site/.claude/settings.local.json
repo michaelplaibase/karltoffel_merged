@@ -1,0 +1,18 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(curl -sL -A \"Mozilla/5.0 \\(Macintosh; Intel Mac OS X 10_15_7\\) AppleWebKit/537.36 \\(KHTML, like Gecko\\) Chrome/120.0 Safari/537.36\" https://karltoffel.dk -o index_raw.html -w \"HTTP %{http_code} | final URL: %{url_effective} | size: %{size_download} bytes\\\\n\")",
+      "Bash(grep -vE '^$')",
+      "Read(//tmp/**)",
+      "Bash(python3 _source/build_mirror.py)",
+      "Bash(cd /Users/michaelplaibase/karltoffel *)",
+      "Bash(awk 'NR>=2939 && NR<=2949 {printf \"%d: %s\\\\n\", NR, $0}' index.html)",
+      "Bash(awk 'NR>=259 && NR<=266' index.html)",
+      "Bash(grep -vE '^\\\\s*$')",
+      "Bash(awk 'NR>=2766 && NR<=2807 {printf \"%d: %s\\\\n\", NR, $0}' index.html)",
+      "Bash(awk 'NR==263' index.html)",
+      "Bash(rm -f _source/pages/_sample_*.html)",
+      "Bash(python3 _source/build_pages.py)"
+    ]
+  }
+}
