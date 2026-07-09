@@ -48,6 +48,7 @@ model User {
   canHandlePayment Boolean  @default(true)
   canChangePaymentOption Boolean @default(true)
   orders           Order[]
+  timeEntries      TimeEntry[]
 
   @@index([companyId])
 }
@@ -237,4 +238,19 @@ model Lead {
   @@index([companyId, status])
   @@index([email])
   @@index([phone])
+}
+
+// Medarbejder-tidsregistrering ("Check ind / Check ud" — til/fra arbejde).
+// Højst én åben registrering (checkOut = null) ad gangen per bruger håndhæves i
+// server-action'en (app/actions/timesheet.ts) i en transaktion — portabelt uden
+// partial unique index. checkIn/checkOut er UTC-tidsstempler.
+model TimeEntry {
+  id        Int       @id @default(autoincrement())
+  user      User      @relation(fields: [userId], references: [id])
+  userId    Int
+  checkIn   DateTime  @default(now())
+  checkOut  DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([userId, checkIn])
 }

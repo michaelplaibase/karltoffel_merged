@@ -16,3 +16,10 @@ form button.g-recaptcha:hover{filter:brightness(1.15)}
 .section--type-offer-form .form_3 .form-controls button[type=submit]{background:#4C3718;color:#FFF87B;min-height:48px;padding:14px 28px;border-radius:999px;font-size:16px;font-weight:600}
 .section--type-offer-form .form_3 .form-controls button[type=submit]:hover,
 .section--type-offer-form .form_3 .form-controls button[type=submit]:focus{background:#5a4322;color:#FFF87B}
+
+/* ==========================================================================
+   HERO-CTA (QA 09.07.2026) — "Bliv en heldig karltoffel" skal være tydeligere.
+   Fra transparent ghost/outline-knap til fyldt gul primær-CTA med dybde.
+   ========================================================================== */
+.hero-slider__content .big-button{background:#FFF87B;border-color:#FFF87B;color:#4C3718;font-size:17px;min-height:64px;padding:18px 44px;border-radius:999px;box-shadow:0 10px 30px rgba(0,0,0,.35)}
+.hero-slider__content .big-button:hover,.hero-slider__content .big-button:focus{background:#FFFFF0;border-color:#FFFFF0;color:#4C3718;box-shadow:0 12px 34px rgba(0,0,0,.45);transform:translateY(-2px)}

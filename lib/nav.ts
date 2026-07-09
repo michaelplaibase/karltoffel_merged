@@ -24,6 +24,7 @@ export const TOP_NAV: NavMenu[] = [
   {
     label: "Funktioner", en: "Functions",
     items: [
+      { label: "Timeregistrering", en: "Timesheet", href: "/timesheet" },
       { label: "Gruppebeskeder", en: "Group messages", href: "/group-messages" },
       { label: "Ferieplanlægning", en: "Holiday planning", href: "/holidays" },
       { label: "Abonnementsoptimering", en: "Subscription optimization", href: "/optimization" },

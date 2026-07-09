@@ -54,16 +54,26 @@ const PRODUCTS = [
 /* Uberørt kopi til at nulstille pakken når en ny adresse vælges. */
 const DEFAULTS = PRODUCTS.map(function(p){ return Object.assign({}, p); });
 
+/* Mængderabat: "jo mere du vælger, jo mere sparer du" — 3% pr. valgt service,
+   loft på 15% (5+ services = fuld rabat). Rabatten lægges på den prissatte
+   årssum; uprisede "indeholdt/pris ved besøg"-linjer tæller med i antallet
+   men trækker naturligvis 0 kr. */
+var RABAT_PR_SERVICE = 3, RABAT_MAX = 15;
+function rabatPct(count){ return Math.min(RABAT_MAX, RABAT_PR_SERVICE * count); }
+
 function beregn(products){
-  var aar = 0, count = 0, visits = 0;
+  var brutto = 0, count = 0, visits = 0;
   for (var i=0;i<products.length;i++){
     var p = products[i];
     if(!p.on) continue;
     count += 1;                                   /* uprisede ("indeholdt") tæller også med */
     if(p.freq > visits) visits = p.freq;          /* ydelser bundtes på samme besøg */
-    if(p.pris != null && p.qty > 0) aar += p.pris * p.qty * p.freq;
+    if(p.pris != null && p.qty > 0) brutto += p.pris * p.qty * p.freq;
   }
-  return { aar: aar, md: aar/12, snit: visits>0 ? aar/visits : 0, count: count, visits: visits };
+  var pct = rabatPct(count);
+  var aar = brutto * (1 - pct/100);
+  return { aar: aar, aarBrutto: brutto, rabatPct: pct, rabatKr: brutto - aar,
+           md: aar/12, snit: visits>0 ? aar/visits : 0, count: count, visits: visits };
 }
 
 function linjeMd(p){ return (p.pris == null || !p.qty) ? 0 : (p.pris * p.qty * p.freq) / 12; }
@@ -194,6 +204,41 @@ function applyMeasurements(m){
   /* Genrender løsnings-trinnet, så "Pris pr. gang" afspejler de auto-målte mængder. */
   const active = ROOT.querySelector(".step.active");
   if(active && active.id === "step-losning") renderTop();
+}
+
+/* AI-vinduestælling: send det renderede skråfoto til /api/windows (Anthropic-nøglen
+   bor på serveren) og brug estimatet som glasantal for udvendig vinduespudsning.
+   Alt er best-effort og fejler stille — uden svar (eller uden ANTHROPIC_API_KEY)
+   beholder motoren sit standard-glasantal. Respekterer kundens egne rettelser. */
+let windowsReq = 0;
+function taelVinduerAI(){
+  try{
+    const canvas = ROOT.querySelector("#sf-canvas");
+    if(!canvas || !canvas.width || typeof canvas.toDataURL !== "function") return;
+    let dataUrl;
+    try{ dataUrl = canvas.toDataURL("image/jpeg", 0.85); }
+    catch(e){ return; }   /* tainted canvas → kan ikke læses ud, drop */
+    if(!dataUrl || dataUrl.length < 800) return;
+    const req = ++windowsReq;
+    fetch("/api/windows", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ imageBase64: dataUrl, address: state.adresse })
+    })
+    .then(r => r.ok ? r.json() : null)
+    .then(d => {
+      if(!d || !d.ok || req !== windowsReq) return;   /* forældet/tomt svar → ignorer */
+      const panes = Math.round(d.panes);
+      if(!(panes >= 1 && panes <= 300)) return;
+      ["vinduer", "vinduerind"].forEach(id => {
+        const p = PRODUCTS.find(x => x.id === id);
+        if(p && !p.touched) p.qty = panes;            /* rør ikke mængder kunden selv har rettet */
+      });
+      const active = ROOT.querySelector(".step.active");
+      if(active && active.id === "step-losning") renderTop(); else opdater();
+    })
+    .catch(()=>{});
+  }catch(e){}
 }
 
 let measureReq = 0;
@@ -339,7 +384,7 @@ $("ls-skift").addEventListener("click", ()=>{
   adrInput.focus();
 });
 
-$("btn-ja").addEventListener("click", ()=> visStep("step-losning"));
+$("btn-ja").addEventListener("click", ()=>{ visStep("step-losning"); taelVinduerAI(); });
 btnNej.addEventListener("click", ()=>{
   verifyDir++;
   if(verifyDir < VERIFY_DIRS.length){
@@ -377,7 +422,7 @@ $("btn-send").addEventListener("click", ()=>{
     kundetype: state.kundetype,
     source: "tilbudsmotor",
     services: valgt.map(p=>({ id:p.id, navn:p.navn, wm:p.wm, qty:p.qty, enhed:p.enhed, freq:p.freq, pris:p.pris })),
-    estimat: { md: Math.round(r.md), snit: Math.round(r.snit), aar: Math.round(r.aar), visits: r.visits, count: r.count }
+    estimat: { md: Math.round(r.md), snit: Math.round(r.snit), aar: Math.round(r.aar), aarBrutto: Math.round(r.aarBrutto), rabatPct: r.rabatPct, rabatKr: Math.round(r.rabatKr), visits: r.visits, count: r.count }
   };
 
   const btnSend = $("btn-send");
@@ -409,9 +454,13 @@ $("btn-send").addEventListener("click", ()=>{
                      : (!p.qty ? " (angiv antal)" : " (" + p.freq + "x/år)");
         return esc(p.navn) + suffix;
       }).join(", ");
+      var rabatLinje = r.rabatPct > 0
+        ? "Mængderabat: <b>−" + r.rabatPct + "%</b> (du sparer ca. " + kr(r.rabatKr) + " om året)<br>"
+        : "";
       opsum.innerHTML =
         "<b>" + esc(state.adresse) + ktLabel + "</b><br>" +
         "Valgt: " + linjer + "<br>" +
+        rabatLinje +
         "Estimeret: <b>" + kr(r.snit) + " pr. besøg</b> ved " + r.visits + " besøg om året.";
     }
     rydState();   /* leadet er sendt — intet at gendanne længere */
@@ -534,6 +583,25 @@ function renderAddons(){
   });
 }
 
+/* Live mængderabat-banner på løsnings-trinnet — svar på "hvor fremgår det?". */
+function opdaterRabat(){
+  var el = $("tm-rabat");
+  if(!el) return;
+  var r = beregn(PRODUCTS);
+  if(r.rabatPct > 0 && r.rabatKr > 0){
+    el.innerHTML = 'Du har valgt <b>' + r.count + ' services</b> og sparer <b>' + r.rabatPct +
+      '%</b> (ca. ' + kr(r.rabatKr) + ' om året). Jo flere du vælger, jo mere sparer du' +
+      (r.rabatPct < RABAT_MAX ? ' — helt op til ' + RABAT_MAX + '%.' : '.');
+    el.hidden = false;
+  } else if(r.rabatPct > 0){
+    el.innerHTML = 'Jo flere services du vælger, jo mere sparer du — <b>' + RABAT_PR_SERVICE +
+      '% pr. service</b>, op til ' + RABAT_MAX + '%.';
+    el.hidden = false;
+  } else {
+    el.hidden = true;
+  }
+}
+
 function opdater(){
   PRODUCTS.forEach(p => {
     const el = ROOT.querySelector('.pw[data-id="' + p.id + '"]');
@@ -543,9 +611,10 @@ function opdater(){
     } else if(!p.qty){
       el.innerHTML = '<span class="pw-note">Pris efter antal</span>';
     } else {
-      el.innerHTML = '<span class="pw-lbl">Pris pr. gang</span><b class="pw-val">' + kr(p.pris * p.qty) + '</b>';
+      el.innerHTML = '<b class="pw-val">' + kr(p.pris * p.qty) + '</b><span class="pw-unit">pr. gang</span>';
     }
   });
+  opdaterRabat();
   gemState("step-losning");   /* hver frekvens-/til-fravalgs-ændring overlever refresh */
 }
 

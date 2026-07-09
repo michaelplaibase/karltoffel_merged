@@ -46,14 +46,16 @@
   body[data-link="/p/cookiepolitik"] .content.rte ul{ padding-left:40px !important; }
 }
 
-/* Tilbudsmotoren ligger inde i pakke-sektionen (ikke et top-niveau-skift).
-   Nulstil headerens bundafstand og giv motoren 100px over og under, så den
-   følger samme rytme som de øvrige skift. */
+/* Tilbudsmotoren er nu FØRSTE element i pakke-sektionen (ombyttet 07.07.2026),
+   så den ligger lige efter hero. Pakke-sektionen giver selv 100px foroven via
+   .main-wrap .section-reglen; derfor må motoren IKKE lægge margin-top oveni —
+   ellers bliver skiftet hero→motor 200px. "Mindre bøvl"-headeren ligger nu UNDER
+   motoren og holdes fri via motorens margin-bottom. */
 .section--type-packages-slider .section__header{
   margin-bottom:0 !important;
   padding-bottom:0 !important;
 }
 #tilbudsmotor{
-  margin-top:100px !important;
+  margin-top:0 !important;
   margin-bottom:100px !important;
 }

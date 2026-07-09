@@ -2,6 +2,9 @@ import Link from "next/link";
 import { getDayProgram } from "@/lib/queries";
 import { weekMondayToday } from "@/lib/calendar";
 import DayStopCard from "@/components/DayStopCard";
+import { requireSession } from "@/lib/api-auth";
+import { getOpenTimeEntry, cphTime } from "@/lib/timesheet";
+import CheckInOut from "@/components/CheckInOut";
 
 export const metadata = { title: "Dagsprogram · Karltoffel" };
 
@@ -9,9 +12,12 @@ export default async function DayCalendarPage({ searchParams }: { searchParams: 
   const sp = await searchParams;
   const date = /^\d{4}-\d{2}-\d{2}$/.test(sp.date ?? "") ? sp.date! : weekMondayToday();
   const day = await getDayProgram(date);
+  const userId = await requireSession();
+  const open = userId != null ? await getOpenTimeEntry(userId) : null;
 
   return (
     <div className="container-1140">
+      <CheckInOut checkedIn={!!open} sinceLabel={open ? cphTime(open.checkIn) : null} />
       <div className="daycal-toolbar">
         <Link href={`/daycalendar?date=${day.prevISO}`} className="calbtn">‹</Link>
         <h1 className="title">{day.heading}</h1>
