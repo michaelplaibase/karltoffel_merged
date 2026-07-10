@@ -47,6 +47,9 @@ model User {
   canEditOrders    Boolean  @default(true)
   canHandlePayment Boolean  @default(true)
   canChangePaymentOption Boolean @default(true)
+  payModel         String   @default("fast")  // lønmodel: "fast" | "akkord"
+  commissionPct    Int?     // akkord: provisionssats i % (fx 40)
+  monthlySalary    Int?     // fast løn: manuelt beløb (kr/md)
   orders           Order[]
   timeEntries      TimeEntry[]
 

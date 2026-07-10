@@ -45,6 +45,7 @@ export const TOP_NAV: NavMenu[] = [
     label: "Rapportering", en: "Reporting",
     items: [
       { label: "Grafer og nøgletal", en: "Charts & KPIs", href: "/reports/graphs" },
+      { label: "Lønrapport", en: "Payroll", href: "/payroll" },
       { label: "Rapporter", en: "Reports", href: "/reports/download" },
       { label: "Dagsprogram i PDF", en: "Day program PDF", href: "/reports/day-pdf" },
     ],

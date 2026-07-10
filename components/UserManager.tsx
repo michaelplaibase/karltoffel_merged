@@ -1,14 +1,41 @@
 "use client";
 
-// Brugerstyring (kun admin): liste over rigtige brugere + en reveal-bar
-// opret-formular. Admins kan oprette både admin- og medarbejder-profiler.
-// Spejler mønstret fra DiscountCodeManager (formular + tabel via server action).
-import { useActionState, useState } from "react";
-import { createUser, type UserState } from "@/app/actions/users";
+// Brugerstyring (kun admin): liste over rigtige brugere + reveal-bar opret-formular,
+// og inline-redigering af lønmodel (fast løn / akkord) per bruger.
+import { useActionState, useState, useTransition } from "react";
+import { createUser, updateUserPay, type UserState } from "@/app/actions/users";
 import type { UserRow } from "@/lib/users";
+
+// Inline lønmodel-editor per bruger.
+function PayEditor({ u }: { u: UserRow }) {
+  const [model, setModel] = useState<"fast" | "akkord">(u.payModel);
+  const [belob, setBelob] = useState<string>(
+    u.payModel === "akkord" ? String(u.commissionPct ?? 40) : (u.monthlySalary != null ? String(u.monthlySalary) : "")
+  );
+  const [pending, start] = useTransition();
+  const [saved, setSaved] = useState(false);
+  return (
+    <div style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap" }}>
+      <select value={model} className="form-control form-control-sm" style={{ width: "auto" }}
+        onChange={(e) => { setModel(e.target.value as "fast" | "akkord"); setSaved(false); }}>
+        <option value="fast">Fast løn</option>
+        <option value="akkord">Akkord</option>
+      </select>
+      <input type="number" min="0" value={belob} placeholder={model === "akkord" ? "%" : "kr/md"}
+        className="form-control form-control-sm" style={{ width: 92 }}
+        onChange={(e) => { setBelob(e.target.value); setSaved(false); }} />
+      <span className="help-note" style={{ margin: 0 }}>{model === "akkord" ? "%" : "kr/md"}</span>
+      <button type="button" className="btn btn-sm btn-light" disabled={pending}
+        onClick={() => start(async () => { await updateUserPay(u.id, model, belob === "" ? null : Number(belob)); setSaved(true); })}>
+        {pending ? "…" : saved ? "Gemt ✓" : "Gem"}
+      </button>
+    </div>
+  );
+}
 
 export default function UserManager({ users }: { users: UserRow[] }) {
   const [open, setOpen] = useState(false);
+  const [createPay, setCreatePay] = useState<"fast" | "akkord">("fast");
   const [state, formAction, pending] = useActionState<UserState, FormData>(async (p, fd) => {
     const r = await createUser(p, fd);
     if (r.ok) setOpen(false);
@@ -16,9 +43,9 @@ export default function UserManager({ users }: { users: UserRow[] }) {
   }, {});
 
   return (
-    <div className="container-1140" style={{ maxWidth: 900 }}>
+    <div className="container-1140">
       <p className="page-desc" style={{ marginTop: 4 }}>
-        Administrér brugere. Kun administratorer kan oprette nye profiler — enten som administrator eller som medarbejder.
+        Administrér brugere. Kun administratorer kan oprette nye profiler (administrator eller medarbejder) og sætte lønmodel.
       </p>
       <div className="card">
         <div className="card-body">
@@ -29,7 +56,7 @@ export default function UserManager({ users }: { users: UserRow[] }) {
           <div className="table-wrap">
             <table className="data-table">
               <thead>
-                <tr><th>Navn</th><th>Brugernavn</th><th>E-mail</th><th>Rolle</th><th>Login</th></tr>
+                <tr><th>Navn</th><th>Brugernavn</th><th>Rolle</th><th>Login</th><th>Lønmodel</th></tr>
               </thead>
               <tbody>
                 {users.length === 0 ? (
@@ -38,7 +65,6 @@ export default function UserManager({ users }: { users: UserRow[] }) {
                   <tr key={u.id}>
                     <td>{u.navn}</td>
                     <td>{u.username}</td>
-                    <td>{u.email || "—"}</td>
                     <td>
                       {u.rolle === "admin"
                         ? <span className="badge badge-soft-warning">Administrator</span>
@@ -49,6 +75,7 @@ export default function UserManager({ users }: { users: UserRow[] }) {
                         ? <span className="badge badge-soft-success">Aktiv</span>
                         : <span className="badge badge-soft-muted">Intet kodeord</span>}
                     </td>
+                    <td><PayEditor u={u} /></td>
                   </tr>
                 ))}
               </tbody>
@@ -72,6 +99,15 @@ export default function UserManager({ users }: { users: UserRow[] }) {
                   <option value="medarbejder">Medarbejder</option>
                   <option value="admin">Administrator (kan oprette brugere)</option>
                 </select>
+              </div></div>
+              <div className="f2"><label className="col-label">Lønmodel</label><div>
+                <select name="payModel" className="form-control form-control-sm" value={createPay} onChange={(e) => setCreatePay(e.target.value as "fast" | "akkord")}>
+                  <option value="fast">Fast løn</option>
+                  <option value="akkord">Akkord (provision)</option>
+                </select>
+              </div></div>
+              <div className="f2"><label className="col-label">{createPay === "akkord" ? "Provisionssats (%)" : "Fast løn (kr/md)"}</label><div>
+                <input name="belob" type="number" min="0" className="form-control form-control-sm" placeholder={createPay === "akkord" ? "fx 40" : "fx 32000"} />
               </div></div>
               {state.error ? <div className="help-note" style={{ color: "var(--danger, #C4183C)" }}>{state.error}</div> : null}
               <hr className="section-hr" />
