@@ -22,8 +22,8 @@ Besøg os på www.bubble.dk eller ring til os på +45 6069 8700
 	<link rel="icon" type="image/png" href="/assets/img/design/favicon.png">
 		<link rel="apple-touch-icon" href="/assets/img/design/appicon.png">
 	<link rel="stylesheet" href="/assets/css/typekit.css">
-	<link rel="stylesheet" type="text/css" href="/assets/css/style.css?v=4">
-	<link rel="stylesheet" href="/assets/css/tilbudsmotor.css?v=21">
+	<link rel="stylesheet" type="text/css" href="/assets/css/style.css?v=5">
+	<link rel="stylesheet" href="/assets/css/tilbudsmotor.css?v=22">
 	<link rel="stylesheet" href="/assets/css/spacing.css?v=3">
 		<link rel="preload" as="image"
 		href="/assets/img/thumb/e2a541dff09c05bfe2957c4875f7dfe5e570401c_w2000.webp"
@@ -348,17 +348,8 @@ Besøg os på www.bubble.dk eller ring til os på +45 6069 8700
 	      <button type="button" class="ls-skift" id="ls-skift">Skift adresse</button>
 	    </div>
 
-	    <p class="socio"><b>Villapakken</b> – det typiske valg til en ejendom som din. Fjern det, du ikke vil have, og vælg hvor tit vi kommer.</p>
-	    <div class="split">
-	      <div class="col left">
-	        <div class="col-head"><h3>Dine services</h3></div>
-	        <div class="rows" id="rows"></div>
-	      </div>
-	      <div class="col right">
-	        <div class="col-head"><h3>Tilvalg</h3><span class="meta">klik for at tilføje</span></div>
-	        <div class="addons" id="addons"></div>
-	      </div>
-	    </div>
+	    <p class="socio"><b>Villapakken</b> – det typiske valg til en ejendom som din. Sæt flueben ved det, du vil have, og vælg hvor tit vi kommer.</p>
+	    <div class="rows" id="rows"></div>
 	    <p class="gaps">Services markeret "indeholdt / pris ved besøg" aftales, når vi ringer — uden det koster dig noget.</p>
 	    <div class="tm-rabat" id="tm-rabat" hidden></div>
 	    <div class="tm-nav">
@@ -379,6 +370,9 @@ Besøg os på www.bubble.dk eller ring til os på +45 6069 8700
 	    <input id="k-mail" type="email" autocomplete="email" maxlength="200">
 	    <label for="k-note">Noget vi skal vide? (valgfrit)</label>
 	    <textarea id="k-note" rows="3" maxlength="2000"></textarea>
+	    <label for="k-rabat">Rabatkode (valgfri)</label>
+	    <input id="k-rabat" type="text" autocomplete="off" autocapitalize="characters" spellcheck="false" maxlength="40">
+	    <p class="rk-note" id="k-rabat-status" role="status" aria-live="polite" hidden></p>
 	    <div class="err" id="k-err">Udfyld navn og telefonnummer, så vi kan ringe dig op.</div>
 	    <div class="verify-btns" style="justify-content:flex-start">
 	      <button class="btn btn-ja" id="btn-send">Send og bliv kontaktet</button>
@@ -680,21 +674,6 @@ Besøg os på www.bubble.dk eller ring til os på +45 6069 8700
 			</div>
 					<div class="services__item">
 						
-<a href="/c/det-vi-ordner/soignering-af-bede" class="card card--service in-view in-view--slide-up">
-	<div class="card__image">
-					<img src="/assets/img/thumb/9bddc0300ebc45fc05818d9fe1487ac3e62adcc1_w1100.webp" alt="Soignering af bede" loading="lazy">
-			</div>
-	<div class="card__content">
-					<div class="card__label">
-													<span class="card__subtitle">Fra 499 kr</span>
-							</div>
-				<h3 class="card__title">Soignering af bede</h3>
-	</div>
-	<div class="card__action"><i class="fa-default fa-arrow-right"></i></div>
-</a>
-			</div>
-					<div class="services__item">
-						
 <a href="/c/det-vi-ordner/robotplaeneklipper-service" class="card card--service in-view in-view--slide-up">
 	<div class="card__image">
 					<img src="/assets/img/thumb/b698471411b4d480c915a919713579996058a47f_w1100.webp" alt="Robotplæneklipper-service" loading="lazy">
@@ -794,11 +773,6 @@ Besøg os på www.bubble.dk eller ring til os på +45 6069 8700
 			"position": 10,
 			"url": "https://karltoffel.dk/c/det-vi-ordner/tagrenderens",
 			"name": "Tagrenderens"
-		  },{
-			"@type":"ListItem",
-			"position": 11,
-			"url": "https://karltoffel.dk/c/det-vi-ordner/soignering-af-bede",
-			"name": "Soignering af bede"
 		  },{
 			"@type":"ListItem",
 			"position": 12,
@@ -1147,6 +1121,6 @@ Besøg os på www.bubble.dk eller ring til os på +45 6069 8700
 			<script src="/assets/js/tilbudsmotor.config.js?v=9"></script>
 			<script src="/assets/js/vendor/geotiff.min.js"></script>
 			<script src="/assets/js/skraafoto.js?v=12"></script>
-			<script src="/assets/js/tilbudsmotor.js?v=21"></script>
+			<script src="/assets/js/tilbudsmotor.js?v=22"></script>
 </body>
 </html>

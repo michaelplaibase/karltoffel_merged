@@ -12,6 +12,9 @@ type TmPayload = {
   kundetype?: string | null;
   services?: { navn: string; qty?: number; enhed?: string; freq?: number }[];
   estimat?: { md?: number; visits?: number; count?: number };
+  rabatkode?: string | null;
+  rabatOk?: boolean;
+  rabatPct?: number | null;
 };
 function parsePayload(raw: string | null): TmPayload | null {
   if (!raw) return null;
@@ -82,6 +85,11 @@ export default async function LeadsPage({ searchParams }: { searchParams: Promis
                         {l.name}
                         {l.contactId ? <span className="badge badge-soft-muted" style={{ marginLeft: 6 }}>eksisterende kunde</span> : null}
                         {tm?.kundetype === "erhverv" ? <span className="badge badge-soft-warning" style={{ marginLeft: 6 }}>Erhverv</span> : null}
+                        {tm?.rabatkode ? (
+                          tm.rabatOk
+                            ? <span className="badge badge-soft-success" style={{ marginLeft: 6 }}>Rabatkode: {tm.rabatkode}{tm.rabatPct != null ? ` (−${tm.rabatPct}%)` : ""}</span>
+                            : <span className="badge badge-soft-danger" style={{ marginLeft: 6 }}>Ugyldig rabatkode: {tm.rabatkode}</span>
+                        ) : null}
                       </td>
                       <td>{[l.email, l.phone].filter(Boolean).join(" · ") || "—"}</td>
                       <td>

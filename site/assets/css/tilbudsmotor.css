@@ -139,18 +139,17 @@
 
 .tm-flow .socio{margin:22px 2px 4px;font-size:15px;color:var(--gul)}
 
-/* Todelt skærm — base = stakket (mobil) */
-.tm-flow .split{display:grid;grid-template-columns:1fr;gap:6px;margin-top:14px}
-.tm-flow .col{min-width:0;padding:14px 2px 4px}
-.tm-flow .col-head{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin:0 4px 12px}
-.tm-flow .col-head h3{font-size:13px;letter-spacing:.14em;text-transform:uppercase;color:var(--gul);font-weight:700}
-.tm-flow .col-head .meta{font-size:12px;color:rgba(255,255,240,.6)}
-
-/* Venstre: service-kort som ÉN række på ALLE skærme (samme layout som desktop).
-   Navnet (1fr) ombryder lange navne til 2 linjer; pris + frekvens holdes til højre. */
-.tm-flow .rows{display:flex;flex-direction:column;gap:9px}
+/* ÉN samlet, stationær serviceliste (alle skærme): valgte OG fravalgte services
+   er SAMME gule kort, grupperet efter kategori. Navnet (1fr) ombryder lange
+   navne til 2 linjer; pris + frekvens holdes til højre. */
+.tm-flow .rows{display:flex;flex-direction:column;gap:18px;max-width:760px;margin:14px auto 0}
+.tm-flow .row-grp{display:flex;flex-direction:column;gap:9px}
+.tm-flow .row-cat{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--gul);opacity:.7;margin:0 4px}
 .tm-flow .row{display:grid;grid-template-columns:auto minmax(0,1fr) 44px auto;grid-template-areas:"chk navn pw fw";column-gap:7px;align-items:center;background:var(--gul);color:var(--brun);border-radius:13px;padding:10px 11px}
-.tm-flow .row--incl{background:#fbf3ad}
+/* Fravalgt: rækken står bomstille — kun checkbox-state skifter, og pris/frekvens
+   skjules på stedet. visibility (ikke display): kontrollerne beholder deres
+   plads i gridden, så intet hopper. */
+.tm-flow .row--off .pw,.tm-flow .row--off .fw{visibility:hidden}
 .tm-flow .row input[type=checkbox]{grid-area:chk;width:21px;height:21px;accent-color:var(--brun);cursor:pointer}
 .tm-flow .row .navn{grid-area:navn;min-width:0;white-space:normal;overflow-wrap:break-word;font-size:12.5px;font-weight:700;line-height:1.25;cursor:pointer}
 /* Pris pr. gang — label over tallet (kompakt; indhold styrer bredden på mobil) */
@@ -167,30 +166,9 @@
 .tm-flow .fw-ctl button:disabled{opacity:.3;cursor:default}
 .tm-flow .fw-ctl b{min-width:14px;text-align:center;font-size:14px;font-weight:800;font-variant-numeric:tabular-nums}
 
-/* Højre: kun-navn tilvalg */
-.tm-flow .addons{display:flex;flex-direction:column;gap:14px}
-.tm-flow .addon-cat{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--gul);opacity:.7;margin-bottom:8px}
-.tm-flow .addon-list{display:flex;flex-direction:column;gap:8px}
-/* pointer-events:auto ophæver sidens globale label{pointer-events:none} (chips er <label>). */
-.tm-flow .addon{display:flex;align-items:center;gap:10px;background:rgba(255,248,123,.05);border:1.5px solid var(--bronze);border-radius:12px;padding:11px 14px;cursor:pointer;pointer-events:auto;transition:background .15s,border-color .15s}
-.tm-flow .addon:hover{background:rgba(255,248,123,.12);border-color:var(--gul)}
-.tm-flow .addon:focus-within{outline:3px solid var(--gul);outline-offset:2px}
-/* Ægte checkbox (state + tastatur/skærmlæser) skjules visuelt; "+"-cirklen er den synlige affordance. */
-.tm-flow .addon input[type=checkbox]{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none}
-.tm-flow .addon-navn{flex:1;min-width:0;font-size:14px;color:var(--ivory);font-weight:600}
-.tm-flow .addon-add{width:26px;height:26px;flex:none;border-radius:50%;border:1.5px solid var(--bronze);color:var(--gul);font-size:17px;line-height:1;display:grid;place-items:center;transition:background .15s,color .15s,border-color .15s}
-.tm-flow .addon:hover .addon-add{background:var(--gul);color:var(--brun);border-color:var(--gul)}
+/* Tal der tæller (count-animationen) — tabular-nums så cifrene ikke hopper */
+.tm-flow .tm-anim-kr{font-variant-numeric:tabular-nums}
 
-/* Flash når et felt skifter kolonne */
-@keyframes tm-flash{0%{box-shadow:0 0 0 3px var(--gul)}100%{box-shadow:0 0 0 0 transparent}}
-.tm-flow .flash{animation:tm-flash .6s ease}
-
-/* Tablet/desktop: todelt med lodret skille */
-@media (min-width:760px){
-  .tm-flow .split{grid-template-columns:1fr 1fr;gap:0}
-  .tm-flow .col.left{padding-left:2px;padding-right:22px}
-  .tm-flow .col.right{padding-left:22px;padding-right:2px;border-left:1px solid rgba(255,248,123,.16)}
-}
 /* Bred desktop: mere luft + linede steppere på tværs af rækker (den godkendte visning) */
 @media (min-width:1024px){
   .tm-flow .row{grid-template-columns:auto 1fr auto auto;column-gap:16px;padding:10px 16px}
@@ -225,6 +203,11 @@
 .tm-flow .kontakt input,.tm-flow .kontakt textarea{width:100%;padding:15px 16px;border-radius:12px;border:0;background:var(--ivory);color:var(--brun);font-size:16px}
 .tm-flow .kontakt .err{color:var(--ivory);background:var(--roed-moerk);border-radius:10px;padding:10px 14px;margin-top:16px;font-size:14px;display:none}   /* ivory på mørk rød ≈7.1:1 (AA) */
 .tm-flow .kontakt .err.show{display:block}
+/* Rabatkode-status under feltet: "anvendt" (gul) eller diskret "Ukendt rabatkode" */
+.tm-flow .kontakt .rk-note{margin:8px 2px 0;font-size:14px;color:var(--gul);opacity:.95}
+.tm-flow .kontakt .rk-note b{font-weight:800}
+.tm-flow .kontakt .rk-note.rk-ukendt{color:var(--ivory);opacity:.65}
+.tm-flow .kontakt .rk-note[hidden]{display:none}
 /* Konkret opkaldstidspunkt på tak-siden */
 .tm-flow .tak-ring{display:none;margin-top:14px;font-size:19px;font-weight:700;color:var(--gul)}
 .tm-flow .tak-ring.show{display:block}

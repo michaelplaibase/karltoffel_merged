@@ -38,10 +38,12 @@ const normEmail = (e: string) => e.toLowerCase();
 const normPhone = (p: string) => p.replace(/[^\d]/g, "").replace(/^(45|0045)(?=\d{8}$)/, "");
 const num = (v: unknown, max: number) => (typeof v === "number" && Number.isFinite(v) && v >= 0 ? Math.min(v, max) : 0);
 
-/** Tilbudsmotorens payload: valgte services + estimat + kundetype. Alt er
- *  valgfrit og valideres felt for felt — ukendte/ugyldige rækker droppes. */
+/** Tilbudsmotorens payload: valgte services + estimat + kundetype (+ evt.
+ *  valideret rabatkode). Alt er valgfrit og valideres felt for felt —
+ *  ukendte/ugyldige rækker droppes. */
 type TmService = { id: string; navn: string; wm: string | null; qty: number; enhed: string; freq: number; pris: number | null };
-function parseTmPayload(body: Record<string, unknown>): { payloadJson: string | null; kundetype: string | null; services: TmService[]; estimatMd: number } {
+type Rabat = { rabatkode: string; rabatOk: boolean; rabatPct: number | null };
+function parseTmPayload(body: Record<string, unknown>, rabat: Rabat | null): { payloadJson: string | null; kundetype: string | null; services: TmService[]; estimatMd: number } {
   const kt = str(body.kundetype, 10).toLowerCase();
   const kundetype = kt === "privat" || kt === "erhverv" ? kt : null;
 
@@ -64,8 +66,8 @@ function parseTmPayload(body: Record<string, unknown>): { payloadJson: string | 
   const e = body.estimat && typeof body.estimat === "object" ? (body.estimat as Record<string, unknown>) : {};
   const estimat = { md: num(e.md, 10_000_000), aar: num(e.aar, 100_000_000), visits: num(e.visits, 366), count: num(e.count, 100) };
 
-  const payloadJson = kundetype || services.length
-    ? JSON.stringify({ kundetype, services, estimat })
+  const payloadJson = kundetype || services.length || rabat
+    ? JSON.stringify({ kundetype, services, estimat, ...(rabat ?? {}) })
     : null;
   return { payloadJson, kundetype, services, estimatMd: estimat.md };
 }
@@ -114,7 +116,30 @@ export async function POST(req: NextRequest) {
 
   const message = str(body.message, 2000) || null;
   const address = str(body.address, 300) || null;
-  const tm = parseTmPayload(body);
+
+  // Rabatkode (valgfri): valideres mod DiscountCode med samme where-logik som
+  // /api/discount-codes/validate — startOfToday i UTC, fordi expiresAt gemmes
+  // som T00:00:00Z (så en kode der udløber "i dag" stadig er gyldig). Opslaget
+  // må ALDRIG vælte lead-oprettelsen: fejl → koden behandles som ugyldig.
+  const rabatkode = str(body.rabatkode, 40).toUpperCase();
+  let rabat: Rabat | null = null;
+  if (rabatkode) {
+    let hit: { percent: number } | null = null;
+    try {
+      const startOfToday = new Date(new Date().toISOString().slice(0, 10) + "T00:00:00Z");
+      hit = await prisma.discountCode.findFirst({
+        where: {
+          code: { equals: rabatkode, mode: "insensitive" },
+          OR: [{ expiresAt: null }, { expiresAt: { gte: startOfToday } }],
+        },
+      });
+    } catch (e) {
+      console.error("[leads] rabatkode-opslag fejlede — behandles som ugyldig:", e);
+    }
+    rabat = { rabatkode, rabatOk: !!hit, rabatPct: hit ? hit.percent : null };
+  }
+
+  const tm = parseTmPayload(body, rabat);
 
   // Dedup: merge into an OPEN lead (<=30 days) with the same normalised email/phone.
   const since = new Date(Date.now() - 30 * 86_400_000);
@@ -172,6 +197,7 @@ export async function POST(req: NextRequest) {
       address ? `Adresse: ${address}` : null,
       tm.kundetype ? `Kundetype: ${tm.kundetype === "erhverv" ? "Erhverv" : "Privat"}` : null,
       tm.estimatMd ? `Estimat: ${DKK.format(tm.estimatMd)} kr/md` : null,
+      rabat ? `Rabatkode: ${rabat.rabatkode}${rabat.rabatOk ? ` (−${rabat.rabatPct}%)` : " (ugyldig)"}` : null,
       lines.length ? `` : null,
       ...lines,
       ``,

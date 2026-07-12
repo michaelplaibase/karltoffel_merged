@@ -21,7 +21,7 @@ const TM_KATEGORI: Record<string, string> = {
   ukrudt: "Ukrudtsbekæmpelse",
   fliserens: "Overfladerens", husgarage: "Overfladerens",
   haek: "Grøn service", green: "Grøn service", graes: "Grøn service", beskaering: "Grøn service",
-  soignering: "Grøn service", stub: "Grøn service", sammenriv: "Grøn service",
+  stub: "Grøn service", sammenriv: "Grøn service",
   haveaffald: "Grøn service", sedum: "Grøn service", sne: "Andet", robot: "Andet", service: "Andet",
 };
 
