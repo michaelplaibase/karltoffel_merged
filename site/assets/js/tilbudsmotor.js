@@ -15,9 +15,8 @@ const $ = (id) => ROOT.querySelector("#" + id);
    produktnavn i WorkMaker-CSV (eneste join-nøgle — kun R0–R3 har Varenr),
    inkl. CSV'ens stavefejl: "Tagrenerens 2-plans hus", "Vindeuspudsning
    Indvendig pr glas", "Ukrudt bekæmpelse på belægningsarealer".
-   wm = null ⇒ findes endnu ikke i WorkMaker; opret som 0-kr placeholder
-   (mønster: "Soignering af bede = 0 kr."): robot, husgarage, stub,
-   drivhus, fliserens, sne.
+   wm = null ⇒ findes endnu ikke i WorkMaker; opret som 0-kr placeholder:
+   robot, husgarage, stub, drivhus, fliserens, sne.
    alge → CSV "Algebehandling af tag"; algeflis → CSV "Algebehandling af
    belægning". beskaering er prissat fra CSV "Beskæring Små træer /
    Frugttræer" (500 kr). pris:null = "Indeholdt" (pakke:true) eller
@@ -38,7 +37,6 @@ const PRODUCTS = [
   {id:"ukrudt",    navn:"Ukrudtsbekæmpelse på belægning",         enhed:"m² fliser", pris:1.50,   note:"Vi holder fugerne rene",  qty:60,  freq:1,  fmax:8,  on:false, pakke:false, kat:"groen",   wm:"Ukrudt bekæmpelse på belægningsarealer"},
   {id:"graes",     navn:"Græsslåning",                            enhed:"m² plæne",  pris:1.60,   note:"Klip i sæsonen",          qty:450, freq:1,  fmax:26, on:false, pakke:false, kat:"groen",   wm:"Græsslåning"},
   {id:"beskaering",navn:"Beskæring af buske, træer og planter",   enhed:"træer",     pris:500.00, note:"Små træer/frugttræer — større træer efter besøg", qty:3, freq:1, fmax:2, on:false, pakke:false, kat:"groen", prisEnh:"træ", wm:"Beskæring Små træer / Frugttræer"},
-  {id:"soignering",navn:"Soignering af bede",                     enhed:"",          pris:null,   note:"Pris ved besøg",          qty:1,   freq:1,  fmax:12, on:false, pakke:false, kat:"groen",   wm:"Soignering af bede"},
   {id:"stub",      navn:"Stubfræsning",                           enhed:"",          pris:null,   note:"Pris ved besøg",          qty:1,   freq:1,  fmax:1,  on:false, pakke:false, kat:"groen",   wm:null},
   {id:"vinduerind",navn:"Vinduesvask indvendigt",                 enhed:"glas",      pris:19.87,  note:"Indvendige ruder",        qty:14,  freq:1,  fmax:6,  on:false, pakke:false, kat:"vinduer", wm:"Vindeuspudsning Indvendig pr glas"},
   {id:"ovenlys",   navn:"Ovenlysvinduesvask",                     enhed:"stk",       pris:25.00,  note:"Pr. ovenlysvindue",       qty:2,   freq:1,  fmax:4,  on:false, pakke:false, kat:"vinduer", wm:"Ovenlys vinduesvask pr stk"},
@@ -83,10 +81,30 @@ const DKK0 = new Intl.NumberFormat("da-DK",{maximumFractionDigits:0});
 const DKK2 = new Intl.NumberFormat("da-DK",{minimumFractionDigits:2,maximumFractionDigits:2});
 function kr(n){ return DKK0.format(Math.round(n)) + " kr"; }
 
+/* Blød count-op/ned af viste tal (~450 ms, ease-out cubic, requestAnimationFrame).
+   Bruges overalt hvor kr()-tal skrives, så priser/rabatter tæller fra gammel til
+   ny værdi. Respekterer prefers-reduced-motion: så sættes slutværdien straks. */
+const REDUCE_MOTION = window.matchMedia("(prefers-reduced-motion: reduce)");
+function animateNumber(el, from, to, fmt){
+  if(!el) return;
+  fmt = fmt || kr;
+  if(REDUCE_MOTION.matches || !isFinite(from) || from === to){ el.textContent = fmt(to); return; }
+  if(el._tmRaf) cancelAnimationFrame(el._tmRaf);
+  const t0 = performance.now(), DUR = 450;
+  function frame(now){
+    const t = Math.min(1, (now - t0) / DUR);
+    const e = 1 - Math.pow(1 - t, 3);          /* ease-out cubic */
+    el.textContent = fmt(from + (to - from) * e);
+    el._tmRaf = t < 1 ? requestAnimationFrame(frame) : 0;
+  }
+  el._tmRaf = requestAnimationFrame(frame);
+}
+
 /* ============ STATE ============ */
 const state = {
   adresse: "",
   kundetype: null,   /* "privat" | "erhverv" — vælges på step 2 */
+  rabatkode: { code:"", percent:0, valid:false },   /* valideret server-side via /api/rabatkode */
   ejendom: { type:"Villa, 1 fam.", grund:"827 m²", opfoert:"2007", haek:"65 m" }
 };
 
@@ -201,9 +219,10 @@ function applyMeasurements(m){
     if(m.rygHojde > 5){ tr.pris = 28.00; tr.note = "2-plans hus"; tr.wm = "Tagrenerens 2-plans hus"; }
     else { tr.pris = 18.00; tr.note = "Stueplan / 1-plans hus"; tr.wm = "Tagrenderens Stueplan / 1-plans hus"; }
   }
-  /* Genrender løsnings-trinnet, så "Pris pr. gang" afspejler de auto-målte mængder. */
+  /* Opdater priserne på stedet (ingen gen-render), så "Pris pr. gang" tæller
+     blødt hen til de auto-målte mængder. */
   const active = ROOT.querySelector(".step.active");
-  if(active && active.id === "step-losning") renderTop();
+  if(active && active.id === "step-losning") opdater();
 }
 
 /* AI-vinduestælling: send det renderede skråfoto til /api/windows (Anthropic-nøglen
@@ -234,8 +253,7 @@ function taelVinduerAI(){
         const p = PRODUCTS.find(x => x.id === id);
         if(p && !p.touched) p.qty = panes;            /* rør ikke mængder kunden selv har rettet */
       });
-      const active = ROOT.querySelector(".step.active");
-      if(active && active.id === "step-losning") renderTop(); else opdater();
+      opdater();   /* på stedet: priserne tæller blødt til det nye glasantal */
     })
     .catch(()=>{});
   }catch(e){}
@@ -400,6 +418,54 @@ btnNej.addEventListener("click", ()=>{
 });
 $("btn-tilbage").addEventListener("click", ()=> visStep("step-losning"));
 
+/* ============ RABATKODE (valgfri, kontakt-trinnet) ============ */
+/* Valideres server-side via sitets read-only relay (/api/rabatkode?code=X →
+   {valid, percent}). Valid kode = EKSTRA procent-rabat oven i mængderabatten.
+   Må ALDRIG blokere indsendelsen: fejl/ukendt kode ⇒ ingen rabat, flowet
+   fortsætter. Stale-guard: kun svaret på den nyeste indtastning bruges. */
+const rkInput = $("k-rabat"), rkStatus = $("k-rabat-status");
+let rkReq = 0;
+function rkNote(cls, html){
+  if(!rkStatus) return;
+  rkStatus.className = "rk-note " + cls;
+  rkStatus.innerHTML = html;
+  rkStatus.hidden = false;
+}
+function tjekRabatkode(){
+  if(!rkInput) return;
+  const kode = rkInput.value.trim().toUpperCase();
+  const req = ++rkReq;
+  if(!kode){
+    state.rabatkode = { code:"", percent:0, valid:false };
+    if(rkStatus){ rkStatus.hidden = true; rkStatus.textContent = ""; }
+    return;
+  }
+  fetch("/api/rabatkode?code=" + encodeURIComponent(kode))
+    .then(r => r.ok ? r.json() : null)
+    .then(d => {
+      if(req !== rkReq) return;   /* forældet svar — brugeren har rettet koden */
+      const pct = (d && d.valid === true) ? Math.max(0, Math.min(100, Number(d.percent) || 0)) : 0;
+      if(pct > 0){
+        state.rabatkode = { code: kode, percent: pct, valid: true };
+        rkNote("rk-ok", 'Rabatkode anvendt: <b>−<span class="rk-pct tm-anim-kr">0</span>%</b>');
+        animateNumber(rkStatus && rkStatus.querySelector(".rk-pct"), 0, pct,
+          function(n){ return DKK0.format(Math.round(n)); });
+      } else {
+        state.rabatkode = { code: kode, percent: 0, valid: false };
+        rkNote("rk-ukendt", "Ukendt rabatkode");
+      }
+    })
+    .catch(()=>{
+      if(req !== rkReq) return;
+      state.rabatkode = { code: kode, percent: 0, valid: false };
+      rkNote("rk-ukendt", "Ukendt rabatkode");
+    });
+}
+if(rkInput){
+  rkInput.addEventListener("blur", tjekRabatkode);
+  rkInput.addEventListener("keydown", (e)=>{ if(e.key === "Enter"){ e.preventDefault(); tjekRabatkode(); } });
+}
+
 $("btn-send").addEventListener("click", ()=>{
   const navn = $("k-navn").value.trim(), mail = $("k-mail").value.trim(), tlf = $("k-tlf").value.trim();
   /* Telefon er obligatorisk — hele løftet er et opkald. E-mail er valgfri,
@@ -411,6 +477,11 @@ $("btn-send").addEventListener("click", ()=>{
   const r = beregn(PRODUCTS);
   const valgt = PRODUCTS.filter(p=>p.on);
   const ktLabel = state.kundetype === "erhverv" ? " · Erhverv" : (state.kundetype === "privat" ? " · Privat" : "");
+  /* Rabatkode: ekstra rabat oven i mængderabatten — trækkes fra årssummen
+     EFTER mængderabat. Gælder de viste totaler; estimat-felterne er uændrede. */
+  const kodePct = state.rabatkode.valid ? state.rabatkode.percent : 0;
+  const aarNet = r.aar * (1 - kodePct/100);
+  const snitNet = r.visits > 0 ? aarNet / r.visits : 0;
 
   /* Lead-payload til CRM'et: kontaktinfo + valgte services (med WorkMaker-
      nøgle under overgangen) + estimat + kundetype. Sendes via sitets relay
@@ -424,6 +495,8 @@ $("btn-send").addEventListener("click", ()=>{
     services: valgt.map(p=>({ id:p.id, navn:p.navn, wm:p.wm, qty:p.qty, enhed:p.enhed, freq:p.freq, pris:p.pris })),
     estimat: { md: Math.round(r.md), snit: Math.round(r.snit), aar: Math.round(r.aar), aarBrutto: Math.round(r.aarBrutto), rabatPct: r.rabatPct, rabatKr: Math.round(r.rabatKr), visits: r.visits, count: r.count }
   };
+  /* KONTRAKT: feltnavn `rabatkode` (streng, trimmet + uppercased) — kun med når koden er valid. */
+  if(state.rabatkode.valid) payload.rabatkode = state.rabatkode.code;
 
   const btnSend = $("btn-send");
   btnSend.disabled = true;
@@ -455,13 +528,17 @@ $("btn-send").addEventListener("click", ()=>{
         return esc(p.navn) + suffix;
       }).join(", ");
       var rabatLinje = r.rabatPct > 0
-        ? "Mængderabat: <b>−" + r.rabatPct + "%</b> (du sparer ca. " + kr(r.rabatKr) + " om året)<br>"
+        ? 'Mængderabat: <b>−' + r.rabatPct + '%</b> (du sparer ca. <span id="tak-rabatkr" class="tm-anim-kr">' + kr(r.rabatKr) + '</span> om året)<br>'
         : "";
+      var kodeLinje = kodePct > 0 ? "Rabatkode anvendt: <b>−" + kodePct + "%</b><br>" : "";
       opsum.innerHTML =
         "<b>" + esc(state.adresse) + ktLabel + "</b><br>" +
         "Valgt: " + linjer + "<br>" +
-        rabatLinje +
-        "Estimeret: <b>" + kr(r.snit) + " pr. besøg</b> ved " + r.visits + " besøg om året.";
+        rabatLinje + kodeLinje +
+        'Estimeret: <b><span id="tak-snit" class="tm-anim-kr">' + kr(snitNet) + '</span> pr. besøg</b> ved ' + r.visits + " besøg om året.";
+      /* Tak-totalerne tæller blødt op fra 0 (count-animationen). */
+      animateNumber(opsum.querySelector("#tak-rabatkr"), 0, r.rabatKr, kr);
+      animateNumber(opsum.querySelector("#tak-snit"), 0, snitNet, kr);
     }
     rydState();   /* leadet er sendt — intet at gendanne længere */
     visStep("step-tak");
@@ -492,19 +569,17 @@ function esc(s){ const d = document.createElement("div"); d.textContent = s; ret
 /* ============ RENDER ============ */
 const CAT_ORDER = ["pakke", "groen", "vinduer", "tag", "affald", "vinter"];
 const CAT_LABELS = { pakke:"Fra Villapakken", groen:"Grøn have", vinduer:"Vinduer & glas", tag:"Tag & fliser", affald:"Affald", vinter:"Vinter" };
-/* id på det felt der lige er flyttet mellem kolonnerne — får et kort "flash" ved gen-render. */
-let flashId = null;
 function enhKort(p){ return p.enhed ? p.enhed.split(" ")[0] : "enhed"; }
 function prisEnh(p){ return p.prisEnh || enhKort(p); }   /* ental til "kr pr. X" */
-function focusById(id){ const el = ROOT.querySelector('input[data-pid="' + id + '"]'); if(el) el.focus(); }
 
 function renderTop(){
   $("t-adr").textContent = state.adresse || "Din adresse";
   renderLosning();
 }
 
-/* Fuld gen-render: rækker (aktive) + tilvalg (inaktive) + priser. */
-function renderLosning(){ renderRows(); renderAddons(); opdater(); }
+/* Fuld gen-render af den samlede serviceliste + priser. Kører kun ved trin-/
+   adresse-skift — til-/fravalg gen-renderer IKKE (rækkerne står bomstille). */
+function renderLosning(){ renderRows(); opdater(); }
 
 function knap(tegn, label){
   const b = document.createElement("button");
@@ -512,92 +587,90 @@ function knap(tegn, label){
   return b;
 }
 
+/* ÉN stationær liste: ALLE services (valgte + fravalgte) som ens gule rækker,
+   grupperet efter kategori. Til-/fravalg flipper kun checkboxen + .row--off
+   (CSS skjuler pris-/frekvens-kontrollerne på stedet) — ingen kolonne-flytning,
+   intet farveskift, intet flash. */
 function renderRows(){
   const wrap = $("rows");
   wrap.innerHTML = "";
-  PRODUCTS.filter(p => p.on).forEach(p => {
-    const priced = (p.pris != null);
-    const incl = (p.pakke && !priced);          /* del af Villapakken → "Indeholdt" */
-    const row = document.createElement("div");
-    row.className = "row" + (incl ? " row--incl" : "") + (p.id === flashId ? " flash" : "");
-
-    const chk = document.createElement("input");
-    chk.type = "checkbox"; chk.checked = true; chk.dataset.pid = p.id;
-    chk.id = "chk-" + p.id;
-    chk.setAttribute("aria-label", "Fravælg " + p.navn);
-    chk.addEventListener("change", ()=>{ p.on = false; flashId = p.id; renderLosning(); flashId = null; });
-
-    /* Titlen er en <label for=checkbox>, så hele navnet toggler rækken. */
-    const navn = document.createElement("label");
-    navn.className = "navn";
-    navn.htmlFor = chk.id;
-    navn.textContent = p.navn;
-
-    /* Pris pr. gang — label over tallet (indhold sættes af opdater()). */
-    const pw = document.createElement("div");
-    pw.className = "pw"; pw.dataset.id = p.id;
-
-    /* Frekvens — "Besøg om året" over stepperen. Gælder ALLE rækker (også de indeholdte). */
-    const fw = document.createElement("div");
-    fw.className = "fw";
-    const flbl = document.createElement("span"); flbl.className = "fw-lbl"; flbl.textContent = "Besøg om året";
-    const ctl = document.createElement("div"); ctl.className = "fw-ctl";
-    const minus = knap("−", "Færre besøg med " + p.navn);
-    const fv = document.createElement("b");
-    const plus = knap("+", "Flere besøg med " + p.navn);
-    function sync(){ fv.textContent = p.freq; minus.disabled = p.freq <= 1; plus.disabled = p.freq >= p.fmax; }
-    minus.addEventListener("click", ()=>{ if(p.freq > 1){ p.freq--; sync(); opdater(); } });
-    plus.addEventListener("click", ()=>{ if(p.freq < p.fmax){ p.freq++; sync(); opdater(); } });
-    sync();
-    ctl.appendChild(minus); ctl.appendChild(fv); ctl.appendChild(plus);
-    fw.appendChild(flbl); fw.appendChild(ctl);
-
-    row.appendChild(chk); row.appendChild(navn); row.appendChild(pw); row.appendChild(fw);
-    wrap.appendChild(row);
-  });
-}
-
-/* "Vi tilbyder også" — inaktive services som kompakte chips, grupperet i kategorier. */
-function renderAddons(){
-  const wrap = $("addons");
-  if(!wrap) return;
-  wrap.innerHTML = "";
   CAT_ORDER.forEach(katKey => {
-    const items = PRODUCTS.filter(p => !p.on && p.kat === katKey);
+    const items = PRODUCTS.filter(p => p.kat === katKey);
     if(!items.length) return;
-    const grp = document.createElement("div"); grp.className = "addon-cat-grp";
-    const lbl = document.createElement("div"); lbl.className = "addon-cat"; lbl.textContent = CAT_LABELS[katKey];
-    const list = document.createElement("div"); list.className = "addon-list";
-    items.forEach(p => {
-      const chip = document.createElement("label"); chip.className = "addon" + (p.id === flashId ? " flash" : "");
-      const chk = document.createElement("input");
-      chk.type = "checkbox"; chk.checked = false; chk.dataset.pid = p.id;
-      chk.setAttribute("aria-label", "Tilvælg " + p.navn);
-      chk.addEventListener("change", ()=>{ p.on = true; flashId = p.id; renderLosning(); flashId = null; });
-      const txt = document.createElement("span"); txt.className = "addon-navn"; txt.textContent = p.navn;   /* kun navnet — pris + frekvens vises, når den flyttes til venstre */
-      const add = document.createElement("span"); add.className = "addon-add"; add.textContent = "+"; add.setAttribute("aria-hidden", "true");
-      chip.appendChild(chk); chip.appendChild(txt); chip.appendChild(add);
-      list.appendChild(chip);
-    });
-    grp.appendChild(lbl); grp.appendChild(list); wrap.appendChild(grp);
+    const grp = document.createElement("div"); grp.className = "row-grp";
+    const lbl = document.createElement("div"); lbl.className = "row-cat"; lbl.textContent = CAT_LABELS[katKey];
+    grp.appendChild(lbl);
+    items.forEach(p => grp.appendChild(byggRaekke(p)));
+    wrap.appendChild(grp);
   });
 }
 
-/* Live mængderabat-banner på løsnings-trinnet — svar på "hvor fremgår det?". */
+function byggRaekke(p){
+  const row = document.createElement("div");
+  row.className = "row" + (p.on ? "" : " row--off");
+
+  const chk = document.createElement("input");
+  chk.type = "checkbox"; chk.checked = p.on; chk.dataset.pid = p.id;
+  chk.id = "chk-" + p.id;
+  const ariaSync = ()=> chk.setAttribute("aria-label", (p.on ? "Fravælg " : "Tilvælg ") + p.navn);
+  ariaSync();
+  chk.addEventListener("change", ()=>{
+    p.on = chk.checked;
+    row.classList.toggle("row--off", !p.on);   /* kun state-flip — rækken bliver stående */
+    ariaSync();
+    opdater();
+  });
+
+  /* Titlen er en <label for=checkbox>, så hele navnet toggler rækken. */
+  const navn = document.createElement("label");
+  navn.className = "navn";
+  navn.htmlFor = chk.id;
+  navn.textContent = p.navn;
+
+  /* Pris pr. gang — label over tallet (indhold sættes/animeres af opdater()). */
+  const pw = document.createElement("div");
+  pw.className = "pw"; pw.dataset.id = p.id;
+
+  /* Frekvens — "Besøg om året" over stepperen. Gælder ALLE rækker (også de indeholdte). */
+  const fw = document.createElement("div");
+  fw.className = "fw";
+  const flbl = document.createElement("span"); flbl.className = "fw-lbl"; flbl.textContent = "Besøg om året";
+  const ctl = document.createElement("div"); ctl.className = "fw-ctl";
+  const minus = knap("−", "Færre besøg med " + p.navn);
+  const fv = document.createElement("b");
+  const plus = knap("+", "Flere besøg med " + p.navn);
+  function sync(){ fv.textContent = p.freq; minus.disabled = p.freq <= 1; plus.disabled = p.freq >= p.fmax; }
+  minus.addEventListener("click", ()=>{ if(p.freq > 1){ p.freq--; sync(); opdater(); } });
+  plus.addEventListener("click", ()=>{ if(p.freq < p.fmax){ p.freq++; sync(); opdater(); } });
+  sync();
+  ctl.appendChild(minus); ctl.appendChild(fv); ctl.appendChild(plus);
+  fw.appendChild(flbl); fw.appendChild(ctl);
+
+  row.appendChild(chk); row.appendChild(navn); row.appendChild(pw); row.appendChild(fw);
+  return row;
+}
+
+/* Live mængderabat-banner på løsnings-trinnet — svar på "hvor fremgår det?".
+   Kr-beløbet tæller blødt op/ned (animateNumber), når rabatten ændrer sig. */
 function opdaterRabat(){
   var el = $("tm-rabat");
   if(!el) return;
   var r = beregn(PRODUCTS);
   if(r.rabatPct > 0 && r.rabatKr > 0){
+    var prev = parseFloat(el.dataset.kr);
     el.innerHTML = 'Du har valgt <b>' + r.count + ' services</b> og sparer <b>' + r.rabatPct +
-      '%</b> (ca. ' + kr(r.rabatKr) + ' om året). Jo flere du vælger, jo mere sparer du' +
+      '%</b> (ca. <span class="tm-rabat-kr tm-anim-kr">' + kr(r.rabatKr) + '</span> om året). Jo flere du vælger, jo mere sparer du' +
       (r.rabatPct < RABAT_MAX ? ' — helt op til ' + RABAT_MAX + '%.' : '.');
+    if(isFinite(prev) && prev !== r.rabatKr) animateNumber(el.querySelector(".tm-rabat-kr"), prev, r.rabatKr, kr);
+    el.dataset.kr = r.rabatKr;
     el.hidden = false;
   } else if(r.rabatPct > 0){
     el.innerHTML = 'Jo flere services du vælger, jo mere sparer du — <b>' + RABAT_PR_SERVICE +
       '% pr. service</b>, op til ' + RABAT_MAX + '%.';
+    delete el.dataset.kr;
     el.hidden = false;
   } else {
+    delete el.dataset.kr;
     el.hidden = true;
   }
 }
@@ -608,10 +681,22 @@ function opdater(){
     if(!el) return;
     if(p.pris == null){
       el.innerHTML = '<span class="pw-note">' + (p.pakke ? "Indeholdt i pakken" : "Pris ved besøg") + '</span>';
+      delete el.dataset.val;
     } else if(!p.qty){
       el.innerHTML = '<span class="pw-note">Pris efter antal</span>';
+      delete el.dataset.val;
     } else {
-      el.innerHTML = '<b class="pw-val">' + kr(p.pris * p.qty) + '</b><span class="pw-unit">pr. gang</span>';
+      const val = p.pris * p.qty;
+      const prev = parseFloat(el.dataset.val);
+      const b = el.querySelector(".pw-val");
+      if(!b){   /* første visning: skriv direkte (ingen animation fra ingenting) */
+        el.innerHTML = '<b class="pw-val">' + kr(val) + '</b><span class="pw-unit">pr. gang</span>';
+      } else if(isFinite(prev) && prev !== val){
+        animateNumber(b, prev, val, kr);   /* mængde ændret → tæl blødt derhen */
+      } else {
+        b.textContent = kr(val);
+      }
+      el.dataset.val = val;
     }
   });
   opdaterRabat();

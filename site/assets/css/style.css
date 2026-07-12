@@ -23,3 +23,11 @@ form button.g-recaptcha:hover{filter:brightness(1.15)}
    ========================================================================== */
 .hero-slider__content .big-button{background:#FFF87B;border-color:#FFF87B;color:#4C3718;font-size:17px;min-height:64px;padding:18px 44px;border-radius:999px;box-shadow:0 10px 30px rgba(0,0,0,.35)}
 .hero-slider__content .big-button:hover,.hero-slider__content .big-button:focus{background:#FFFFF0;border-color:#FFFFF0;color:#4C3718;box-shadow:0 12px 34px rgba(0,0,0,.45);transform:translateY(-2px)}
+
+/* ==========================================================================
+   HEADER-CTA (12.07.2026) — header-/drawer-knappen "Få et tilbud på mindre
+   bøvl" lignede et løst tekst-link. Nu en fyldt brand-brun pille-knap; tekst
+   og pil-ikon i gul (#FFF87B på #4C3718 = ca. 10:1 kontrast).
+   ========================================================================== */
+.header__buttons a.button,.drawer__buttons a.button{--theme-color-text:#FFF87B;--theme-color-button-icon:#FFF87B;background:#4C3718;color:#FFF87B;padding:12px 22px;border-radius:999px;display:inline-flex;align-items:center;gap:8px}
+.header__buttons a.button:hover,.header__buttons a.button:focus,.drawer__buttons a.button:hover,.drawer__buttons a.button:focus{background:#5a4322;color:#FFF87B}
