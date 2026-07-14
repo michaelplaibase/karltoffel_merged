@@ -9,7 +9,7 @@ import TaskLineEditor, { type TaskRow } from "@/components/TaskLineEditor";
 export type FixedPriceInitial = { contactId: number; tasks: TaskRow[] };
 
 export default function FixedPriceForm({
-  action, contacts, initial, title, submitLabel, danger,
+  action, contacts, initial, title, submitLabel, danger, minuteRate,
 }: {
   action: (state: FixedPriceState, formData: FormData) => Promise<FixedPriceState>;
   contacts: ContactOption[];
@@ -17,6 +17,8 @@ export default function FixedPriceForm({
   title: string;
   submitLabel: string;
   danger?: React.ReactNode;
+  /** Minutpris (kr/min ekskl. moms) — auto-beregner varighed ud fra prisen. */
+  minuteRate: number;
 }) {
   const [state, formAction, pending] = useActionState(action, {});
 
@@ -43,7 +45,7 @@ export default function FixedPriceForm({
       <div className="card">
         <div className="card-header"><h4 className="section-title">Pris og varighed</h4></div>
         <div className="card-body tight">
-          <TaskLineEditor mode="order" initial={initial?.tasks} />
+          <TaskLineEditor mode="order" initial={initial?.tasks} minuteRate={minuteRate} />
         </div>
       </div>
 

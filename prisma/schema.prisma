@@ -21,6 +21,7 @@ model Company {
   email         String?
   planTier      String    @default("Pro") // Free | Pro | Premium
   hourlyPrice   Int       @default(600)   // DKK incl. VAT, excl. driving
+  minutePriceOere Int     @default(860)   // øre pr. minut EKSKL. moms (8,60 kr/min) — prisberegner: varighed = (pris inkl. moms / 1,25) / (minutePriceOere/100)
   users         User[]
   contacts      Contact[]
   standardTasks StandardTask[]

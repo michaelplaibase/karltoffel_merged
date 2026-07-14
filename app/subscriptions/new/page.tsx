@@ -1,4 +1,4 @@
-import { getContactOptions, getEmployeeNames } from "@/lib/queries";
+import { getContactOptions, getEmployeeNames, getMinuteRate } from "@/lib/queries";
 import { createSubscription } from "@/app/actions/subscriptions";
 import SubscriptionForm from "@/components/SubscriptionForm";
 
@@ -6,7 +6,7 @@ export const metadata = { title: "Opret abonnement · Karltoffel" };
 
 export default async function NewSubscription({ searchParams }: { searchParams: Promise<{ for_contact?: string }> }) {
   const { for_contact } = await searchParams;
-  const [contacts, employees] = await Promise.all([getContactOptions(), getEmployeeNames()]);
+  const [contacts, employees, minuteRate] = await Promise.all([getContactOptions(), getEmployeeNames(), getMinuteRate()]);
   const initialContactId = for_contact ? Number(for_contact) : undefined;
 
   return (
@@ -18,6 +18,7 @@ export default async function NewSubscription({ searchParams }: { searchParams: 
         initial={initialContactId ? { contactId: initialContactId, baseInterval: "Hver 2. uge", startWeek: "", fixedEmployee: "Ingen", tasks: [] } : undefined}
         title="Opret abonnement"
         submitLabel="Opret abonnement"
+        minuteRate={minuteRate}
       />
     </div>
   );

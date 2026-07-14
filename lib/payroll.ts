@@ -1,6 +1,7 @@
 // Lønrapport: per medarbejder, omsætning af UDFØRTE ordrer i en periode
 // (filtreret på plandato), og provision for akkord-folk. Node-only.
 import { prisma } from "@/lib/db";
+import { MOMS } from "@/lib/data";
 
 export type PayrollRow = {
   id: number;
@@ -17,7 +18,7 @@ export type PayrollRow = {
 export type Payroll = { fromISO: string; toISO: string; rows: PayrollRow[] };
 
 // Priser gemmes inkl. moms; akkordløn beregnes af beløbet EKSKL. moms.
-const MOMS = 0.25;                       // dansk moms 25 %
+// (MOMS deles med lib/data.ts.)
 const DEFAULT_COMMISSION_PCT = 43;       // standard akkordsats
 
 const iso = (d: Date) =>

@@ -9,12 +9,14 @@ import TaskLineEditor from "@/components/TaskLineEditor";
 export type WeekOption = { value: string; label: string };
 
 export default function OrderCreateForm({
-  action, contacts, weekOptions, initialContactId,
+  action, contacts, weekOptions, initialContactId, minuteRate,
 }: {
   action: (state: OrderCreateState, formData: FormData) => Promise<OrderCreateState>;
   contacts: ContactOption[];
   weekOptions: WeekOption[];
   initialContactId?: number;
+  /** Minutpris (kr/min ekskl. moms) — auto-beregner varighed ud fra prisen. */
+  minuteRate: number;
 }) {
   const [state, formAction, pending] = useActionState(action, {});
 
@@ -31,7 +33,7 @@ export default function OrderCreateForm({
       <div className="card">
         <div className="card-header"><h4 className="section-title">Opgaver på ordren</h4></div>
         <div className="card-body tight">
-          <TaskLineEditor />
+          <TaskLineEditor minuteRate={minuteRate} />
         </div>
       </div>
 

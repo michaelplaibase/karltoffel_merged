@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { getContactOptions } from "@/lib/queries";
+import { getContactOptions, getMinuteRate } from "@/lib/queries";
 import { createOrder } from "@/app/actions/orders";
 import { isoWeek } from "@/lib/planner";
 import { weekMondayToday } from "@/lib/calendar";
@@ -21,7 +21,7 @@ function weekOptions(fromMondayISO: string, count: number): WeekOption[] {
 
 export default async function NewOrder({ searchParams }: { searchParams: Promise<{ for_contact?: string }> }) {
   const { for_contact } = await searchParams;
-  const contacts = await getContactOptions();
+  const [contacts, minuteRate] = await Promise.all([getContactOptions(), getMinuteRate()]);
   const initialContactId = for_contact ? Number(for_contact) : undefined;
 
   return (
@@ -36,6 +36,7 @@ export default async function NewOrder({ searchParams }: { searchParams: Promise
         contacts={contacts}
         weekOptions={weekOptions(weekMondayToday(), 12)}
         initialContactId={initialContactId}
+        minuteRate={minuteRate}
       />
     </div>
   );
