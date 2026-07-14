@@ -11,6 +11,20 @@ Besøg os på www.bubble.dk eller ring til os på +45 6069 8700
 	<title>Fast hus- og haveservice til heldige karltofler - Karltoffel</title>
 	<meta name="description" content="Vi holder løbende hus og have skarpt, så du kan bruge tiden på noget sjovere.">
 	<meta name="apple-mobile-web-app-title" content="Karltoffel">
+	<script>
+	/* Kundetype: har kunden tidligere valgt "erhverv" (localStorage-nøglen
+	   "kt-kundetype-v1", sat af kundetype.js/tilbudsmotoren), sendes de direkte
+	   til /erhverv — kørt FØR stylesheets, så forsiden ikke når at blinke.
+	   Undtagelser: #tilbudsmotor (erhvervs-CTA'er til motoren skal virke) og
+	   ?privat-overriden. */
+	(function(){
+		try {
+			if(location.hash === "#tilbudsmotor") return;
+			if(/[?&]privat([=&]|$)/.test(location.search)) return;
+			if(localStorage.getItem("kt-kundetype-v1") === "erhverv") location.replace("/erhverv");
+		} catch(e){}
+	})();
+	</script>
 	<link rel="stylesheet" type="text/css" href="/assets/css/main.min.css">
 	<script type="text/javascript" charset="UTF-8" src="//cdn.cookie-script.com/s/ef5f34255da71cfcf814c76250b36eb1.js"></script>
 	<meta property="og:title" content="Fast hus- og haveservice til heldige karltofler - Karltoffel">
@@ -23,8 +37,9 @@ Besøg os på www.bubble.dk eller ring til os på +45 6069 8700
 		<link rel="apple-touch-icon" href="/assets/img/design/appicon.png">
 	<link rel="stylesheet" href="/assets/css/typekit.css">
 	<link rel="stylesheet" type="text/css" href="/assets/css/style.css?v=5">
-	<link rel="stylesheet" href="/assets/css/tilbudsmotor.css?v=22">
+	<link rel="stylesheet" href="/assets/css/tilbudsmotor.css?v=24">
 	<link rel="stylesheet" href="/assets/css/spacing.css?v=3">
+	<link rel="stylesheet" href="/assets/css/kundetype.css?v=1">
 		<link rel="preload" as="image"
 		href="/assets/img/thumb/e2a541dff09c05bfe2957c4875f7dfe5e570401c_w2000.webp"
 		imagesrcset="assets/img/thumb/e2a541dff09c05bfe2957c4875f7dfe5e570401c_w2000.webp 2000w,
@@ -1084,7 +1099,7 @@ Besøg os på www.bubble.dk eller ring til os på +45 6069 8700
 <li><a href="/p/handelsbetingelser">Handelsbetingelser</a></li>
 <li><a href="/p/cookiepolitik">Privatlivspolitik</a></li>
 <li><a href="/p/cookiepolitik">Cookiepolitik</a></li>
-<li><a href="/p/faa-et-tilbud">Få et tilbud</a></li>
+<li><a href="/#tilbudsmotor">Få et tilbud</a></li>
 </ul>
 
 
@@ -1115,12 +1130,13 @@ Besøg os på www.bubble.dk eller ring til os på +45 6069 8700
 	</div>
 
 		<script src="/assets/js/script.js"></script>
+		<script src="/assets/js/kundetype.js?v=1" defer></script>
 	
 
 
 			<script src="/assets/js/tilbudsmotor.config.js?v=9"></script>
 			<script src="/assets/js/vendor/geotiff.min.js"></script>
 			<script src="/assets/js/skraafoto.js?v=12"></script>
-			<script src="/assets/js/tilbudsmotor.js?v=22"></script>
+			<script src="/assets/js/tilbudsmotor.js?v=24"></script>
 </body>
 </html>

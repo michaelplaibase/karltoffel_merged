@@ -19,6 +19,32 @@ export function MapLink({ address }: { address: string }) {
   );
 }
 
+/** Normalise a stored phone number to a dialable "+…" string, or null when it is
+ *  missing/undialable (fewer than 8 digits also guards masked placeholders like
+ *  "+45 •• •• •• ••"). */
+function telNormalize(raw: string | null | undefined): string | null {
+  if (!raw) return null;
+  const digits = raw.replace(/\D/g, "");
+  if (digits.length < 8) return null;
+  if (raw.trim().startsWith("+")) return `+${digits}`;
+  if (digits.length === 8) return `+45${digits}`;
+  if (digits.startsWith("0045")) return `+${digits.slice(2)}`;
+  if (digits.length === 10 && digits.startsWith("45")) return `+${digits}`;
+  return null;
+}
+
+export function telHref(raw: string | null | undefined): string | null {
+  const n = telNormalize(raw);
+  return n ? `tel:${n}` : null;
+}
+
+export function telDisplay(raw: string | null | undefined): string | null {
+  const n = telNormalize(raw);
+  if (!n) return null;
+  const m = /^\+45(\d{8})$/.exec(n);
+  return m ? `+45 ${m[1].replace(/(\d{2})(?=\d)/g, "$1 ")}` : n;
+}
+
 export function StatusPill({ status }: { status: string }) {
   const s = status.toLowerCase();
   const cls = s.includes("afsluttet") || s.includes("udført")

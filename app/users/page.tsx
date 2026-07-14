@@ -5,7 +5,7 @@ import UserManager from "@/components/UserManager";
 
 export const metadata = { title: "Brugere · Karltoffel" };
 
-export default async function UsersPage() {
+export default async function UsersPage({ searchParams }: { searchParams: Promise<{ inactive?: string }> }) {
   const me = await getSessionUser();
   if (!me) redirect("/login");
 
@@ -23,6 +23,7 @@ export default async function UsersPage() {
     );
   }
 
-  const users = await getUsers();
-  return <UserManager users={users} />;
+  const includeInactive = (await searchParams).inactive === "1";
+  const users = await getUsers(includeInactive);
+  return <UserManager users={users} meId={me.id} includeInactive={includeInactive} />;
 }

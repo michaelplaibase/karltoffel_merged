@@ -1,12 +1,12 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getContactById, getSubscriptionsForContact, getFixedPricesForContact, getOrdersForContact } from "@/lib/queries";
-import { CatChip, MapLink, StatusPill, money } from "@/components/ui";
-import RowMenu, { type RowMenuItem } from "@/components/RowMenu";
+import { CatChip, MapLink, money } from "@/components/ui";
+import RowMenu from "@/components/RowMenu";
 import SkraafotoCard from "@/components/SkraafotoCard";
+import CustomerOrdersTable from "@/components/CustomerOrdersTable";
 import { stopSubscription } from "@/app/actions/subscriptions";
 import { deleteFixedPrice } from "@/app/actions/fixed-prices";
-import { deleteOrder } from "@/app/actions/orders";
 
 // Skråfoto-verifikationen bruger Dataforsyningen-tokenet, men tokenet når ALDRIG
 // browseren: kaldene går gennem CRM-proxyen (app/api/skraafoto/*), som injicerer
@@ -137,47 +137,7 @@ export default async function CustomerDetail({
         </div>
       </div>
 
-      <div className="card">
-        <div className="card-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          <h4 className="section-title">Kundens ordrer</h4>
-          <Link href={`/orders/new?for_contact=${c.id}`} className="btn btn-primary btn-sm">Opret ny ordre på kunden</Link>
-        </div>
-        <div className="card-body tight">
-          <div className="table-wrap">
-            <table className="data-table">
-              <thead><tr><th style={{ width: 34 }} /><th>Ordre nr.</th><th>Leverings-dato</th><th>Opgaver</th><th>Pris</th><th>Medarbejder</th><th>Ordrestatus</th><th>Kilde</th></tr></thead>
-              <tbody>
-                {orders.length === 0 ? (
-                  <tr><td colSpan={8}><div className="table-empty">Ingen ordrer</div></td></tr>
-                ) : orders.map((o) => {
-                  const items: RowMenuItem[] = [
-                    { label: "Vis ordre i kalender", href: `/calendar?week=${o.weekMonday}` },
-                    { label: "Rediger ordre", href: `/orders/${o.id}` },
-                    { label: "Afslut ordre…", href: `/orders/${o.id}/complete` },
-                    { label: "Send tilbud på ordren…", href: `/orders/${o.id}/send-tilbud` },
-                    { label: "Opret ny ordre", href: `/orders/new?for_contact=${o.contactId}` },
-                    ...(o.subscriptionNo ? [{ label: "Rediger abonnement", href: `/subscriptions/${o.subscriptionNo}` }] : []),
-                    { label: "Slet ordre…", danger: true, action: deleteOrder.bind(null, o.id),
-                      confirm: { title: "Slet ordre", body: `Er du sikker på, at du vil slette ordre #${o.id}?`, confirmLabel: "Slet ordre", note: "Denne handling kan ikke fortrydes." } },
-                  ];
-                  return (
-                  <tr key={o.id}>
-                    <td><RowMenu items={items} /></td>
-                    <td className="num"><Link href={`/orders/${o.id}`}>{o.id}</Link></td>
-                    <td className="num">{o.overdue ? <span className="badge badge-soft-warning">{o.deliveryDate}</span> : o.deliveryDate}</td>
-                    <td>{o.tasks.map((t, i) => <div key={i}><CatChip category={t.category} letter={t.letter} /> {t.description}</div>)}</td>
-                    <td className="num">{money(o.tasks.reduce((a, t) => a + t.price, 0))}</td>
-                    <td>{o.employee}</td>
-                    <td><StatusPill status={o.status} /></td>
-                    <td>{o.subscriptionNo ? <Link href={`/subscriptions/${o.subscriptionNo}`}>{o.source}</Link> : o.source}</td>
-                  </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </div>
+      <CustomerOrdersTable orders={orders} contactId={c.id} />
     </div>
   );
 }

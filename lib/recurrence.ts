@@ -55,7 +55,9 @@ function loadActiveSubs() {
 }
 
 async function defaultEmployeeId(fixedEmployee: string): Promise<number | null> {
-  const users = await prisma.user.findMany({ orderBy: { id: "asc" } });
+  // Kun aktive brugere — en deaktiveret medarbejder må hverken navne-matches
+  // eller være første-bruger-fallback for nye abonnements-ordrer.
+  const users = await prisma.user.findMany({ where: { active: true }, orderBy: { id: "asc" } });
   if (fixedEmployee && fixedEmployee !== "Ingen") {
     const match = users.find((u) => `${u.firstName} ${u.lastName}` === fixedEmployee);
     if (match) return match.id;

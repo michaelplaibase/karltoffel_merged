@@ -37,7 +37,8 @@ export async function login(_prev: LoginState, formData: FormData): Promise<Logi
   if (!underLimit(rlKey, 5)) return { error: "For mange forsøg. Prøv igen om lidt." };
 
   const user = await prisma.user.findUnique({ where: { username } });
-  if (!user || !user.passwordHash || !verifyPassword(password, user.passwordHash)) {
+  // Deaktiverede brugere (soft-delete) afvises på linje med forkert kodeord.
+  if (!user || !user.active || !user.passwordHash || !verifyPassword(password, user.passwordHash)) {
     recordHit(rlKey, 60_000);
     return { error: "Forkert brugernavn eller adgangskode." };
   }

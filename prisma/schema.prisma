@@ -42,6 +42,7 @@ model User {
   activeCalendar   Boolean  @default(true)
   canReceiveOnline Boolean  @default(false)
   homeAddress      String?
+  active           Boolean  @default(true)   // soft-delete: false = deaktiveret (kan ikke logge ind, skjult i vælgere)
   isAdmin          Boolean  @default(false)
   canSeePrices     Boolean  @default(true)
   canEditOrders    Boolean  @default(true)

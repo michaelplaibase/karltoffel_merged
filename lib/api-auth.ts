@@ -13,14 +13,17 @@ export async function requireSession(): Promise<number | null> {
 }
 
 /** Returns the logged-in user (id, username, name, isAdmin), or null. Used to
- *  gate admin-only surfaces (e.g. brugerstyring, timeregistrerings-oversigt). */
+ *  gate admin-only surfaces (e.g. brugerstyring, timeregistrerings-oversigt).
+ *  Deaktiverede brugere behandles som logget ud — deres statsløse 7-dages
+ *  token ville ellers holde adgangen åben efter deaktivering. */
 export async function getSessionUser() {
   const userId = await requireSession();
   if (userId == null) return null;
-  return prisma.user.findUnique({
+  const user = await prisma.user.findUnique({
     where: { id: userId },
-    select: { id: true, username: true, firstName: true, lastName: true, isAdmin: true },
+    select: { id: true, username: true, firstName: true, lastName: true, isAdmin: true, active: true },
   });
+  return user?.active ? user : null;
 }
 
 /**

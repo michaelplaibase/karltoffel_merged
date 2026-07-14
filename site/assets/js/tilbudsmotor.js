@@ -344,13 +344,17 @@ function gemState(stepId){
     const prod = {};
     PRODUCTS.forEach(p => { prod[p.id] = { on: p.on, qty: p.qty, freq: p.freq, touched: !!p.touched }; });
     sessionStorage.setItem(PERSIST_KEY, JSON.stringify({
-      t: Date.now(), adresse: state.adresse, kundetype: state.kundetype, step: stepId, prod
+      t: Date.now(), adresse: state.adresse, kundetype: state.kundetype, step: stepId, prod,
+      rabatkode: state.rabatkode
     }));
   } catch(e){ /* private mode / kvote — persistens er best-effort */ }
 }
 function rydState(){ try { sessionStorage.removeItem(PERSIST_KEY); } catch(e){} }
 
 /* ============ KUNDETYPE (privat/erhverv) ============ */
+/* Sitedækkende præference — samme localStorage-nøgle som kundetype.js
+   (forside-modal + header-switch), så valget følger kunden begge veje. */
+const KUNDETYPE_KEY = "kt-kundetype-v1";
 const ktPrivat = $("kt-privat"), ktErhverv = $("kt-erhverv"),
       ktVidere = $("kt-videre"), ktNote = $("kt-note");
 function vaelgKundetype(t){
@@ -361,6 +365,9 @@ function vaelgKundetype(t){
   ktErhverv.setAttribute("aria-checked", t === "erhverv" ? "true" : "false");
   ktNote.classList.toggle("show", t === "erhverv");
   ktVidere.disabled = false;
+  /* Spejl valget til den sitedækkende præference (to-vejs-synk med
+     kundetype.js). Best-effort — private mode må aldrig vælte flowet. */
+  try { localStorage.setItem(KUNDETYPE_KEY, t); } catch(e){}
 }
 /* Kortklik vælger OG fortsætter (ét klik i stedet for to). Kort pause så
    valget når at blive synligt; "Videre" står tilbage som tastatur-fallback.
@@ -438,6 +445,8 @@ function tjekRabatkode(){
   if(!kode){
     state.rabatkode = { code:"", percent:0, valid:false };
     if(rkStatus){ rkStatus.hidden = true; rkStatus.textContent = ""; }
+    opdaterRabat();
+    gemState("step-kontakt");
     return;
   }
   fetch("/api/rabatkode?code=" + encodeURIComponent(kode))
@@ -454,11 +463,16 @@ function tjekRabatkode(){
         state.rabatkode = { code: kode, percent: 0, valid: false };
         rkNote("rk-ukendt", "Ukendt rabatkode");
       }
+      /* Vis koden i løsnings-trinnets rabat-banner + husk den over refresh. */
+      opdaterRabat();
+      gemState("step-kontakt");
     })
     .catch(()=>{
       if(req !== rkReq) return;
       state.rabatkode = { code: kode, percent: 0, valid: false };
       rkNote("rk-ukendt", "Ukendt rabatkode");
+      opdaterRabat();
+      gemState("step-kontakt");
     });
 }
 if(rkInput){
@@ -656,22 +670,43 @@ function opdaterRabat(){
   var el = $("tm-rabat");
   if(!el) return;
   var r = beregn(PRODUCTS);
+  /* Rabatkode (fra kontakt-trinnet): vis den også her, så kunden ser koden
+     ramme prisen med det samme. Trækkes fra årssummen EFTER mængderabat —
+     samme regnestykke som ved indsendelsen. */
+  var kodePct = state.rabatkode.valid ? state.rabatkode.percent : 0;
+  var kodeKr = r.aar * kodePct / 100;
+  var kodeHtml = kodePct > 0
+    ? '<span class="tm-rabat-kode">Rabatkode <b>' + esc(state.rabatkode.code) + '</b>: ekstra <b>−' + kodePct + '%</b>' +
+      (kodeKr > 0 ? ' (ca. <span class="tm-kode-kr tm-anim-kr">' + kr(kodeKr) + '</span> om året)' : '') + ' oveni.</span>'
+    : '';
   if(r.rabatPct > 0 && r.rabatKr > 0){
     var prev = parseFloat(el.dataset.kr);
     el.innerHTML = 'Du har valgt <b>' + r.count + ' services</b> og sparer <b>' + r.rabatPct +
       '%</b> (ca. <span class="tm-rabat-kr tm-anim-kr">' + kr(r.rabatKr) + '</span> om året). Jo flere du vælger, jo mere sparer du' +
-      (r.rabatPct < RABAT_MAX ? ' — helt op til ' + RABAT_MAX + '%.' : '.');
+      (r.rabatPct < RABAT_MAX ? ' — helt op til ' + RABAT_MAX + '%.' : '.') + kodeHtml;
     if(isFinite(prev) && prev !== r.rabatKr) animateNumber(el.querySelector(".tm-rabat-kr"), prev, r.rabatKr, kr);
     el.dataset.kr = r.rabatKr;
     el.hidden = false;
   } else if(r.rabatPct > 0){
     el.innerHTML = 'Jo flere services du vælger, jo mere sparer du — <b>' + RABAT_PR_SERVICE +
-      '% pr. service</b>, op til ' + RABAT_MAX + '%.';
+      '% pr. service</b>, op til ' + RABAT_MAX + '%.' + kodeHtml;
+    delete el.dataset.kr;
+    el.hidden = false;
+  } else if(kodePct > 0){
+    el.innerHTML = kodeHtml;
     delete el.dataset.kr;
     el.hidden = false;
   } else {
     delete el.dataset.kr;
     el.hidden = true;
+  }
+  /* Kode-kr'et tæller også blødt, når mængder/valg ændrer sig. */
+  var prevKode = parseFloat(el.dataset.kodekr);
+  if(kodeKr > 0){
+    if(isFinite(prevKode) && prevKode !== kodeKr) animateNumber(el.querySelector(".tm-kode-kr"), prevKode, kodeKr, kr);
+    el.dataset.kodekr = kodeKr;
+  } else {
+    delete el.dataset.kodekr;
   }
 }
 
@@ -704,6 +739,16 @@ function opdater(){
 }
 
 /* ============ GENDAN (kør sidst — alle handlers er nu på plads) ============ */
+/* Sitedækkende kundetype først: har kunden allerede valgt privat/erhverv
+   (forside-modal eller header-switch), forudvælges kortet på trin 2 — trinnet
+   VISES stadig, og kunden bekræfter selv med "Videre". Kør FØR gendan(), så
+   sessionens eget valg vinder ved gendannelse. */
+(function(){
+  try {
+    const t = localStorage.getItem(KUNDETYPE_KEY);
+    if(t === "privat" || t === "erhverv") vaelgKundetype(t);
+  } catch(e){ /* private mode — best effort */ }
+})();
 (function gendan(){
   let s = null;
   try { s = JSON.parse(sessionStorage.getItem(PERSIST_KEY) || "null"); } catch(e){ return; }
@@ -717,6 +762,16 @@ function opdater(){
     const d = s.prod[p.id];
     if(d){ p.on = !!d.on; if(typeof d.qty === "number") p.qty = d.qty; if(typeof d.freq === "number") p.freq = d.freq; p.touched = !!d.touched; }
   });
+  /* Rabatkode: gendan koden i feltet og genanvend noten/procenten (stille —
+     ingen count-animation), så en indtastet kode overlever refresh. */
+  if(s.rabatkode && s.rabatkode.code && rkInput){
+    rkInput.value = s.rabatkode.code;
+    const pct = Math.max(0, Math.min(100, Number(s.rabatkode.percent) || 0));
+    if(s.rabatkode.valid === true && pct > 0){
+      state.rabatkode = { code: String(s.rabatkode.code), percent: pct, valid: true };
+      rkNote("rk-ok", 'Rabatkode anvendt: <b>−' + pct + '%</b>');
+    }
+  }
   /* Skråfoto + auto-mål genstartes i baggrunden (stale-guard beskytter
      brugerens gendannede mængder via touched-flaget). */
   renderSkraafoto(VERIFY_DIRS[0]);
