@@ -22,7 +22,7 @@ export type SubscriptionInitial = {
 };
 
 export default function SubscriptionForm({
-  action, contacts, employees, initial, title, submitLabel, danger,
+  action, contacts, employees, initial, title, submitLabel, danger, minuteRate,
 }: {
   action: (state: SubscriptionState, formData: FormData) => Promise<SubscriptionState>;
   contacts: ContactOption[];
@@ -31,6 +31,8 @@ export default function SubscriptionForm({
   title: string;
   submitLabel: string;
   danger?: React.ReactNode;
+  /** Minutpris (kr/min ekskl. moms) — auto-beregner varighed ud fra prisen. */
+  minuteRate: number;
 }) {
   const [state, formAction, pending] = useActionState(action, {});
   // Opgaverækkerne er løftet herop, så TaskLineEditor og PauseSection deler
@@ -70,7 +72,7 @@ export default function SubscriptionForm({
               <input name="startWeek" defaultValue={initial?.startWeek ?? ""} placeholder="Uge 29" className="form-control form-control-sm" />
             </div>
           </div>
-          <TaskLineEditor mode="subscription" rows={rows} setRows={setRows} />
+          <TaskLineEditor mode="subscription" rows={rows} setRows={setRows} minuteRate={minuteRate} />
         </div>
       </div>
 

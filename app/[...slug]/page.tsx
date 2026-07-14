@@ -2,8 +2,10 @@ import Link from "next/link";
 import { TOP_NAV } from "@/lib/nav";
 import { SETTINGS_PAGES } from "@/lib/settings-config";
 import { getSettingsValues } from "@/lib/settings-store";
+import { getMinuteRate } from "@/lib/queries";
 import { saveSettings } from "@/app/actions/settings";
 import SettingsForm from "@/components/SettingsForm";
+import MinuteRateForm from "@/components/MinuteRateForm";
 
 function labelFor(path: string): { label: string; en: string } | null {
   for (const menu of TOP_NAV) {
@@ -21,10 +23,21 @@ export default async function CatchAll({
   const path = "/" + (slug ?? []).join("/");
 
   // Settings pages are data-driven from lib/settings-config, and persist into
-  // the settings store (Company.settings JSON).
+  // the settings store (Company.settings JSON). /settings får derudover kortet
+  // med minutprisen (Company.minutePriceOere) til varighedsberegning.
   if (SETTINGS_PAGES[path]) {
     const values = await getSettingsValues(path);
-    return <SettingsForm page={SETTINGS_PAGES[path]} values={values} action={saveSettings.bind(null, path)} />;
+    const form = <SettingsForm page={SETTINGS_PAGES[path]} values={values} action={saveSettings.bind(null, path)} />;
+    if (path === "/settings") {
+      const minuteRate = await getMinuteRate();
+      return (
+        <>
+          {form}
+          <MinuteRateForm rate={minuteRate} />
+        </>
+      );
+    }
+    return form;
   }
 
   const meta = labelFor(path);

@@ -254,6 +254,13 @@ export async function getSubscriptionEditData(displayNo: number) {
   };
 }
 
+/** Minutpris (kr/min EKSKL. moms) til varighedsberegning på opgavelinjer.
+ *  Gemmes i øre på Company.minutePriceOere (default 860 => 8,6 kr/min). */
+export async function getMinuteRate(): Promise<number> {
+  const company = await prisma.company.findFirst({ select: { minutePriceOere: true } });
+  return (company?.minutePriceOere ?? 860) / 100;
+}
+
 /** Fixed-employee options: "Ingen" + each active employee's name. */
 export async function getEmployeeNames(): Promise<string[]> {
   const users = await prisma.user.findMany({ where: { active: true }, orderBy: { id: "asc" } });

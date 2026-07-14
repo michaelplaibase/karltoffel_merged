@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { getSubscriptionEditData, getContactOptions, getEmployeeNames } from "@/lib/queries";
+import { getSubscriptionEditData, getContactOptions, getEmployeeNames, getMinuteRate } from "@/lib/queries";
 import { updateSubscription, stopSubscription, approveSubscription } from "@/app/actions/subscriptions";
 import SubscriptionForm from "@/components/SubscriptionForm";
 import ConfirmButton from "@/components/ConfirmButton";
@@ -9,10 +9,11 @@ export const metadata = { title: "Rediger abonnement · Karltoffel" };
 export default async function EditSubscription({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const displayNo = Number(id);
-  const [sub, contacts, employees] = await Promise.all([
+  const [sub, contacts, employees, minuteRate] = await Promise.all([
     getSubscriptionEditData(displayNo),
     getContactOptions(),
     getEmployeeNames(),
+    getMinuteRate(),
   ]);
   if (!sub) notFound();
 
@@ -46,6 +47,7 @@ export default async function EditSubscription({ params }: { params: Promise<{ i
         }}
         title={`Rediger abonnement #${sub.displayNo}`}
         submitLabel="Opdater abonnement"
+        minuteRate={minuteRate}
         danger={
           <ConfirmButton
             action={stopSubscription.bind(null, sub.pk)}

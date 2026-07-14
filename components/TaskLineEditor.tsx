@@ -7,6 +7,7 @@
 // subscription editor.
 import { useState } from "react";
 import { CATEGORIES, categoryColor } from "@/lib/categories";
+import { MOMS } from "@/lib/data";
 
 export type TaskRow = {
   description: string; price: string; duration: string; category: string;
@@ -29,7 +30,7 @@ const timepris = (r: TaskRow) => {
 };
 
 export default function TaskLineEditor({
-  initial, mode = "order", rows: controlledRows, setRows: controlledSetRows,
+  initial, mode = "order", rows: controlledRows, setRows: controlledSetRows, minuteRate,
 }: {
   initial?: TaskRow[];
   mode?: "order" | "subscription";
@@ -38,6 +39,11 @@ export default function TaskLineEditor({
    *  (som hidtil — OrderCreateForm/FixedPriceForm er uændrede). */
   rows?: TaskRow[];
   setRows?: React.Dispatch<React.SetStateAction<TaskRow[]>>;
+  /** Minutpris (kr/min EKSKL. moms, fra Company.minutePriceOere). Angives den,
+   *  auto-udfyldes varigheden når prisen tastes: (pris inkl. moms / 1,25) ÷
+   *  minutpris, afrundet (min. 1 min). Varigheden kan stadig rettes manuelt —
+   *  en manuel rettelse står, indtil prisen ændres igen. */
+  minuteRate?: number;
 }) {
   const sub = mode === "subscription";
   const [ownRows, setOwnRows] = useState<TaskRow[]>(initial?.length ? initial : [blank()]);
@@ -107,11 +113,26 @@ export default function TaskLineEditor({
                 </td>
                 <td>
                   <input name="taskPrice" type="number" min="0" value={r.price}
-                    onChange={(e) => update(i, { price: e.target.value })} className="form-control form-control-sm num" />
+                    onChange={(e) => {
+                      // Pris tastet → auto-beregn varighed fra minutprisen (ekskl.
+                      // moms). Tom/0/ugyldig pris rører ikke varigheden.
+                      const v = e.target.value;
+                      const n = Number(v);
+                      const patch: Partial<TaskRow> = { price: v };
+                      if (minuteRate && minuteRate > 0 && n > 0) {
+                        patch.duration = String(Math.max(1, Math.round((n / (1 + MOMS)) / minuteRate)));
+                      }
+                      update(i, patch);
+                    }} className="form-control form-control-sm num" />
                 </td>
                 <td>
                   <input name="taskDuration" type="number" min="0" value={r.duration}
                     onChange={(e) => update(i, { duration: e.target.value })} className="form-control form-control-sm num" />
+                  {Number(r.duration) > 0 && (
+                    <small className="form-text field-help">
+                      ≈ {(Number(r.duration) / 60).toLocaleString("da-DK", { maximumFractionDigits: 1 })} t
+                    </small>
+                  )}
                 </td>
                 {sub && (
                   <td>
@@ -146,6 +167,11 @@ export default function TaskLineEditor({
           </tbody>
         </table>
       </div>
+      {minuteRate != null && minuteRate > 0 && (
+        <small className="form-text field-help" style={{ display: "block", marginTop: 4 }}>
+          Varighed beregnes ud fra prisen ekskl. moms ÷ {minuteRate.toLocaleString("da-DK")} kr/min.
+        </small>
+      )}
       <button type="button" onClick={add} className="btn btn-outline-primary btn-sm" style={{ marginTop: 8 }}>
         Tilføj opgave
       </button>

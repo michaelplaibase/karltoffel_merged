@@ -58,3 +58,6 @@ export type Order = {
 };
 
 export const kr = (n: number | null) => (n == null ? "-" : "kr. " + n.toLocaleString("da-DK"));
+
+/** Dansk moms 25 % — delt mellem client (TaskLineEditor) og node (payroll). */
+export const MOMS = 0.25;

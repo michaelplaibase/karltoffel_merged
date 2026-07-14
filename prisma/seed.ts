@@ -41,7 +41,7 @@ async function main() {
   await prisma.company.deleteMany();
 
   const company = await prisma.company.create({
-    data: { id: 1, name: "Karltoffel ApS", cvr: "38242520", planTier: "Pro", hourlyPrice: 600 },
+    data: { id: 1, name: "Karltoffel ApS", cvr: "38242520", planTier: "Pro", hourlyPrice: 600, minutePriceOere: 860 },
   });
 
   await prisma.user.create({
