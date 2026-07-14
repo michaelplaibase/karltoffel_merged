@@ -29,20 +29,37 @@ function readTaskLines(formData: FormData) {
   const cats = formData.getAll("taskCategory").map(String);
   const intervals = formData.getAll("taskInterval").map(String);
   const nextWeeks = formData.getAll("taskNextWeek").map(String);
+  // "Måneder på pause" — submittes som skjulte felter for HVER række (også
+  // upausede), så det positionsvise zip med taskDescription aldrig forskubbes.
+  const pauseActives = formData.getAll("taskPauseActive").map(String);
+  const pauseStarts = formData.getAll("taskPauseStart").map(String);
+  const pauseEnds = formData.getAll("taskPauseEnd").map(String);
+  const pauseYearlies = formData.getAll("taskPauseYearly").map(String);
   return descs
     .map((d, i) => ({
       description: d.trim(), price: prices[i] || 0, durationMin: durs[i] || 0,
       category: cats[i] || "Andet", interval: intervals[i] || "Hver gang", nextWeek: (nextWeeks[i] || "").trim(),
+      pauseActive: pauseActives[i] || "0", pauseStart: (pauseStarts[i] || "").trim(),
+      pauseEnd: (pauseEnds[i] || "").trim(), pauseYearly: pauseYearlies[i] || "1",
     }))
     .filter((l) => l.description);
 }
 
+const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
+
 function taskCreate(lines: ReturnType<typeof readTaskLines>) {
-  return lines.map((l, i) => ({
-    category: l.category, letter: (l.category[0] ?? "A").toUpperCase(), color: categoryColor(l.category),
-    description: l.description, price: l.price, durationMin: l.durationMin,
-    intervalMultiplier: l.interval, startWeek: l.nextWeek || null, isStandardTask: false, sort: i,
-  }));
+  return lines.map((l, i) => {
+    // Lempelig pause-validering: mangler/ugyldig dato ⇒ gem som ikke-pauset
+    // frem for at fejle hele abonnements-gemningen.
+    const paused = l.pauseActive === "1" && ISO_DATE.test(l.pauseStart) && ISO_DATE.test(l.pauseEnd);
+    return {
+      category: l.category, letter: (l.category[0] ?? "A").toUpperCase(), color: categoryColor(l.category),
+      description: l.description, price: l.price, durationMin: l.durationMin,
+      intervalMultiplier: l.interval, startWeek: l.nextWeek || null, isStandardTask: false, sort: i,
+      pauseActive: paused, pauseStart: paused ? l.pauseStart : null, pauseEnd: paused ? l.pauseEnd : null,
+      pauseYearly: l.pauseYearly !== "0",
+    };
+  });
 }
 
 type Fields = { contactId: number; baseInterval: string; startWeek: string; fixedEmployee: string; lines: ReturnType<typeof readTaskLines> };

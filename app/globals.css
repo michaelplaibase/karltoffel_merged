@@ -231,6 +231,18 @@ table.data-table tbody tr:hover { background-color: var(--row-hover); }
 .tl-mini { font-size: 11px; color: var(--muted); margin-top: 2px; }
 .tl-sum { display: flex; justify-content: flex-end; gap: 28px; padding: 12px 14px; background: var(--row-striped); font-size: 13px; }
 
+/* "Måneder på pause" (abonnementsformular): opgaveliste + 12-måneders stribe */
+.pauserow { border: 1px solid var(--table-border); border-radius: 8px; padding: 10px 14px; margin-top: 10px; }
+.pauserow-head { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+.pauserow-name { flex: 1; min-width: 160px; font-size: 14px; font-weight: 500; color: var(--heading); }
+.pauserow-body { border-top: 1px solid var(--light); margin-top: 10px; padding-top: 12px; }
+.pausestrip { display: flex; gap: 3px; }
+.pausestrip .m { flex: 1; text-align: center; font-size: 10.5px; font-weight: 500; letter-spacing: .02em;
+  color: var(--muted); background: var(--row-striped); border: 1px solid var(--table-border);
+  border-radius: 4px; padding: 4px 0; user-select: none; }
+.pausestrip .m.on { background: var(--accent); border-color: var(--bronze); color: var(--accent-ink); font-weight: 600; }
+@media (max-width: 700px){ .pausestrip { flex-wrap: wrap; } .pausestrip .m { flex: 1 0 calc(100% / 6 - 3px); } }
+
 /* misc utility */
 .row-actions { display: flex; flex-wrap: wrap; gap: 10px; }
 .savebar { display: flex; justify-content: flex-end; gap: 10px; margin-top: 24px; padding-top: 18px; border-top: 1px solid var(--light); }

@@ -11,6 +11,9 @@ import { CATEGORIES, categoryColor } from "@/lib/categories";
 export type TaskRow = {
   description: string; price: string; duration: string; category: string;
   interval?: string; nextWeek?: string;
+  // "Måneder på pause" (kun abonnementer) — strengform til form-submit:
+  // pauseActive/pauseYearly er '1'/'0', datoerne ISO 'YYYY-MM-DD'.
+  pauseActive?: string; pauseStart?: string; pauseEnd?: string; pauseYearly?: string;
 };
 
 const CAT_NAMES = Object.keys(CATEGORIES);
@@ -18,20 +21,28 @@ const INTERVALS = [
   "Hver gang", "Hver 2. gang", "Hver 3. gang", "Hver 4. gang", "Hver 5. gang",
   "Hver 6. gang", "Hver 8. gang", "Hver 12. gang", "På anmodning",
 ];
-const blank = (): TaskRow => ({ description: "", price: "", duration: "", category: "Vinduespudsning", interval: "Hver gang", nextWeek: "" });
+export const blankTaskRow = (): TaskRow => ({ description: "", price: "", duration: "", category: "Vinduespudsning", interval: "Hver gang", nextWeek: "" });
+const blank = blankTaskRow;
 const timepris = (r: TaskRow) => {
   const p = Number(r.price) || 0, d = Number(r.duration) || 0;
   return d > 0 ? Math.round((p / d) * 60) : 0;
 };
 
 export default function TaskLineEditor({
-  initial, mode = "order",
+  initial, mode = "order", rows: controlledRows, setRows: controlledSetRows,
 }: {
   initial?: TaskRow[];
   mode?: "order" | "subscription";
+  /** Valgfri kontrolleret tilstand: giver forælderen ejerskab over rækkerne, så
+   *  fx PauseSection kan dele samme state. Udelades de, styrer editoren selv
+   *  (som hidtil — OrderCreateForm/FixedPriceForm er uændrede). */
+  rows?: TaskRow[];
+  setRows?: React.Dispatch<React.SetStateAction<TaskRow[]>>;
 }) {
   const sub = mode === "subscription";
-  const [rows, setRows] = useState<TaskRow[]>(initial?.length ? initial : [blank()]);
+  const [ownRows, setOwnRows] = useState<TaskRow[]>(initial?.length ? initial : [blank()]);
+  const rows = controlledRows ?? ownRows;
+  const setRows = controlledSetRows ?? setOwnRows;
   const update = (i: number, patch: Partial<TaskRow>) =>
     setRows((rs) => rs.map((r, j) => (j === i ? { ...r, ...patch } : r)));
   const add = () => setRows((rs) => [...rs, blank()]);
@@ -69,6 +80,17 @@ export default function TaskLineEditor({
                     onChange={(e) => update(i, { description: e.target.value })}
                     className="form-control form-control-sm" placeholder="Fremsøg eller opret ny opgave"
                   />
+                  {sub && (
+                    // "Måneder på pause": skjulte felter (IKKE checkbokse) der ALTID
+                    // submittes for hver række, så formData.getAll-zippet i
+                    // server-action'en holder indeks-flugt med taskDescription.
+                    <>
+                      <input type="hidden" name="taskPauseActive" value={r.pauseActive || "0"} />
+                      <input type="hidden" name="taskPauseStart" value={r.pauseStart || ""} />
+                      <input type="hidden" name="taskPauseEnd" value={r.pauseEnd || ""} />
+                      <input type="hidden" name="taskPauseYearly" value={r.pauseYearly || "1"} />
+                    </>
+                  )}
                   {timepris(r) > 0 && <small className="form-text field-help">Timepris {timepris(r)} kr/t</small>}
                 </td>
                 <td>

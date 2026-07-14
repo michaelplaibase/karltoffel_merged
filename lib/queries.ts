@@ -246,6 +246,10 @@ export async function getSubscriptionEditData(displayNo: number) {
     tasks: [...s.tasks].sort((a, b) => a.sort - b.sort).map((t) => ({
       description: t.description, price: String(t.price), duration: String(t.durationMin),
       category: t.category, interval: t.intervalMultiplier ?? "Hver gang", nextWeek: t.startWeek ?? "",
+      // "Måneder på pause" — strengform ('1'/'0'/ISO) så formularen kan prefille
+      // og submitte felterne uændret (round-trip: gem sletter+genopretter linjerne).
+      pauseActive: t.pauseActive ? "1" : "0", pauseStart: t.pauseStart ?? "",
+      pauseEnd: t.pauseEnd ?? "", pauseYearly: t.pauseYearly ? "1" : "0",
     })),
   };
 }

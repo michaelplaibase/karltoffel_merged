@@ -1,10 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 import type { SubscriptionState } from "@/app/actions/subscriptions";
 import ContactPicker, { type ContactOption } from "@/components/ContactPicker";
-import TaskLineEditor, { type TaskRow } from "@/components/TaskLineEditor";
+import TaskLineEditor, { blankTaskRow, type TaskRow } from "@/components/TaskLineEditor";
+import PauseSection from "@/components/PauseSection";
 
 const BASE_INTERVALS = [
   "Hver uge", "Hver 2. uge", "Hver 3. uge", "Hver 4. uge", "Hver 5. uge", "Hver 6. uge",
@@ -13,7 +14,11 @@ const BASE_INTERVALS = [
 ];
 
 export type SubscriptionInitial = {
-  contactId: number; baseInterval: string; startWeek: string; fixedEmployee: string; tasks: TaskRow[];
+  contactId: number; baseInterval: string; startWeek: string; fixedEmployee: string;
+  // TaskRow inkluderer de valgfri pausefelter (pauseActive/pauseStart/pauseEnd/
+  // pauseYearly i strengform) — redigeringssiden prefiller dem fra
+  // getSubscriptionEditData; opret-siden lader dem stå tomme (pause slået fra).
+  tasks: TaskRow[];
 };
 
 export default function SubscriptionForm({
@@ -28,6 +33,10 @@ export default function SubscriptionForm({
   danger?: React.ReactNode;
 }) {
   const [state, formAction, pending] = useActionState(action, {});
+  // Opgaverækkerne er løftet herop, så TaskLineEditor og PauseSection deler
+  // samme state (pause redigeres i sit eget kort, men submittes via editorens
+  // skjulte felter — én række, ét sæt felter, indeks-flugt bevaret).
+  const [rows, setRows] = useState<TaskRow[]>(initial?.tasks?.length ? initial.tasks : [blankTaskRow()]);
   const baseOptions = initial?.baseInterval && !BASE_INTERVALS.includes(initial.baseInterval)
     ? [initial.baseInterval, ...BASE_INTERVALS] : BASE_INTERVALS;
 
@@ -61,7 +70,7 @@ export default function SubscriptionForm({
               <input name="startWeek" defaultValue={initial?.startWeek ?? ""} placeholder="Uge 29" className="form-control form-control-sm" />
             </div>
           </div>
-          <TaskLineEditor mode="subscription" initial={initial?.tasks} />
+          <TaskLineEditor mode="subscription" rows={rows} setRows={setRows} />
         </div>
       </div>
 
@@ -74,6 +83,8 @@ export default function SubscriptionForm({
           </select>
         </div>
       </div>
+
+      <PauseSection rows={rows} setRows={setRows} />
 
       {state.error && <div style={{ color: "#c0392b", fontSize: 13, marginBottom: 10 }}>{state.error}</div>}
 

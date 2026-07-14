@@ -116,6 +116,10 @@ model TaskLine {
   fromSubscription   Boolean @default(false)
   intervalMultiplier String?  // subscriptions/orders only — "Hver 2. gang (hver 4. uge)"
   startWeek     String?        // subscriptions only — "Uge 29"
+  pauseActive   Boolean  @default(false) // "Måneder på pause": opgaven genereres ikke i vinduet
+  pauseStart    String?        // ISO 'YYYY-MM-DD' (subscriptions only; window may wrap New Year)
+  pauseEnd      String?        // ISO 'YYYY-MM-DD'
+  pauseYearly   Boolean  @default(true)  // true = gentag hvert år (kun måned/dag); false = kun denne sæson (absolutte datoer)
   subscription  Subscription? @relation(fields: [subscriptionId], references: [id])
   subscriptionId Int?
   fixedPrice    FixedPriceAgreement? @relation(fields: [fixedPriceId], references: [id])

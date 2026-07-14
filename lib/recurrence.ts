@@ -49,6 +49,26 @@ function parseWeekLabel(label: string | null): number | null {
   return m ? Number(m[1]) : null;
 }
 
+/** Sæsonpause ("Måneder på pause"): er opgaven på pause i ugen med mandag `v`
+ *  (ms-tidsstempel, UTC midnat)? Vinduet må krydse nytår (fx 31/10 → 30/03) —
+ *  derfor sammenlignes wrap-bevidst. pauseYearly=true gentager hvert år (kun
+ *  måned/dag sammenlignes); false er "kun denne sæson" (absolutte ISO-datoer). */
+function isPausedOn(
+  t: { pauseActive: boolean; pauseStart: string | null; pauseEnd: string | null; pauseYearly: boolean },
+  v: number,
+): boolean {
+  if (!t.pauseActive || !t.pauseStart || !t.pauseEnd) return false;
+  const d = new Date(v);
+  const pad = (n: number) => String(n).padStart(2, "0");
+  const mmdd = pad(d.getUTCMonth() + 1) + "-" + pad(d.getUTCDate());
+  if (t.pauseYearly) {
+    const s = t.pauseStart.slice(5), e = t.pauseEnd.slice(5);
+    return s <= e ? mmdd >= s && mmdd <= e : mmdd >= s || mmdd <= e;
+  }
+  const iso = d.getUTCFullYear() + "-" + mmdd;
+  return iso >= t.pauseStart && iso <= t.pauseEnd;
+}
+
 type SubWithTasks = Awaited<ReturnType<typeof loadActiveSubs>>[number];
 function loadActiveSubs() {
   return prisma.subscription.findMany({ where: { active: true }, include: { tasks: true } });
@@ -116,9 +136,12 @@ export async function generateForSubscription(sub: SubWithTasks, ref: Date = new
     if (isHoliday(v) || existingWeeks.has(v)) continue;
 
     // Tasks due at this visit index (i base-steps from the anchor): a task recurs
-    // every m visits from its own offset j0. "På anmodning" (m == null) is skipped.
+    // every m visits from its own offset j0. "På anmodning" (m == null) is skipped,
+    // og sæsonpausede opgaver udelades i deres pausevindue (rytmen — besøgsindeks
+    // i — tæller videre gennem pausen, så opgaven genoptages på sin fase). Er ALLE
+    // ugens opgaver på pause, giver `!due.length` ingen ordre den uge.
     const i = Math.round((v - anchor) / step);
-    const due = tasks.filter((x) => x.m != null && i >= x.j0 && (i - x.j0) % x.m === 0).map((x) => x.t);
+    const due = tasks.filter((x) => x.m != null && i >= x.j0 && (i - x.j0) % x.m === 0 && !isPausedOn(x.t, v)).map((x) => x.t);
     if (!due.length) continue;
 
     try {
