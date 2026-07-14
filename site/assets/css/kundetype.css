@@ -1,0 +1,31 @@
+/* ==========================================================================
+   Kundetype-vælger (privat/erhverv): header-switch på alle sider + første-
+   gangs-modal på forsiden. Markup injiceres af /assets/js/kundetype.js —
+   al styling er scopet under .kt-* / .nav__item--kundetype, så det spejlede
+   layout ikke forstyrres. Valget gemmes i localStorage ("kt-kundetype-v1").
+   Farver som sitet i øvrigt: brun #4C3718, gul #FFF87B, ivory #FFFFF0,
+   bronze #86612A.
+   ========================================================================== */
+
+/* --- Switch: Privat | Erhverv (ivory header/drawer, brun tekst — jf. .header) --- */
+.kt-switch{display:inline-flex;align-self:center;align-items:center;margin:0 6px;border:2px solid #4C3718;border-radius:999px;background:#FFFFF0;overflow:hidden}
+.kt-switch__btn{border:0;background:none;cursor:pointer;font-family:"DM Sans",sans-serif;font-size:13px;font-weight:600;line-height:1;color:#4C3718;padding:7px 13px;white-space:nowrap;transition:background .2s,color .2s}
+.kt-switch__btn.is-active{background:#4C3718;color:#FFF87B}
+.kt-switch__btn:focus-visible{outline:3px solid #86612A;outline-offset:-3px}
+/* Mobil-drawer: nav-links har 24px indryk — flugt switchen med dem. */
+.drawer__nav .nav__item--kundetype .kt-switch{align-self:flex-start;margin:0 24px}
+
+/* --- Førstegangs-modal på forsiden ("Privat eller erhverv?") --- */
+/* Genbruger tilbudsmotorens ktype-kort-udtryk (brun flade, bronze-kant, gul hover). */
+.kt-modal{position:fixed;inset:0;z-index:2000;display:flex;align-items:center;justify-content:center;padding:20px;background:rgba(28,20,8,.6)}
+.kt-modal__inner{width:100%;max-width:600px;background:#4C3718;color:#FFFFF0;border-radius:18px;padding:40px 28px;text-align:center;font-family:"DM Sans",system-ui,sans-serif;box-shadow:0 24px 60px rgba(0,0,0,.45)}
+.kt-modal__inner h2{margin:0;font-family:"snaga-unicase-display","DM Sans",sans-serif;font-weight:700;font-size:clamp(26px,4vw,38px);line-height:1.1;color:#FFF87B}
+.kt-modal__inner p{margin:12px auto 0;max-width:420px;font-size:16px;opacity:.9}
+.kt-modal__cards{display:flex;gap:16px;justify-content:center;flex-wrap:wrap;margin-top:28px}
+.kt-modal-card{display:block;flex:1 1 210px;min-width:200px;padding:24px 28px;background:rgba(255,248,123,.06);border:2px solid #86612A;border-radius:16px;color:#FFFFF0;text-align:center;font-family:inherit;cursor:pointer;transition:background .15s,border-color .15s}
+.kt-modal-card:hover,.kt-modal-card:focus-visible{background:rgba(255,248,123,.15);border-color:#FFF87B}
+.kt-modal-card:focus-visible{outline:3px solid #FFF87B;outline-offset:2px}
+.kt-modal-card svg{display:block;width:44px;height:44px;margin:0 auto 12px;max-width:100%}
+.kt-modal-card b{display:block;font-size:19px}
+.kt-modal-card small{display:block;margin-top:4px;font-size:13px;color:#FFF87B;opacity:.75}
+@media (max-width:520px){.kt-modal-card{flex:1 1 100%}}

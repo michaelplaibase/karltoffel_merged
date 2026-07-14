@@ -252,7 +252,7 @@ export async function getSubscriptionEditData(displayNo: number) {
 
 /** Fixed-employee options: "Ingen" + each active employee's name. */
 export async function getEmployeeNames(): Promise<string[]> {
-  const users = await prisma.user.findMany({ orderBy: { id: "asc" } });
+  const users = await prisma.user.findMany({ where: { active: true }, orderBy: { id: "asc" } });
   return ["Ingen", ...users.map((u) => `${u.firstName} ${u.lastName}`)];
 }
 
@@ -492,13 +492,14 @@ async function buildWeekPlan(weekMonday: string) {
   ]);
   const holiday = await isHolidayWeek(weekMonday);
   const priceById = new Map<number, number>();
-  const metaById = new Map<number, { subNo: number | null; status: string; tasks: TaskLine[]; comment: string; addressNote: string }>();
+  const metaById = new Map<number, { subNo: number | null; status: string; phone: string | null; tasks: TaskLine[]; comment: string; addressNote: string }>();
   // Ferielukket uge: der PLANLÆGGES intet, men allerede-materialiserede ordrer
   // må aldrig blive usynlige — de vises som "Ikke planlagt (ferielukket)".
   const jobs: Job[] = orders.map((o) => {
     priceById.set(o.id, o.tasks.reduce((a, t) => a + t.price, 0));
     metaById.set(o.id, {
       subNo: o.subscription?.displayNo ?? null, status: o.status,
+      phone: o.contact.phone ?? null,
       tasks: [...o.tasks].sort((a, b) => a.sort - b.sort).map(mapTask),
       comment: o.comment ?? "", addressNote: o.addressNote ?? "",
     });
@@ -569,6 +570,7 @@ export async function getCalendarWeek(weekMonday: string): Promise<CalendarWeek>
         status: calStatusOf(meta?.status ?? "Afventer levering"), type: sourceType(s.job.source),
         lock: (s.job.locked ? "fastlaast" : "frigjort") as LockState, employeeId: d.employeeId,
         contactId: s.job.contactId, subscriptionNo: meta?.subNo ?? null,
+        phone: meta?.phone ?? null,
       };
     })
   );
@@ -593,7 +595,7 @@ export async function getCalendarWeek(weekMonday: string): Promise<CalendarWeek>
     return {
       id: job.id, postal: job.postal, customer: job.customer, category: job.category,
       status: calStatusOf(meta?.status ?? "Afventer levering"), contactId: job.contactId,
-      subscriptionNo: meta?.subNo ?? null, reason,
+      subscriptionNo: meta?.subNo ?? null, phone: meta?.phone ?? null, reason,
     };
   });
 
@@ -623,7 +625,7 @@ export async function getDayProgram(dateISO: string): Promise<DayProgram> {
         employee: empName.get(dp.employeeId) ?? "Ingen",
         source: s.job.source,
         orderId: s.job.id, contactId: s.job.contactId,
-        subscriptionNo: meta?.subNo ?? null, status: meta?.status ?? "Afventer levering",
+        subscriptionNo: meta?.subNo ?? null, phone: meta?.phone ?? null, status: meta?.status ?? "Afventer levering",
         tasks: (meta?.tasks ?? []).map((t) => ({ category: t.category, letter: t.letter, description: t.description, price: t.price, durationMin: t.durationMin })),
         comment: meta?.comment ?? "", addressNote: meta?.addressNote ?? "",
       };

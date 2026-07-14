@@ -24,6 +24,7 @@ export type CalEvent = {
   employeeId: number;
   contactId: number;            // → /customers/{contactId}
   subscriptionNo: number | null; // source "Abo. nr." → /subscriptions/{no} (null for manual/online)
+  phone: string | null;          // customer phone for "Ring kunden op" (null when missing)
 };
 
 export type WeekDay = { label: string; date: string; revenue: number; driving?: string };
@@ -32,6 +33,7 @@ export type WeekDay = { label: string; date: string; revenue: number; driving?: 
 export type UnplannedJob = {
   id: number; postal: string; customer: string; category: string;
   status: CalStatus; contactId: number; subscriptionNo: number | null;
+  phone: string | null;
   reason: "unassigned" | "overflow" | "holiday"; // no employee / didn't fit / ferielukket uge
 };
 
@@ -112,6 +114,7 @@ export type DayStop = {
   orderId: number;
   contactId: number;
   subscriptionNo: number | null;
+  phone: string | null;
   status: string;
   tasks: { category: string; letter: string; description: string; price: number; durationMin: number }[];
   comment: string;

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { Fragment, useEffect, useRef, useState, useSyncExternalStore, useTransition } from "react";
 import type { CalendarMonth, CalendarWeek, CalStatus } from "@/lib/calendar";
 import { categoryColor } from "@/lib/categories";
+import { telHref, telDisplay } from "@/components/ui";
 import { setOrderLock, moveOrderWeeks, replanWeek, deleteOrder } from "@/app/actions/orders";
 
 type Props =
@@ -11,7 +12,7 @@ type Props =
   | { mode: "month"; month: CalendarMonth; nav: { prevWeek?: never } };
 
 /** What the context menu needs to act on an order — both board events and unplanned jobs qualify. */
-type MenuTarget = { id: number; contactId: number; subscriptionNo: number | null };
+type MenuTarget = { id: number; contactId: number; subscriptionNo: number | null; phone: string | null };
 
 const STATUS_CLASS: Record<CalStatus, string> = {
   afsluttet: "s-ok",
@@ -125,6 +126,7 @@ export default function TeamCalendarClient(props: Props) {
   }
 
   const shown = employees.filter((e) => selectedEmp.has(e.id));
+  const menuTel = menu ? telHref(menu.ev.phone) : null; // null when the number is missing/undialable
 
   // ---------- toolbar ----------
   const toolbar = (
@@ -403,6 +405,11 @@ export default function TeamCalendarClient(props: Props) {
           {expanded === "mere" && (
             <>
               <Link href={`/customers/${menu.ev.contactId}`} className="ctxmenu-item" style={{ paddingLeft: 34 }}>Gå til kundedetaljer …</Link>
+              {menuTel != null ? (
+                <a href={menuTel} className="ctxmenu-item" style={{ paddingLeft: 34 }}>Ring kunden op · {telDisplay(menu.ev.phone)}</a>
+              ) : (
+                <div className="ctxmenu-item" style={{ paddingLeft: 34, color: "var(--muted)", opacity: 0.55, cursor: "default" }} title="Intet telefonnummer">Intet telefonnummer</div>
+              )}
               {menu.ev.subscriptionNo != null && (
                 <Link href={`/subscriptions/${menu.ev.subscriptionNo}`} className="ctxmenu-item" style={{ paddingLeft: 34 }}>Rediger abonnement …</Link>
               )}

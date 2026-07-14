@@ -1,12 +1,13 @@
 "use client";
 
-// One stop in the day program. The icon row (opgaver/fotos/bemærkninger/
-// ordrehistorik/notifikation) expands inline detail panels; the action buttons
-// navigate to the existing order/subscription flows, and "Mere ▾" opens a
-// dropdown (vis i kalender / kundedetaljer / send notifikation / slet ordre).
+// One stop in the day program. The tasks are always visible on the card; the
+// icon row (fotos/bemærkninger/ordrehistorik/notifikation) expands inline
+// detail panels; the action buttons navigate to the existing order/subscription
+// flows, and "Mere ▾" opens a dropdown (vis i kalender / kundedetaljer / send
+// notifikation / slet ordre).
 import Link from "next/link";
 import { useState, useTransition } from "react";
-import { money } from "@/components/ui";
+import { CatChip, money, telHref, telDisplay } from "@/components/ui";
 import { deleteOrder } from "@/app/actions/orders";
 import type { DayStop } from "@/lib/calendar";
 
@@ -18,8 +19,9 @@ export default function DayStopCard({ stop, weekMonday }: { stop: DayStop; weekM
   const [pending, startTransition] = useTransition();
   const toggle = (k: string) => setPanel((p) => (p === k ? null : k));
 
+  const tel = telHref(stop.phone);
+
   const icons: [string, string, string][] = [
-    ["opgaver", "bi-list-task", "opgaver"],
     ["fotos", "bi-image", "fotos"],
     ["bemærkninger", "bi-info-circle", "bemærkninger"],
     ["ordrehistorik", "bi-card-checklist", "ordrehistorik"],
@@ -33,7 +35,23 @@ export default function DayStopCard({ stop, weekMonday }: { stop: DayStop; weekM
         <a className="maplink" href={`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(stop.address)}`} target="_blank" rel="noopener noreferrer">
           <i className="bi bi-geo-alt-fill" /> {stop.address}
         </a>
+        {tel ? (
+          <a className="maplink" href={tel} style={{ marginLeft: 12 }}>
+            <i className="bi bi-telephone-fill" /> {telDisplay(stop.phone)}
+          </a>
+        ) : (
+          <span className="maplink" style={{ marginLeft: 12, color: "var(--muted)", opacity: 0.55 }} title="Intet telefonnummer">
+            <i className="bi bi-telephone-fill" /> Intet telefonnummer
+          </span>
+        )}
         <div style={{ fontWeight: 600, marginTop: 2 }}>{stop.customer} · <span className="num">{money(stop.price)}</span></div>
+        {stop.tasks.length > 0 && (
+          <div className="daycal-tasks">
+            {stop.tasks.map((t, i) => (
+              <div key={i}><CatChip category={t.category} letter={t.letter} /> {t.description} · <span className="num">{t.durationMin} min</span></div>
+            ))}
+          </div>
+        )}
         <div className="daycal-icons">
           {icons.map(([key, icon, label]) => (
             <span key={key} role="button" tabIndex={0} style={{ cursor: "pointer", color: panel === key ? "var(--primary)" : undefined }} onClick={() => toggle(key)}>
@@ -44,9 +62,6 @@ export default function DayStopCard({ stop, weekMonday }: { stop: DayStop; weekM
 
         {panel && (
           <div className="help-note" style={{ marginTop: 8, fontSize: 12.5 }}>
-            {panel === "opgaver" && (stop.tasks.length
-              ? <ul style={{ margin: 0, paddingLeft: 16 }}>{stop.tasks.map((t, i) => <li key={i}>{t.letter} · {t.description} — {money(t.price)} · {t.durationMin} min</li>)}</ul>
-              : "Ingen opgaver")}
             {panel === "fotos" && "Ingen fotos på ordren."}
             {panel === "bemærkninger" && (stop.comment || stop.addressNote
               ? <>{stop.comment && <div>Ordrekommentar: {stop.comment}</div>}{stop.addressNote && <div>Adressebemærkning: {stop.addressNote}</div>}</>

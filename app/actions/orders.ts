@@ -33,7 +33,7 @@ export async function createOrder(_prev: OrderCreateState, formData: FormData): 
 
   const week = String(formData.get("week") ?? "");
   const plannedAt = week ? new Date(`${week}T10:00:00Z`) : new Date();
-  const user = await prisma.user.findFirst();
+  const user = await prisma.user.findFirst({ where: { active: true } });
 
   const order = await prisma.order.create({
     data: {
