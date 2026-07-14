@@ -385,6 +385,12 @@ export default function TeamCalendarClient(props: Props) {
 
       {menu && (
         <div className="ctxmenu" ref={menuRef} style={{ left: menu.x, top: menu.y }}>
+          {menuTel != null ? (
+            <a href={menuTel} className="ctxmenu-item">Ring kunden op · {telDisplay(menu.ev.phone)}</a>
+          ) : (
+            <div className="ctxmenu-item" style={{ color: "var(--muted)", opacity: 0.55, cursor: "default" }} title="Intet telefonnummer">Intet telefonnummer</div>
+          )}
+          <div className="ctxmenu-sep" />
           <Link href={`/orders/${menu.ev.id}`} className="ctxmenu-item">Rediger ordre …</Link>
           <div className="ctxmenu-item" onClick={() => run(() => setOrderLock(menu.ev.id, false))}>Lås helt op</div>
           <div className="ctxmenu-item" onClick={() => run(() => setOrderLock(menu.ev.id, true))}>Lås op, fastgør til ugedag</div>
@@ -405,11 +411,6 @@ export default function TeamCalendarClient(props: Props) {
           {expanded === "mere" && (
             <>
               <Link href={`/customers/${menu.ev.contactId}`} className="ctxmenu-item" style={{ paddingLeft: 34 }}>Gå til kundedetaljer …</Link>
-              {menuTel != null ? (
-                <a href={menuTel} className="ctxmenu-item" style={{ paddingLeft: 34 }}>Ring kunden op · {telDisplay(menu.ev.phone)}</a>
-              ) : (
-                <div className="ctxmenu-item" style={{ paddingLeft: 34, color: "var(--muted)", opacity: 0.55, cursor: "default" }} title="Intet telefonnummer">Intet telefonnummer</div>
-              )}
               {menu.ev.subscriptionNo != null && (
                 <Link href={`/subscriptions/${menu.ev.subscriptionNo}`} className="ctxmenu-item" style={{ paddingLeft: 34 }}>Rediger abonnement …</Link>
               )}
