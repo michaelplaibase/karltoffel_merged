@@ -8,7 +8,7 @@
 import { prisma } from "./db";
 import { findFirstAvailableSlot, createBooking, type Slot, type CreateBookingInput } from "./booking";
 import { getContacts, getOrdersForContact } from "./queries";
-import { sendEmail } from "./email";
+import { sendEmail, senderForUser } from "./email";
 
 const DAY_MS = 864e5;
 function ymd(d: Date): string {
@@ -53,7 +53,9 @@ export async function createBookingTool(args: CreateBookingInput) {
   const result = await createBooking(args);
   const slotTxt = result.proposedSlot
     ? ` — foreslået slot ${result.proposedSlot.dateISO} ${result.proposedSlot.startLabel}–${result.proposedSlot.endLabel}`
-    : "";
+    : result.startLabel
+      ? ` kl. ${result.startLabel}`
+      : "";
   return {
     ...result,
     summary:
@@ -97,11 +99,11 @@ export async function getCustomer(args: { query: string }) {
 }
 
 // ---- send_confirmation -----------------------------------------------------
-// Sends a booking confirmation to the customer. GAP: lib/email.ts sends from a
-// single verified EMAIL_FROM (Resend), so we cannot literally send "from Mikael's
-// address". We put the handyman's name in the body and set reply-to to the
-// employee's e-mail (best available identity). A true per-handyman from-address
-// needs a verified sender per user in Resend + a from-override in lib/email.ts.
+// Sends a booking confirmation to the customer AS the assigned handyman.
+// Identity is resolved by senderForUser (lib/email.ts): when KARL_SENDER_DOMAIN
+// is configured the mail goes out from `<username>@<domain>` (verified in
+// Resend) with the handyman's name; otherwise it falls back to the company
+// EMAIL_FROM address stamped with the handyman's name + reply-to = their e-mail.
 export async function sendConfirmation(args: { orderId: number }) {
   const order = await prisma.order.findUnique({
     where: { id: args.orderId },
@@ -111,6 +113,10 @@ export async function sendConfirmation(args: { orderId: number }) {
   if (!order.contact.email) return { ok: false, error: "Kunden har ingen e-mailadresse — kan ikke sende bekræftelse." };
 
   const handyman = order.employee ? `${order.employee.firstName} ${order.employee.lastName}` : "Karltoffel";
+  // Concrete booked clock time when the order has one; otherwise date only.
+  const timeLabel = order.startAt
+    ? ` kl. ${String(order.startAt.getUTCHours()).padStart(2, "0")}:${String(order.startAt.getUTCMinutes()).padStart(2, "0")}`
+    : "";
   const dateLabel = ymd(order.plannedAt);
   const lines = order.tasks
     .slice()
@@ -122,7 +128,7 @@ export async function sendConfirmation(args: { orderId: number }) {
     ``,
     `Tak for din bestilling. Vi har booket følgende besøg:`,
     ``,
-    `Dato: ${dateLabel}`,
+    `Dato: ${dateLabel}${timeLabel}`,
     `Adresse: ${order.deliveryAddress}`,
     ``,
     `Opgaver:`,
@@ -137,19 +143,28 @@ export async function sendConfirmation(args: { orderId: number }) {
     `Karltoffel`,
   ].join("\n");
 
+  // Send AS the assigned handyman where possible (per-user verified sender via
+  // KARL_SENDER_DOMAIN), else company address + handyman name/reply-to.
+  const identity = order.employee
+    ? senderForUser(order.employee)
+    : { from: undefined, senderName: "Karltoffel", replyTo: undefined };
   const res = await sendEmail({
     to: order.contact.email,
     subject: `Bekræftelse på dit besøg d. ${dateLabel}`,
     text,
-    replyTo: order.employee?.email ?? undefined,
+    from: identity.from,
+    senderName: identity.senderName,
+    replyTo: identity.replyTo,
   });
   return {
     ok: res.ok,
     simulated: res.simulated ?? false,
     to: order.contact.email,
-    from: handyman,
+    from: res.from ?? identity.senderName,
     error: res.error,
-    note: "From-adresse er virksomhedens verificerede Resend-afsender; håndværkerens navn står i teksten og reply-to. Ægte per-håndværker afsender kræver CRM-udvidelse (se PR).",
+    note: process.env.KARL_SENDER_DOMAIN
+      ? "Sendt fra håndværkerens egen verificerede afsender (KARL_SENDER_DOMAIN)."
+      : "KARL_SENDER_DOMAIN ikke sat: sendt fra virksomhedens EMAIL_FROM med håndværkerens navn som afsender + reply-to = håndværkerens e-mail.",
   };
 }
 

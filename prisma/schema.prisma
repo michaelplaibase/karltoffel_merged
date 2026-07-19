@@ -174,7 +174,8 @@ model Order {
   contact       Contact   @relation(fields: [contactId], references: [id])
   contactId     Int
   deliveryAddress String
-  plannedAt     DateTime
+  plannedAt     DateTime  // leverings-DATO (gemt UTC-middag) — bevaret for bagudkompatibilitet
+  startAt       DateTime? // præcist booket klokkeslæt inden for arbejdsdagen (07:00–15:00); null = ældre/dato-only ordre
   status        String    @default("Afventer levering")
   sourceType    String    // subscription | fixed | manual | online
   subscription  Subscription? @relation(fields: [subscriptionId], references: [id])

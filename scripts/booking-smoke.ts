@@ -67,6 +67,57 @@ console.log("findSlotInSchedule:");
 // 7. Workday-start constant sanity.
 ok("workday starts 07:00", BOOK_WORK_START_MIN === 7 * 60);
 
+// 7a. TRUE clock packing: a 90-min job on an empty day starts 07:00 …
+{
+  const s = findSlotInSchedule({ bookings: [], durationMin: 90, fromDateISO: "2026-07-20" });
+  ok("first 90-min job → 07:00–08:30", !!s && s.startLabel === "07:00" && s.endLabel === "08:30");
+}
+
+// 7b. … and a second 90-min job, with the first now at a concrete startAt (07:00),
+//     packs sequentially to 08:30 (not merely capacity-summed).
+{
+  const s = findSlotInSchedule({
+    bookings: [{ dateISO: "2026-07-20", durationMin: 90, startMin: 7 * 60 }],
+    durationMin: 90,
+    fromDateISO: "2026-07-20",
+  });
+  ok("second 90-min job after fixed 07:00 → 08:30–10:00", !!s && s.startLabel === "08:30" && s.endLabel === "10:00");
+}
+
+// 7c. Gap-filling: a fixed job at 10:00 leaves 07:00–10:00 free for a 90-min job.
+{
+  const s = findSlotInSchedule({
+    bookings: [{ dateISO: "2026-07-20", durationMin: 60, startMin: 10 * 60 }],
+    durationMin: 90,
+    fromDateISO: "2026-07-20",
+  });
+  ok("fixed 10:00 job → new 90-min fills 07:00 gap", !!s && s.startLabel === "07:00" && s.endLabel === "08:30");
+}
+
+// 7d. No overlap: a 4h job cannot fit the 07:00–10:00 gap before a fixed 10:00
+//     job, so it lands after it (11:00).
+{
+  const s = findSlotInSchedule({
+    bookings: [{ dateISO: "2026-07-20", durationMin: 60, startMin: 10 * 60 }], // 10:00–11:00
+    durationMin: 240,
+    fromDateISO: "2026-07-20",
+  });
+  ok("oversized-for-gap job → after fixed job 11:00", !!s && s.startLabel === "11:00" && s.endLabel === "15:00");
+}
+
+// 7e. Legacy date-only load + a fixed job stack correctly (front capacity then fixed).
+{
+  const s = findSlotInSchedule({
+    bookings: [
+      { dateISO: "2026-07-20", durationMin: 120 }, // legacy → reserves 07:00–09:00
+      { dateISO: "2026-07-20", durationMin: 60, startMin: 9 * 60 }, // fixed 09:00–10:00
+    ],
+    durationMin: 60,
+    fromDateISO: "2026-07-20",
+  });
+  ok("legacy 2h + fixed 09:00 → next slot 10:00", !!s && s.startLabel === "10:00" && s.endLabel === "11:00");
+}
+
 console.log("\nestimateLineDurations:");
 
 // 8. Explicit durations are trusted; no confirmation needed.
