@@ -2,6 +2,8 @@ import { prisma } from "@/lib/db";
 import { unauthorized } from "@/lib/api-auth";
 import { underLimit, recordHit } from "@/lib/rate-limit";
 import { bookCallEvent } from "@/lib/gcal";
+import { sendEmail } from "@/lib/email";
+import { isWithinWeekendWindow, buildWeekendAutoReply } from "@/lib/weekend-autoreply";
 import type { NextRequest } from "next/server";
 
 // Inbound lead webhook for the public website form. No session cookie —
@@ -211,5 +213,27 @@ export async function POST(req: NextRequest) {
     console.error(`[leads] kalender-booking exception for lead ${lead.id}:`, e);
   }
 
-  return json({ id: lead.id, deduplicated: false, call }, 201);
+  // Godkendt weekend-autosvar: kun for HELT NYE leads (aldrig ved dedup-merge
+  // ovenfor, som returnerer tidligt), kun hvis leadet har en e-mail, og kun
+  // inden for weekend-vinduet (fre 16:00 → man 08:00, Europe/Copenhagen). Må
+  // ALDRIG vælte eller forsinke lead-oprettelsen: alt i try/catch, fejl logges
+  // og rapporteres i svaret. Sendes AS firmaet (EMAIL_FROM), ikke en handyman.
+  let autoReply: "sent" | "skipped" | "outside-window" | "no-email" | "failed" = "skipped";
+  try {
+    if (!email) {
+      autoReply = "no-email";
+    } else if (!isWithinWeekendWindow(new Date())) {
+      autoReply = "outside-window";
+    } else {
+      const { subject, text } = buildWeekendAutoReply(name);
+      const sent = await sendEmail({ to: email, subject, text });
+      autoReply = sent.ok ? "sent" : "failed";
+      if (!sent.ok) console.error(`[leads] weekend-autosvar fejlede for lead ${lead.id}: ${sent.error}`);
+    }
+  } catch (e) {
+    autoReply = "failed";
+    console.error(`[leads] weekend-autosvar exception for lead ${lead.id}:`, e);
+  }
+
+  return json({ id: lead.id, deduplicated: false, call, autoReply }, 201);
 }
