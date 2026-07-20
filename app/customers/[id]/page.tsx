@@ -76,7 +76,7 @@ export default async function CustomerDetail({
         </div>
         <div className="card-body tight">
           <div className="table-wrap">
-            <table className="data-table stack">
+            <table className="data-table rowstack">
               <thead><tr><th style={{ width: 34 }} /><th>Abo. nr.</th><th>Leveringsadresse</th><th>Opgaver</th><th>Interval</th><th>Pris</th><th>Fast medarb.</th><th>Fremtidige ordrer</th></tr></thead>
               <tbody>
                 {subs.length === 0 ? (
@@ -113,7 +113,7 @@ export default async function CustomerDetail({
         </div>
         <div className="card-body tight">
           <div className="table-wrap">
-            <table className="data-table stack">
+            <table className="data-table rowstack">
               <thead><tr><th style={{ width: 34 }} /><th>Aftale nr.</th><th>Leveringsadresse</th><th>Opgaver</th><th>Pris</th></tr></thead>
               <tbody>
                 {fixedPrices.length === 0 ? (

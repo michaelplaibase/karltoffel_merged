@@ -17,9 +17,9 @@ export default async function GroupMessagesPage() {
       <div className="card">
         <div className="card-body">
           <div className="table-wrap">
-            <table className="data-table">
+            <table className="data-table rowstack">
               <thead><tr>{G.historyCols.map((c, i) => <th key={i}>{c}</th>)}</tr></thead>
-              <tbody><tr><td colSpan={G.historyCols.length}><div className="table-empty">{G.historyEmpty}</div></td></tr></tbody>
+              <tbody><tr><td colSpan={G.historyCols.length} data-fullspan><div className="table-empty">{G.historyEmpty}</div></td></tr></tbody>
             </table>
           </div>
         </div>

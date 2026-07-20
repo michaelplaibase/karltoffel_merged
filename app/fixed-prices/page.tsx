@@ -28,7 +28,7 @@ export default async function FixedPricesPage({ searchParams }: { searchParams: 
           </div>
 
           <div className="table-wrap">
-            <table className="data-table">
+            <table className="data-table rowstack">
               <thead>
                 <tr>
                   <th style={{ width: 34 }} /><th>Aftale nr.</th><th>Leveringsadresse</th><th>Opgaver</th><th>Pris</th>
@@ -36,7 +36,7 @@ export default async function FixedPricesPage({ searchParams }: { searchParams: 
               </thead>
               <tbody>
                 {agreements.length === 0 ? (
-                  <tr><td colSpan={5}><div className="table-empty">Ingen fastprisaftaler fundet</div></td></tr>
+                  <tr><td colSpan={5} data-fullspan><div className="table-empty">Ingen fastprisaftaler fundet</div></td></tr>
                 ) : agreements.map((f) => (
                   <tr key={f.id}>
                     <td><RowMenu items={[
@@ -44,10 +44,10 @@ export default async function FixedPricesPage({ searchParams }: { searchParams: 
                       { label: "Slet fastprisaftale…", danger: true, action: deleteFixedPrice.bind(null, f.pk),
                         confirm: { title: "Slet fastprisaftale", body: `Er du sikker på, at du vil slette fastprisaftale #${f.id}?`, confirmLabel: "Slet fastprisaftale", note: "Denne handling kan ikke fortrydes." } },
                     ]} /></td>
-                    <td className="num"><Link href={`/fixed-prices/${f.id}`}>{f.id}</Link></td>
-                    <td>{f.deliveryAddress}<div><MapLink address={f.deliveryAddress} /></div></td>
-                    <td>{f.tasks.map((t, i) => <div key={i}><CatChip category={t.category} letter={t.letter} /> {t.description}</div>)}</td>
-                    <td className="num">{f.tasks.map((t, i) => <div key={i}>{money(t.price)}</div>)}</td>
+                    <td className="num" data-label="Aftale nr."><Link href={`/fixed-prices/${f.id}`}>{f.id}</Link></td>
+                    <td data-label="Leveringsadresse">{f.deliveryAddress}<div><MapLink address={f.deliveryAddress} /></div></td>
+                    <td data-label="Opgaver">{f.tasks.map((t, i) => <div key={i}><CatChip category={t.category} letter={t.letter} /> {t.description}</div>)}</td>
+                    <td className="num" data-label="Pris">{f.tasks.map((t, i) => <div key={i}>{money(t.price)}</div>)}</td>
                   </tr>
                 ))}
               </tbody>

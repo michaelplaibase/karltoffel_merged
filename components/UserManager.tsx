@@ -62,7 +62,7 @@ export default function UserManager({ users, meId, includeInactive }: { users: U
               onChange={(e) => { const sp = new URLSearchParams(); if (e.currentTarget.checked) sp.set("inactive", "1"); window.location.search = sp.toString(); }} /> Vis deaktiverede brugere
           </label>
           <div className="table-wrap">
-            <table className="data-table stack">
+            <table className="data-table rowstack">
               <thead>
                 <tr><th>Navn</th><th>Brugernavn</th><th>Rolle</th><th>Login</th><th>Lønmodel</th><th style={{ width: 44 }} /></tr>
               </thead>

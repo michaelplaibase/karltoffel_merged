@@ -49,8 +49,8 @@ export default function OptimizationRunner({ dialogNote }: { dialogNote: string 
               <>
                 <div className="help-note"><b>Forslag ({res.proposals.length})</b><div style={{ marginTop: 6 }}>Flyt følgende abonnementer for at jævne arbejdsbyrden ud:</div></div>
                 <div className="table-wrap" style={{ marginTop: 8 }}>
-                  <table className="data-table"><thead><tr><th>Abo. nr.</th><th>Kunde</th><th>Fra uge</th><th>Til uge</th></tr></thead>
-                    <tbody>{res.proposals.map((p) => <tr key={p.pk}><td className="num">{p.displayNo}</td><td>{p.customer}</td><td className="num">{p.fromWeek}</td><td className="num">{p.toWeek}</td></tr>)}</tbody>
+                  <table className="data-table rowstack"><thead><tr><th>Abo. nr.</th><th>Kunde</th><th>Fra uge</th><th>Til uge</th></tr></thead>
+                    <tbody>{res.proposals.map((p) => <tr key={p.pk}><td className="num" data-label="Abo. nr.">{p.displayNo}</td><td data-label="Kunde">{p.customer}</td><td className="num" data-label="Fra uge">{p.fromWeek}</td><td className="num" data-label="Til uge">{p.toWeek}</td></tr>)}</tbody>
                   </table>
                 </div>
                 <div className="row-actions" style={{ marginTop: 12 }}>

@@ -29,7 +29,7 @@ export default async function SubscriptionsPage({ searchParams }: { searchParams
           </div>
 
           <div className="table-wrap">
-            <table className="data-table">
+            <table className="data-table rowstack">
               <thead>
                 <tr>
                   <th style={{ width: 34 }} /><th>Abo. nr.</th><th>Kunde</th><th>Leveringsadresse</th>
@@ -38,7 +38,7 @@ export default async function SubscriptionsPage({ searchParams }: { searchParams
               </thead>
               <tbody>
                 {subscriptions.length === 0 ? (
-                  <tr><td colSpan={9}><div className="table-empty">Ingen abonnementer fundet</div></td></tr>
+                  <tr><td colSpan={9} data-fullspan><div className="table-empty">Ingen abonnementer fundet</div></td></tr>
                 ) : subscriptions.map((s) => {
                   const c = contactById(s.contactId);
                   return (
@@ -52,17 +52,17 @@ export default async function SubscriptionsPage({ searchParams }: { searchParams
                         { label: "Stop abonnement…", danger: true, action: stopSubscription.bind(null, s.pk),
                           confirm: { title: "Stop abonnement", body: `Vil du stoppe abonnement #${s.id}? Der oprettes ikke flere ordrer, og kommende uleverede (ulåste) ordrer fjernes fra kalenderen.`, confirmLabel: "Stop abonnement", note: "Denne handling kan ikke fortrydes." } },
                       ]} /></td>
-                      <td className="num">
+                      <td className="num" data-label="Abo. nr.">
                         <Link href={`/subscriptions/${s.id}`}>{s.id}</Link>
                         {s.pending ? <span className="badge badge-soft-warning" style={{ marginLeft: 6 }}>Afventende</span> : null}
                       </td>
-                      <td>{c ? <CustomerCell contact={c} withMap={false} /> : null}</td>
-                      <td>{s.deliveryAddress}<div><MapLink address={s.deliveryAddress} /></div></td>
-                      <td>{s.tasks.map((t, i) => <div key={i}><CatChip category={t.category} letter={t.letter} /> {t.description}</div>)}</td>
-                      <td>{s.tasks.map((t, i) => <div key={i}>{t.interval}</div>)}</td>
-                      <td className="num">{s.tasks.map((t, i) => <div key={i}>{money(t.price)}</div>)}</td>
-                      <td>{s.fixedEmployee}</td>
-                      <td>{s.nextWeek}</td>
+                      <td data-label="Kunde">{c ? <CustomerCell contact={c} withMap={false} /> : null}</td>
+                      <td data-label="Leveringsadresse">{s.deliveryAddress}<div><MapLink address={s.deliveryAddress} /></div></td>
+                      <td data-label="Opgaver">{s.tasks.map((t, i) => <div key={i}><CatChip category={t.category} letter={t.letter} /> {t.description}</div>)}</td>
+                      <td data-label="Interval">{s.tasks.map((t, i) => <div key={i}>{t.interval}</div>)}</td>
+                      <td className="num" data-label="Pris">{s.tasks.map((t, i) => <div key={i}>{money(t.price)}</div>)}</td>
+                      <td data-label="Fast medarb.">{s.fixedEmployee}</td>
+                      <td data-label="Fremtidige ordrer">{s.nextWeek}</td>
                     </tr>
                   );
                 })}

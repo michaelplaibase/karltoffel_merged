@@ -71,11 +71,11 @@ export function Field({ f, name, value }: { f: SField; name?: string; value?: st
       <div style={{ marginBottom: 16 }}>
         {f.l ? <label style={{ marginBottom: 8 }}>{f.l}</label> : null}
         <div className="table-wrap">
-          <table className="data-table">
+          <table className="data-table rowstack">
             <thead><tr>{(f.cols ?? []).map((c, i) => <th key={i}>{c}</th>)}</tr></thead>
             <tbody>
-              {(f.rows && f.rows.length) ? f.rows.map((r, ri) => <tr key={ri}>{r.map((c, ci) => <td key={ci}>{c}</td>)}</tr>)
-                : <tr><td colSpan={(f.cols ?? []).length || 1}><div className="table-empty">{f.empty ?? "Ingen data"}</div></td></tr>}
+              {(f.rows && f.rows.length) ? f.rows.map((r, ri) => <tr key={ri}>{r.map((c, ci) => <td key={ci} data-label={(f.cols ?? [])[ci] || undefined}>{c}</td>)}</tr>)
+                : <tr><td colSpan={(f.cols ?? []).length || 1} data-fullspan><div className="table-empty">{f.empty ?? "Ingen data"}</div></td></tr>}
             </tbody>
           </table>
         </div>

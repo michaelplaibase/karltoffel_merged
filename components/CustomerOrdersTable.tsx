@@ -50,7 +50,7 @@ function SortTh({ label, k, sort, onSort }: { label: string; k: SortKey; sort: S
 function OrdersTable({ rows, sort, onSort, emptyText }: { rows: Order[]; sort: Sort; onSort: (k: SortKey) => void; emptyText: string }) {
   return (
     <div className="table-wrap">
-      <table className="data-table stack">
+      <table className="data-table rowstack">
         <thead><tr>
           <th style={{ width: 34 }} />
           <SortTh label="Ordre nr." k="id" sort={sort} onSort={onSort} />

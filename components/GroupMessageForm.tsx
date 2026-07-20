@@ -96,8 +96,8 @@ export default function GroupMessageForm({ weekOpts, employees }: { weekOpts: We
         <Modal title={`Oversigt over modtagere (${recipients.length})`} onClose={() => setRecipients(null)}>
           {recipients.length === 0 ? <p className="muted">Ingen modtagere matcher den valgte kundegruppe.</p> : (
             <div className="table-wrap" style={{ maxHeight: "50vh", overflow: "auto" }}>
-              <table className="data-table"><thead><tr><th>Navn</th><th>E-mail</th><th>Telefon</th></tr></thead>
-                <tbody>{recipients.map((r, i) => <tr key={i}><td>{r.name}</td><td>{r.email || "—"}</td><td>{r.phone || "—"}</td></tr>)}</tbody>
+              <table className="data-table rowstack"><thead><tr><th>Navn</th><th>E-mail</th><th>Telefon</th></tr></thead>
+                <tbody>{recipients.map((r, i) => <tr key={i}><td data-label="Navn">{r.name}</td><td data-label="E-mail">{r.email || "—"}</td><td data-label="Telefon">{r.phone || "—"}</td></tr>)}</tbody>
               </table>
             </div>
           )}

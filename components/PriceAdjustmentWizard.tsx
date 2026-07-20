@@ -65,8 +65,8 @@ export default function PriceAdjustmentWizard() {
             <h4 className="section-title">Tilpas opgaver</h4>
             <p className="muted" style={{ fontSize: 13 }}>{adj.length} opgaver justeres med {percent}% ({rounding.toLowerCase()}):</p>
             <div className="table-wrap" style={{ maxHeight: "46vh", overflow: "auto" }}>
-              <table className="data-table"><thead><tr><th>Opgave</th><th>Type</th><th>Før</th><th>Efter</th></tr></thead>
-                <tbody>{adj.map((a) => <tr key={a.taskId}><td>{a.description}</td><td>{a.kind}</td><td className="num">{money(a.oldPrice)}</td><td className="num">{money(a.newPrice)}</td></tr>)}</tbody>
+              <table className="data-table rowstack"><thead><tr><th>Opgave</th><th>Type</th><th>Før</th><th>Efter</th></tr></thead>
+                <tbody>{adj.map((a) => <tr key={a.taskId}><td data-label="Opgave">{a.description}</td><td data-label="Type">{a.kind}</td><td className="num" data-label="Før">{money(a.oldPrice)}</td><td className="num" data-label="Efter">{money(a.newPrice)}</td></tr>)}</tbody>
               </table>
             </div>
             {error ? <div className="help-note" style={{ color: "var(--danger, #C4183C)" }}>{error}</div> : null}

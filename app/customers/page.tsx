@@ -27,7 +27,7 @@ export default async function CustomersPage({ searchParams }: { searchParams: Pr
           </div>
 
           <div className="table-wrap">
-            <table className="data-table">
+            <table className="data-table rowstack">
               <thead>
                 <tr>
                   <th style={{ width: 34 }} />
@@ -40,7 +40,7 @@ export default async function CustomersPage({ searchParams }: { searchParams: Pr
               </thead>
               <tbody>
                 {slice.length === 0 ? (
-                  <tr><td colSpan={6}><div className="table-empty">Ingen kunder fundet</div></td></tr>
+                  <tr><td colSpan={6} data-fullspan><div className="table-empty">Ingen kunder fundet</div></td></tr>
                 ) : slice.map((c) => (
                   <tr key={c.id}>
                     <td><RowMenu items={[
@@ -48,13 +48,13 @@ export default async function CustomersPage({ searchParams }: { searchParams: Pr
                       { label: "Slet kunde…", danger: true, action: deleteContact.bind(null, c.id),
                         confirm: { title: "Slet kunde", body: `Er du sikker på, at du vil slette ${c.name}? Alle kundens abonnementer, fastprisaftaler og ordrer slettes også.`, confirmLabel: "Slet kunde", note: "Denne handling kan ikke fortrydes." } },
                     ]} /></td>
-                    <td className="num">
+                    <td className="num" data-label="Kundenr.">
                       <Link href={`/customers/${c.id}`}>{c.id}</Link>
                     </td>
-                    <td><CustomerCell contact={c} /></td>
-                    <td className="num">{kr(c.revenueYtd)}</td>
-                    <td className="num">{kr(c.avgYearlyFromSubs)}</td>
-                    <td className="num">{c.subscriptionCount}</td>
+                    <td data-label="Kunde"><CustomerCell contact={c} /></td>
+                    <td className="num" data-label="Omsætning ÅTD">{kr(c.revenueYtd)}</td>
+                    <td className="num" data-label="Gns. oms/år fra abo.">{kr(c.avgYearlyFromSubs)}</td>
+                    <td className="num" data-label="Antal abo.">{c.subscriptionCount}</td>
                   </tr>
                 ))}
               </tbody>

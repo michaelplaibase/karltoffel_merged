@@ -21,7 +21,7 @@ export default async function TimesheetPage() {
       <div className="card">
         <div className="card-body">
           <div className="table-wrap">
-            <table className="data-table stack">
+            <table className="data-table rowstack">
               <thead>
                 <tr>
                   {isAdmin && <th>Medarbejder</th>}

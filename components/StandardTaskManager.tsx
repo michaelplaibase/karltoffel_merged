@@ -40,7 +40,7 @@ export default function StandardTaskManager({ tasks, q, includeInactive }: { tas
           </label>
 
           <div className="table-wrap">
-            <table className="data-table stack">
+            <table className="data-table rowstack">
               <thead><tr><th style={{ width: 34 }} /><th>Kategori</th><th>Beskrivelse</th><th>Kunden skal være tilstede</th><th style={{ width: 120 }} /></tr></thead>
               <tbody>
                 {tasks.length === 0 ? (

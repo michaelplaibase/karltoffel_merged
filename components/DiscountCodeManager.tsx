@@ -25,7 +25,7 @@ export default function DiscountCodeManager({ codes }: { codes: Code[] }) {
           <div className="help-note" style={{ marginBottom: 16 }}>Rabatkoder kan anvendes af kunder ved online bestilling.</div>
           <div className="toolbar"><button className="btn btn-primary" onClick={() => setOpen((v) => !v)}>Opret ny rabatkode</button></div>
           <div className="table-wrap">
-            <table className="data-table stack">
+            <table className="data-table rowstack">
               <thead><tr><th>Rabatkode</th><th>Procentsats</th><th>Udløbsdato</th><th style={{ width: 80 }}>Slet</th></tr></thead>
               <tbody>
                 {codes.length === 0 ? (

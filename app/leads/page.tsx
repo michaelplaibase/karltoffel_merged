@@ -51,7 +51,7 @@ export default async function LeadsPage({ searchParams }: { searchParams: Promis
           </div>
 
           <div className="table-wrap">
-            <table className="data-table stack">
+            <table className="data-table rowstack">
               <thead><tr><th style={{ width: 34 }} /><th>Dato</th><th>Navn</th><th>Kontakt</th><th>Valgt pakke</th><th>Besked</th><th>Kilde</th><th>Status</th></tr></thead>
               <tbody>
                 {leads.length === 0 ? (

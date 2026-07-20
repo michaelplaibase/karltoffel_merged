@@ -26,7 +26,7 @@ export default function HolidayManager({ holidays, weekOpts, saveLabel }: { holi
           <div className="toolbar"><button className="btn btn-outline-primary" onClick={() => setOpen((v) => !v)}>Opret ny ferie</button></div>
           {state.message ? <div className="help-note" style={{ color: "var(--success)" }}>{state.message}</div> : null}
           <div className="table-wrap">
-            <table className="data-table stack">
+            <table className="data-table rowstack">
               <thead><tr><th>Ferienr.</th><th>Ferieperiode (inklusiv)</th><th>Kan redigeres til og med</th><th style={{ width: 90 }} /></tr></thead>
               <tbody>
                 {holidays.length === 0 ? (

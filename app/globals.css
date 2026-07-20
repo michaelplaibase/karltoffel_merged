@@ -712,27 +712,27 @@ select.form-control-sm { background-position: right 10px center; padding-right: 
    Server-renderet markup, så ingen hydration-mismatch. Desktop/tablet (>700px)
    beholder den normale vandrette tabel uændret. */
 @media (max-width: 700px){
-  table.data-table.stack{ min-width: 0; display: block; }
-  table.data-table.stack thead{ display: none; }
-  table.data-table.stack tbody{ display: block; }
-  table.data-table.stack tbody tr{
+  table.data-table.rowstack{ min-width: 0; display: block; }
+  table.data-table.rowstack thead{ display: none; }
+  table.data-table.rowstack tbody{ display: block; }
+  table.data-table.rowstack tbody tr{
     display: block; margin: 0 0 12px; padding: 2px 0;
     border: 1px solid var(--card-border); border-radius: 10px; background: #fff;
   }
-  table.data-table.stack tbody tr:nth-child(odd){ background: #fff; }
-  table.data-table.stack tbody tr:hover{ background: #fff; }
-  table.data-table.stack td{
+  table.data-table.rowstack tbody tr:nth-child(odd){ background: #fff; }
+  table.data-table.rowstack tbody tr:hover{ background: #fff; }
+  table.data-table.rowstack td{
     display: flex; gap: 14px; justify-content: space-between; align-items: baseline;
     padding: 9px 14px; border-top: 0; text-align: right; font-size: 14px; white-space: normal;
   }
-  table.data-table.stack td + td{ border-top: 1px solid var(--table-border); }
-  table.data-table.stack td[data-label]::before{
+  table.data-table.rowstack td + td{ border-top: 1px solid var(--table-border); }
+  table.data-table.rowstack td[data-label]::before{
     content: attr(data-label); flex: 0 0 40%; text-align: left;
     font-size: 11px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase;
     color: var(--table-header); white-space: normal;
   }
   /* handlings-/kebab-celler uden label: ingen label, værdi højrestillet */
-  table.data-table.stack td:not([data-label]):not([data-fullspan])::before{ content: ""; flex: 0 0 auto; }
-  table.data-table.stack td[data-fullspan]{ display: block; text-align: center; }
-  table.data-table.stack td[data-fullspan] .table-empty{ padding: 28px 12px; }
+  table.data-table.rowstack td:not([data-label]):not([data-fullspan])::before{ content: ""; flex: 0 0 auto; }
+  table.data-table.rowstack td[data-fullspan]{ display: block; text-align: center; }
+  table.data-table.rowstack td[data-fullspan] .table-empty{ padding: 28px 12px; }
 }

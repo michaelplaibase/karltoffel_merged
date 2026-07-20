@@ -40,7 +40,7 @@ export default async function PayrollPage({ searchParams }: { searchParams: Prom
           </form>
 
           <div className="table-wrap">
-            <table className="data-table stack">
+            <table className="data-table rowstack">
               <thead>
                 <tr>
                   <th>Medarbejder</th><th>Lønmodel</th><th>Udførte ordrer</th>

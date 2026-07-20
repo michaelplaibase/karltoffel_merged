@@ -58,23 +58,23 @@ export default async function OrderDetail({ params }: { params: Promise<{ id: st
         <div className="card-header"><h4 className="section-title">Opgaver på ordren</h4></div>
         <div className="card-body tight">
           <div className="table-wrap">
-            <table className="data-table">
+            <table className="data-table rowstack">
               <thead><tr><th>Opgavebeskrivelse</th><th>Pris (inkl. moms)</th><th>Varighed (min.)</th></tr></thead>
               <tbody>
                 {o.tasks.map((t, i) => (
                   <tr key={i}>
-                    <td>
+                    <td data-label="Opgavebeskrivelse">
                       <CatChip category={t.category} letter={t.letter} /> {t.description}
                       {t.fromSubscription ? <div className="muted" style={{ fontSize: 12 }}>Dette er en opgave fra abonnementet</div> : null}
                     </td>
-                    <td className="num">{money(t.price)}</td>
-                    <td className="num">{t.durationMin}</td>
+                    <td className="num" data-label="Pris (inkl. moms)">{money(t.price)}</td>
+                    <td className="num" data-label="Varighed (min.)">{t.durationMin}</td>
                   </tr>
                 ))}
                 <tr>
-                  <td style={{ textAlign: "right", fontWeight: 600 }}>Sum</td>
-                  <td className="num" style={{ fontWeight: 600 }}>{money(o.sumPrice)}</td>
-                  <td className="num" style={{ fontWeight: 600 }}>{o.sumDuration}</td>
+                  <td data-label="Opgavebeskrivelse" style={{ textAlign: "right", fontWeight: 600 }}>Sum</td>
+                  <td className="num" data-label="Pris (inkl. moms)" style={{ fontWeight: 600 }}>{money(o.sumPrice)}</td>
+                  <td className="num" data-label="Varighed (min.)" style={{ fontWeight: 600 }}>{o.sumDuration}</td>
                 </tr>
               </tbody>
             </table>
