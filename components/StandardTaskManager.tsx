@@ -40,17 +40,17 @@ export default function StandardTaskManager({ tasks, q, includeInactive }: { tas
           </label>
 
           <div className="table-wrap">
-            <table className="data-table">
+            <table className="data-table stack">
               <thead><tr><th style={{ width: 34 }} /><th>Kategori</th><th>Beskrivelse</th><th>Kunden skal være tilstede</th><th style={{ width: 120 }} /></tr></thead>
               <tbody>
                 {tasks.length === 0 ? (
-                  <tr><td colSpan={5}><div className="table-empty">Ingen standardopgaver fundet</div></td></tr>
+                  <tr><td colSpan={5} data-fullspan><div className="table-empty">Ingen standardopgaver fundet</div></td></tr>
                 ) : tasks.map((t) => (
                   <tr key={t.id} style={{ opacity: t.active ? 1 : 0.5 }}>
                     <td><CatChip category={t.category} letter={t.letter || t.category[0]} /></td>
-                    <td>{t.category}</td>
-                    <td>{t.description}{t.isSystem ? <span className="badge badge-soft-muted" style={{ marginLeft: 6 }}>system</span> : null}</td>
-                    <td>{t.presence ? "Ja" : ""}</td>
+                    <td data-label="Kategori">{t.category}</td>
+                    <td data-label="Beskrivelse">{t.description}{t.isSystem ? <span className="badge badge-soft-muted" style={{ marginLeft: 6 }}>system</span> : null}</td>
+                    <td data-label="Kunden skal være tilstede">{t.presence ? "Ja" : ""}</td>
                     <td>{t.isSystem ? <span className="muted" style={{ fontSize: 12 }}>låst</span> : (
                       <button className="btn btn-sm btn-light" disabled={togglePending} onClick={() => startToggle(async () => { await toggleStandardTask(t.id); })}>
                         {t.active ? "Deaktiver" : "Reaktiver"}

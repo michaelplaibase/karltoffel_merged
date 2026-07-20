@@ -26,16 +26,16 @@ export default function HolidayManager({ holidays, weekOpts, saveLabel }: { holi
           <div className="toolbar"><button className="btn btn-outline-primary" onClick={() => setOpen((v) => !v)}>Opret ny ferie</button></div>
           {state.message ? <div className="help-note" style={{ color: "var(--success)" }}>{state.message}</div> : null}
           <div className="table-wrap">
-            <table className="data-table">
+            <table className="data-table stack">
               <thead><tr><th>Ferienr.</th><th>Ferieperiode (inklusiv)</th><th>Kan redigeres til og med</th><th style={{ width: 90 }} /></tr></thead>
               <tbody>
                 {holidays.length === 0 ? (
-                  <tr><td colSpan={4}><div className="table-empty">Ingen planlagte ferier</div></td></tr>
+                  <tr><td colSpan={4} data-fullspan><div className="table-empty">Ingen planlagte ferier</div></td></tr>
                 ) : holidays.map((h) => (
                   <tr key={h.id}>
-                    <td className="num">{h.id}</td>
-                    <td>{h.period}</td>
-                    <td>{h.editableUntil}</td>
+                    <td className="num" data-label="Ferienr.">{h.id}</td>
+                    <td data-label="Ferieperiode (inklusiv)">{h.period}</td>
+                    <td data-label="Kan redigeres til og med">{h.editableUntil}</td>
                     <td><button className="btn btn-sm btn-light" disabled={delPending}
                       onClick={() => startDel(async () => { await deleteHoliday(h.id); })}
                       style={{ color: "var(--danger, #C4183C)" }}>Slet</button></td>

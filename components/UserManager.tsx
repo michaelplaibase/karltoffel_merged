@@ -62,13 +62,13 @@ export default function UserManager({ users, meId, includeInactive }: { users: U
               onChange={(e) => { const sp = new URLSearchParams(); if (e.currentTarget.checked) sp.set("inactive", "1"); window.location.search = sp.toString(); }} /> Vis deaktiverede brugere
           </label>
           <div className="table-wrap">
-            <table className="data-table">
+            <table className="data-table stack">
               <thead>
                 <tr><th>Navn</th><th>Brugernavn</th><th>Rolle</th><th>Login</th><th>Lønmodel</th><th style={{ width: 44 }} /></tr>
               </thead>
               <tbody>
                 {users.length === 0 ? (
-                  <tr><td colSpan={6}><div className="table-empty">Ingen brugere fundet</div></td></tr>
+                  <tr><td colSpan={6} data-fullspan><div className="table-empty">Ingen brugere fundet</div></td></tr>
                 ) : users.map((u) => {
                   // Deaktivering/degradering er låst for dig selv og for den sidste aktive admin.
                   const locked = u.id === meId || (u.rolle === "admin" && u.active && activeAdmins <= 1);
@@ -89,21 +89,21 @@ export default function UserManager({ users, meId, includeInactive }: { users: U
                   }
                   return (
                     <tr key={u.id} style={{ opacity: u.active ? 1 : 0.5 }}>
-                      <td>{u.navn}</td>
-                      <td>{u.username}</td>
-                      <td>
+                      <td data-label="Navn">{u.navn}</td>
+                      <td data-label="Brugernavn">{u.username}</td>
+                      <td data-label="Rolle">
                         {u.rolle === "admin"
                           ? <span className="badge badge-soft-warning">Administrator</span>
                           : <span className="badge badge-soft-muted">Medarbejder</span>}
                       </td>
-                      <td>
+                      <td data-label="Login">
                         {!u.active
                           ? <span className="badge badge-soft-danger">Deaktiveret</span>
                           : u.kanLogge
                             ? <span className="badge badge-soft-success">Aktiv</span>
                             : <span className="badge badge-soft-muted">Intet kodeord</span>}
                       </td>
-                      <td><PayEditor u={u} /></td>
+                      <td data-label="Lønmodel"><PayEditor u={u} /></td>
                       <td><RowMenu items={items} /></td>
                     </tr>
                   );

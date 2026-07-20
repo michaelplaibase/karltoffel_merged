@@ -25,15 +25,15 @@ export default function DiscountCodeManager({ codes }: { codes: Code[] }) {
           <div className="help-note" style={{ marginBottom: 16 }}>Rabatkoder kan anvendes af kunder ved online bestilling.</div>
           <div className="toolbar"><button className="btn btn-primary" onClick={() => setOpen((v) => !v)}>Opret ny rabatkode</button></div>
           <div className="table-wrap">
-            <table className="data-table">
+            <table className="data-table stack">
               <thead><tr><th>Rabatkode</th><th>Procentsats</th><th>Udløbsdato</th><th style={{ width: 80 }}>Slet</th></tr></thead>
               <tbody>
                 {codes.length === 0 ? (
-                  <tr><td colSpan={4}><div className="table-empty">Ingen rabatkoder fundet</div></td></tr>
+                  <tr><td colSpan={4} data-fullspan><div className="table-empty">Ingen rabatkoder fundet</div></td></tr>
                 ) : codes.map((c) => (
                   <tr key={c.id}>
-                    <td>{c.code}</td><td className="num">{c.percent}%</td><td>{c.expiresAt || "—"}</td>
-                    <td><button className="btn btn-sm btn-light" disabled={delPending} style={{ color: "var(--danger, #C4183C)" }}
+                    <td data-label="Rabatkode">{c.code}</td><td className="num" data-label="Procentsats">{c.percent}%</td><td data-label="Udløbsdato">{c.expiresAt || "—"}</td>
+                    <td data-label="Slet"><button className="btn btn-sm btn-light" disabled={delPending} style={{ color: "var(--danger, #C4183C)" }}
                       onClick={() => startDel(async () => { await deleteDiscountCode(c.id); })}>Slet</button></td>
                   </tr>
                 ))}
