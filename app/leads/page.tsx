@@ -51,11 +51,11 @@ export default async function LeadsPage({ searchParams }: { searchParams: Promis
           </div>
 
           <div className="table-wrap">
-            <table className="data-table">
+            <table className="data-table stack">
               <thead><tr><th style={{ width: 34 }} /><th>Dato</th><th>Navn</th><th>Kontakt</th><th>Valgt pakke</th><th>Besked</th><th>Kilde</th><th>Status</th></tr></thead>
               <tbody>
                 {leads.length === 0 ? (
-                  <tr><td colSpan={8}><div className="table-empty">Ingen emner</div></td></tr>
+                  <tr><td colSpan={8} data-fullspan><div className="table-empty">Ingen emner</div></td></tr>
                 ) : leads.map((l) => {
                   const tm = parsePayload(l.payload);
                   const items: RowMenuItem[] = [
@@ -80,8 +80,8 @@ export default async function LeadsPage({ searchParams }: { searchParams: Promis
                   return (
                     <tr key={l.id}>
                       <td>{items.length ? <RowMenu items={items} /> : null}</td>
-                      <td className="num">{l.createdAt.toISOString().slice(0, 10)}</td>
-                      <td>
+                      <td className="num" data-label="Dato">{l.createdAt.toISOString().slice(0, 10)}</td>
+                      <td data-label="Navn">
                         {l.name}
                         {l.contactId ? <span className="badge badge-soft-muted" style={{ marginLeft: 6 }}>eksisterende kunde</span> : null}
                         {tm?.kundetype === "erhverv" ? <span className="badge badge-soft-warning" style={{ marginLeft: 6 }}>Erhverv</span> : null}
@@ -91,8 +91,8 @@ export default async function LeadsPage({ searchParams }: { searchParams: Promis
                             : <span className="badge badge-soft-danger" style={{ marginLeft: 6 }}>Ugyldig rabatkode: {tm.rabatkode}</span>
                         ) : null}
                       </td>
-                      <td>{[l.email, l.phone].filter(Boolean).join(" · ") || "—"}</td>
-                      <td>
+                      <td data-label="Kontakt">{[l.email, l.phone].filter(Boolean).join(" · ") || "—"}</td>
+                      <td data-label="Valgt pakke">
                         {tm?.services?.length ? (
                           <details>
                             <summary style={{ cursor: "pointer", whiteSpace: "nowrap" }}>
@@ -111,9 +111,9 @@ export default async function LeadsPage({ searchParams }: { searchParams: Promis
                           </details>
                         ) : "—"}
                       </td>
-                      <td>{l.message ? (l.message.length > 60 ? l.message.slice(0, 60) + "…" : l.message) : "—"}</td>
-                      <td>{l.source}</td>
-                      <td><span className={"badge " + (STATUS_CLASS[l.status] ?? "badge-soft-muted")}>{STATUS_LABEL[l.status] ?? l.status}</span></td>
+                      <td data-label="Besked">{l.message ? (l.message.length > 60 ? l.message.slice(0, 60) + "…" : l.message) : "—"}</td>
+                      <td data-label="Kilde">{l.source}</td>
+                      <td data-label="Status"><span className={"badge " + (STATUS_CLASS[l.status] ?? "badge-soft-muted")}>{STATUS_LABEL[l.status] ?? l.status}</span></td>
                     </tr>
                   );
                 })}

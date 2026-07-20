@@ -21,7 +21,7 @@ export default async function TimesheetPage() {
       <div className="card">
         <div className="card-body">
           <div className="table-wrap">
-            <table className="data-table">
+            <table className="data-table stack">
               <thead>
                 <tr>
                   {isAdmin && <th>Medarbejder</th>}
@@ -30,14 +30,14 @@ export default async function TimesheetPage() {
               </thead>
               <tbody>
                 {rows.length === 0 ? (
-                  <tr><td colSpan={isAdmin ? 5 : 4}><div className="table-empty">Ingen registreringer endnu</div></td></tr>
+                  <tr><td colSpan={isAdmin ? 5 : 4} data-fullspan><div className="table-empty">Ingen registreringer endnu</div></td></tr>
                 ) : rows.map((r) => (
                   <tr key={r.id}>
-                    {isAdmin && <td>{r.navn}</td>}
-                    <td>{r.dato}</td>
-                    <td className="num">{r.ind}</td>
-                    <td className="num">{r.ud ?? <span className="badge badge-soft-success">Åben</span>}</td>
-                    <td className="num">{r.varighed}</td>
+                    {isAdmin && <td data-label="Medarbejder">{r.navn}</td>}
+                    <td data-label="Dato">{r.dato}</td>
+                    <td className="num" data-label="Ind">{r.ind}</td>
+                    <td className="num" data-label="Ud">{r.ud ?? <span className="badge badge-soft-success">Åben</span>}</td>
+                    <td className="num" data-label="Varighed">{r.varighed}</td>
                   </tr>
                 ))}
               </tbody>

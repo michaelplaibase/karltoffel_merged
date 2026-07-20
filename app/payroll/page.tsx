@@ -40,7 +40,7 @@ export default async function PayrollPage({ searchParams }: { searchParams: Prom
           </form>
 
           <div className="table-wrap">
-            <table className="data-table">
+            <table className="data-table stack">
               <thead>
                 <tr>
                   <th>Medarbejder</th><th>Lønmodel</th><th>Udførte ordrer</th>
@@ -49,19 +49,19 @@ export default async function PayrollPage({ searchParams }: { searchParams: Prom
               </thead>
               <tbody>
                 {rows.length === 0 ? (
-                  <tr><td colSpan={6}><div className="table-empty">Ingen brugere</div></td></tr>
+                  <tr><td colSpan={6} data-fullspan><div className="table-empty">Ingen brugere</div></td></tr>
                 ) : rows.map((r) => (
                   <tr key={r.id}>
-                    <td>{r.navn}</td>
-                    <td>
+                    <td data-label="Medarbejder">{r.navn}</td>
+                    <td data-label="Lønmodel">
                       {r.payModel === "akkord"
                         ? <span className="badge badge-soft-warning">Akkord {r.commissionPct}%</span>
                         : <span className="badge badge-soft-muted">Fast løn</span>}
                     </td>
-                    <td className="num">{r.antalOrdrer}</td>
-                    <td className="num">{kr(r.omsaetning)}</td>
-                    <td className="num">{kr(r.omsaetningExMoms)}</td>
-                    <td className="num">
+                    <td className="num" data-label="Udførte ordrer">{r.antalOrdrer}</td>
+                    <td className="num" data-label="Omsætning (inkl. moms)">{kr(r.omsaetning)}</td>
+                    <td className="num" data-label="Grundlag (ekskl. moms)">{kr(r.omsaetningExMoms)}</td>
+                    <td className="num" data-label="Provision / Fast løn">
                       {r.payModel === "akkord"
                         ? <b>{kr(r.provision ?? 0)}</b>
                         : (r.fastLoen != null ? <><b>{kr(r.fastLoen)}</b> /md</> : "—")}
