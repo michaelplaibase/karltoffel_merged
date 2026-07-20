@@ -623,6 +623,12 @@ select.form-control-sm { background-position: right 10px center; padding-right: 
   .page-desc { font-size: 14px; }
   .section-title { font-size: 18px; }
 
+  /* Kort-headere med inline flex (titel + handlingsknap, fx kundesiden) skal
+     ombryde på mobil — ellers skubber en bred knap ("Opret nyt abonnement på
+     kunden") sig uden for skærmen og tvinger hele siden til at zoome ud.
+     Inert for almindelige (ikke-flex) kort-headere. */
+  .card-header { flex-wrap: wrap; gap: 8px 12px; }
+
   /* Tabeller: scroll i stedet for at mase 8 kolonner på 375px */
   .table-wrap { -webkit-overflow-scrolling: touch; }
   .table-wrap table.data-table { min-width: 640px; }
@@ -646,7 +652,12 @@ select.form-control-sm { background-position: right 10px center; padding-right: 
 }
 
 /* Form-sider MED navbar (Shell): modal-look bevaret, men aldrig navigationsfælde på mobil */
-.form-page--chrome { min-height: calc(100vh - var(--navbar-h)); padding-top: 42px; }
+/* display:block (ikke flex): en flex-child arver min-width:auto og kan derfor ikke
+   krympe under sit indhold — en opgavetabel med min-width:640px sprænger så hele
+   layoutet på mobil (create-siderne blev uzoombare, "Tilføj opgave" havnede uden
+   for skærmen). Som blok centrerer .container-1140 sig selv (margin:0 auto) og
+   krymper til viewporten, så .table-wrap kan scrolle internt. */
+.form-page--chrome { display: block; min-height: calc(100vh - var(--navbar-h)); padding-top: 42px; }
 @media (max-width: 700px){ .form-page--chrome { padding-top: 16px; } }
 
 /* QA-fund: grids som mobile-blokken havde glemt */

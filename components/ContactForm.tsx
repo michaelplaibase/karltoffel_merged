@@ -71,7 +71,7 @@ export default function ContactForm({
         </div>
         <div className="f2">
           <label>Telefon</label>
-          <input name="phone" defaultValue={initial.phone} className="form-control form-control-sm" />
+          <input name="phone" defaultValue={initial.phone} className="form-control form-control-sm" type="tel" inputMode="tel" autoComplete="tel" />
         </div>
         <div className="f2">
           <label>Adresse</label>
