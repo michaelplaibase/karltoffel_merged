@@ -27,6 +27,7 @@ model Company {
   standardTasks StandardTask[]
   leads         Lead[]
   settings      String?   // JSON blob (SQLite has no native Json)
+  dineroConnection DineroConnection?
   createdAt     DateTime  @default(now())
 }
 
@@ -81,6 +82,10 @@ model Contact {
   showDeliveryNameOnInvoice    Boolean @default(false)
   skipInvoiceOverSms           Boolean @default(false)
   invoiceChoicePreselect       String  @default("default")
+  // Dinero (Visma) kontakt-guid — sættes ved første fakturering af kunden, så
+  // efterfølgende ordrer kan springe opslag/oprettelse over. @unique er et værn
+  // mod at oprette den samme kontakt to gange i Dinero.
+  dineroContactGuid            String? @unique
   subscriptions Subscription[]
   fixedPrices   FixedPriceAgreement[]
   orders        Order[]
@@ -188,6 +193,21 @@ model Order {
   comment       String?
   addressNote   String?
   sourceWeek    DateTime? // rytme-ugens mandag ordren blev genereret FOR (dedup-nøgle — flytning ændrer den ikke; null for manuelle ordrer)
+  // --- Fakturering via Dinero (sat i "Afslut ordre"-flowet) ---
+  // invoiceDecision = det rå betalingsvalg fra CompleteOrderForm
+  // ("Send faktura - ubetalt" | "Send faktura - betalt kontant" |
+  //  "Send ikke faktura fra Fenster" | "Opret fakturakladde" |
+  //  "Registrer på et senere tidspunkt"). Før i tiden blev valget kasseret.
+  invoiceDecision       String?
+  // dineroInvoiceGuid @unique er DB-værnet mod dobbeltfakturering: en ordre kan
+  // kun bære ÉT Dinero-fakturaid. Sættes straks efter kladden er oprettet.
+  dineroInvoiceGuid     String?  @unique
+  dineroInvoiceTimeStamp String? // Dineros concurrency-token (roterer ved create/book/betaling) — kræves til book/email/payments og til genoptagelse efter fejl
+  dineroInvoiceNumber   Int?     // tildeles juridisk ved bogføring (ikke ved kladde)
+  dineroInvoiceStatus   String?  // simulated | Draft | Booked | Sent | Paid | Failed
+  dineroPaymentGuid     String?  // betalings-guid ved "betalt kontant"
+  dineroError           String?  // seneste fejldetalje (dansk), rydded ved succes
+  invoicedAt            DateTime?
   tasks         TaskLine[]
   createdAt     DateTime  @default(now())
 
@@ -263,4 +283,29 @@ model TimeEntry {
   createdAt DateTime  @default(now())
 
   @@index([userId, checkIn])
+}
+
+// Dinero (Visma) regnskabsforbindelse — én pr. Company (single-tenant).
+// Rummer resultatet af Visma Connect OAuth (authorization_code): den
+// organisation brugeren valgte + roterende tokens. refreshTokenEnc er
+// AES-256-GCM-krypteret (nøgle = DINERO_TOKEN_ENC_KEY). accessToken caches til
+// det udløber (~1 t); refresh-tokenet ROTERER ved hver brug og opdateres i en
+// række-lås (SELECT … FOR UPDATE), så to samtidige refreshes ikke laver et
+// dobbelt-exchange, der ellers ugyldiggør HELE autorisationen hos Visma.
+model DineroConnection {
+  id             Int       @id @default(autoincrement())
+  company        Company   @relation(fields: [companyId], references: [id])
+  companyId      Int       @unique
+  organizationId String    // Dinero firma-/organisations-ID (numerisk, gemt som streng — indgår i alle resource-URL'er)
+  orgName        String?
+  isPro          Boolean   @default(false) // API'et kræver Dinero Pro
+  refreshTokenEnc String   // AES-256-GCM: "ivB64:tagB64:cipherB64"
+  accessToken    String?   // cachet bearer-token (roterer)
+  accessTokenExpiresAt DateTime?
+  scopes         String?
+  salesAccountNumber Int   @default(1000)  // kontonr. i Dinero kontoplan til bogføring af salg (afsendte fakturaer)
+  cashAccountNumber  Int   @default(55040) // indbetalingskonto (kasse) til "betalt kontant"
+  status         String    @default("connected") // connected | broken (kræver gen-forbindelse)
+  connectedAt    DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
 }

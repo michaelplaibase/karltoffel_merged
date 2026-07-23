@@ -368,6 +368,7 @@ export type OrderDetail = {
   deliveryAddress: string; plannedLabel: string; source: string; employee: string;
   contact: { name: string; street: string; city: string; att: string; phone: string; email: string; cvr: string };
   tasks: TaskLine[]; sumPrice: number; sumDuration: number;
+  invoiceDecision: string; dineroInvoiceStatus: string; dineroInvoiceNumber: number | null; dineroError: string;
 };
 
 export async function getOrderDetail(id: number): Promise<OrderDetail | null> {
@@ -395,6 +396,10 @@ export async function getOrderDetail(id: number): Promise<OrderDetail | null> {
     tasks: tasks.map(mapTask),
     sumPrice: tasks.reduce((a, t) => a + t.price, 0),
     sumDuration: tasks.reduce((a, t) => a + t.durationMin, 0),
+    invoiceDecision: o.invoiceDecision ?? "",
+    dineroInvoiceStatus: o.dineroInvoiceStatus ?? "",
+    dineroInvoiceNumber: o.dineroInvoiceNumber,
+    dineroError: o.dineroError ?? "",
   };
 }
 

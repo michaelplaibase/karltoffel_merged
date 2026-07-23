@@ -5,6 +5,7 @@
 import { prisma } from "@/lib/db";
 import { guardAction } from "@/lib/api-auth";
 import { categoryColor } from "@/lib/categories";
+import { isInvoiceDecision, issueInvoiceForOrder } from "@/lib/dinero";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
@@ -149,14 +150,29 @@ export async function completeOrder(orderId: number, _prev: CompleteOrderState, 
   const addressNote = String(formData.get("addressNote") ?? "").trim();
   const backUrl = String(formData.get("backUrl") ?? "/orders") || "/orders";
 
+  // "Betaling og fakturering" — persist the chosen invoicing action. Only the five
+  // known values are stored; anything else (or blank) means "no invoicing decision".
+  const betaling = String(formData.get("betaling") ?? "").trim();
+  const invoiceDecision = betaling && isInvoiceDecision(betaling) ? betaling : null;
+
   await prisma.order.update({
     where: { id: orderId },
-    data: { status: STATUS[leveringsstatus], comment: comment || null, addressNote: addressNote || null },
+    data: { status: STATUS[leveringsstatus], comment: comment || null, addressNote: addressNote || null, invoiceDecision },
   });
+
+  // Fire Dinero invoicing (dry-run unless configured). Decoupled: it never throws
+  // and never blocks completion — a failure is recorded on the order (status
+  // 'Failed' + dineroError) and surfaced with a "Fakturér igen" affordance.
+  let invoiceFailed = false;
+  if (invoiceDecision) {
+    const res = await issueInvoiceForOrder(orderId);
+    invoiceFailed = !res.ok;
+  }
 
   revalidatePath("/orders");
   revalidatePath(`/orders/${orderId}`);
   revalidatePath("/daycalendar");
   revalidatePath("/calendar");
-  redirect(backUrl);
+  // On invoicing failure, land on the order so the error + retry are front and centre.
+  redirect(invoiceFailed ? `/orders/${orderId}` : backUrl);
 }

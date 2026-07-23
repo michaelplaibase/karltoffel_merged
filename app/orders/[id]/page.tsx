@@ -2,10 +2,21 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getOrderDetail } from "@/lib/queries";
 import { deleteOrder } from "@/app/actions/orders";
+import { retryInvoice } from "@/app/actions/dinero";
 import { CatChip, MapLink, StatusPill, money } from "@/components/ui";
 import ConfirmButton from "@/components/ConfirmButton";
 
 export const metadata = { title: "Rediger ordre · Karltoffel" };
+
+// dineroInvoiceStatus → Danish label + colour for the Fakturering card.
+const INVOICE_STATUS: Record<string, { label: string; color: string }> = {
+  simulated: { label: "Simuleret (dry-run — intet sendt til Dinero)", color: "#6b7280" },
+  Draft: { label: "Kladde oprettet i Dinero", color: "#8a6d3b" },
+  Booked: { label: "Bogført i Dinero", color: "#2e7d32" },
+  Sent: { label: "Faktura sendt af Dinero", color: "#2e7d32" },
+  Paid: { label: "Bogført + betalt (kontant)", color: "#2e7d32" },
+  Failed: { label: "Fakturering fejlede", color: "#C4183C" },
+};
 
 export default async function OrderDetail({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -96,6 +107,30 @@ export default async function OrderDetail({ params }: { params: Promise<{ id: st
         <div className="card">
           <div className="card-header"><h4 className="section-title">Adressebemærkning</h4></div>
           <div className="card-body tight"><div className="form-static">{o.addressNote}</div></div>
+        </div>
+      ) : null}
+
+      {o.invoiceDecision || o.dineroInvoiceStatus ? (
+        <div className="card">
+          <div className="card-header"><h4 className="section-title">Fakturering</h4></div>
+          <div className="card-body tight">
+            <div className="form-static">
+              <b>Valg</b>{"\n"}{o.invoiceDecision || "—"}{"\n\n"}
+              <b>Status</b>{"\n"}
+              <span style={{ color: INVOICE_STATUS[o.dineroInvoiceStatus]?.color ?? "#6b7280" }}>
+                {INVOICE_STATUS[o.dineroInvoiceStatus]?.label ?? (o.dineroInvoiceStatus || "Afventer")}
+              </span>
+              {o.dineroInvoiceNumber ? `\n\nFakturanr.\n${o.dineroInvoiceNumber}` : ""}
+              {o.dineroInvoiceStatus === "Failed" && o.dineroError ? `\n\nFejl\n${o.dineroError}` : ""}
+            </div>
+            {o.dineroInvoiceStatus === "Failed" ||
+            o.invoiceDecision === "Registrer på et senere tidspunkt" ||
+            (o.invoiceDecision && o.invoiceDecision !== "Send ikke faktura fra Fenster" && !o.dineroInvoiceStatus) ? (
+              <form action={retryInvoice.bind(null, o.id)} style={{ marginTop: 12 }}>
+                <button type="submit" className="btn btn-outline-primary">Fakturér igen</button>
+              </form>
+            ) : null}
+          </div>
         </div>
       ) : null}
 
