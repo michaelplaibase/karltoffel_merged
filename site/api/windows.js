@@ -84,16 +84,28 @@ async function countPanes(media, data) {
     return { ok: false, source: "error" };
   }
   const msg = await res.json();
-  // Sikkerhedsafvisning e.l. → intet brugbart svar; motoren falder tilbage.
-  if (msg.stop_reason === "refusal") return { ok: false, source: "refusal" };
-
   const textBlock = Array.isArray(msg.content) ? msg.content.find((b) => b.type === "text") : null;
-  if (!textBlock) return { ok: false, source: "empty" };
-  let out;
-  try { out = JSON.parse(textBlock.text); } catch { return { ok: false, source: "unparsable" }; }
-  const panes = Math.round(Number(out && out.panes));
-  if (!Number.isFinite(panes) || panes < 1 || panes > 300) return { ok: false, source: "out-of-range" };
 
+  // TEMP diagnostik (fjernes efter vi har fanget en soft-fail-source) — ingen hemmeligheder.
+  const logWindows = (source, panes) => console.log("[windows]", JSON.stringify({
+    status: res.status,
+    stop_reason: msg.stop_reason,
+    stop_details: msg.stop_details ?? null,
+    source,
+    panes: panes ?? null,
+    text: textBlock ? String(textBlock.text).slice(0, 300) : null,
+  }));
+
+  // Sikkerhedsafvisning e.l. → intet brugbart svar; motoren falder tilbage.
+  if (msg.stop_reason === "refusal") { logWindows("refusal"); return { ok: false, source: "refusal" }; }
+
+  if (!textBlock) { logWindows("empty"); return { ok: false, source: "empty" }; }
+  let out;
+  try { out = JSON.parse(textBlock.text); } catch { logWindows("unparsable"); return { ok: false, source: "unparsable" }; }
+  const panes = Math.round(Number(out && out.panes));
+  if (!Number.isFinite(panes) || panes < 1 || panes > 300) { logWindows("out-of-range", panes); return { ok: false, source: "out-of-range" }; }
+
+  logWindows("ai", panes);
   return { ok: true, source: "ai", panes, confidence: out.confidence || "low" };
 }
 
