@@ -152,6 +152,7 @@ model Subscription {
   tasks          TaskLine[]
   orders         Order[]
   weekSkips      SubscriptionWeekSkip[]
+  attachments    Attachment[]
   createdAt      DateTime  @default(now())
 
   @@index([contactId])
@@ -189,6 +190,7 @@ model Order {
   addressNote   String?
   sourceWeek    DateTime? // rytme-ugens mandag ordren blev genereret FOR (dedup-nøgle — flytning ændrer den ikke; null for manuelle ordrer)
   tasks         TaskLine[]
+  attachments   Attachment[]
   createdAt     DateTime  @default(now())
 
   @@unique([subscriptionId, sourceWeek]) // concurrency-værn: cron + manuel generering kan ikke dobbelt-oprette en uge
@@ -208,6 +210,30 @@ model SubscriptionWeekSkip {
   createdAt      DateTime     @default(now())
 
   @@unique([subscriptionId, week])
+}
+
+// Vedhæftede billeder/videoer på ordrer og abonnementer. Bytes ligger i Vercel
+// Blob (privat, region fra1/EU); her gemmes kun url + pathname (blob-nøgle til
+// sletning/signering) + metadata. Visning sker via en session-gated proxy, der
+// signerer en korttids-URL (app/api/attachments/[id]). Portabel: kun skalarer.
+model Attachment {
+  id           Int      @id @default(autoincrement())
+  url          String   // rå blob-URL (privat — ikke direkte tilgængelig uden signeret token)
+  pathname     String   // blob-nøgle i storen — bruges til sletning og signering
+  contentType  String   // fx "image/jpeg", "video/mp4"
+  kind         String   // "image" | "video" (plain string — ingen enum, jf. header)
+  sizeBytes    Int
+  originalName String?
+  sort         Int      @default(0)
+  createdAt    DateTime @default(now())
+
+  order          Order?        @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  orderId        Int?
+  subscription   Subscription? @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+  subscriptionId Int?
+
+  @@index([orderId])
+  @@index([subscriptionId])
 }
 
 model DiscountCode {
