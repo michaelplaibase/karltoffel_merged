@@ -45,9 +45,17 @@ const num = (v: unknown, max: number) => (typeof v === "number" && Number.isFini
  *  ukendte/ugyldige rækker droppes. */
 type TmService = { id: string; navn: string; wm: string | null; qty: number; enhed: string; freq: number; pris: number | null };
 type Rabat = { rabatkode: string; rabatOk: boolean; rabatPct: number | null };
-function parseTmPayload(body: Record<string, unknown>, rabat: Rabat | null): { payloadJson: string | null; kundetype: string | null; services: TmService[]; estimatMd: number } {
+function parseTmPayload(body: Record<string, unknown>, rabat: Rabat | null): { payloadJson: string | null; kundetype: string | null; services: TmService[]; estimatMd: number; pakkeNavn: string | null } {
   const kt = str(body.kundetype, 10).toLowerCase();
   const kundetype = kt === "privat" || kt === "erhverv" ? kt : null;
+
+  // Pakkevalg fra tilbudsmotoren (trin "Vælg din pakke"): id + visningsnavn, og
+  // BBR-boligtypen der forvalgte den. Alt valgfrit — ukendte værdier → null.
+  const pkId = str(body.pakke, 20).toLowerCase();
+  const pakke = ["villa", "sommerhus", "allin", "erhverv", "blandselv"].includes(pkId) ? pkId : null;
+  const pakkeNavn = str(body.pakkeNavn, 60) || null;
+  const btRaw = str(body.boligtype, 20).toLowerCase();
+  const boligtype = btRaw === "villa" || btRaw === "sommerhus" ? btRaw : null;
 
   const services: TmService[] = (Array.isArray(body.services) ? body.services.slice(0, 40) : []).flatMap((row) => {
     if (!row || typeof row !== "object") return [];
@@ -68,10 +76,10 @@ function parseTmPayload(body: Record<string, unknown>, rabat: Rabat | null): { p
   const e = body.estimat && typeof body.estimat === "object" ? (body.estimat as Record<string, unknown>) : {};
   const estimat = { md: num(e.md, 10_000_000), aar: num(e.aar, 100_000_000), visits: num(e.visits, 366), count: num(e.count, 100) };
 
-  const payloadJson = kundetype || services.length || rabat
-    ? JSON.stringify({ kundetype, services, estimat, ...(rabat ?? {}) })
+  const payloadJson = kundetype || pakke || services.length || rabat
+    ? JSON.stringify({ kundetype, boligtype, pakke, pakkeNavn, services, estimat, ...(rabat ?? {}) })
     : null;
-  return { payloadJson, kundetype, services, estimatMd: estimat.md };
+  return { payloadJson, kundetype, services, estimatMd: estimat.md, pakkeNavn };
 }
 
 const DKK = new Intl.NumberFormat("da-DK", { maximumFractionDigits: 0 });
@@ -198,6 +206,7 @@ export async function POST(req: NextRequest) {
       email ? `E-mail: ${email}` : null,
       address ? `Adresse: ${address}` : null,
       tm.kundetype ? `Kundetype: ${tm.kundetype === "erhverv" ? "Erhverv" : "Privat"}` : null,
+      tm.pakkeNavn ? `Pakke: ${tm.pakkeNavn}` : null,
       tm.estimatMd ? `Estimat: ${DKK.format(tm.estimatMd)} kr/md` : null,
       rabat ? `Rabatkode: ${rabat.rabatkode}${rabat.rabatOk ? ` (−${rabat.rabatPct}%)` : " (ugyldig)"}` : null,
       lines.length ? `` : null,

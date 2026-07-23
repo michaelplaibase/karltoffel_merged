@@ -34,10 +34,17 @@ type TmService = { id?: string; navn?: string; qty?: number; enhed?: string; fre
  *  beregner ("ydelser bundtes på samme besøg"). freq 0 → "På anmodning". */
 function subscriptionSpecFromPayload(raw: string | null) {
   if (!raw) return null;
-  let payload: { services?: TmService[] };
-  try { payload = JSON.parse(raw) as { services?: TmService[] }; } catch { return null; }
+  let payload: { services?: TmService[]; pakke?: string; pakkeNavn?: string; estimat?: { md?: number } };
+  try { payload = JSON.parse(raw) as typeof payload; } catch { return null; }
   const services = (payload.services ?? []).filter((s) => s && typeof s.navn === "string" && s.navn.trim());
   if (!services.length) return null;
+
+  // Pakkevalg + tilbudt md-pris følger med over på abonnementet (bevar det tal,
+  // kunden så — konverteringen genberegner ellers linje for linje).
+  const packageId = typeof payload.pakke === "string" && payload.pakke ? payload.pakke : null;
+  const packageName = typeof payload.pakkeNavn === "string" && payload.pakkeNavn ? payload.pakkeNavn : null;
+  const md = payload.estimat && typeof payload.estimat.md === "number" ? Math.round(payload.estimat.md) : 0;
+  const quotedMonthly = md > 0 ? md : null;
 
   const freqs = services.map((s) => Math.max(0, Math.round(s.freq ?? 0)));
   const maxFreq = Math.max(1, ...freqs);
@@ -63,7 +70,7 @@ function subscriptionSpecFromPayload(raw: string | null) {
       startWeek: null as string | null, isStandardTask: false, sort: i,
     };
   });
-  return { baseInterval, startWeek, lines };
+  return { baseInterval, startWeek, lines, packageId, packageName, quotedMonthly };
 }
 
 /** Opret et AFVENTENDE abonnement (active=false, pending=true) fra leadets
@@ -82,6 +89,7 @@ async function createPendingSubscription(lead: { payload: string | null; address
           baseInterval: spec.baseInterval, startWeek: spec.startWeek, nextWeek: spec.startWeek,
           fixedEmployee: "Ingen",
           active: false, pending: true,   // afventer godkendelses-opkaldet — ingen ordrer endnu
+          packageId: spec.packageId, packageName: spec.packageName, quotedMonthly: spec.quotedMonthly,
           tasks: { create: spec.lines },
         },
       });

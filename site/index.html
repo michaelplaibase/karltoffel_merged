@@ -277,8 +277,8 @@ Besøg os på www.bubble.dk eller ring til os på +45 6069 8700
 	<section class="tm-flow" id="tilbudsmotor" aria-label="Tilbudsmotor – få din pris">
 	<div class="tm-main">
 	  <div class="tm-progress" id="tm-progress">
-	    <span class="tm-progress-txt" id="tm-progress-txt">Trin 1 af 5</span>
-	    <span class="tm-progress-dots" id="tm-progress-dots" aria-hidden="true"><i class="on"></i><i></i><i></i><i></i><i></i></span>
+	    <span class="tm-progress-txt" id="tm-progress-txt">Trin 1 af 6</span>
+	    <span class="tm-progress-dots" id="tm-progress-dots" aria-hidden="true"><i class="on"></i><i></i><i></i><i></i><i></i><i></i></span>
 	  </div>
 	  <!-- STEP 1 -->
 	  <section class="step active hero" id="step-adresse" aria-labelledby="tm-h1">
@@ -352,7 +352,17 @@ Besøg os på www.bubble.dk eller ring til os på +45 6069 8700
 	    </div>
 	  </section>
 
-	  <!-- STEP 4 -->
+	  <!-- STEP: PAKKEVALG -->
+  <section class="step pakke" id="step-pakke" aria-labelledby="tm-h2pk">
+    <h2 id="tm-h2pk">Vælg din pakke</h2>
+    <p class="pakke-sub">Vi har forvalgt den, der passer til din ejendom. Vælg en fast pakke — eller sammensæt selv. Du kan altid justere bagefter.</p>
+    <div class="pakke-cards" id="pakke-cards" role="radiogroup" aria-label="Vælg pakke"></div>
+    <div class="tm-nav">
+      <button class="btn btn-nej" id="pk-tilbage">Tilbage</button>
+    </div>
+  </section>
+
+  <!-- STEP 4 -->
 	  <section class="step losning" id="step-losning" aria-labelledby="tm-h2l">
 	    <h2 id="tm-h2l" style="position:absolute;left:-9999px">Din løsning</h2>
 	    <div class="topbar">
@@ -363,7 +373,7 @@ Besøg os på www.bubble.dk eller ring til os på +45 6069 8700
 	      <button type="button" class="ls-skift" id="ls-skift">Skift adresse</button>
 	    </div>
 
-	    <p class="socio"><b>Villapakken</b> – det typiske valg til en ejendom som din. Sæt flueben ved det, du vil have, og vælg hvor tit vi kommer.</p>
+	    <p class="socio" id="ls-socio"><b>Villapakken</b> – det typiske valg til en ejendom som din. Sæt flueben ved det, du vil have, og vælg hvor tit vi kommer.</p>
 	    <div class="rows" id="rows"></div>
 	    <p class="gaps">Services markeret "indeholdt / pris ved besøg" aftales, når vi ringer — uden det koster dig noget.</p>
 	    <div class="tm-rabat" id="tm-rabat" hidden></div>

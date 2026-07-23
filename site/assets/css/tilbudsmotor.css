@@ -104,6 +104,23 @@
 .tm-flow .ktype-note{display:none;margin-top:18px;font-size:14px;color:var(--gul);opacity:.9}
 .tm-flow .ktype-note.show{display:block}
 
+/* STEP: PAKKEVALG */
+.tm-flow .pakke{padding:36px 0;text-align:center}
+.tm-flow .pakke h2{font-family:var(--display);font-size:clamp(26px,4vw,40px);color:var(--gul)}
+.tm-flow .pakke-sub{margin:10px auto 0;max-width:560px;font-size:16px;opacity:.9}
+.tm-flow .pakke-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px;margin-top:28px;text-align:left}
+.tm-flow .pakke-card{position:relative;display:block;padding:22px 22px 20px;background:rgba(255,248,123,.06);border:2px solid var(--bronze);border-radius:16px;color:var(--ivory);cursor:pointer;transition:background .15s,border-color .15s,transform .1s}
+.tm-flow .pakke-card:hover{background:rgba(255,248,123,.15);border-color:var(--gul);transform:translateY(-2px)}
+.tm-flow .pakke-card b{display:block;font-size:20px;margin-top:6px}
+.tm-flow .pakke-card small{display:block;margin-top:8px;font-size:13.5px;line-height:1.5;color:var(--ivory);opacity:.85}
+.tm-flow .pakke-card .pk-tag{display:inline-block;font-size:11px;letter-spacing:.1em;text-transform:uppercase;padding:4px 9px;border-radius:999px;background:rgba(255,248,123,.16);color:var(--gul)}
+.tm-flow .pakke-card.anbefalet{border-color:var(--gul)}
+.tm-flow .pakke-card.anbefalet .pk-tag{background:var(--gul);color:var(--brun)}
+.tm-flow .pakke-card.selected{background:var(--gul);border-color:var(--gul);color:var(--brun)}
+.tm-flow .pakke-card.selected small{color:var(--bronze);opacity:1}
+.tm-flow .pakke-card.selected .pk-tag{background:var(--brun);color:var(--gul)}
+@media (max-width:520px){ .tm-flow .pakke-cards{grid-template-columns:1fr} }
+
 /* STEP 3: VERIFY */
 .tm-flow .verify{padding:36px 0;text-align:center}
 .tm-flow .verify h2{font-family:var(--display);font-size:clamp(26px,4vw,40px);color:var(--gul)}

@@ -10,6 +10,9 @@ const STATUS_LABEL: Record<string, string> = { new: "Ny", contacted: "Kontaktet"
 /** Tilbudsmotor-payload på leadet (JSON blob string, se /api/leads). */
 type TmPayload = {
   kundetype?: string | null;
+  boligtype?: string | null;
+  pakke?: string | null;
+  pakkeNavn?: string | null;
   services?: { navn: string; qty?: number; enhed?: string; freq?: number }[];
   estimat?: { md?: number; visits?: number; count?: number };
   rabatkode?: string | null;
@@ -93,6 +96,12 @@ export default async function LeadsPage({ searchParams }: { searchParams: Promis
                       </td>
                       <td>{[l.email, l.phone].filter(Boolean).join(" · ") || "—"}</td>
                       <td>
+                        {tm?.pakkeNavn ? (
+                          <div style={{ fontWeight: 600, marginBottom: tm?.services?.length ? 4 : 0 }}>
+                            {tm.pakkeNavn}
+                            {tm.boligtype ? <span className="badge badge-soft-muted" style={{ marginLeft: 6, fontWeight: 400 }}>{tm.boligtype === "sommerhus" ? "Sommerhus" : "Villa"}</span> : null}
+                          </div>
+                        ) : null}
                         {tm?.services?.length ? (
                           <details>
                             <summary style={{ cursor: "pointer", whiteSpace: "nowrap" }}>
@@ -109,7 +118,7 @@ export default async function LeadsPage({ searchParams }: { searchParams: Promis
                             </ul>
                             {tm.estimat?.visits ? <div style={{ marginTop: 4, opacity: 0.7 }}>{tm.estimat.visits} besøg/år</div> : null}
                           </details>
-                        ) : "—"}
+                        ) : (tm?.pakkeNavn ? null : "—")}
                       </td>
                       <td>{l.message ? (l.message.length > 60 ? l.message.slice(0, 60) + "…" : l.message) : "—"}</td>
                       <td>{l.source}</td>

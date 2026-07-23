@@ -149,6 +149,9 @@ model Subscription {
   notiOverride   Boolean   @default(false)
   active         Boolean   @default(true)
   pending        Boolean   @default(false) // afventende godkendelse (lead konverteret, pris ikke bekræftet endnu) — active er false imens
+  packageId      String?   // valgt pakke fra tilbudsmotoren: villa|sommerhus|allin|erhverv|blandselv
+  packageName    String?   // pakkens visningsnavn, fx "Villapakken" (til lister/detaljer)
+  quotedMonthly  Int?      // tilbudt md-pris fra tilbudsmotoren (kr/md inkl. moms) — bevar det viste tal
   tasks          TaskLine[]
   orders         Order[]
   weekSkips      SubscriptionWeekSkip[]

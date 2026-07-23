@@ -246,6 +246,8 @@ export async function getSubscriptionEditData(displayNo: number) {
     fixedEmployee: s.fixedEmployee,
     deliveryAddress: s.deliveryAddress,
     pending: s.pending,
+    packageName: s.packageName,
+    quotedMonthly: s.quotedMonthly,
     attachments: s.attachments.map((a) => ({
       id: a.id, url: a.url, pathname: a.pathname, contentType: a.contentType,
       kind: (a.kind === "video" ? "video" : "image") as "image" | "video",

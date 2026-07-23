@@ -24,6 +24,12 @@ export default async function EditSubscription({ params }: { params: Promise<{ i
           <div className="card-body" style={{ display: "flex", alignItems: "center", gap: 16, justifyContent: "space-between", flexWrap: "wrap" }}>
             <div>
               <b>Afventer godkendelse</b>
+              {(sub.packageName || sub.quotedMonthly) && (
+                <div style={{ fontSize: 13, marginTop: 2 }}>
+                  {sub.packageName ? <>Valgt pakke: <b>{sub.packageName}</b></> : null}
+                  {sub.quotedMonthly ? <>{sub.packageName ? " · " : ""}Tilbudt pris: <b>{sub.quotedMonthly.toLocaleString("da-DK")} kr/md</b></> : null}
+                </div>
+              )}
               <div className="muted" style={{ fontSize: 13 }}>
                 Oprettet fra tilbudsmotor-lead. Ring til kunden, bekræft prisen — og godkend for at aktivere abonnementet og lægge ordrerne i kalenderen.
               </div>

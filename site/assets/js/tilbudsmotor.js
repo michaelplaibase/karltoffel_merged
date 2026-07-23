@@ -107,9 +107,64 @@ function animateNumber(el, from, to, fmt){
 const state = {
   adresse: "",
   kundetype: null,   /* "privat" | "erhverv" — vælges på step 2 */
+  boligtype: null,   /* "villa" | "sommerhus" | null — BBR-opslag (kun privat) */
+  pakke: null,       /* valgt pakke-id — se PAKKE_SETS */
   rabatkode: { code:"", percent:0, valid:false },   /* valideret server-side via /api/rabatkode */
   ejendom: { type:"Villa, 1 fam.", grund:"827 m²", opfoert:"2007", haek:"65 m" }
 };
+
+/* ============ PAKKER ============ */
+/* En pakke forvælger et kurateret sæt services (hvilke PRODUCTS-linjer der er
+   'on'); kunden kan altid til-/fravælge bagefter. Prisen beregnes UÆNDRET fra de
+   valgte linjer (måling × mængderabat). Service-sættene er afledt af
+   pakker-priser-siden — bekræft/justér med Karltoffel. */
+const PAKKE_SETS = {
+  villa:     ["vinduer","haek","green","alge","tagrender","robot","facadevask","garageport","doere"],
+  sommerhus: ["vinduer","haek","green","alge","tagrender"],
+  allin:     ["vinduer","vinduerind","ovenlys","haek","green","alge","algeflis","tagrender","robot","facadevask","garageport","doere","ukrudt","sammenriv","haveaffald","beskaering"],
+  erhverv:   ["vinduer","vinduerind","ovenlys","alge","algeflis","tagrender","facadevask"]
+  /* blandselv: intet kurateret sæt — kunden bygger selv videre fra det målte default */
+};
+const PAKKE_META = {
+  villa:     { navn:"Villapakken",     tag:"Det typiske valg",   beskr:"Alt det, der skal fikses på et hus — vinduer, hæk, tag, facade og plæne." },
+  sommerhus: { navn:"Sommerhuspakken", tag:"Til sommerhuset",    beskr:"Nem vedligehold af sommerhuset — vinduer, hæk, tag og plæne." },
+  allin:     { navn:"All inclusive",   tag:"Tænk ikke på haven", beskr:"Vi tager os af det hele — hele haven og huset, hele året." },
+  erhverv:   { navn:"Erhvervspakken",  tag:"Til virksomheden",   beskr:"Facade, vinduer og tag holdt præsentabelt året rundt." },
+  blandselv: { navn:"Bland selv",      tag:"Byg din egen",       beskr:"Sammensæt præcis de services, du vil have — vælg frit fra listen." }
+};
+
+/* Hvilke kort vises: erhverv → Erhvervspakken + Bland selv; privat → den
+   boligtype-matchede pakke (BBR: villa/sommerhus, default villa) + All inclusive
+   + Bland selv. Første id = det anbefalede (forvalgte) kort. */
+function pakkeKort(){
+  if(state.kundetype === "erhverv") return ["erhverv","blandselv"];
+  return [state.boligtype === "sommerhus" ? "sommerhus" : "villa", "allin", "blandselv"];
+}
+
+/* Anvend en pakke: slå netop dens services 'on' (bevar mængder/frekvens fra
+   målingen). "Bland selv" rører ikke valgene — kunden bygger selv fra listen. */
+function applyPakke(id){
+  state.pakke = id;
+  var set = PAKKE_SETS[id];
+  if(set) PRODUCTS.forEach(function(p){ p.on = set.indexOf(p.id) !== -1; });
+}
+
+/* BBR-boligtype-opslag — kun til at forvælge villa/sommerhus-kortet. Best-effort:
+   fejler stille, og motoren defaulter til villa. Stale-guard som measureProperty. */
+let boligtypeReq = 0;
+function fetchBoligtype(adr){
+  const req = ++boligtypeReq;
+  state.boligtype = null;
+  fetch("/api/boligtype?address=" + encodeURIComponent(adr))
+    .then(r => r.ok ? r.json() : null)
+    .then(d => {
+      if(req !== boligtypeReq) return;
+      if(d && (d.boligtype === "villa" || d.boligtype === "sommerhus")) state.boligtype = d.boligtype;
+      const active = ROOT.querySelector(".step.active");
+      if(active && active.id === "step-pakke") renderPakkeKort();   /* opdater forvalg hvis vi allerede står på trinnet */
+    })
+    .catch(()=>{});
+}
 
 /* ============ ADRESSEOPSLAG: Adressevælgeren (DAWAs officielle afløser) ============ */
 const ADR_API = "https://adressevaelger.dk/husnumre/soeg?token=adressevaelger123&maksimum=6&tekst=";
@@ -282,6 +337,8 @@ function vaelgAdresse(titel){
   if(window.KARLTOFFEL && window.KARLTOFFEL.measureProperty){
     window.KARLTOFFEL.measureProperty(titel).then(function(m){ if(req === measureReq) applyMeasurements(m); });
   }
+  /* BBR-boligtype i baggrunden → forvælger villa/sommerhus-kortet på pakke-trinnet. */
+  fetchBoligtype(titel);
   /* Videre til privat/erhverv-valget; gravningen kører først ved "Videre" derfra
      (skråfoto + auto-mål er allerede sat i gang i baggrunden ovenfor). */
   visStep("step-kundetype");
@@ -309,7 +366,7 @@ function koerGravning(done){
   }, 620);
 }
 
-const STEP_ORDER = ["step-adresse","step-kundetype","step-verify","step-losning","step-kontakt"];
+const STEP_ORDER = ["step-adresse","step-kundetype","step-verify","step-pakke","step-losning","step-kontakt"];
 
 /* skipScroll: ved stille gendannelse (persistens) må siden ikke hoppe til
    sektionen eller stjæle fokus — kunden er måske landet øverst på forsiden. */
@@ -318,6 +375,7 @@ function visStep(id, skipScroll){
   $(id).classList.add("active");
   if(!skipScroll) ROOT.scrollIntoView({ block:"start", behavior:"auto" });
   if(id === "step-verify") $("verify-adr").textContent = state.adresse;
+  if(id === "step-pakke") renderPakkeKort();
   if(id === "step-losning") renderTop();
   /* Fremdrift: "Trin N af 5" + dots (skjules på tak-trinnet). */
   const prog = $("tm-progress");
@@ -348,6 +406,7 @@ function gemState(stepId){
     PRODUCTS.forEach(p => { prod[p.id] = { on: p.on, qty: p.qty, freq: p.freq, touched: !!p.touched }; });
     sessionStorage.setItem(PERSIST_KEY, JSON.stringify({
       t: Date.now(), adresse: state.adresse, kundetype: state.kundetype, step: stepId, prod,
+      boligtype: state.boligtype, pakke: state.pakke,
       rabatkode: state.rabatkode
     }));
   } catch(e){ /* private mode / kvote — persistens er best-effort */ }
@@ -401,8 +460,9 @@ $("adr-videre").addEventListener("click", ()=>{
   adrInput.focus();
 });
 $("vf-tilbage").addEventListener("click", ()=> visStep("step-kundetype"));
-$("ls-tilbage").addEventListener("click", ()=> visStep("step-verify"));
+$("ls-tilbage").addEventListener("click", ()=> visStep("step-pakke"));
 $("ls-videre").addEventListener("click", ()=> visStep("step-kontakt"));
+$("pk-tilbage").addEventListener("click", ()=> visStep("step-verify"));
 /* "Skift adresse" på løsnings-trinnet: start flowet forfra på adresse-trinnet.
    resetProducts() kører automatisk, når en ny adresse vælges (vaelgAdresse). */
 $("ls-skift").addEventListener("click", ()=>{
@@ -412,7 +472,7 @@ $("ls-skift").addEventListener("click", ()=>{
   adrInput.focus();
 });
 
-$("btn-ja").addEventListener("click", ()=>{ visStep("step-losning"); taelVinduerAI(); });
+$("btn-ja").addEventListener("click", ()=>{ visStep("step-pakke"); taelVinduerAI(); });
 btnNej.addEventListener("click", ()=>{
   verifyDir++;
   if(verifyDir < VERIFY_DIRS.length){
@@ -508,6 +568,9 @@ $("btn-send").addEventListener("click", ()=>{
     message: $("k-note").value.trim().slice(0, 2000),   /* server-cap er 2000 — klip lokalt så relayets 9 KB-grænse aldrig rammes */
     address: state.adresse,
     kundetype: state.kundetype,
+    boligtype: state.boligtype,
+    pakke: state.pakke,
+    pakkeNavn: state.pakke && PAKKE_META[state.pakke] ? PAKKE_META[state.pakke].navn : null,
     source: "tilbudsmotor",
     services: valgt.map(p=>({ id:p.id, navn:p.navn, wm:p.wm, qty:p.qty, enhed:p.enhed, freq:p.freq, pris:p.pris })),
     estimat: { md: Math.round(r.md), snit: Math.round(r.snit), aar: Math.round(r.aar), aarBrutto: Math.round(r.aarBrutto), rabatPct: r.rabatPct, rabatKr: Math.round(r.rabatKr), visits: r.visits, count: r.count }
@@ -591,7 +654,38 @@ function prisEnh(p){ return p.prisEnh || enhKort(p); }   /* ental til "kr pr. X"
 
 function renderTop(){
   $("t-adr").textContent = state.adresse || "Din adresse";
+  /* Løsnings-overskriften afspejler den valgte pakke (falder tilbage til statisk
+     tekst hvis intet er valgt — fx ved direkte gendannelse). */
+  const socio = $("ls-socio");
+  if(socio && state.pakke && PAKKE_META[state.pakke]){
+    socio.innerHTML = '<b>' + esc(PAKKE_META[state.pakke].navn) + '</b> – tilpas den til din ejendom. Sæt flueben ved det, du vil have, og vælg hvor tit vi kommer.';
+  }
   renderLosning();
+}
+
+/* Pakkevalg-trinnet: render kortene ud fra kundetype + boligtype (BBR). Klik på
+   et kort forvælger pakkens services og fortsætter til service-listen, hvor
+   kunden stadig kan til-/fravælge. Første kort er det anbefalede (fremhævet). */
+function renderPakkeKort(){
+  const wrap = $("pakke-cards");
+  if(!wrap) return;
+  wrap.innerHTML = "";
+  const ids = pakkeKort();
+  ids.forEach(function(id, i){
+    const meta = PAKKE_META[id];
+    if(!meta) return;
+    const card = document.createElement("button");
+    card.type = "button";
+    card.className = "pakke-card" + (i === 0 && id !== "blandselv" ? " anbefalet" : "") + (state.pakke === id ? " selected" : "");
+    card.setAttribute("role", "radio");
+    card.setAttribute("aria-checked", state.pakke === id ? "true" : "false");
+    card.dataset.pakke = id;
+    const tag = (i === 0 && id !== "blandselv") ? "Anbefalet til dig" : meta.tag;
+    card.innerHTML = (tag ? '<span class="pk-tag">' + esc(tag) + '</span>' : "") +
+      '<b>' + esc(meta.navn) + '</b><small>' + esc(meta.beskr) + '</small>';
+    card.addEventListener("click", function(){ applyPakke(id); visStep("step-losning"); });
+    wrap.appendChild(card);
+  });
 }
 
 /* Fuld gen-render af den samlede serviceliste + priser. Kører kun ved trin-/
@@ -756,11 +850,13 @@ function opdater(){
   let s = null;
   try { s = JSON.parse(sessionStorage.getItem(PERSIST_KEY) || "null"); } catch(e){ return; }
   if(!s || !s.adresse || Date.now() - (s.t || 0) > 3600e3) return;
-  if(["step-kundetype","step-verify","step-losning","step-kontakt"].indexOf(s.step) === -1) return;
+  if(["step-kundetype","step-verify","step-pakke","step-losning","step-kontakt"].indexOf(s.step) === -1) return;
 
   state.adresse = s.adresse;
   adrInput.value = s.adresse;
   if(s.kundetype === "privat" || s.kundetype === "erhverv") vaelgKundetype(s.kundetype);
+  if(s.boligtype === "villa" || s.boligtype === "sommerhus") state.boligtype = s.boligtype;
+  if(s.pakke && PAKKE_META[s.pakke]) state.pakke = s.pakke;
   if(s.prod) PRODUCTS.forEach(p => {
     const d = s.prod[p.id];
     if(d){ p.on = !!d.on; if(typeof d.qty === "number") p.qty = d.qty; if(typeof d.freq === "number") p.freq = d.freq; p.touched = !!d.touched; }
@@ -782,6 +878,7 @@ function opdater(){
   if(window.KARLTOFFEL && window.KARLTOFFEL.measureProperty){
     window.KARLTOFFEL.measureProperty(s.adresse).then(function(m){ if(req === measureReq) applyMeasurements(m); });
   }
+  if(!state.boligtype) fetchBoligtype(s.adresse);   /* kun hvis ikke allerede gendannet */
   visStep(s.step, true);   /* stille: intet scroll-hop, ingen fokus-tyveri */
 })();
 
