@@ -97,18 +97,26 @@ let tokenCache: { token: string; exp: number } | null = null;
 async function getAccessToken(): Promise<string> {
   if (tokenCache && tokenCache.exp - Date.now() > 60_000) return tokenCache.token;
   const url = process.env.DINERO_TOKEN_URL?.trim() || DEFAULT_TOKEN_URL;
-  const scope = process.env.DINERO_SCOPE?.trim() || DEFAULT_SCOPE;
-  const res = await fetch(url, {
-    method: "POST",
-    headers: { "content-type": "application/x-www-form-urlencoded" },
-    body: new URLSearchParams({
-      grant_type: "client_credentials",
-      client_id: process.env.DINERO_CLIENT_ID ?? "",
-      client_secret: process.env.DINERO_CLIENT_SECRET ?? "",
-      scope,
-    }).toString(),
-    signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
-  });
+  const id = process.env.DINERO_CLIENT_ID ?? "";
+  const secret = process.env.DINERO_CLIENT_SECRET ?? "";
+  // Scope: default unless DINERO_SCOPE is set; empty or "none" omits it entirely
+  // (Dinero's own server uses "read write"; Visma Connect uses "dineropublicapi:*").
+  const scopeRaw = process.env.DINERO_SCOPE?.trim();
+  const scope = scopeRaw == null ? DEFAULT_SCOPE : scopeRaw && scopeRaw.toLowerCase() !== "none" ? scopeRaw : "";
+  // Client auth: Dinero's own auth server (authz.dinero.dk) wants an HTTP Basic
+  // header; Visma Connect wants the credentials in the form body. Auto-detect by
+  // host, overridable with DINERO_CLIENT_AUTH = "basic" | "body".
+  const authStyle = process.env.DINERO_CLIENT_AUTH?.trim().toLowerCase() || (/authz\.dinero\.dk/i.test(url) ? "basic" : "body");
+  const form = new URLSearchParams({ grant_type: "client_credentials" });
+  if (scope) form.set("scope", scope);
+  const headers: Record<string, string> = { "content-type": "application/x-www-form-urlencoded" };
+  if (authStyle === "basic") {
+    headers.Authorization = "Basic " + Buffer.from(`${id}:${secret}`).toString("base64");
+  } else {
+    form.set("client_id", id);
+    form.set("client_secret", secret);
+  }
+  const res = await fetch(url, { method: "POST", headers, body: form.toString(), signal: AbortSignal.timeout(FETCH_TIMEOUT_MS) });
   const raw = await res.text().catch(() => "");
   if (!res.ok) throw new DineroApiError(res.status, `Token ${res.status}: ${raw.slice(0, 300)}`, raw);
   let data: { access_token?: string; expires_in?: number } = {};
