@@ -23,6 +23,7 @@ import {
   createAdset,
   getAds,
   getAdCreatives,
+  uploadAdImageFromUrl,
   createAdCreative,
   createAd,
   deleteAd,
@@ -191,6 +192,20 @@ const TOOLS: Record<string, ToolDef> = {
     description: "Kreativ-detaljer for en specifik annonce.",
     inputSchema: { type: "object", required: ["adId"], properties: { adId: { type: "string" } } },
     handler: (a) => getAdCreatives(a as { adId: string }),
+  },
+  upload_ad_image_from_url: {
+    description: "Upload et godkendt annoncebillede fra en HTTPS-URL og returnér Metas image hash.",
+    inputSchema: {
+      type: "object",
+      required: ["imageUrl"],
+      properties: {
+        accountId: { type: "string" },
+        imageUrl: { type: "string" },
+        filename: { type: "string" },
+      },
+    },
+    handler: (a) =>
+      uploadAdImageFromUrl(a as { accountId?: string; imageUrl: string; filename?: string }),
   },
   create_ad_creative: {
     description: "Opret et nyt kreativ (link-annonce) med tekst, billede og CTA.",

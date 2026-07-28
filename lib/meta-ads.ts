@@ -202,6 +202,30 @@ export async function getAdCreatives(a: { adId: string }) {
   });
 }
 
+export async function uploadAdImageFromUrl(a: { accountId?: string; imageUrl: string; filename?: string }) {
+  const accountId = a.accountId || defaultAccountId();
+  const imageResponse = await fetch(a.imageUrl);
+  if (!imageResponse.ok) throw new Error(`Image download failed (${imageResponse.status})`);
+
+  const form = new FormData();
+  form.set("access_token", accessToken());
+  form.set(
+    "filename",
+    new Blob([await imageResponse.arrayBuffer()], {
+      type: imageResponse.headers.get("content-type") || "image/png",
+    }),
+    a.filename || "creative.png",
+  );
+
+  const response = await fetch(`${GRAPH_BASE}/${accountId}/adimages`, { method: "POST", body: form });
+  const json = await response.json();
+  if (!response.ok) {
+    const details = json?.error ? JSON.stringify(json.error) : `Graph API error (${response.status})`;
+    throw new Error(details);
+  }
+  return json;
+}
+
 export async function createAdCreative(a: {
   accountId?: string;
   name: string;
