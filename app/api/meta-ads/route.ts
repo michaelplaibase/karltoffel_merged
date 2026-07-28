@@ -14,6 +14,7 @@ import {
   getAdAccounts,
   getAccountInfo,
   getAccountPages,
+  getPageLeadForms,
   getCampaigns,
   getCampaignDetails,
   createCampaign,
@@ -75,6 +76,15 @@ const TOOLS: Record<string, ToolDef> = {
     description: "Facebook-sider tilknyttet annoncekontoen (skal bruges som page_id ved kreativer).",
     inputSchema: { type: "object", properties: { accountId: { type: "string" } } },
     handler: (a) => getAccountPages(a as { accountId?: string }),
+  },
+  get_page_lead_forms: {
+    description: "List Meta Instant Forms for en Facebook-side.",
+    inputSchema: {
+      type: "object",
+      required: ["pageId"],
+      properties: { pageId: { type: "string" }, limit: { type: "number" } },
+    },
+    handler: (a) => getPageLeadForms(a as { pageId: string; limit?: number }),
   },
   get_campaigns: {
     description: "List kampagner for annoncekontoen, evt. filtreret på status.",
@@ -224,6 +234,7 @@ const TOOLS: Record<string, ToolDef> = {
         description: { type: "string" },
         descriptions: { type: "array", items: { type: "string" } },
         callToActionType: { type: "string", description: "fx LEARN_MORE, SIGN_UP" },
+        formId: { type: "string", description: "Meta Instant Form ID til ON_AD lead-annoncer." },
         instagramActorId: { type: "string" },
       },
     },
@@ -232,7 +243,7 @@ const TOOLS: Record<string, ToolDef> = {
         a as {
           accountId?: string; name: string; imageHash?: string; pageId: string; linkUrl: string; message: string;
           headline?: string; headlines?: string[]; description?: string; descriptions?: string[];
-          callToActionType?: string; instagramActorId?: string;
+          callToActionType?: string; formId?: string; instagramActorId?: string;
         },
       ),
   },

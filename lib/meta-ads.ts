@@ -72,6 +72,13 @@ export async function getAccountPages(a: { accountId?: string }) {
   return graphFetch(`${accountId}/promote_pages`, { fields: "id,name" });
 }
 
+export async function getPageLeadForms(a: { pageId: string; limit?: number }) {
+  return graphFetch(`${a.pageId}/leadgen_forms`, {
+    fields: "id,name,status,locale,created_time",
+    limit: a.limit ?? 25,
+  });
+}
+
 export async function getCampaigns(a: { accountId?: string; limit?: number; statusFilter?: string }) {
   const accountId = a.accountId || defaultAccountId();
   const filtering = a.statusFilter
@@ -238,13 +245,17 @@ export async function createAdCreative(a: {
   description?: string;
   descriptions?: string[];
   callToActionType?: string;
+  formId?: string;
   instagramActorId?: string;
 }) {
   const accountId = a.accountId || defaultAccountId();
   const linkData: Record<string, unknown> = {
     link: a.linkUrl,
     message: a.message,
-    call_to_action: { type: a.callToActionType || "LEARN_MORE", value: { link: a.linkUrl } },
+    call_to_action: {
+      type: a.callToActionType || "LEARN_MORE",
+      value: a.formId ? { lead_gen_form_id: a.formId } : { link: a.linkUrl },
+    },
   };
   if (a.imageHash) linkData.image_hash = a.imageHash;
   if (a.headlines) linkData.multi_share_optimized = true;
