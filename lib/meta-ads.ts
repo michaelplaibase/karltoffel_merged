@@ -19,7 +19,7 @@ function defaultAccountId(): string {
   return process.env.META_AD_ACCOUNT_ID || "act_2067372627323557";
 }
 
-async function graphFetch(path: string, params: Record<string, unknown> = {}, method: "GET" | "POST" = "GET") {
+async function graphFetch(path: string, params: Record<string, unknown> = {}, method: "GET" | "POST" | "DELETE" = "GET") {
   const url = new URL(`${GRAPH_BASE}/${path}`);
   const token = accessToken();
 
@@ -44,7 +44,7 @@ async function graphFetch(path: string, params: Record<string, unknown> = {}, me
     if (v === undefined) continue;
     body.set(k, typeof v === "string" ? v : JSON.stringify(v));
   }
-  const res = await fetch(url.toString(), { method: "POST", body });
+  const res = await fetch(url.toString(), { method, body });
   const json = await res.json();
   if (!res.ok) {
     const details = json?.error ? JSON.stringify(json.error) : `Graph API error (${res.status})`;
@@ -261,6 +261,10 @@ export async function createAd(a: {
     },
     "POST",
   );
+}
+
+export async function deleteAd(a: { adId: string }) {
+  return graphFetch(a.adId, {}, "DELETE");
 }
 
 export async function getInsights(a: {

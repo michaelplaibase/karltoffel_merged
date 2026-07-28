@@ -25,6 +25,7 @@ import {
   getAdCreatives,
   createAdCreative,
   createAd,
+  deleteAd,
   getInsights,
 } from "@/lib/meta-ads";
 
@@ -236,6 +237,15 @@ const TOOLS: Record<string, ToolDef> = {
     },
     handler: (a) =>
       createAd(a as { accountId?: string; name: string; adsetId: string; creativeId: string; status?: string; bidAmount?: number }),
+  },
+  delete_ad: {
+    description: "Slet en specifik annonce permanent. Kræver et eksplicit annonce-ID.",
+    inputSchema: {
+      type: "object",
+      required: ["adId"],
+      properties: { adId: { type: "string" } },
+    },
+    handler: (a) => deleteAd(a as { adId: string }),
   },
   get_insights: {
     description: "Performance-rapport (spend, klik, CPC, CTR mv.) for kampagne/annoncesæt/annonce.",
