@@ -31,7 +31,10 @@ async function graphFetch(path: string, params: Record<string, unknown> = {}, me
     }
     const res = await fetch(url.toString());
     const json = await res.json();
-    if (!res.ok) throw new Error(json?.error?.message || `Graph API error (${res.status})`);
+    if (!res.ok) {
+      const details = json?.error ? JSON.stringify(json.error) : `Graph API error (${res.status})`;
+      throw new Error(details);
+    }
     return json;
   }
 
@@ -43,7 +46,10 @@ async function graphFetch(path: string, params: Record<string, unknown> = {}, me
   }
   const res = await fetch(url.toString(), { method: "POST", body });
   const json = await res.json();
-  if (!res.ok) throw new Error(json?.error?.message || `Graph API error (${res.status})`);
+  if (!res.ok) {
+    const details = json?.error ? JSON.stringify(json.error) : `Graph API error (${res.status})`;
+    throw new Error(details);
+  }
   return json;
 }
 
@@ -122,8 +128,23 @@ export async function getAdsets(a: { accountId?: string; limit?: number; campaig
 
 export async function getAdsetDetails(a: { adsetId: string }) {
   return graphFetch(a.adsetId, {
-    fields: "id,name,status,effective_status,daily_budget,lifetime_budget,targeting,optimization_goal,billing_event,bid_strategy",
+    fields: "id,name,status,effective_status,daily_budget,lifetime_budget,targeting,optimization_goal,billing_event,bid_strategy,destination_type,promoted_object",
   });
+}
+
+export async function updateAdset(a: {
+  adsetId: string;
+  destinationType?: string;
+  status?: string;
+}) {
+  return graphFetch(
+    a.adsetId,
+    {
+      destination_type: a.destinationType,
+      status: a.status,
+    },
+    "POST",
+  );
 }
 
 export async function createAdset(a: {
@@ -141,6 +162,7 @@ export async function createAdset(a: {
   startTime?: string;
   endTime?: string;
   pageId?: string;
+  destinationType?: string;
 }) {
   const accountId = a.accountId || defaultAccountId();
   return graphFetch(
@@ -159,6 +181,7 @@ export async function createAdset(a: {
       start_time: a.startTime,
       end_time: a.endTime,
       promoted_object: a.pageId ? { page_id: a.pageId } : undefined,
+      destination_type: a.destinationType,
     },
     "POST",
   );

@@ -19,6 +19,7 @@ import {
   createCampaign,
   getAdsets,
   getAdsetDetails,
+  updateAdset,
   createAdset,
   getAds,
   getAdCreatives,
@@ -127,6 +128,20 @@ const TOOLS: Record<string, ToolDef> = {
     inputSchema: { type: "object", required: ["adsetId"], properties: { adsetId: { type: "string" } } },
     handler: (a) => getAdsetDetails(a as { adsetId: string }),
   },
+  update_adset: {
+    description: "Opdatér destination eller status på et eksisterende annoncesæt.",
+    inputSchema: {
+      type: "object",
+      required: ["adsetId"],
+      properties: {
+        adsetId: { type: "string" },
+        destinationType: { type: "string", description: "fx ON_AD til Meta Instant Form." },
+        status: { type: "string" },
+      },
+    },
+    handler: (a) =>
+      updateAdset(a as { adsetId: string; destinationType?: string; status?: string }),
+  },
   create_adset: {
     description: "Opret et nyt annoncesæt under en kampagne. status default PAUSED.",
     inputSchema: {
@@ -147,6 +162,7 @@ const TOOLS: Record<string, ToolDef> = {
         startTime: { type: "string" },
         endTime: { type: "string" },
         pageId: { type: "string", description: "Facebook Page ID. Kræves til Meta Instant Form lead-annoncer." },
+        destinationType: { type: "string", description: "fx ON_AD til Meta Instant Form." },
       },
     },
     handler: (a) =>
@@ -155,7 +171,7 @@ const TOOLS: Record<string, ToolDef> = {
           accountId?: string; campaignId: string; name: string; status?: string; dailyBudget?: string;
           lifetimeBudget?: string; targeting?: Record<string, unknown>; optimizationGoal?: string;
           billingEvent?: string; bidAmount?: number; bidStrategy?: string; startTime?: string; endTime?: string;
-          pageId?: string;
+          pageId?: string; destinationType?: string;
         },
       ),
   },
