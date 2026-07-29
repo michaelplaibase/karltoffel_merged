@@ -377,6 +377,7 @@ function visStep(id, skipScroll){
   if(id === "step-verify") $("verify-adr").textContent = state.adresse;
   if(id === "step-pakke") renderPakkeKort();
   if(id === "step-losning") renderTop();
+  if(id === "step-kontakt") renderKontaktOpsum();
   /* Fremdrift: "Trin N af 5" + dots (skjules på tak-trinnet). */
   const prog = $("tm-progress");
   if(prog){
@@ -543,12 +544,61 @@ if(rkInput){
   rkInput.addEventListener("keydown", (e)=>{ if(e.key === "Enter"){ e.preventDefault(); tjekRabatkode(); } });
 }
 
+/* Rabatkoden ligger foldet vaek bag et link, saa den ikke stjaeler opmaerksomhed
+   fra selve afsendelsen. Flowet bagved er uaendret. */
+const rkToggle = $("rk-toggle"), rkFelt = $("rk-felt");
+function visRabatFelt(){
+  if(!rkFelt || !rkToggle) return;
+  rkFelt.hidden = false;
+  rkToggle.textContent = "Skjul rabatkode";
+}
+if(rkToggle && rkFelt){
+  rkToggle.addEventListener("click", ()=>{
+    if(rkFelt.hidden){ visRabatFelt(); if(rkInput) rkInput.focus(); }
+    else { rkFelt.hidden = true; rkToggle.textContent = "Har du en rabatkode?"; }
+  });
+}
+
+/* Opsummeringskortet paa kontakt-trinnet: adresse, valgte services med frekvens,
+   og maanedsprisen. Bruger motorens egne tal (beregn), saa intet prislogik
+   dubleres her. Bemaerk: visits er motorens max-frekvens, ikke summen, fordi
+   ydelser bundtes paa samme besoeg. */
+function renderKontaktOpsum(){
+  const adr = $("k-kort-adresse");
+  if(adr) adr.textContent = state.adresse || "Din adresse";
+
+  const wrap = $("k-kort-linjer");
+  if(wrap){
+    wrap.innerHTML = "";
+    PRODUCTS.filter(p => p.on).forEach(p => {
+      const row = document.createElement("div"); row.className = "k-linje";
+      const n = document.createElement("span"); n.textContent = p.navn;
+      const f = document.createElement("span"); f.textContent = p.freq + " besøg/år";
+      row.appendChild(n); row.appendChild(f); wrap.appendChild(row);
+    });
+  }
+
+  const r = beregn(PRODUCTS);
+  /* Rabatkode trraekkes fra EFTER maengderabatten, samme regnestykke som ved
+     indsendelsen, saa kortet og det sendte estimat aldrig kan vise to tal. */
+  const kodePct = state.rabatkode.valid ? state.rabatkode.percent : 0;
+  const mdNet = (r.aar * (1 - kodePct/100)) / 12;
+  const pris = $("k-kort-pris");
+  if(pris) pris.textContent = kr(mdNet) + "/md";
+  const note = $("k-kort-prisnote");
+  if(note) note.textContent = "inkl. moms · " + r.visits + " besøg/år samlet";
+}
+
 $("btn-send").addEventListener("click", ()=>{
   const navn = $("k-navn").value.trim(), mail = $("k-mail").value.trim(), tlf = $("k-tlf").value.trim();
-  /* Telefon er obligatorisk — hele løftet er et opkald. E-mail er valgfri,
-     men skal ligne en e-mail, hvis den er udfyldt. */
-  if(!navn || tlf.replace(/\D/g,"").length < 8){ sendFejl("Udfyld navn og telefonnummer, så vi kan ringe dig op."); return; }
-  if(mail && mail.indexOf("@") < 1){ sendFejl("Tjek lige e-mailen — den ser ikke rigtig ud."); return; }
+  /* E-mail er obligatorisk, telefon er valgfri (men goer opkaldet hurtigere).
+     Serveren kraever navn plus mail ELLER telefon, saa mail-kravet daekker den.
+     Er telefonen udfyldt, skal den ligne et rigtigt nummer. */
+  if(!navn){ sendFejl("Skriv dit navn, så vi ved, hvem vi ringer til."); return; }
+  if(!mail || mail.indexOf("@") < 1){ sendFejl("Skriv en e-mail, vi kan svare på."); return; }
+  if(tlf && tlf.replace(/\D/g,"").length < 8){ sendFejl("Tjek lige telefonnummeret, det ser for kort ud."); return; }
+  const samtykke = $("k-samtykke");
+  if(samtykke && !samtykke.checked){ sendFejl("Sæt flueben i, at vi må kontakte dig om tilbuddet."); return; }
   $("k-err").classList.remove("show");
 
   const r = beregn(PRODUCTS);
@@ -805,6 +855,9 @@ function opdaterRabat(){
   } else {
     delete el.dataset.kodekr;
   }
+  /* Hold opsummeringskortet paa kontakt-trinnet i sync: baade maengde-/frekvens-
+     aendringer og en indtastet rabatkode loeber gennem denne funktion. */
+  renderKontaktOpsum();
 }
 
 function opdater(){
@@ -865,6 +918,7 @@ function opdater(){
      ingen count-animation), så en indtastet kode overlever refresh. */
   if(s.rabatkode && s.rabatkode.code && rkInput){
     rkInput.value = s.rabatkode.code;
+    visRabatFelt();   /* en gendannet kode maa ikke ligge skjult bag toggle'en */
     const pct = Math.max(0, Math.min(100, Number(s.rabatkode.percent) || 0));
     if(s.rabatkode.valid === true && pct > 0){
       state.rabatkode = { code: String(s.rabatkode.code), percent: pct, valid: true };

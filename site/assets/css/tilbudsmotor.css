@@ -213,11 +213,45 @@
 
 
 /* STEP 5: KONTAKT + TAK */
-.tm-flow .kontakt{max-width:560px;margin:0 auto;padding:36px 0}
-.tm-flow .kontakt h2{font-family:var(--display);color:var(--gul);font-size:clamp(26px,4vw,38px)}
-.tm-flow .kontakt p{margin-top:10px;opacity:.9}
+.tm-flow .kontakt{max-width:1120px;margin:0 auto;padding:36px 0}
+.tm-flow .kontakt h2{font-family:var(--display);color:var(--gul);font-size:clamp(26px,4vw,40px);line-height:1.08}
+.tm-flow .kontakt .k-sub{margin-top:12px;opacity:.9;font-size:16px}
 .tm-flow .kontakt label{display:block;margin:20px 0 6px;font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:var(--gul)}
+.tm-flow .kontakt label .valgfri{text-transform:none;letter-spacing:0;color:var(--ivory);opacity:.55}
 .tm-flow .kontakt input,.tm-flow .kontakt textarea{width:100%;padding:15px 16px;border-radius:12px;border:0;background:var(--ivory);color:var(--brun);font-size:16px}
+.tm-flow .kontakt textarea{resize:vertical}
+/* To kolonner: formular til venstre, opsummering til hoejre. */
+.tm-flow .k-grid{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,.95fr);gap:40px;align-items:start;margin-top:26px}
+.tm-flow .k-felter{display:grid;grid-template-columns:1fr 1fr;gap:0 18px}
+.tm-flow .k-bred{grid-column:1 / -1}
+.tm-flow .k-hjaelp{margin:8px 2px 0;font-size:13.5px;color:var(--gul);opacity:.8}
+.tm-flow .k-knapper{display:flex;gap:12px;margin-top:24px;flex-wrap:wrap}
+.tm-flow .k-fineprint{margin-top:12px;font-size:13px;opacity:.75}
+/* Samtykke: skal saettes foer afsendelse (tjekkes i btn-send). */
+.tm-flow .k-samtykke{display:flex;gap:12px;align-items:flex-start;margin-top:26px}
+.tm-flow .k-samtykke input{width:22px;height:22px;flex:0 0 22px;margin-top:1px;accent-color:var(--gul);cursor:pointer}
+.tm-flow .k-samtykke label{margin:0;font-size:12.5px;line-height:1.6;letter-spacing:.06em;cursor:pointer}
+.tm-flow .k-samtykke a{color:var(--gul);text-decoration:underline}
+/* Rabatkode foldet vaek bag et diskret link, saa den ikke stjaeler opmaerksomhed. */
+.tm-flow .rk-toggle{margin-top:20px;background:none;border:0;padding:0;color:var(--gul);font-size:14px;text-decoration:underline;cursor:pointer}
+.tm-flow .rk-felt[hidden]{display:none}
+/* Opsummeringskort */
+.tm-flow .k-kort{background:#5a4322;border-radius:18px;padding:22px;position:sticky;top:20px}
+.tm-flow .k-kort-adr{display:flex;gap:8px;align-items:center;color:var(--gul);font-weight:700;font-size:15px}
+.tm-flow .k-kort-adr svg{width:15px;height:15px;flex:0 0 15px}
+.tm-flow .k-linjer{margin-top:14px}
+.tm-flow .k-linje{display:flex;justify-content:space-between;gap:14px;padding:11px 0;border-bottom:1px solid rgba(255,248,123,.16);font-size:15px}
+.tm-flow .k-linje:last-child{border-bottom:0}
+.tm-flow .k-linje span:last-child{color:var(--gul);opacity:.65;font-size:13.5px;white-space:nowrap}
+.tm-flow .k-pris{background:var(--gul);color:var(--brun);border-radius:14px;padding:16px 18px;margin-top:16px}
+.tm-flow .k-pris b{display:block;font-size:30px;font-weight:800;line-height:1.1}
+.tm-flow .k-pris small{display:block;margin-top:4px;font-size:13px;opacity:.75}
+.tm-flow .k-trin{margin-top:18px;display:grid;gap:12px}
+.tm-flow .k-trin div{display:flex;gap:11px;align-items:center;font-size:14px}
+.tm-flow .k-trin i{flex:0 0 22px;height:22px;border-radius:50%;background:var(--gul);color:var(--brun);font-style:normal;font-weight:700;font-size:12px;display:flex;align-items:center;justify-content:center}
+.tm-flow .k-kort-fine{margin-top:16px;font-size:12.5px;opacity:.5;line-height:1.6}
+@media (max-width:900px){ .tm-flow .k-grid{grid-template-columns:1fr;gap:28px} .tm-flow .k-kort{position:static} }
+@media (max-width:520px){ .tm-flow .k-felter{grid-template-columns:1fr} }
 .tm-flow .kontakt .err{color:var(--ivory);background:var(--roed-moerk);border-radius:10px;padding:10px 14px;margin-top:16px;font-size:14px;display:none}   /* ivory på mørk rød ≈7.1:1 (AA) */
 .tm-flow .kontakt .err.show{display:block}
 /* Rabatkode-status under feltet: "anvendt" (gul) eller diskret "Ukendt rabatkode" */

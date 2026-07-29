@@ -385,23 +385,60 @@ Besøg os på www.bubble.dk eller ring til os på +45 6069 8700
 
 	  <!-- STEP 5 -->
 	  <section class="step kontakt" id="step-kontakt" aria-labelledby="tm-h2k">
-	    <h2 id="tm-h2k">Næsten i mål</h2>
-	    <p>Vi ringer og bekræfter tallene, før noget koster dig en krone.</p>
-	    <label for="k-navn">Fulde navn</label>
-	    <input id="k-navn" type="text" autocomplete="name" maxlength="120">
-	    <label for="k-tlf">Telefon</label>
-	    <input id="k-tlf" type="tel" autocomplete="tel" inputmode="tel" maxlength="40">
-	    <label for="k-mail">E-mail (valgfri)</label>
-	    <input id="k-mail" type="email" autocomplete="email" maxlength="200">
-	    <label for="k-note">Noget vi skal vide? (valgfrit)</label>
-	    <textarea id="k-note" rows="3" maxlength="2000"></textarea>
-	    <label for="k-rabat">Rabatkode (valgfri)</label>
-	    <input id="k-rabat" type="text" autocomplete="off" autocapitalize="characters" spellcheck="false" maxlength="40">
-	    <p class="rk-note" id="k-rabat-status" role="status" aria-live="polite" hidden></p>
-	    <div class="err" id="k-err">Udfyld navn og telefonnummer, så vi kan ringe dig op.</div>
-	    <div class="verify-btns" style="justify-content:flex-start">
-	      <button class="btn btn-ja" id="btn-send">Send og bliv kontaktet</button>
-	      <button class="btn btn-nej" id="btn-tilbage">Tilbage</button>
+	    <div class="k-grid">
+	      <div class="k-form">
+	        <h2 id="tm-h2k">Sidste skridt, heldige karltoffel</h2>
+	        <p class="k-sub">Vi ringer og bekræfter tallene, før noget koster dig en krone.</p>
+	        <div class="k-felter">
+	          <div>
+	            <label for="k-navn">Fulde navn</label>
+	            <input id="k-navn" type="text" autocomplete="name" maxlength="120" placeholder="Anna Karltoffel">
+	          </div>
+	          <div>
+	            <label for="k-mail">E-mail</label>
+	            <input id="k-mail" type="email" autocomplete="email" maxlength="200" placeholder="anna@eksempel.dk">
+	          </div>
+	          <div class="k-bred">
+	            <label for="k-tlf">Telefon <span class="valgfri">(valgfrit, men gør det hurtigere)</span></label>
+	            <input id="k-tlf" type="tel" autocomplete="tel" inputmode="tel" maxlength="40" placeholder="12 34 56 78">
+	            <p class="k-hjaelp">Så vi kan ringe med det samme i stedet for at maile frem og tilbage.</p>
+	          </div>
+	          <div class="k-bred">
+	            <label for="k-note">Noget vi skal vide? <span class="valgfri">(valgfrit)</span></label>
+	            <textarea id="k-note" rows="3" maxlength="2000" placeholder="Fx: hunden gør højlydt, men bider ikke"></textarea>
+	          </div>
+	        </div>
+	        <button type="button" class="rk-toggle" id="rk-toggle">Har du en rabatkode?</button>
+	        <div class="rk-felt" id="rk-felt" hidden>
+	          <label for="k-rabat">Rabatkode</label>
+	          <input id="k-rabat" type="text" autocomplete="off" autocapitalize="characters" spellcheck="false" maxlength="40">
+	          <p class="rk-note" id="k-rabat-status" role="status" aria-live="polite" hidden></p>
+	        </div>
+	        <div class="k-samtykke">
+	          <input type="checkbox" id="k-samtykke">
+	          <label for="k-samtykke">Jeg accepterer, at Karltoffel må kontakte mig om dette tilbud, og at mine oplysninger behandles efter <a href="/p/cookiepolitik">privatlivspolitikken</a>.</label>
+	        </div>
+	        <div class="err" id="k-err">Udfyld navn og e-mail, så vi kan vende tilbage.</div>
+	        <div class="k-knapper">
+	          <button class="btn btn-ja" id="btn-send">Send og bliv kontaktet</button>
+	          <button class="btn btn-nej" id="btn-tilbage">Tilbage</button>
+	        </div>
+	        <p class="k-fineprint">Ingen betaling nu. Ingen binding, før du siger ja på telefonen.</p>
+	      </div>
+	      <aside class="k-kort" aria-label="Opsummering af dit tilbud">
+	        <div class="k-kort-adr">
+	          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 21s-7-6.1-7-11a7 7 0 1 1 14 0c0 4.9-7 11-7 11Z" stroke="#FFF87B" stroke-width="2"/><circle cx="12" cy="10" r="2.6" fill="#FFF87B"/></svg>
+	          <span id="k-kort-adresse"></span>
+	        </div>
+	        <div class="k-linjer" id="k-kort-linjer"></div>
+	        <div class="k-pris"><b id="k-kort-pris">0 kr/md</b><small id="k-kort-prisnote"></small></div>
+	        <div class="k-trin">
+	          <div><i>1</i> Vi ringer inden for 24 timer</div>
+	          <div><i>2</i> Vi bekræfter dine mål på stedet</div>
+	          <div><i>3</i> Du siger ja eller nej, ingen binding</div>
+	        </div>
+	        <p class="k-kort-fine">Prisen holder, hvis målene passer. Intet koster noget før du bekræfter.</p>
+	      </aside>
 	    </div>
 	  </section>
 
