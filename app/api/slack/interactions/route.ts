@@ -248,11 +248,21 @@ async function sendQuote(
       ? `mailto:${company.email}?subject=${encodeURIComponent(`Jeg accepterer tilbuddet — ${lead.name}`)}`
       : undefined;
 
+  // Rabatlinjerne SKAL med, når totalen er lavere end summen af linjerne — ellers
+  // kan kunden lægge linjepriserne sammen og få et andet tal end totalen.
+  // Rækkefølgen matcher beregningen: mængderabat først, rabatkode oven på.
+  const kodePct = payload.rabatOk && payload.rabatPct ? payload.rabatPct : 0;
+  const rabatter = [
+    ...(r.rabatPct ? [{ label: `Mængderabat (−${r.rabatPct} %)`, beloeb: r.rabatKr }] : []),
+    ...(kodePct ? [{ label: `Rabatkode ${payload.rabatkode ?? ""} (−${kodePct} %)`.trim(), beloeb: r.aar - aarNet }] : []),
+  ];
+
   const input = {
     fornavn: lead.name.trim().split(/\s+/)[0] || lead.name,
     adresse: lead.address || "din adresse",
     services: payload.services,
     total: aarNet,
+    rabatter,
     gyldigTil,
     acceptUrl,
     firma: { navn: company.name, telefon: company.phone, email: company.email },

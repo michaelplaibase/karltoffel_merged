@@ -42,6 +42,11 @@ export type QuoteHtmlInput = {
   /** Totalen der skal stå på tilbuddet, i kr inkl. moms. Sendes ind færdig-
    *  beregnet, så mailen aldrig regner sin egen pris ud — ét sted at regne. */
   total: number;
+  /** Rabatlinjer mellem sum og total. SKAL med når total < summen af linjerne:
+   *  ellers kan kunden lægge linjepriserne sammen og få et andet tal end
+   *  totalen, og et tilbud der ikke kan regnes efter, er et tilbud der bliver
+   *  ringet ind om. `beloeb` er positivt og vises som fradrag. */
+  rabatter?: { label: string; beloeb: number }[];
   gyldigTil: string;
   pakkeNavn?: string;
   acceptUrl?: string;
@@ -75,11 +80,30 @@ export function renderQuoteHtml(i: QuoteHtmlInput): string {
   const pakkeNavn = i.pakkeNavn ?? "Villapakken";
   const moms = i.momsInfo ?? "Alle priser er inkl. moms.";
 
+  // Delsum + rabatlinjer, så regnestykket kan følges fra linjer til total.
+  // Vises kun når der FAKTISK er en rabat — ellers er delsum og total ens, og en
+  // ekstra række ville blot støje.
+  const rabatter = (i.rabatter ?? []).filter((r) => r.beloeb > 0);
+  const delsum = i.services.reduce((a, s) => a + linjeAar(s), 0);
+  const rabatRaekker = rabatter.length
+    ? [
+        `<tr>
+<td style="padding:14px 0 9px;border-bottom:1px solid ${C.kant};color:${C.brun};font-family:${FONT};font-size:14px;font-weight:700;">Sum</td>
+<td align="right" style="padding:14px 0 9px;border-bottom:1px solid ${C.kant};color:${C.brun};font-family:${FONT};font-size:14px;font-weight:700;white-space:nowrap;">${kr(delsum)}</td>
+</tr>`,
+        ...rabatter.map((r) => `<tr>
+<td style="padding:9px 0;border-bottom:1px solid ${C.kant};color:${C.brunLys};font-family:${FONT};font-size:14px;font-weight:700;">${esc(r.label)}</td>
+<td align="right" style="padding:9px 0;border-bottom:1px solid ${C.kant};color:${C.brunLys};font-family:${FONT};font-size:14px;font-weight:700;white-space:nowrap;">− ${kr(r.beloeb)}</td>
+</tr>`),
+      ].join("")
+    : "";
+
   const raekker = [
     pakke.length ? sektionsTitel(`Pakke: ${pakkeNavn}`, true) : "",
     ...pakke.map((s, n) => linje(n + 1, s)),
     ekstra.length ? sektionsTitel("Ekstra ydelser til ekstra heldige karltofler", pakke.length === 0) : "",
     ...ekstra.map((s, n) => linje(n + 1, s)),
+    rabatRaekker,
   ].join("");
 
   // Brødteksten må kun henvise til knappen, hvis knappen faktisk er der. Uden
@@ -180,6 +204,9 @@ export function renderQuoteText(i: QuoteHtmlInput): string {
       return `${n + 1}. ${s.navn}${maengde} – ${beloeb}`;
     });
 
+  const rabatter = (i.rabatter ?? []).filter((r) => r.beloeb > 0);
+  const delsum = i.services.reduce((a, s) => a + linjeAar(s), 0);
+
   return [
     `Hej ${i.fornavn}`,
     ``,
@@ -188,6 +215,9 @@ export function renderQuoteText(i: QuoteHtmlInput): string {
     ``,
     ...(pakke.length ? [`Pakke: ${i.pakkeNavn ?? "Villapakken"}`, ...linjer(pakke), ``] : []),
     ...(ekstra.length ? [`Ekstra ydelser:`, ...linjer(ekstra), ``] : []),
+    ...(rabatter.length
+      ? [`Sum: ${kr(delsum)}`, ...rabatter.map((r) => `${r.label}: − ${kr(r.beloeb)}`)]
+      : []),
     `Total: ${kr(i.total)}`,
     i.momsInfo ?? "Alle priser er inkl. moms.",
     ``,
