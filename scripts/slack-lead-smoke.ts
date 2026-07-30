@@ -142,6 +142,38 @@ const tekst = renderQuoteText(mailInput);
 ok("tekstudgaven har total", tekst.includes("2.300 kr"));
 ok("tekstudgaven har begge sektioner", tekst.includes("Villapakken") && tekst.includes("Ekstra ydelser"));
 
+// Regnestykket skal kunne følges: linjer -> sum -> rabatter -> total. Ellers
+// lægger kunden linjepriserne sammen og faar et andet tal end totalen.
+// Fixturen udledes af prismotoren — ikke af opdigtede tal — så testen faktisk
+// beviser at det regnestykke kunden ser, går op.
+const rDesign = beregn(designServices);
+const kodePctDesign = 10;
+const nettoDesign = medRabatkode(rDesign, kodePctDesign).aarNet;
+const rabatterDesign = [
+  { label: `Mængderabat (−${rDesign.rabatPct} %)`, beloeb: rDesign.rabatKr },
+  { label: `Rabatkode SOMMER (−${kodePctDesign} %)`, beloeb: rDesign.aar - nettoDesign },
+];
+const medRabat = { ...mailInput, total: nettoDesign, rabatter: rabatterDesign };
+const htmlRabat = renderQuoteHtml(medRabat);
+ok("rabat: sum-række vises", htmlRabat.includes(">Sum<"));
+ok("rabat: begge rabatlinjer vises",
+  htmlRabat.includes(`Mængderabat (−${rDesign.rabatPct} %)`) && htmlRabat.includes("Rabatkode SOMMER (−10 %)"));
+ok("rabat: fradrag vises med minus", htmlRabat.includes(`− ${kr(rDesign.rabatKr)}`));
+const sumLinjer = designServices.reduce((a, s) => a + (s.pris == null ? 0 : s.pris * s.qty * s.freq), 0);
+ok("rabat: sum matcher linjernes faktiske sum", htmlRabat.includes(kr(sumLinjer)), kr(sumLinjer));
+ok("rabat: delsum er den samme som motorens brutto", Math.abs(sumLinjer - rDesign.aarBrutto) < 1e-9);
+ok("rabat: regnestykket går op (sum − rabatter = total)",
+  Math.abs(sumLinjer - rabatterDesign.reduce((a, x) => a + x.beloeb, 0) - nettoDesign) < 1e-9,
+  `${sumLinjer} − ${rabatterDesign.reduce((a, x) => a + x.beloeb, 0)} != ${nettoDesign}`);
+ok("rabat: også de AFRUNDEDE tal på mailen går op (det kunden lægger sammen)",
+  Math.round(sumLinjer) - Math.round(rabatterDesign[0].beloeb) - Math.round(rabatterDesign[1].beloeb) === Math.round(nettoDesign),
+  `${Math.round(sumLinjer)} − ${Math.round(rabatterDesign[0].beloeb)} − ${Math.round(rabatterDesign[1].beloeb)} != ${Math.round(nettoDesign)}`);
+ok("rabat: tekstudgaven har sum og fradrag",
+  renderQuoteText(medRabat).includes("Sum:") && renderQuoteText(medRabat).includes(`− ${kr(rDesign.rabatKr)}`));
+ok("uden rabatter vises INGEN sum-række (delsum = total)", !html.includes(">Sum<"));
+ok("nul-rabat filtreres væk",
+  !renderQuoteHtml({ ...mailInput, rabatter: [{ label: "Ingenting", beloeb: 0 }] }).includes(">Sum<"));
+
 const udenAccept = renderQuoteHtml({ ...mailInput, acceptUrl: undefined });
 ok("uden acceptUrl er der ingen knap", !udenAccept.includes("<a href="));
 ok("uden acceptUrl henviser teksten IKKE til en knap",
