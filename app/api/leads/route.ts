@@ -4,6 +4,9 @@ import { underLimit, recordHit } from "@/lib/rate-limit";
 import { bookCallEvent } from "@/lib/gcal";
 import { sendEmail } from "@/lib/email";
 import { isWithinWeekendWindow, buildWeekendAutoReply } from "@/lib/weekend-autoreply";
+import { postMessage } from "@/lib/slack";
+import { buildLeadBlocks, leadFallbackText } from "@/lib/slack-lead";
+import { parseLeadPayload } from "@/lib/tilbudsmotor-pricing";
 import type { NextRequest } from "next/server";
 
 // Inbound lead webhook for the public website form. No session cookie —
@@ -75,6 +78,32 @@ function parseTmPayload(body: Record<string, unknown>, rabat: Rabat | null): { p
 }
 
 const DKK = new Intl.NumberFormat("da-DK", { maximumFractionDigits: 0 });
+
+/** Ping #leads. Må ALDRIG vælte lead-oprettelsen — samme kontrakt som
+ *  kalender-bookingen og weekend-autosvaret nedenfor: alt i try/catch, fejl
+ *  logges og rapporteres i svaret, men leadet er allerede gemt. */
+async function pingSlack(
+  lead: { id: number; name: string; email: string | null; phone: string | null; address: string | null; message: string | null },
+  payloadJson: string | null,
+  advarsel?: string,
+): Promise<string> {
+  try {
+    const p = parseLeadPayload(payloadJson);
+    const res = await postMessage({
+      text: leadFallbackText(lead, p),
+      blocks: buildLeadBlocks(lead, p, advarsel ? { advarsel } : {}),
+    });
+    if (res.simulated) return "simulated";
+    if (!res.ok) {
+      console.error(`[leads] slack-ping fejlede for lead ${lead.id}: ${res.error}`);
+      return `failed: ${res.error}`;
+    }
+    return "posted";
+  } catch (e) {
+    console.error(`[leads] slack-ping exception for lead ${lead.id}:`, e);
+    return "failed";
+  }
+}
 
 export async function POST(req: NextRequest) {
   const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "local";
@@ -153,7 +182,7 @@ export async function POST(req: NextRequest) {
     orderBy: { createdAt: "desc" },
   });
   if (existing) {
-    await prisma.lead.update({
+    const merged = await prisma.lead.update({
       where: { id: existing.id },
       data: {
         message: message ? [existing.message, message].filter(Boolean).join("\n---\n") : existing.message,
@@ -164,7 +193,10 @@ export async function POST(req: NextRequest) {
       },
     });
     // Ingen ny kalender-booking ved dedup — det åbne lead har allerede sit opkalds-slot.
-    return json({ id: existing.id, deduplicated: true }, 200);
+    // Slack pinges dog alligevel: kunden har rørt tilbudsmotoren igen, og det
+    // nye pakkevalg kan ændre prisen på et lead Kristian allerede har set.
+    const slack = await pingSlack(merged, merged.payload, "Opfølgning på et eksisterende emne — mængder/pakkevalg kan være ændret.");
+    return json({ id: existing.id, deduplicated: true, slack }, 200);
   }
 
   // Pre-link an existing customer so the UI can badge "eksisterende kunde".
@@ -235,5 +267,7 @@ export async function POST(req: NextRequest) {
     console.error(`[leads] weekend-autosvar exception for lead ${lead.id}:`, e);
   }
 
-  return json({ id: lead.id, deduplicated: false, call, autoReply }, 201);
+  const slack = await pingSlack(lead, lead.payload);
+
+  return json({ id: lead.id, deduplicated: false, call, autoReply, slack }, 201);
 }
