@@ -18,7 +18,7 @@ const TM_KATEGORI: Record<string, string> = {
   solcelle: "Vinduespudsning", drivhus: "Vinduespudsning",
   alge: "Algebehandling", algeflis: "Algebehandling",
   tagrender: "Tagrenderens",
-  ukrudt: "Ukrudtsbekæmpelse",
+  ukrudt: "Ukrudtsbekæmpelse", ukrudt_sproejt: "Ukrudtsbekæmpelse", ukrudt_fjern: "Ukrudtsbekæmpelse",
   fliserens: "Overfladerens", husgarage: "Overfladerens",
   haek: "Grøn service", green: "Grøn service", graes: "Grøn service", beskaering: "Grøn service",
   stub: "Grøn service", sammenriv: "Grøn service",

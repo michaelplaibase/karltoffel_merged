@@ -34,7 +34,8 @@ const PRODUCTS = [
   {id:"service",  navn:"Servicering af vinduer og døre", enhed:"",           pris:null,  note:"Indeholdt i pakken",              qty:1,   freq:1,  fmax:2,  on:true,  pakke:true, kat:"pakke", wm:"Service af vinduer og døre"},
 
   /* ---- Tilvalg: "Vi tilbyder også" (off som standard, gruppe = kat) ---- */
-  {id:"ukrudt",    navn:"Ukrudtsbekæmpelse på belægning",         enhed:"m² fliser", pris:1.50,   note:"Vi holder fugerne rene",  qty:60,  freq:1,  fmax:8,  on:false, pakke:false, kat:"groen",   wm:"Ukrudt bekæmpelse på belægningsarealer"},
+  {id:"ukrudt_sproejt", navn:"Sprøjtning af ukrudt mellem belægning", enhed:"m² fliser", pris:1.50, note:"Vi holder fugerne rene", qty:60, freq:5, fmax:8, on:false, pakke:false, kat:"groen", wm:"Ukrudt bekæmpelse på belægningsarealer"},
+  {id:"ukrudt_fjern", navn:"Fjernelse af ukrudt mellem belægning", enhed:"", pris:null, note:"Pris ved besøg", qty:1, freq:5, fmax:8, on:false, pakke:false, kat:"groen", wm:null},
   {id:"graes",     navn:"Græsslåning",                            enhed:"m² plæne",  pris:1.60,   note:"Klip i sæsonen",          qty:450, freq:1,  fmax:26, on:false, pakke:false, kat:"groen",   wm:"Græsslåning"},
   {id:"beskaering",navn:"Beskæring af buske, træer og planter",   enhed:"træer",     pris:500.00, note:"Små træer/frugttræer — større træer efter besøg", qty:3, freq:1, fmax:2, on:false, pakke:false, kat:"groen", prisEnh:"træ", wm:"Beskæring Små træer / Frugttræer"},
   {id:"stub",      navn:"Stubfræsning",                           enhed:"",          pris:null,   note:"Pris ved besøg",          qty:1,   freq:1,  fmax:1,  on:false, pakke:false, kat:"groen",   wm:null},
