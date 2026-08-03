@@ -56,11 +56,19 @@ function quote(s: string): string {
   return s.split("\n").map((l) => "> " + l).join("\n");
 }
 
+/** Kundens egen tekst (navn, adresse, besked) gaar ind i en Slack-kodeblok.
+ *  Skriver kunden selv tre backticks, ville de lukke blokken og resten af
+ *  teksten blive tolket som mrkdwn, saa den kunne forfalske knapper eller
+ *  efterligne systemtekst. Backticks neutraliseres derfor. */
+function sikkerBlok(s: string): string {
+  return s.replace(/`/g, "'");
+}
+
 function draftBlocks(ctx: LeadContext, reply: { id: number; version: number; subject: string; body: string }): unknown[] {
   const mention = approverMention();
   return [
     { type: "header", text: { type: "plain_text", text: `Nyt lead: ${ctx.name}`.slice(0, 150) } },
-    { type: "section", text: { type: "mrkdwn", text: "```" + leadSummary(ctx) + "```" } },
+    { type: "section", text: { type: "mrkdwn", text: "```" + sikkerBlok(leadSummary(ctx)) + "```" } },
     { type: "divider" },
     {
       type: "section",
@@ -117,16 +125,41 @@ export async function postLeadForApproval(leadId: number): Promise<{ ok: boolean
   }
 }
 
-/** Godkendt: send mailen til kunden og laas beskeden. */
+/** Frigiv en reservation igen, saa knappen kan proeves paa ny. */
+async function frigiv(replyId: number): Promise<void> {
+  await prisma.leadReply.updateMany({ where: { id: replyId, status: "sending" }, data: { status: "draft" } });
+}
+
+/** Godkendt: send mailen til kunden og laas beskeden.
+ *
+ *  Reserverer raekken ATOMISK foer der sendes noget. Uden det kunne to samtidige
+ *  kald (et dobbeltklik, eller Slack der proever igen fordi svaret var for
+ *  langsomt) begge passere et status-tjek og sende den samme mail til kunden to
+ *  gange. updateMany med status i where er betingelsen og skrivningen i ét
+ *  atomisk trin: praecis én kalder faar count === 1, resten bliver afvist. */
 export async function approveReply(replyId: number, slackUser: string): Promise<{ ok: boolean; error?: string }> {
+  const claim = await prisma.leadReply.updateMany({
+    where: { id: replyId, status: "draft" },
+    data: { status: "sending", approvedBy: slackUser },
+  });
+  if (claim.count !== 1) return { ok: false, error: "udkastet er allerede behandlet" };
+
   const reply = await prisma.leadReply.findUnique({ where: { id: replyId }, include: { lead: true } });
   if (!reply) return { ok: false, error: "udkastet findes ikke" };
-  if (reply.status !== "draft") return { ok: false, error: `udkastet er allerede ${reply.status}` };
-  if (!reply.lead.email) return { ok: false, error: "leadet har ingen e-mail, ring i stedet" };
+  if (!reply.lead.email) {
+    await frigiv(replyId);
+    return { ok: false, error: "leadet har ingen e-mail, ring i stedet" };
+  }
 
   const sent = await sendEmail({ to: reply.lead.email, subject: reply.subject, text: reply.body });
-  if (!sent.ok) return { ok: false, error: sent.error || "afsendelse fejlede" };
+  if (!sent.ok) {
+    await frigiv(replyId);
+    return { ok: false, error: sent.error || "afsendelse fejlede" };
+  }
 
+  // Mailen ER ude nu. Fejler skrivningen her, bliver raekken staaende som
+  // "sending", hvilket er den sikre ende at fejle i: knappen re-armes ikke, saa
+  // kunden kan ikke faa mailen to gange. Det kraever i stedet et manuelt kig.
   await prisma.$transaction([
     prisma.leadReply.update({
       where: { id: replyId },
@@ -149,29 +182,47 @@ export async function approveReply(replyId: number, slackUser: string): Promise<
 
 /** Afvist med feedback: skriv en ny version og laeg den op til godkendelse igen. */
 export async function reviseReply(replyId: number, feedback: string, slackUser: string): Promise<{ ok: boolean; error?: string }> {
+  // Samme atomiske reservation som ved godkendelse: to samtidige modal-
+  // indsendelser maa ikke give to sideloebende v2-udkast, som begge kunne
+  // godkendes og dermed sende to mails.
+  const claim = await prisma.leadReply.updateMany({
+    where: { id: replyId, status: "draft" },
+    data: { status: "replaced", feedback },
+  });
+  if (claim.count !== 1) return { ok: false, error: "udkastet er allerede behandlet" };
+
   const reply = await prisma.leadReply.findUnique({ where: { id: replyId }, include: { lead: true } });
   if (!reply) return { ok: false, error: "udkastet findes ikke" };
-  if (reply.status !== "draft") return { ok: false, error: `udkastet er allerede ${reply.status}` };
 
   const ctx = leadContextFrom(reply.lead);
   const draft = await draftReply(ctx, { subject: reply.subject, body: reply.body, feedback });
 
-  const next = await prisma.$transaction(async (tx) => {
-    await tx.leadReply.update({ where: { id: replyId }, data: { status: "replaced", feedback } });
-    return tx.leadReply.create({
-      data: {
-        leadId: reply.leadId, version: reply.version + 1, subject: draft.subject, body: draft.body,
-        status: "draft", model: draft.model,
-        slackChannel: reply.slackChannel, slackTs: reply.slackTs,
-      },
-    });
+  const next = await prisma.leadReply.create({
+    data: {
+      leadId: reply.leadId, version: reply.version + 1, subject: draft.subject, body: draft.body,
+      status: "draft", model: draft.model,
+      slackChannel: reply.slackChannel, slackTs: reply.slackTs,
+    },
   });
 
   if (reply.slackChannel && reply.slackTs) {
-    await updateMessage(reply.slackChannel, reply.slackTs, `Nyt udkast v${next.version}: ${ctx.name}`, [
+    const blocks = [
       ...draftBlocks(ctx, next),
       { type: "context", elements: [{ type: "mrkdwn", text: `v${reply.version} afvist af <@${slackUser}>: _${feedback.slice(0, 300)}_` }] },
-    ]);
+    ];
+    const opdateret = await updateMessage(reply.slackChannel, reply.slackTs, `Nyt udkast v${next.version}: ${ctx.name}`, blocks);
+    // Fejler opdateringen, staar den gamle besked tilbage med knapper der peger
+    // paa et udkast der nu er afloest, og floejet ville laase. Slaa i stedet det
+    // nye udkast op som en frisk besked, saa der altid er noget at godkende.
+    if (!opdateret.ok) {
+      const nyBesked = await postMessage(`Nyt udkast v${next.version}: ${ctx.name}`, blocks);
+      if (nyBesked.ts) {
+        await prisma.leadReply.update({
+          where: { id: next.id },
+          data: { slackTs: nyBesked.ts, slackChannel: nyBesked.channel ?? leadsChannel() },
+        });
+      }
+    }
   }
   return { ok: true };
 }
