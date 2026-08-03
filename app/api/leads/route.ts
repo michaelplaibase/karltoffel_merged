@@ -2,8 +2,7 @@ import { prisma } from "@/lib/db";
 import { unauthorized } from "@/lib/api-auth";
 import { underLimit, recordHit } from "@/lib/rate-limit";
 import { bookCallEvent } from "@/lib/gcal";
-import { sendEmail } from "@/lib/email";
-import { isWithinWeekendWindow, buildWeekendAutoReply } from "@/lib/weekend-autoreply";
+import { postLeadForApproval, leadSlackEnabled } from "@/lib/lead-slack";
 import type { NextRequest } from "next/server";
 
 // Inbound lead webhook for the public website form. No session cookie —
@@ -222,27 +221,24 @@ export async function POST(req: NextRequest) {
     console.error(`[leads] kalender-booking exception for lead ${lead.id}:`, e);
   }
 
-  // Godkendt weekend-autosvar: kun for HELT NYE leads (aldrig ved dedup-merge
-  // ovenfor, som returnerer tidligt), kun hvis leadet har en e-mail, og kun
-  // inden for weekend-vinduet (fre 16:00 → man 08:00, Europe/Copenhagen). Må
-  // ALDRIG vælte eller forsinke lead-oprettelsen: alt i try/catch, fejl logges
-  // og rapporteres i svaret. Sendes AS firmaet (EMAIL_FROM), ikke en handyman.
-  let autoReply: "sent" | "skipped" | "outside-window" | "no-email" | "failed" = "skipped";
-  try {
-    if (!email) {
-      autoReply = "no-email";
-    } else if (!isWithinWeekendWindow(new Date())) {
-      autoReply = "outside-window";
-    } else {
-      const { subject, text } = buildWeekendAutoReply(name);
-      const sent = await sendEmail({ to: email, subject, text });
-      autoReply = sent.ok ? "sent" : "failed";
-      if (!sent.ok) console.error(`[leads] weekend-autosvar fejlede for lead ${lead.id}: ${sent.error}`);
+  // Svaret til kunden skrives af AI og godkendes af et menneske i Slack, aldrig
+  // automatisk (se lib/lead-slack.ts). Der findes derfor INTET autosvar mere,
+  // heller ikke i weekenden: vi svarer alle dage, men altid efter godkendelse.
+  //
+  // Slaaet fra som standard (LEAD_SLACK_ENABLED). Saa laenge et andet system
+  // haandterer Slack-floejet, ville det her give dobbelte beskeder og risiko for
+  // to mails til kunden. Maa ALDRIG vaelte lead-oprettelsen: leadet er gemt.
+  let approval: "posted" | "disabled" | "failed" = "disabled";
+  if (leadSlackEnabled()) {
+    try {
+      const res = await postLeadForApproval(lead.id);
+      approval = res.ok ? "posted" : "failed";
+      if (!res.ok) console.error(`[leads] Slack-godkendelse fejlede for lead ${lead.id}: ${res.error}`);
+    } catch (e) {
+      approval = "failed";
+      console.error(`[leads] Slack-godkendelse exception for lead ${lead.id}:`, e);
     }
-  } catch (e) {
-    autoReply = "failed";
-    console.error(`[leads] weekend-autosvar exception for lead ${lead.id}:`, e);
   }
 
-  return json({ id: lead.id, deduplicated: false, call, autoReply }, 201);
+  return json({ id: lead.id, deduplicated: false, call, approval }, 201);
 }

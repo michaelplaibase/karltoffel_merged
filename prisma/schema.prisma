@@ -271,12 +271,41 @@ model Lead {
   ip        String?                       // submitter IP for abuse forensics
   contact   Contact? @relation(fields: [contactId], references: [id])
   contactId Int?                          // set when converted to a customer
+  replies   LeadReply[]
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@index([companyId, status])
   @@index([email])
   @@index([phone])
+}
+
+// AI-skrevet svarudkast til et lead, godkendt af et menneske i Slack foer det
+// sendes. Hver runde feedback giver en NY raekke (version 2, 3, ...) i stedet
+// for at overskrive, saa hele forloebet kan laeses bagefter: hvad AI'en foreslog,
+// hvad Kristian sagde imod, og hvad der endte med at blive sendt.
+//
+// status: draft   = afventer godkendelse i Slack
+//         sent    = godkendt og afsendt til kunden
+//         replaced = en nyere version afloeste dette udkast efter feedback
+//         rejected = forkastet uden at blive sendt
+model LeadReply {
+  id           Int      @id @default(autoincrement())
+  lead         Lead     @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  leadId       Int
+  version      Int      @default(1)
+  subject      String
+  body         String
+  status       String   @default("draft")
+  feedback     String?  // Kristians kommentar der udloeste NAESTE version
+  model        String?  // hvilken model der skrev udkastet (sporbarhed)
+  slackChannel String?  // hvor beskeden blev slaaet op
+  slackTs      String?  // besked-timestamp, saa den kan opdateres paa plads
+  approvedBy   String?  // Slack-bruger der trykkede godkend
+  sentAt       DateTime?
+  createdAt    DateTime @default(now())
+
+  @@index([leadId])
 }
 
 // Medarbejder-tidsregistrering ("Check ind / Check ud" — til/fra arbejde).
