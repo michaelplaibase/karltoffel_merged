@@ -525,6 +525,10 @@ $("btn-send").addEventListener("click", ()=>{
   })
   .then(res => { if(!res.ok) throw new Error("HTTP " + res.status); return res.json().catch(()=>({})); })   /* 2xx med u-parsbar body: leadet ER oprettet — vis tak-siden */
   .then((data)=>{
+    /* Leadet er oprettet — send konverteringen til GTM først, så den ikke kan
+       gå tabt hvis noget i tak-siden nedenfor fejler. */
+    pushLeadEvent(valgt, r, aarNet, kodePct);
+
     /* CRM'et returnerer call:"booked 2026-07-06T15:15:00" når opkalds-slottet
        er lagt i kalenderen — vis det konkrete tidspunkt til kunden. */
     const ring = $("tak-ring");
@@ -565,6 +569,59 @@ $("btn-send").addEventListener("click", ()=>{
 });
 
 function sendFejl(t){ const e = $("k-err"); e.textContent = t; e.classList.add("show"); }
+
+/* ============ Konvertering til Google Tag Manager ============ */
+/* Skubber GA4-eventet `generate_lead` i dataLayer — kun når CRM'et har
+   bekræftet leadet, så mislykkede forsøg ikke tælles som konverteringer.
+
+   INGEN PERSONDATA: navn, e-mail, telefon, adresse og fritekst holdes bevidst
+   ude af dataLayer, så GTM/GA4 aldrig får PII. Kun beløb, antal og hvilke
+   services der er valgt.
+
+   `value` er den estimerede ÅRLIGE omsætning netto — efter mængderabat og
+   rabatkode. Måned/år/brutto ligger med som separate felter, så GTM selv kan
+   vælge hvad der skal bruges som konverteringsværdi.
+
+   `items` følger GA4's semantik: `price` = enhedspris, `quantity` = antal
+   enheder (glas, m², træer) — altså værdien pr. besøg. GA4 kender ikke
+   besøgsfrekvensen, så den årlige linjeværdi ligger eksplicit i
+   `item_revenue_yearly`. Uprisede linjer ("indeholdt" / "pris ved besøg")
+   sendes med pris 0, men tæller i `lead_services_count`. */
+function pushLeadEvent(valgt, r, aarNet, kodePct){
+  const dl = (window.dataLayer = window.dataLayer || []);
+  const ev = {
+    event: "generate_lead",
+    currency: "DKK",
+    value: Math.round(aarNet),
+    lead_source: "tilbudsmotor",
+    lead_kundetype: state.kundetype || "ukendt",
+    lead_services_count: r.count,
+    lead_visits_per_year: r.visits,
+    lead_value_monthly: Math.round(aarNet / 12),
+    lead_value_yearly: Math.round(aarNet),
+    lead_value_yearly_gross: Math.round(r.aarBrutto),
+    lead_volume_discount_pct: r.rabatPct,
+    lead_coupon_discount_pct: kodePct,
+    items: valgt.map(function(p, i){
+      const enhedspris = p.pris == null ? 0 : p.pris;
+      return {
+        item_id: p.id,
+        item_name: p.navn,
+        item_category: p.kat,
+        item_list_name: p.pakke ? "Villapakken" : "Tilvalg",
+        index: i,
+        price: enhedspris,
+        quantity: p.qty,
+        frequency_per_year: p.freq,
+        item_revenue_yearly: Math.round(enhedspris * p.qty * p.freq)
+      };
+    })
+  };
+  /* Kun med når koden faktisk er valideret server-side. */
+  if(state.rabatkode.valid) ev.coupon = state.rabatkode.code;
+  /* Måling må aldrig vælte tak-siden. */
+  try { dl.push(ev); } catch(e){}
+}
 
 /* "booked 2026-07-06T15:15:00" → "Vi ringer til dig i dag ca. kl. 15:15."
    Slottet er dansk vægur-tid; kunderne sidder i praksis i samme tidszone. */

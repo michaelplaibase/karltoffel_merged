@@ -171,6 +171,43 @@ Caching-tip: `assets/`-mappen kan caches aggressivt (immutable), mens
 
 ---
 
+## Konvertering: `generate_lead` i dataLayer
+
+Tilbudsmotoren skubber GA4-eventet `generate_lead` i `dataLayer`, **først når
+CRM'et har bekræftet leadet** — mislykkede forsøg tælles ikke som konverteringer.
+Koden ligger i `pushLeadEvent()` i `assets/js/tilbudsmotor.js`.
+
+> **Ingen persondata.** Navn, e-mail, telefon, adresse og fritekst holdes
+> bevidst ude af `dataLayer` og sendes kun til CRM'et via `/api/lead`. GTM og
+> GA4 får aldrig PII fra motoren.
+
+| Felt | Betydning |
+|------|-----------|
+| `currency` | Altid `"DKK"` |
+| `value` | Estimeret **årlig** omsætning netto — efter mængderabat *og* rabatkode |
+| `lead_source` | Altid `"tilbudsmotor"` |
+| `lead_kundetype` | `"privat"` \| `"erhverv"` \| `"ukendt"` |
+| `lead_services_count` | Antal valgte services (uprisede "indeholdt"-linjer tæller med) |
+| `lead_visits_per_year` | Besøg om året (højeste frekvens — ydelser bundtes på samme besøg) |
+| `lead_value_monthly` / `lead_value_yearly` | Samme netto-beløb pr. md / pr. år |
+| `lead_value_yearly_gross` | Årssum **før** rabatter |
+| `lead_volume_discount_pct` | Mængderabat (3 % pr. service, loft 15 %) |
+| `lead_coupon_discount_pct` | Rabatkodens procent (0 uden gyldig kode) |
+| `coupon` | Rabatkoden — **kun med** når den er valideret server-side |
+| `items[]` | En linje pr. valgt service |
+
+`items[]` følger GA4's semantik: `price` er **enhedsprisen** og `quantity` er
+antal enheder (glas, m², træer) — altså værdien *pr. besøg*. GA4 kender ikke
+besøgsfrekvensen, så den ligger i `frequency_per_year`, og den årlige linjeværdi
+i `item_revenue_yearly`. `item_list_name` er `"Villapakken"` eller `"Tilvalg"`.
+Uprisede linjer sendes med `price: 0`.
+
+Motoren findes på `/`, `/p/forside/` og `/p/erhverv/` — alle tre indlæser samme
+`assets/js/tilbudsmotor.js`, så eventet er ens på alle tre. Husk at hæve
+`?v=`-nummeret på script-tagget i **alle tre** sider, når filen ændres.
+
+---
+
 ## Verificeret
 
 Hele kopien er kørt lokalt og kontrolleret — **alle 23 sider**:
