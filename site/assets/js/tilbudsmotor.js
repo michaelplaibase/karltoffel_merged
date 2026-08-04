@@ -105,6 +105,7 @@ function animateNumber(el, from, to, fmt){
 const state = {
   adresse: "",
   kundetype: null,   /* "privat" | "erhverv" — vælges på step 2 */
+  betaling: null,    /* "abonnement" | "pr_gang" — vælges på step 4 (løsning) */
   rabatkode: { code:"", percent:0, valid:false },   /* valideret server-side via /api/rabatkode */
   ejendom: { type:"Villa, 1 fam.", grund:"827 m²", opfoert:"2007", haek:"65 m" }
 };
@@ -345,7 +346,7 @@ function gemState(stepId){
     const prod = {};
     PRODUCTS.forEach(p => { prod[p.id] = { on: p.on, qty: p.qty, freq: p.freq, touched: !!p.touched }; });
     sessionStorage.setItem(PERSIST_KEY, JSON.stringify({
-      t: Date.now(), adresse: state.adresse, kundetype: state.kundetype, step: stepId, prod,
+      t: Date.now(), adresse: state.adresse, kundetype: state.kundetype, betaling: state.betaling, step: stepId, prod,
       rabatkode: state.rabatkode
     }));
   } catch(e){ /* private mode / kvote — persistens er best-effort */ }
@@ -389,6 +390,50 @@ ktErhverv.addEventListener("click", ()=> ktKlik("erhverv"));
 ktVidere.addEventListener("click", ()=>{ if(state.kundetype) ktFortsaet(); });
 $("kt-tilbage").addEventListener("click", ()=>{ clearTimeout(ktTimer); visStep("step-adresse"); });
 
+/* ============ BETALING (abonnement/pr. gang) — splittest på step-losning ============ */
+const btAbo = $("bt-abonnement"), btPrGang = $("bt-prgang"), btAboMd = $("bt-abo-md"),
+      btAboMdFuld = $("bt-abo-md-fuld"), btGangPris = $("bt-gang-pris"), lsVidere = $("ls-videre"),
+      btRabatDetail = $("bt-rabat-detail"), btGangSnit = $("bt-gang-snit");
+const HAVE_SAESON_MDR = 7;   /* 1. april – 31. oktober, inklusive begge måneder */
+const BT_ABO_RABAT = 0.10;   /* 10% rabat for at vælge fast abonnement (nudge væk fra pr. gang) */
+function vaelgBetaling(t){
+  state.betaling = t;
+  btAbo.classList.toggle("selected", t === "abonnement");
+  btPrGang.classList.toggle("selected", t === "pr_gang");
+  btAbo.setAttribute("aria-checked", t === "abonnement" ? "true" : "false");
+  btPrGang.setAttribute("aria-checked", t === "pr_gang" ? "true" : "false");
+  lsVidere.disabled = false;
+}
+btAbo.addEventListener("click", ()=> vaelgBetaling("abonnement"));
+btPrGang.addEventListener("click", ()=> vaelgBetaling("pr_gang"));
+
+/* Sæson-månedsprisen for abonnementet: årssummen (efter mængderabat) med
+   yderligere 10% abonnements-rabat, fordelt over KUN de 7 havesæson-måneder —
+   IKKE 12, så tallet der vises er det kunden faktisk betaler pr. opkrævning. */
+function opdaterBetaling(){
+  if(!btAboMd) return;
+  const r = beregn(PRODUCTS);
+  /* r.aar er allerede netto EFTER mængderabat (r.rabatPct) — det er den
+     retfærdige sammenligningsbund: pr.-gang-kunden får også mængderabatten,
+     bare ikke de ekstra 10% for at binde sig til abonnement. */
+  const mdFuldPris = r.aar / HAVE_SAESON_MDR;                 /* = pr.-gang-kundens månedssnit i sæsonen */
+  const mdISaeson = r.aar * (1 - BT_ABO_RABAT) / HAVE_SAESON_MDR;
+  btAboMd.textContent = DKK0.format(Math.round(mdISaeson));
+  if(btAboMdFuld) btAboMdFuld.textContent = mdFuldPris > mdISaeson ? DKK0.format(Math.round(mdFuldPris)) + " kr/md" : "";
+  if(btGangPris) btGangPris.textContent = DKK0.format(Math.round(r.snit));
+  if(btGangSnit) btGangSnit.textContent = r.aar > 0 ? "≈ " + DKK0.format(Math.round(mdFuldPris)) + " kr/md i snit i sæsonen" : "";
+
+  /* Rabat-detaljen på abonnement-kortet: de to rabatter stables synligt i
+     stedet for kun at vise slutprisen — mængderabatten (r.rabatPct, allerede
+     i r.aar) + de ekstra 10% for abonnementet. */
+  if(btRabatDetail){
+    const dele = [];
+    if(r.rabatPct > 0) dele.push(r.rabatPct + "% mængderabat");
+    dele.push(Math.round(BT_ABO_RABAT*100) + "% abonnementsrabat");
+    btRabatDetail.textContent = "10% billigere end pr. gang · " + dele.join(" + ");
+  }
+}
+
 /* ============ VIDERE/TILBAGE-NAVIGATION ============ */
 /* Step 1: "Videre" kræver en adresse. Er der tekst i feltet, men intet valg
    fra listen, bruger vi det indtastede som adresse (API'et kan være nede). */
@@ -400,7 +445,7 @@ $("adr-videre").addEventListener("click", ()=>{
 });
 $("vf-tilbage").addEventListener("click", ()=> visStep("step-kundetype"));
 $("ls-tilbage").addEventListener("click", ()=> visStep("step-verify"));
-$("ls-videre").addEventListener("click", ()=> visStep("step-kontakt"));
+$("ls-videre").addEventListener("click", ()=>{ if(state.betaling) visStep("step-kontakt"); });
 /* "Skift adresse" på løsnings-trinnet: start flowet forfra på adresse-trinnet.
    resetProducts() kører automatisk, når en ny adresse vælges (vaelgAdresse). */
 $("ls-skift").addEventListener("click", ()=>{
@@ -506,6 +551,7 @@ $("btn-send").addEventListener("click", ()=>{
     message: $("k-note").value.trim().slice(0, 2000),   /* server-cap er 2000 — klip lokalt så relayets 9 KB-grænse aldrig rammes */
     address: state.adresse,
     kundetype: state.kundetype,
+    betaling: state.betaling,
     source: "tilbudsmotor",
     services: valgt.map(p=>({ id:p.id, navn:p.navn, wm:p.wm, qty:p.qty, enhed:p.enhed, freq:p.freq, pris:p.pris })),
     estimat: { md: Math.round(r.md), snit: Math.round(r.snit), aar: Math.round(r.aar), aarBrutto: Math.round(r.aarBrutto), rabatPct: r.rabatPct, rabatKr: Math.round(r.rabatKr), visits: r.visits, count: r.count }
@@ -793,6 +839,7 @@ function opdater(){
     }
   });
   opdaterRabat();
+  opdaterBetaling();
   gemState("step-losning");   /* hver frekvens-/til-fravalgs-ændring overlever refresh */
 }
 
@@ -816,6 +863,7 @@ function opdater(){
   state.adresse = s.adresse;
   adrInput.value = s.adresse;
   if(s.kundetype === "privat" || s.kundetype === "erhverv") vaelgKundetype(s.kundetype);
+  if(s.betaling === "abonnement" || s.betaling === "pr_gang") vaelgBetaling(s.betaling);
   if(s.prod) PRODUCTS.forEach(p => {
     const d = s.prod[p.id];
     if(d){ p.on = !!d.on; if(typeof d.qty === "number") p.qty = d.qty; if(typeof d.freq === "number") p.freq = d.freq; p.touched = !!d.touched; }

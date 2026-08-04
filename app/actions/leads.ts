@@ -66,6 +66,49 @@ function subscriptionSpecFromPayload(raw: string | null) {
   return { baseInterval, startWeek, lines };
 }
 
+/** Byg en engangs-ordre-spec fra tilbudsmotorens payload (betaling: "pr_gang").
+ *  Én linje pr. valgt service, prissat pr. besøg (pris × qty — IKKE ganget med
+ *  freq, da det her kun er ÉT besøg, ikke et helt års rytme). */
+function orderSpecFromPayload(raw: string | null) {
+  if (!raw) return null;
+  let payload: { services?: TmService[] };
+  try { payload = JSON.parse(raw) as { services?: TmService[] }; } catch { return null; }
+  const services = (payload.services ?? []).filter((s) => s && typeof s.navn === "string" && s.navn.trim());
+  if (!services.length) return null;
+
+  const nextMondayISO = new Date(new Date(`${weekMondayToday()}T00:00:00Z`).getTime() + 7 * 864e5)
+    .toISOString().slice(0, 10);
+
+  const lines = services.map((s, i) => {
+    const category = TM_KATEGORI[s.id ?? ""] ?? "Andet";
+    const qty = Math.max(0, Math.round(s.qty ?? 0));
+    return {
+      category, letter: (category[0] ?? "A").toUpperCase(), color: categoryColor(category),
+      description: `${s.navn!.trim()}${qty > 0 && s.enhed ? ` — ${qty} ${s.enhed}` : ""}`,
+      price: s.pris != null && Number.isFinite(s.pris) ? Math.max(0, Math.round(s.pris * qty)) : 0,
+      durationMin: 0, sort: i,
+    };
+  });
+  return { plannedAt: new Date(`${nextMondayISO}T10:00:00Z`), lines };
+}
+
+/** Opret en AFVENTENDE engangs-ordre (status "Afventer levering", sourceType
+ *  "manual" — samme kategori som andre håndoprettede ordrer i /orders) fra
+ *  leadets payload, når kunden har valgt "betal pr. gang" i splittesten frem
+ *  for abonnement. */
+async function createPendingOrder(lead: { payload: string | null }, contactId: number, deliveryAddress: string): Promise<boolean> {
+  const spec = orderSpecFromPayload(lead.payload);
+  if (!spec) return false;
+  await prisma.order.create({
+    data: {
+      contactId, deliveryAddress, plannedAt: spec.plannedAt,
+      sourceType: "manual", status: "Afventer levering",
+      tasks: { create: spec.lines },
+    },
+  });
+  return true;
+}
+
 /** Opret et AFVENTENDE abonnement (active=false, pending=true) fra leadets
  *  payload — samme displayNo-retry-mønster som createSubscription. Returnerer
  *  displayNo eller null (intet payload / ingen services). */
@@ -124,6 +167,11 @@ export async function convertLead(id: number): Promise<void> {
 
   const { street, city } = splitAddress(lead.address ?? "");
 
+  // Tilbudsmotorens betalingsvalg (splittest): "pr_gang" → engangs-ordre i
+  // stedet for et abonnement. Læses uanset om leadet allerede har en Contact.
+  let betaling: string | null = null;
+  try { betaling = lead.payload ? (JSON.parse(lead.payload) as { betaling?: string | null }).betaling ?? null : null; } catch { /* korrupt payload ignoreres */ }
+
   let contactId: number;
   if (lead.contactId) {
     contactId = lead.contactId;
@@ -146,12 +194,18 @@ export async function convertLead(id: number): Promise<void> {
     contactId = contact.id;
   }
 
-  // Payload → afventende abonnement (ingen ordrer før godkendelse).
+  // Payload → afventende abonnement, MEDMINDRE kunden har valgt "betal pr.
+  // gang" i splittesten — så bliver det i stedet en engangs-ordre. Ukendt/
+  // manglende betalingsvalg (ældre leads) bevarer den gamle opførsel: abonnement.
   const deliveryAddress = city ? `${street}, ${city}` : street || lead.address || "";
-  if (deliveryAddress) await createPendingSubscription(lead, contactId, deliveryAddress);
+  if (deliveryAddress) {
+    if (betaling === "pr_gang") await createPendingOrder(lead, contactId, deliveryAddress);
+    else await createPendingSubscription(lead, contactId, deliveryAddress);
+  }
 
   revalidatePath("/leads");
   revalidatePath("/customers");
   revalidatePath("/subscriptions");
+  revalidatePath("/orders");
   redirect(`/customers/${contactId}`);
 }

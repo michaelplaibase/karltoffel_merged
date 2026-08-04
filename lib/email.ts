@@ -8,7 +8,10 @@
 // `from`/`senderName` let a caller send under a different identity than the
 // company default (e.g. AS the assigned handyman). `from` must still be a
 // Resend-verified address; `senderName` sets the display name in front of it.
-export type SendEmailInput = { to: string; subject: string; text: string; replyTo?: string; from?: string; senderName?: string };
+// `html` er valgfri. Sættes den, sendes mailen som multipart med BÅDE html og
+// text — `text` er ikke et fallback man kan udelade: klienter uden HTML viser
+// den, og en mail med kun en HTML-del scorer markant værre i spamfiltre.
+export type SendEmailInput = { to: string; subject: string; text: string; html?: string; replyTo?: string; from?: string; senderName?: string };
 export type SendEmailResult = { ok: boolean; simulated?: boolean; id?: string; error?: string; from?: string };
 
 /** Extract the bare address from a "Name <addr>" or plain "addr" from-header. */
@@ -37,7 +40,7 @@ export function senderForUser(u: { username: string; firstName: string; lastName
   return { senderName, replyTo };
 }
 
-export async function sendEmail({ to, subject, text, replyTo, from, senderName }: SendEmailInput): Promise<SendEmailResult> {
+export async function sendEmail({ to, subject, text, html, replyTo, from, senderName }: SendEmailInput): Promise<SendEmailResult> {
   const key = process.env.RESEND_API_KEY;
   const baseFrom = from ?? process.env.EMAIL_FROM;
   const reply = replyTo ?? process.env.EMAIL_REPLY_TO;
@@ -46,7 +49,7 @@ export async function sendEmail({ to, subject, text, replyTo, from, senderName }
   const fromHeader = baseFrom ? (senderName ? `${senderName} <${addrOnly(baseFrom)}>` : baseFrom) : undefined;
 
   if (process.env.EMAIL_DRY_RUN === "1" || !key || !fromHeader) {
-    console.log(`[email:dry-run] from=${fromHeader ?? "(unset)"} to=${to} subject=${JSON.stringify(subject)} (${text.length} tegn)`);
+    console.log(`[email:dry-run] from=${fromHeader ?? "(unset)"} to=${to} subject=${JSON.stringify(subject)} (${text.length} tegn${html ? `, ${html.length} tegn html` : ""})`);
     return { ok: true, simulated: true, from: fromHeader };
   }
 
@@ -54,7 +57,7 @@ export async function sendEmail({ to, subject, text, replyTo, from, senderName }
     const res = await fetch("https://api.resend.com/emails", {
       method: "POST",
       headers: { Authorization: `Bearer ${key}`, "content-type": "application/json" },
-      body: JSON.stringify({ from: fromHeader, to, subject, text, ...(reply ? { reply_to: reply } : {}) }),
+      body: JSON.stringify({ from: fromHeader, to, subject, text, ...(html ? { html } : {}), ...(reply ? { reply_to: reply } : {}) }),
     });
     if (!res.ok) {
       const detail = await res.text().catch(() => "");
