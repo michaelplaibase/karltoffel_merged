@@ -104,27 +104,48 @@
 .tm-flow .ktype-note{display:none;margin-top:18px;font-size:14px;color:var(--gul);opacity:.9}
 
 /* Betalingsvalg (splittest: abonnement vs. pr. gang) — altid side om side
-   (aldrig stablet, heller ikke på mobil), og abonnement-kortet er forudfyldt
-   gult som det anbefalede/nudgede valg — pr. gang forbliver det neutrale
-   bronze-kort, samme stil som kundetype-kortene. */
-#bt-cards.ktype-cards{display:grid;grid-template-columns:1fr 1fr;flex-wrap:nowrap;gap:12px}
-.tm-flow .bt-card{position:relative;min-width:0;padding:18px 14px}
+   (aldrig stablet, heller ikke på mobil). Abonnement-kortet nudges visuelt:
+   gult fra start, ribbon-badge, og en 12-måneders tidslinje der viser
+   præcis hvilke 7 måneder der opkræves i. */
+#bt-cards.ktype-cards{display:grid;grid-template-columns:1fr 1fr;flex-wrap:nowrap;gap:14px;align-items:stretch}
+.tm-flow .bt-card{position:relative;min-width:0;padding:26px 18px 20px;overflow:hidden;display:flex;flex-direction:column;align-items:center;box-shadow:0 10px 26px rgba(0,0,0,.22);transition:transform .15s,box-shadow .15s}
+.tm-flow .bt-card:hover{transform:translateY(-2px);box-shadow:0 14px 32px rgba(0,0,0,.3)}
+.tm-flow .bt-icon{width:34px;height:34px;margin-bottom:10px;color:var(--gul);opacity:.9}
+.tm-flow .bt-title{font-size:17px}
+
+/* Ribbon: diagonalt badge i hjørnet i stedet for en inline-pille */
+.tm-flow .bt-ribbon{position:absolute;top:14px;right:-30px;width:130px;padding:4px 0;background:#2f7d3a;color:#fff;font-size:11px;font-weight:800;letter-spacing:.04em;text-align:center;transform:rotate(38deg);box-shadow:0 2px 6px rgba(0,0,0,.25)}
+
 /* Nudge: abonnement-kortet ER gult fra start (ikke kun ved valg) */
-.tm-flow #bt-abonnement{background:var(--gul);border-color:var(--gul);color:var(--brun)}
-.tm-flow #bt-abonnement .bt-pris{color:var(--brun)}
-.tm-flow #bt-abonnement .bt-badge{background:var(--brun);color:var(--gul)}
-.tm-flow #bt-abonnement .bt-saeson{color:#7a1a1a;background:rgba(220,60,60,.15);border-color:rgba(220,60,60,.5)}
-/* Valgt (klikket): tydelig ring, uanset hvilket kort */
-.tm-flow .bt-card.selected{box-shadow:0 0 0 3px var(--ivory)}
-.tm-flow .bt-badge{display:inline-block;margin-top:6px;padding:2px 8px;font-size:12px;font-weight:700;background:#2f7d3a;color:#fff;border-radius:999px}
-.tm-flow .bt-pris{display:block;margin:8px 0 6px;font-size:26px;font-weight:700;color:var(--gul)}
-.tm-flow .bt-pris small{display:inline;font-size:14px;font-weight:400;opacity:.8;margin:0}
-.tm-flow .bt-saeson{display:block;margin-top:10px;padding:8px 10px;font-size:12.5px;font-weight:600;line-height:1.35;color:#ffb4b4;background:rgba(220,60,60,.12);border:1px solid rgba(220,60,60,.4);border-radius:8px}
+.tm-flow #bt-abonnement{background:linear-gradient(180deg,#fffcae,var(--gul));border-color:var(--gul);color:var(--brun)}
+.tm-flow #bt-abonnement .bt-icon{color:var(--brun)}
+.tm-flow #bt-abonnement .bt-pris-num,.tm-flow #bt-abonnement .bt-pris-num small{color:var(--brun)}
+
+/* Prisblok: stor tydelig kr/md-pris, med den ikke-rabatterede pris streget over */
+.tm-flow .bt-pris{display:flex;flex-direction:column;align-items:center;gap:2px;margin:6px 0 10px}
+.tm-flow .bt-pris-old{font-size:13px;text-decoration:line-through;opacity:.6}
+.tm-flow .bt-pris-num{display:flex;align-items:baseline;gap:5px;font-size:30px;font-weight:800;color:var(--gul);font-variant-numeric:tabular-nums}
+.tm-flow .bt-pris-num small{font-size:13px;font-weight:600;opacity:.75}
+
+/* Sæson-tidslinje: 12 prikker, de 7 aktive (apr–okt) lyser klart op — resten
+   er dæmpede, så "kun i sæsonen" ses på ÉT blik uden at skulle læse teksten. */
+.tm-flow .bt-mdr{display:flex;gap:3px;margin:2px 0 10px}
+.tm-flow .bt-mdr-dot{width:18px;height:18px;border-radius:5px;display:grid;place-items:center;font-size:8px;font-weight:800;background:rgba(76,55,24,.18);color:rgba(76,55,24,.5)}
+.tm-flow .bt-mdr-dot.on{background:var(--brun);color:var(--gul)}
+
+.tm-flow .bt-saeson{display:block;margin-top:auto;padding:8px 10px;font-size:12px;font-weight:600;line-height:1.35;color:#7a1a1a;background:rgba(220,60,60,.16);border:1px solid rgba(220,60,60,.4);border-radius:8px}
+.tm-flow .bt-saeson--neutral{color:var(--bronze);background:rgba(255,248,123,.08);border-color:var(--bronze);font-weight:500;opacity:1}
+
+/* Valgt (klikket): tydelig hvid ring, uanset hvilket kort */
+.tm-flow .bt-card.selected{box-shadow:0 0 0 3px var(--ivory),0 14px 32px rgba(0,0,0,.3)}
+
 @media (max-width:480px){
-  .tm-flow .bt-card{padding:14px 10px}
-  .tm-flow .bt-card b{font-size:15px}
-  .tm-flow .bt-pris{font-size:20px}
-  .tm-flow .bt-saeson{font-size:11px}
+  .tm-flow .bt-card{padding:20px 10px 16px}
+  .tm-flow .bt-title{font-size:14.5px}
+  .tm-flow .bt-pris-num{font-size:22px}
+  .tm-flow .bt-mdr-dot{width:14px;height:14px;font-size:6.5px;border-radius:4px}
+  .tm-flow .bt-saeson{font-size:10.5px}
+  .tm-flow .bt-ribbon{width:110px;font-size:10px;top:12px;right:-26px}
 }
 .tm-flow .ktype-note.show{display:block}
 

@@ -375,15 +375,30 @@ Besøg os på www.bubble.dk eller ring til os på +45 6069 8700
 	    <div class="tm-rabat" id="tm-rabat" hidden></div>
 
 	    <p class="socio"><b>Betaling</b> – hvordan vil du helst betale?</p>
-	    <div class="ktype-cards" role="radiogroup" aria-label="Abonnement eller betaling pr. gang" id="bt-cards">
-	      <button type="button" class="ktype-card bt-card" id="bt-abonnement" role="radio" aria-checked="false">
-	        <b>Fast abonnement <span class="bt-badge">−10%</span></b>
-	        <span class="bt-pris"><b id="bt-abo-md">–</b> <small>kr/md</small></span>
-	        <small class="bt-saeson">⚠️ Du betaler KUN i havesæsonen — 1. april til 31. oktober (7 måneder). Ingen opkrævning resten af året.</small>
+	    <div class="ktype-cards bt-cards" role="radiogroup" aria-label="Abonnement eller betaling pr. gang" id="bt-cards">
+	      <button type="button" class="ktype-card bt-card bt-card--abo" id="bt-abonnement" role="radio" aria-checked="false">
+	        <span class="bt-ribbon">Spar 10%</span>
+	        <svg class="bt-icon" viewBox="0 0 48 48" fill="none" aria-hidden="true"><path d="M24 6c8 6 14 14 14 22a14 14 0 1 1-28 0c0-8 6-16 14-22Z" stroke="currentColor" stroke-width="3" stroke-linejoin="round"/><path d="M24 20v18" stroke="currentColor" stroke-width="3" stroke-linecap="round"/></svg>
+	        <b class="bt-title">Fast abonnement</b>
+	        <span class="bt-pris">
+	          <span class="bt-pris-old" id="bt-abo-md-fuld"></span>
+	          <span class="bt-pris-num"><b id="bt-abo-md">–</b><small>kr/md</small></span>
+	        </span>
+	        <div class="bt-mdr" aria-hidden="true">
+	          <span class="bt-mdr-dot" data-m="Jan">J</span><span class="bt-mdr-dot" data-m="Feb">F</span>
+	          <span class="bt-mdr-dot on" data-m="Mar">M</span><span class="bt-mdr-dot on" data-m="Apr">A</span>
+	          <span class="bt-mdr-dot on" data-m="Maj">M</span><span class="bt-mdr-dot on" data-m="Jun">J</span>
+	          <span class="bt-mdr-dot on" data-m="Jul">J</span><span class="bt-mdr-dot on" data-m="Aug">A</span>
+	          <span class="bt-mdr-dot on" data-m="Sep">S</span><span class="bt-mdr-dot" data-m="Okt">O</span>
+	          <span class="bt-mdr-dot" data-m="Nov">N</span><span class="bt-mdr-dot" data-m="Dec">D</span>
+	        </div>
+	        <small class="bt-saeson">Du betaler KUN i havesæsonen — 1. april til 31. oktober. Nul opkrævning resten af året.</small>
 	      </button>
-	      <button type="button" class="ktype-card bt-card" id="bt-prgang" role="radio" aria-checked="false">
-	        <b>Betal pr. gang</b>
-	        <small>Du betaler kun, når vi har været forbi</small>
+	      <button type="button" class="ktype-card bt-card bt-card--engang" id="bt-prgang" role="radio" aria-checked="false">
+	        <svg class="bt-icon" viewBox="0 0 48 48" fill="none" aria-hidden="true"><rect x="8" y="14" width="32" height="26" rx="3" stroke="currentColor" stroke-width="3"/><path d="M8 21h32" stroke="currentColor" stroke-width="3"/><path d="M16 8v10M32 8v10" stroke="currentColor" stroke-width="3" stroke-linecap="round"/></svg>
+	        <b class="bt-title">Betal pr. gang</b>
+	        <span class="bt-pris"><span class="bt-pris-num"><b id="bt-gang-pris">–</b><small>kr/besøg</small></span></span>
+	        <small class="bt-saeson bt-saeson--neutral">Ingen binding — du betaler først, når vi rent faktisk har været forbi.</small>
 	      </button>
 	    </div>
 

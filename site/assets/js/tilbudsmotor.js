@@ -391,7 +391,8 @@ ktVidere.addEventListener("click", ()=>{ if(state.kundetype) ktFortsaet(); });
 $("kt-tilbage").addEventListener("click", ()=>{ clearTimeout(ktTimer); visStep("step-adresse"); });
 
 /* ============ BETALING (abonnement/pr. gang) — splittest på step-losning ============ */
-const btAbo = $("bt-abonnement"), btPrGang = $("bt-prgang"), btAboMd = $("bt-abo-md"), lsVidere = $("ls-videre");
+const btAbo = $("bt-abonnement"), btPrGang = $("bt-prgang"), btAboMd = $("bt-abo-md"),
+      btAboMdFuld = $("bt-abo-md-fuld"), btGangPris = $("bt-gang-pris"), lsVidere = $("ls-videre");
 const HAVE_SAESON_MDR = 7;   /* 1. april – 31. oktober, inklusive begge måneder */
 const BT_ABO_RABAT = 0.10;   /* 10% rabat for at vælge fast abonnement (nudge væk fra pr. gang) */
 function vaelgBetaling(t){
@@ -411,9 +412,11 @@ btPrGang.addEventListener("click", ()=> vaelgBetaling("pr_gang"));
 function opdaterBetaling(){
   if(!btAboMd) return;
   const r = beregn(PRODUCTS);
-  const aarMedAboRabat = r.aar * (1 - BT_ABO_RABAT);
-  const mdISaeson = aarMedAboRabat / HAVE_SAESON_MDR;
+  const mdFuldPris = r.aar / HAVE_SAESON_MDR;                 /* uden abonnements-rabat, til overstregning */
+  const mdISaeson = r.aar * (1 - BT_ABO_RABAT) / HAVE_SAESON_MDR;
   btAboMd.textContent = DKK0.format(Math.round(mdISaeson));
+  if(btAboMdFuld) btAboMdFuld.textContent = mdFuldPris > mdISaeson ? DKK0.format(Math.round(mdFuldPris)) + " kr/md" : "";
+  if(btGangPris) btGangPris.textContent = DKK0.format(Math.round(r.snit));
 }
 
 /* ============ VIDERE/TILBAGE-NAVIGATION ============ */
