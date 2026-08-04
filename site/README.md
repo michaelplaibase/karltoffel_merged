@@ -101,11 +101,14 @@ medfølgende scripts i rækkefølge:
 ```bash
 python3 _source/build_mirror.py   # forsiden + delte CSS/JS/fonte/billeder
 python3 _source/build_pages.py    # crawler alle undersider (via sitemap) + deres billeder
+python3 _source/inject_gtm.py     # sætter GTM-snippet'et tilbage i alle sider
 ```
 
-De henter al HTML/CSS/JS, downloader alle billeder og fonte, self-hoster dem og
-omskriver samtlige URL'er (assets **og** intern navigation) til lokale stier.
-(Kræver `curl` og `python3` — begge findes som standard på macOS.)
+De to første henter al HTML/CSS/JS, downloader alle billeder og fonte,
+self-hoster dem og omskriver samtlige URL'er (assets **og** intern navigation)
+til lokale stier. (Kræver `curl` og `python3` — begge findes som standard på
+macOS.) Fordi de skriver siderne fra bunden, fjerner de også GTM — derfor
+`inject_gtm.py` til sidst; det er idempotent og kan trygt køres igen.
 
 ---
 
@@ -158,6 +161,13 @@ Caching-tip: `assets/`-mappen kan caches aggressivt (immutable), mens
   (cookie-script.com) indlæses stadig fra sit CDN — præcis som på originalen.
   Googles reCAPTCHA loades på de sider der har en formular (fx `/p/faa-et-tilbud/`).
   Alt andet virker offline.
+- **Google Tag Manager (`GTM-P3RXDG98`):** ligger på **alle 21 sider**.
+  Head-snippet'et er placeret umiddelbart *efter* cookie-script-tagget, så
+  samtykke-banneret initialiserer før GTM (Google Consent Mode kender dermed
+  samtykke-status) — og på `/` + `/p/forside/` også efter kundetype-redirect'et,
+  så en besøgende der straks sendes videre til `/erhverv` ikke tæller som et
+  sidevisning på forsiden. `<noscript>`-fallback'et ligger lige efter `<body>`.
+  Genindsættes med `python3 _source/inject_gtm.py` (se **Build**).
 
 ---
 
