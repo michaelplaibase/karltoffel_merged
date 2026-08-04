@@ -86,7 +86,7 @@ ok("md er FØR rabatkode (motorens kontrakt)", Math.abs(r2.md - 1880 / 12) < 1e-
 console.log("\n3) Payload ind og ud");
 
 const rundtur = serializeLeadPayload({
-  kundetype: "privat", services: toServices,
+  kundetype: "privat", betaling: "abonnement", services: toServices,
   rabatkode: "SOMMER", rabatOk: true, rabatPct: 10, tilbudSendtAt: null,
 });
 const læst = parseLeadPayload(rundtur);
@@ -188,7 +188,7 @@ console.log("\n5) Slack-blokke");
 
 const lead = { id: 42, name: "Katrine Holm", email: "katrine@example.dk", phone: "51202040", address: "Fjordparken 9, 8700 Horsens", message: "Kan I komme inden august?" };
 const payload = parseLeadPayload(serializeLeadPayload({
-  kundetype: "privat", services: designServices, rabatkode: null, rabatOk: false, rabatPct: null, tilbudSendtAt: null,
+  kundetype: "privat", betaling: "pr_gang", services: designServices, rabatkode: null, rabatOk: false, rabatPct: null, tilbudSendtAt: null,
 }));
 
 const blocks = buildLeadBlocks(lead, payload) as Record<string, unknown>[];

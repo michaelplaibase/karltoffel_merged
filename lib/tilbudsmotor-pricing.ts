@@ -92,6 +92,10 @@ export function medRabatkode(r: Beregning, kodePct: number): { aarNet: number; s
  *  Ukendte/ugyldige rækker droppes, præcis som ved indtaget. */
 export type LeadPayload = {
   kundetype: "privat" | "erhverv" | null;
+  /** Betalingsvalg (splittest): "abonnement" (fast, tilbagevendende) eller
+   *  "pr_gang" (kunden betaler kun for besøg der er udført). null = ikke
+   *  valgt (ældre leads / manuelt oprettede). */
+  betaling: "abonnement" | "pr_gang" | null;
   services: PricedService[];
   rabatkode: string | null;
   rabatOk: boolean;
@@ -108,13 +112,14 @@ const n = (v: unknown): number => (typeof v === "number" && Number.isFinite(v) &
 const s = (v: unknown): string => (typeof v === "string" ? v : "");
 
 export function parseLeadPayload(raw: string | null): LeadPayload {
-  const empty: LeadPayload = { kundetype: null, services: [], rabatkode: null, rabatOk: false, rabatPct: null, tilbudSendtAt: null };
+  const empty: LeadPayload = { kundetype: null, betaling: null, services: [], rabatkode: null, rabatOk: false, rabatPct: null, tilbudSendtAt: null };
   if (!raw) return empty;
   let o: Record<string, unknown>;
   try { o = JSON.parse(raw) as Record<string, unknown>; } catch { return empty; }
   if (!o || typeof o !== "object") return empty;
 
   const kt = s(o.kundetype);
+  const bt = s(o.betaling);
   const services: PricedService[] = (Array.isArray(o.services) ? o.services : []).flatMap((row) => {
     if (!row || typeof row !== "object") return [];
     const r = row as Record<string, unknown>;
@@ -133,6 +138,7 @@ export function parseLeadPayload(raw: string | null): LeadPayload {
 
   return {
     kundetype: kt === "privat" || kt === "erhverv" ? kt : null,
+    betaling: bt === "abonnement" || bt === "pr_gang" ? bt : null,
     services,
     rabatkode: s(o.rabatkode) || null,
     rabatOk: o.rabatOk === true,
@@ -148,6 +154,7 @@ export function serializeLeadPayload(p: LeadPayload): string {
   const r = beregn(p.services);
   return JSON.stringify({
     kundetype: p.kundetype,
+    betaling: p.betaling,
     services: p.services,
     estimat: {
       md: Math.round(r.md), snit: Math.round(r.snit), aar: Math.round(r.aar),

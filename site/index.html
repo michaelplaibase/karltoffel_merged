@@ -373,9 +373,22 @@ Besøg os på www.bubble.dk eller ring til os på +45 6069 8700
 	    <div class="rows" id="rows"></div>
 	    <p class="gaps">Services markeret "indeholdt / pris ved besøg" aftales, når vi ringer — uden det koster dig noget.</p>
 	    <div class="tm-rabat" id="tm-rabat" hidden></div>
+
+	    <p class="socio"><b>Betaling</b> – hvordan vil du helst betale?</p>
+	    <div class="ktype-cards" role="radiogroup" aria-label="Abonnement eller betaling pr. gang" id="bt-cards">
+	      <button type="button" class="ktype-card" id="bt-abonnement" role="radio" aria-checked="false">
+	        <b>Fast abonnement</b>
+	        <small>Samme beløb hver måned, uanset sæson</small>
+	      </button>
+	      <button type="button" class="ktype-card" id="bt-prgang" role="radio" aria-checked="false">
+	        <b>Betal pr. gang</b>
+	        <small>Du betaler kun, når vi har været forbi</small>
+	      </button>
+	    </div>
+
 	    <div class="tm-nav">
 	      <button class="btn btn-nej" id="ls-tilbage">Tilbage</button>
-	      <button class="btn btn-ja" id="ls-videre">Videre</button>
+	      <button class="btn btn-ja" id="ls-videre" disabled>Videre</button>
 	    </div>
 	  </section>
 

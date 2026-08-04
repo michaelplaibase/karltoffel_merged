@@ -85,6 +85,7 @@ export function buildLeadBlocks(
   const fakta = [
     lead.address ? `*Adresse*\n${esc(lead.address)}` : null,
     p.kundetype ? `*Kundetype*\n${p.kundetype === "erhverv" ? "🏢 Erhverv" : "🏡 Privat"}` : null,
+    p.betaling ? `*Betaling*\n${p.betaling === "abonnement" ? "🔁 Abonnement" : "1️⃣ Pr. gang"}` : null,
     `*Estimat*\n${kr(aarNet)}/år · ${kr(aarNet / 12)}/md`,
     r.visits ? `*Besøg*\n${r.visits}/år` : null,
   ].filter((f): f is string => f !== null);

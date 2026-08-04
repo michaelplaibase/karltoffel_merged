@@ -52,6 +52,11 @@ function parseTmPayload(body: Record<string, unknown>, rabat: Rabat | null): { p
   const kt = str(body.kundetype, 10).toLowerCase();
   const kundetype = kt === "privat" || kt === "erhverv" ? kt : null;
 
+  // Betalingsvalg (splittest): abonnement vs. pr. gang. Valgfrit — ukendt/
+  // manglende værdi falder tilbage til null (samme fail-closed mønster som kundetype).
+  const bt = str(body.betaling, 12).toLowerCase();
+  const betaling = bt === "abonnement" || bt === "pr_gang" ? bt : null;
+
   const services: TmService[] = (Array.isArray(body.services) ? body.services.slice(0, 40) : []).flatMap((row) => {
     if (!row || typeof row !== "object") return [];
     const s = row as Record<string, unknown>;
@@ -71,8 +76,8 @@ function parseTmPayload(body: Record<string, unknown>, rabat: Rabat | null): { p
   const e = body.estimat && typeof body.estimat === "object" ? (body.estimat as Record<string, unknown>) : {};
   const estimat = { md: num(e.md, 10_000_000), aar: num(e.aar, 100_000_000), visits: num(e.visits, 366), count: num(e.count, 100) };
 
-  const payloadJson = kundetype || services.length || rabat
-    ? JSON.stringify({ kundetype, services, estimat, ...(rabat ?? {}) })
+  const payloadJson = kundetype || betaling || services.length || rabat
+    ? JSON.stringify({ kundetype, betaling, services, estimat, ...(rabat ?? {}) })
     : null;
   return { payloadJson, kundetype, services, estimatMd: estimat.md };
 }
