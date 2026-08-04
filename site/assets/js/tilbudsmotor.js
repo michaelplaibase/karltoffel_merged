@@ -392,7 +392,8 @@ $("kt-tilbage").addEventListener("click", ()=>{ clearTimeout(ktTimer); visStep("
 
 /* ============ BETALING (abonnement/pr. gang) — splittest på step-losning ============ */
 const btAbo = $("bt-abonnement"), btPrGang = $("bt-prgang"), btAboMd = $("bt-abo-md"),
-      btAboMdFuld = $("bt-abo-md-fuld"), btGangPris = $("bt-gang-pris"), lsVidere = $("ls-videre");
+      btAboMdFuld = $("bt-abo-md-fuld"), btGangPris = $("bt-gang-pris"), lsVidere = $("ls-videre"),
+      btRabatDetail = $("bt-rabat-detail"), btGangSnit = $("bt-gang-snit");
 const HAVE_SAESON_MDR = 7;   /* 1. april – 31. oktober, inklusive begge måneder */
 const BT_ABO_RABAT = 0.10;   /* 10% rabat for at vælge fast abonnement (nudge væk fra pr. gang) */
 function vaelgBetaling(t){
@@ -412,11 +413,25 @@ btPrGang.addEventListener("click", ()=> vaelgBetaling("pr_gang"));
 function opdaterBetaling(){
   if(!btAboMd) return;
   const r = beregn(PRODUCTS);
-  const mdFuldPris = r.aar / HAVE_SAESON_MDR;                 /* uden abonnements-rabat, til overstregning */
+  /* r.aar er allerede netto EFTER mængderabat (r.rabatPct) — det er den
+     retfærdige sammenligningsbund: pr.-gang-kunden får også mængderabatten,
+     bare ikke de ekstra 10% for at binde sig til abonnement. */
+  const mdFuldPris = r.aar / HAVE_SAESON_MDR;                 /* = pr.-gang-kundens månedssnit i sæsonen */
   const mdISaeson = r.aar * (1 - BT_ABO_RABAT) / HAVE_SAESON_MDR;
   btAboMd.textContent = DKK0.format(Math.round(mdISaeson));
   if(btAboMdFuld) btAboMdFuld.textContent = mdFuldPris > mdISaeson ? DKK0.format(Math.round(mdFuldPris)) + " kr/md" : "";
   if(btGangPris) btGangPris.textContent = DKK0.format(Math.round(r.snit));
+  if(btGangSnit) btGangSnit.textContent = r.aar > 0 ? "≈ " + DKK0.format(Math.round(mdFuldPris)) + " kr/md i snit i sæsonen" : "";
+
+  /* Rabat-detaljen på abonnement-kortet: de to rabatter stables synligt i
+     stedet for kun at vise slutprisen — mængderabatten (r.rabatPct, allerede
+     i r.aar) + de ekstra 10% for abonnementet. */
+  if(btRabatDetail){
+    const dele = [];
+    if(r.rabatPct > 0) dele.push(r.rabatPct + "% mængderabat");
+    dele.push(Math.round(BT_ABO_RABAT*100) + "% abonnementsrabat");
+    btRabatDetail.textContent = "10% billigere end pr. gang · " + dele.join(" + ");
+  }
 }
 
 /* ============ VIDERE/TILBAGE-NAVIGATION ============ */

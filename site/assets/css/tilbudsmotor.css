@@ -126,6 +126,8 @@
 .tm-flow .bt-pris-old{font-size:13px;text-decoration:line-through;opacity:.6}
 .tm-flow .bt-pris-num{display:flex;align-items:baseline;gap:5px;font-size:30px;font-weight:800;color:var(--gul);font-variant-numeric:tabular-nums}
 .tm-flow .bt-pris-num small{font-size:13px;font-weight:600;opacity:.75}
+.tm-flow .bt-rabat-detail{display:block;margin:-4px 0 10px;font-size:12px;font-weight:700;color:#1f5c28}
+.tm-flow .bt-rabat-detail--neutral{color:var(--bronze);font-weight:600}
 
 /* Sæson-tidslinje: 12 prikker, de 7 aktive (apr–okt) lyser klart op — resten
    er dæmpede, så "kun i sæsonen" ses på ÉT blik uden at skulle læse teksten. */
