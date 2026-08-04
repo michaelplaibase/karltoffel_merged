@@ -102,6 +102,18 @@
 .tm-flow .ktype-card.selected small{color:var(--bronze);opacity:1}
 .tm-flow .ktype-card.selected svg path,.tm-flow .ktype-card.selected svg rect{stroke:var(--brun)}
 .tm-flow .ktype-note{display:none;margin-top:18px;font-size:14px;color:var(--gul);opacity:.9}
+
+/* Betalingsvalg (splittest: abonnement vs. pr. gang) — sæson-prisen skal ikke
+   kunne overses, derfor egen badge + rød advarselstekst i stedet for den
+   almindelige dæmpede .small under kortene. */
+.tm-flow .bt-card{position:relative}
+.tm-flow .bt-badge{display:inline-block;margin-left:8px;padding:2px 8px;font-size:12px;font-weight:700;background:#2f7d3a;color:#fff;border-radius:999px;vertical-align:middle}
+.tm-flow .bt-card.selected .bt-badge{background:var(--brun);color:var(--gul)}
+.tm-flow .bt-pris{display:block;margin:10px 0 8px;font-size:28px;font-weight:700;color:var(--gul)}
+.tm-flow .bt-pris small{display:inline;font-size:14px;font-weight:400;opacity:.8;margin:0}
+.tm-flow .bt-card.selected .bt-pris{color:var(--brun)}
+.tm-flow .bt-saeson{display:block;margin-top:10px;padding:8px 10px;font-size:13px;font-weight:600;line-height:1.4;color:#ffb4b4;background:rgba(220,60,60,.12);border:1px solid rgba(220,60,60,.4);border-radius:8px;opacity:1}
+.tm-flow .bt-card.selected .bt-saeson{color:#7a1a1a;background:rgba(220,60,60,.15);border-color:rgba(220,60,60,.5)}
 .tm-flow .ktype-note.show{display:block}
 
 /* STEP 3: VERIFY */
