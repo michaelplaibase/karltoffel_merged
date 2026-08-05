@@ -208,6 +208,7 @@ model Order {
   dineroPaymentGuid     String?  // betalings-guid ved "betalt kontant"
   dineroError           String?  // seneste fejldetalje (dansk), rydded ved succes
   invoicedAt            DateTime?
+  reminderSentAt        DateTime? // "vi kommer i morgen"-påmindelse sendt — idempotens-værn, sendes højst én gang pr. ordre
   tasks         TaskLine[]
   createdAt     DateTime  @default(now())
 
@@ -215,6 +216,23 @@ model Order {
   @@index([contactId])
   @@index([subscriptionId])
   @@index([plannedAt])
+}
+
+// Engangs-token udstedt sammen med en tilbudsmail, så kunden kan klikke Ja/
+// Måske/Nej uden login. Ét token pr. udsendt tilbud (ikke pr. valg — valget
+// vælges ved klik, token forbruges første gang uanset hvilket link der bruges,
+// så et gammelt/videresendt link ikke kan bruges igen bagefter).
+model QuoteToken {
+  id        Int       @id @default(autoincrement())
+  token     String    @unique
+  lead      Lead      @relation(fields: [leadId], references: [id])
+  leadId    Int
+  createdAt DateTime  @default(now())
+  expiresAt DateTime
+  usedAt    DateTime?
+  choice    String?   // "accept" | "maybe" | "decline" — sat når token forbruges
+
+  @@index([leadId])
 }
 
 // Tombstone: en bruger har SLETTET en abonnements-ordre for denne uge — natte-
@@ -250,7 +268,7 @@ model Lead {
   id        Int      @id @default(autoincrement())
   company   Company  @relation(fields: [companyId], references: [id])
   companyId Int
-  status    String   @default("new")     // new | contacted | converted | rejected
+  status    String   @default("new")     // new | contacted | converted | rejected | accepted (kunden klikkede Ja i tilbudsmailen — afventer stadig bekræftelses-opkald før konvertering)
   name      String
   email     String?                       // stored lowercased/trimmed
   phone     String?                       // stored normalised (digits, +45 stripped)
@@ -264,6 +282,7 @@ model Lead {
   contactId Int?                          // set when converted to a customer
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  tokens    QuoteToken[]
 
   @@index([companyId, status])
   @@index([email])
