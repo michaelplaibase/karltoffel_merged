@@ -553,11 +553,18 @@ $("btn-send").addEventListener("click", ()=>{
     kundetype: state.kundetype,
     betaling: state.betaling,
     source: "tilbudsmotor",
-    services: valgt.map(p=>({ id:p.id, navn:p.navn, wm:p.wm, qty:p.qty, enhed:p.enhed, freq:p.freq, pris:p.pris })),
+    services: valgt.map(p=>({ id:p.id, navn:p.navn, wm:p.wm, qty:p.qty, enhed:p.enhed, freq:p.freq, pris:p.pris, erPakkevare:p.pakke })),
     estimat: { md: Math.round(r.md), snit: Math.round(r.snit), aar: Math.round(r.aar), aarBrutto: Math.round(r.aarBrutto), rabatPct: r.rabatPct, rabatKr: Math.round(r.rabatKr), visits: r.visits, count: r.count }
   };
   /* KONTRAKT: feltnavn `rabatkode` (streng, trimmet + uppercased) — kun med når koden er valid. */
   if(state.rabatkode.valid) payload.rabatkode = state.rabatkode.code;
+  /* Hvilken pakke kunden kom ind fra (sat som cookie af pakker-priser-siden,
+     samme cookie som den gamle Bubble-formular bruger — se script.js). Ryddes
+     efter brug så et evt. senere besøg uden pakke-klik ikke arver den. */
+  if(typeof Cookies !== "undefined"){
+    const valgtPakke = Cookies.get("selected_package");
+    if(valgtPakke){ payload.pakke = valgtPakke; Cookies.remove("selected_package", {path:"/"}); }
+  }
 
   const btnSend = $("btn-send");
   btnSend.disabled = true;

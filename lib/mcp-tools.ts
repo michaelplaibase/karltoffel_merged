@@ -9,6 +9,7 @@ import { prisma } from "./db";
 import { findFirstAvailableSlot, createBooking, type Slot, type CreateBookingInput } from "./booking";
 import { getContacts, getOrdersForContact } from "./queries";
 import { sendEmail, senderForUser } from "./email";
+import { buildLeadQuoteDraft } from "./quote";
 
 const DAY_MS = 864e5;
 function ymd(d: Date): string {
@@ -202,6 +203,50 @@ export async function listLeads(args: { status?: string; limit?: number }) {
       };
     }),
   };
+}
+
+// ---- draft_lead_quote -------------------------------------------------------
+// Builds a tilbud draft (to/subject/body) straight from a Lead's tilbudsmotor
+// payload, using the same "tilbud" template as the CRM's manual send-tilbud
+// page. Karl posts this draft to Slack for approval before send_lead_quote.
+export async function draftLeadQuote(args: { leadId: number }) {
+  const lead = await prisma.lead.findUnique({ where: { id: args.leadId } });
+  if (!lead) return { ok: false, error: `Lead #${args.leadId} findes ikke.` };
+  if (!lead.email) return { ok: false, error: "Leadet har ingen e-mailadresse — kan ikke sende tilbud." };
+  const company = await prisma.company.findFirst();
+  if (!company) return { ok: false, error: "Ingen virksomhed konfigureret." };
+  const draft = await buildLeadQuoteDraft(lead, { name: company.name, phone: company.phone, email: company.email });
+  return { ok: true, leadId: lead.id, name: lead.name, status: lead.status, ...draft };
+}
+
+// ---- send_lead_quote --------------------------------------------------------
+// Sends the (human-approved, possibly edited) tilbud text to a lead and marks
+// it "contacted". Never call without prior explicit approval from Michael in
+// Slack — see karl_cs/LEAD_QUOTE_PLAYBOOK.md.
+export async function sendLeadQuote(args: { leadId: number; subject: string; body: string; to?: string; html?: string }) {
+  const lead = await prisma.lead.findUnique({ where: { id: args.leadId } });
+  if (!lead) return { ok: false, error: `Lead #${args.leadId} findes ikke.` };
+  const to = (args.to ?? lead.email ?? "").trim();
+  if (!to) return { ok: false, error: "Ingen modtager-e-mail angivet." };
+
+  // `html` normally comes straight from draft_lead_quote's output; regenerate it
+  // if the caller only re-sends subject/body (e.g. after a text-only edit).
+  let html = args.html;
+  if (html === undefined) {
+    const company = await prisma.company.findFirst();
+    if (company) html = (await buildLeadQuoteDraft(lead, { name: company.name, phone: company.phone, email: company.email })).html;
+  }
+
+  // Afsender-identitet sættes IKKE her længere (var hardcodet hej@karltoffel.dk,
+  // Michael 2026-07-30) — det ville tvinge Resend-transporten, der kræver en
+  // verificeret afsender. Nu falder vi til Gmail-transporten (lib/gmail.ts),
+  // som sender som GMAIL_IMPERSONATE. Michael, 2026-08-05: test på
+  // kristian@karltoffel.dk nu, konverter GMAIL_IMPERSONATE til
+  // hej@karltoffel.dk når flowet er verificeret.
+  const res = await sendEmail({ to, subject: args.subject, text: args.body, html });
+  if (!res.ok) return { ok: false, error: res.error };
+  if (lead.status === "new") await prisma.lead.update({ where: { id: lead.id }, data: { status: "contacted" } });
+  return { ok: true, simulated: res.simulated ?? false, to, leadId: lead.id };
 }
 
 // ---- service_stats ---------------------------------------------------------

@@ -25,6 +25,8 @@ import {
   listLeads,
   serviceStats,
   dailyOverview,
+  draftLeadQuote,
+  sendLeadQuote,
 } from "@/lib/mcp-tools";
 
 export const runtime = "nodejs";
@@ -136,6 +138,26 @@ const TOOLS: Record<string, ToolDef> = {
     description: "Mest/mindst valgte services fra tilbudsmotorens leads + leverede opgaver over et vindue (dage).",
     inputSchema: { type: "object", properties: { days: { type: "number", description: "Vindue i dage (default 90)." } } },
     handler: (a) => serviceStats(a as { days?: number }),
+  },
+  draft_lead_quote: {
+    description: "Byg et tilbud-udkast (til/emne/besked) for et lead ud fra tilbudsmotorens payload og 'tilbud'-skabelonen. Brug FØR send_lead_quote — udkastet skal godkendes af Michael i Slack først.",
+    inputSchema: { type: "object", required: ["leadId"], properties: { leadId: { type: "number" } } },
+    handler: (a) => draftLeadQuote(a as { leadId: number }),
+  },
+  send_lead_quote: {
+    description: "Send det godkendte tilbud til et lead og markér det 'contacted'. Kald ALDRIG uden forudgående eksplicit godkendelse fra Michael i Slack.",
+    inputSchema: {
+      type: "object",
+      required: ["leadId", "subject", "body"],
+      properties: {
+        leadId: { type: "number" },
+        subject: { type: "string" },
+        body: { type: "string" },
+        to: { type: "string", description: "Overstyr modtager-e-mail (default leadets egen)." },
+        html: { type: "string", description: "Den brandede HTML-version fra draft_lead_quote. Udelades den, gendannes den automatisk." },
+      },
+    },
+    handler: (a) => sendLeadQuote(a as { leadId: number; subject: string; body: string; to?: string; html?: string }),
   },
 };
 
