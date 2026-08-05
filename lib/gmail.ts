@@ -67,8 +67,8 @@ function buildRawMessage(input: SendGmailInput): string {
 }
 
 export async function sendGmail(input: SendGmailInput): Promise<SendGmailResult> {
-  const saEmail = process.env.GMAIL_SA_EMAIL;
-  const saKey = process.env.GMAIL_SA_KEY;
+  const saEmail = process.env.GMAIL_SA_EMAIL || process.env.GOOGLE_SA_EMAIL;
+  const saKey = process.env.GMAIL_SA_KEY || process.env.GOOGLE_SA_KEY;
 
   if (!saEmail || !saKey) {
     console.log(`[gmail:dry-run] to=${input.to} subject=${JSON.stringify(input.subject)} (${input.text.length} tegn)`);

@@ -52,7 +52,7 @@ export function senderForUser(u: { username: string; firstName: string; lastName
 export async function sendEmail({ to, subject, text, html, replyTo, from, senderName }: SendEmailInput): Promise<SendEmailResult> {
   // Gmail-transporten sender altid SOM hej@karltoffel.dk — kan ikke bruges når
   // en bestemt afsender-identitet er efterspurgt (send-som-håndværker).
-  const gmailReady = !!process.env.GMAIL_SA_EMAIL && !!process.env.GMAIL_SA_KEY;
+  const gmailReady = !!(process.env.GMAIL_SA_EMAIL || process.env.GOOGLE_SA_EMAIL) && !!(process.env.GMAIL_SA_KEY || process.env.GOOGLE_SA_KEY);
   if (gmailReady && !from && process.env.EMAIL_DRY_RUN !== "1") {
     const r = await sendGmail({ to, subject, text, html, replyTo });
     return { ...r, from: `Karltoffel <${process.env.GMAIL_IMPERSONATE?.trim() || "hej@karltoffel.dk"}>` };
