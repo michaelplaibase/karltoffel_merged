@@ -48,7 +48,12 @@ const PRODUCTS = [
   {id:"sedum",     navn:"Gødning af Sedumtag",                    enhed:"m² tag",    pris:21.00,  note:"Pr. m² sedumtag",         qty:0,   freq:1,  fmax:2,  on:false, pakke:false, kat:"tag",     wm:"Gødning af sedumtag"},
   {id:"haveaffald",navn:"Haveaffald (genbrugsafgift)",           enhed:"gang",      pris:600.00, note:"Pr. bortskaffelse",       qty:1,   freq:1,  fmax:6,  on:false, pakke:false, kat:"affald",  wm:"Genbrugsafgift"},
   {id:"sammenriv", navn:"Sammenrivning & bortskaffelse af affald",enhed:"m² plæne",  pris:3.00,   note:"Åbne arealer / plæne",    qty:450, freq:1,  fmax:4,  on:false, pakke:false, kat:"affald",  wm:"Opsamling af løvfald til efteråret Åbne arealer / Græsplæne"},
-  {id:"sne",       navn:"Snerydning og saltning",                 enhed:"",          pris:null,   note:"Pris ved besøg",          qty:1,   freq:1,  fmax:20, on:false, pakke:false, kat:"vinter",  wm:null}
+  {id:"sne",       navn:"Snerydning og saltning",                 enhed:"",          pris:null,   note:"Pris ved besøg",          qty:1,   freq:1,  fmax:20, on:false, pakke:false, kat:"vinter",  wm:null},
+
+  /* ---- Skadedyr ---- */
+  {id:"myre_ude",   navn:"Myrebekæmpelse, udvendig sokkelbehandling", enhed:"gang", pris:935.00,  note:"Standard parcelhus",              qty:1, freq:1, fmax:2, on:false, pakke:false, kat:"skadedyr", wm:"Myrebekæmpelse udvendig sokkelbehandling"},
+  {id:"myre_inde",  navn:"Myrebekæmpelse, indvendig behandling",      enhed:"gang", pris:650.00,  note:"Standard parcelhus",              qty:1, freq:1, fmax:2, on:false, pakke:false, kat:"skadedyr", wm:"Myrebekæmpelse indvendig behandling"},
+  {id:"myre_saeson",navn:"Myrebekæmpelse, sæsonpakke",                enhed:"gang", pris:2650.00, note:"3x udvendig behandling i sæsonen", qty:1, freq:1, fmax:1, on:false, pakke:false, kat:"skadedyr", wm:"Myrebekæmpelse sæsonpakke 3x udvendig"}
 ];
 /* Uberørt kopi til at nulstille pakken når en ny adresse vælges. */
 const DEFAULTS = PRODUCTS.map(function(p){ return Object.assign({}, p); });
@@ -692,8 +697,8 @@ function ringTekst(call){
 function esc(s){ const d = document.createElement("div"); d.textContent = s; return d.innerHTML; }
 
 /* ============ RENDER ============ */
-const CAT_ORDER = ["pakke", "groen", "vinduer", "tag", "affald", "vinter"];
-const CAT_LABELS = { pakke:"Fra Villapakken", groen:"Grøn have", vinduer:"Vinduer & glas", tag:"Tag & fliser", affald:"Affald", vinter:"Vinter" };
+const CAT_ORDER = ["pakke", "groen", "vinduer", "tag", "affald", "vinter", "skadedyr"];
+const CAT_LABELS = { pakke:"Fra Villapakken", groen:"Grøn have", vinduer:"Vinduer & glas", tag:"Tag & fliser", affald:"Affald", vinter:"Vinter", skadedyr:"Skadedyrsbekæmpelse" };
 function enhKort(p){ return p.enhed ? p.enhed.split(" ")[0] : "enhed"; }
 function prisEnh(p){ return p.prisEnh || enhKort(p); }   /* ental til "kr pr. X" */
 
