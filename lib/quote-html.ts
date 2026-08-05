@@ -50,6 +50,9 @@ export type QuoteHtmlInput = {
   gyldigTil: string;
   pakkeNavn?: string;
   acceptUrl?: string;
+  /** Ja/Måske/Nej-links (lib/quote-tokens.ts + app/api/quote-response).
+   *  Har forrang over acceptUrl når sat — viser tre knapper i stedet for én. */
+  responseUrls?: { accept: string; maybe: string; decline: string };
   firma: { navn: string; telefon: string | null; email: string | null };
   momsInfo?: string;
 };
@@ -106,17 +109,28 @@ export function renderQuoteHtml(i: QuoteHtmlInput): string {
     rabatRaekker,
   ].join("");
 
-  // Brødteksten må kun henvise til knappen, hvis knappen faktisk er der. Uden
-  // acceptUrl ville kunden ellers lede efter noget, der ikke findes i mailen.
-  const opfordring = i.acceptUrl
-    ? "er du klar, klikker du bare &quot;Accepter tilbud&quot; nedenfor, så finder vi en dato."
-    : "er du klar, svarer du blot på denne mail, så finder vi en dato.";
+  // Brødteksten må kun henvise til knapper, der faktisk er der. Uden nogen af
+  // delene ville kunden ellers lede efter noget, der ikke findes i mailen.
+  const opfordring = i.responseUrls
+    ? "er du klar, klikker du bare &quot;Ja tak&quot; nedenfor, så finder vi en dato."
+    : i.acceptUrl
+      ? "er du klar, klikker du bare &quot;Accepter tilbud&quot; nedenfor, så finder vi en dato."
+      : "er du klar, svarer du blot på denne mail, så finder vi en dato.";
 
-  const cta = i.acceptUrl
+  const cta = i.responseUrls
     ? `<tr><td align="center" style="padding:34px 0 8px;">
+<a href="${esc(i.responseUrls.accept)}" style="display:inline-block;background:${C.gul};color:${C.brun};font-family:${FONT};font-weight:900;font-size:15px;letter-spacing:.5px;text-transform:uppercase;text-decoration:none;padding:16px 44px;border-radius:999px;">Ja tak</a>
+</td></tr>
+<tr><td align="center" style="padding:12px 0 0;">
+<a href="${esc(i.responseUrls.maybe)}" style="display:inline-block;color:${C.brunLys};font-family:${FONT};font-weight:700;font-size:13px;text-decoration:underline;padding:8px 16px;">Måske — ring mig op</a>
+&nbsp;&nbsp;·&nbsp;&nbsp;
+<a href="${esc(i.responseUrls.decline)}" style="display:inline-block;color:${C.brunLys};font-family:${FONT};font-weight:700;font-size:13px;text-decoration:underline;padding:8px 16px;">Nej tak</a>
+</td></tr>`
+    : i.acceptUrl
+      ? `<tr><td align="center" style="padding:34px 0 8px;">
 <a href="${esc(i.acceptUrl)}" style="display:inline-block;background:${C.gul};color:${C.brun};font-family:${FONT};font-weight:900;font-size:15px;letter-spacing:.5px;text-transform:uppercase;text-decoration:none;padding:16px 44px;border-radius:999px;">Accepter tilbud</a>
 </td></tr>`
-    : "";
+      : "";
 
   const kontakt = [i.firma.telefon, i.firma.email].filter(Boolean).map((v) => esc(String(v))).join(" · ");
 
@@ -211,7 +225,7 @@ export function renderQuoteText(i: QuoteHtmlInput): string {
     `Hej ${i.fornavn}`,
     ``,
     `Tak for din henvendelse. Her er tilbuddet på ${i.adresse}.`,
-    ...(i.acceptUrl ? [] : [``, `Er du klar, svarer du blot på denne mail, så finder vi en dato.`]),
+    ...(i.responseUrls || i.acceptUrl ? [] : [``, `Er du klar, svarer du blot på denne mail, så finder vi en dato.`]),
     ``,
     ...(pakke.length ? [`Pakke: ${i.pakkeNavn ?? "Villapakken"}`, ...linjer(pakke), ``] : []),
     ...(ekstra.length ? [`Ekstra ydelser:`, ...linjer(ekstra), ``] : []),
@@ -222,7 +236,9 @@ export function renderQuoteText(i: QuoteHtmlInput): string {
     i.momsInfo ?? "Alle priser er inkl. moms.",
     ``,
     `Tilbuddet er gyldigt til ${i.gyldigTil}.`,
-    ...(i.acceptUrl ? [``, `Accepter tilbuddet her: ${i.acceptUrl}`] : []),
+    ...(i.responseUrls
+      ? [``, `Ja tak: ${i.responseUrls.accept}`, `Måske — ring mig op: ${i.responseUrls.maybe}`, `Nej tak: ${i.responseUrls.decline}`]
+      : i.acceptUrl ? [``, `Accepter tilbuddet her: ${i.acceptUrl}`] : []),
     ``,
     i.firma.navn,
     [i.firma.telefon, i.firma.email].filter(Boolean).join(" · "),

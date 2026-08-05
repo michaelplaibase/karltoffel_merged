@@ -11,6 +11,15 @@
 // `html` er valgfri. Sættes den, sendes mailen som multipart med BÅDE html og
 // text — `text` er ikke et fallback man kan udelade: klienter uden HTML viser
 // den, og en mail med kun en HTML-del scorer markant værre i spamfiltre.
+//
+// Transport: Gmail (lib/gmail.ts, sender hej@karltoffel.dk via service-konto
+// domain-wide delegation) foretrækkes når GMAIL_SA_EMAIL/GMAIL_SA_KEY er sat —
+// en rigtig Google Workspace-postkasse har eget SPF/DKIM/domæne-omdømme, som
+// karltoffel.dk (endnu) ikke har i Resend. Falder tilbage til Resend, som
+// stadig kræves for at sende SOM en bestemt håndværker (KARL_SENDER_DOMAIN),
+// da Gmail-DWD'en kun er sat op til hej@karltoffel.dk indtil videre.
+import { sendGmail } from "./gmail";
+
 export type SendEmailInput = { to: string; subject: string; text: string; html?: string; replyTo?: string; from?: string; senderName?: string };
 export type SendEmailResult = { ok: boolean; simulated?: boolean; id?: string; error?: string; from?: string };
 
@@ -41,6 +50,14 @@ export function senderForUser(u: { username: string; firstName: string; lastName
 }
 
 export async function sendEmail({ to, subject, text, html, replyTo, from, senderName }: SendEmailInput): Promise<SendEmailResult> {
+  // Gmail-transporten sender altid SOM hej@karltoffel.dk — kan ikke bruges når
+  // en bestemt afsender-identitet er efterspurgt (send-som-håndværker).
+  const gmailReady = !!process.env.GMAIL_SA_EMAIL && !!process.env.GMAIL_SA_KEY;
+  if (gmailReady && !from && process.env.EMAIL_DRY_RUN !== "1") {
+    const r = await sendGmail({ to, subject, text, html, replyTo });
+    return { ...r, from: `Karltoffel <${process.env.GMAIL_IMPERSONATE?.trim() || "hej@karltoffel.dk"}>` };
+  }
+
   const key = process.env.RESEND_API_KEY;
   const baseFrom = from ?? process.env.EMAIL_FROM;
   const reply = replyTo ?? process.env.EMAIL_REPLY_TO;

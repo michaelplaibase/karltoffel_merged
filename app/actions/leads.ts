@@ -156,14 +156,13 @@ export async function rejectLead(id: number): Promise<void> {
   revalidatePath("/leads");
 }
 
-/** Convert a lead into a customer + et AFVENTENDE abonnement fra payloaden.
- *  If it is already linked to a Contact, reuse that customer; otherwise create
- *  the Contact and link it. Abonnementet godkendes (aktiveres + ordrer
- *  materialiseres) særskilt efter bekræftelses-opkaldet. */
-export async function convertLead(id: number): Promise<void> {
-  await guardAction();
+/** Kernen i lead→kunde-konverteringen, uden auth-guard og uden redirect — så
+ *  den kan genbruges både fra CRM-knappen (convertLead nedenfor) og fra
+ *  quote-response-routen (kunden klikkede Ja i tilbudsmailen). Returnerer
+ *  contactId, eller null hvis leadet ikke findes / ingen firmaopsætning. */
+export async function convertLeadCore(id: number): Promise<number | null> {
   const lead = await prisma.lead.findUnique({ where: { id } });
-  if (!lead) return;
+  if (!lead) return null;
 
   const { street, city } = splitAddress(lead.address ?? "");
 
@@ -178,7 +177,7 @@ export async function convertLead(id: number): Promise<void> {
     await prisma.lead.update({ where: { id }, data: { status: "converted" } });
   } else {
     const company = await prisma.company.findFirst();
-    if (!company) return;
+    if (!company) return null;
 
     // Tilbudsmotorens kundetype følger med over: erhverv → firmakunde.
     let isCompany = false;
@@ -207,5 +206,16 @@ export async function convertLead(id: number): Promise<void> {
   revalidatePath("/customers");
   revalidatePath("/subscriptions");
   revalidatePath("/orders");
-  redirect(`/customers/${contactId}`);
+  return contactId;
+}
+
+/** Convert a lead into a customer + et AFVENTENDE abonnement fra payloaden.
+ *  If it is already linked to a Contact, reuse that customer; otherwise create
+ *  the Contact and link it. Abonnementet godkendes (aktiveres + ordrer
+ *  materialiseres) særskilt efter bekræftelses-opkaldet. CRM-knap-versionen:
+ *  guardet + redirecter til kundekortet. */
+export async function convertLead(id: number): Promise<void> {
+  await guardAction();
+  const contactId = await convertLeadCore(id);
+  if (contactId != null) redirect(`/customers/${contactId}`);
 }

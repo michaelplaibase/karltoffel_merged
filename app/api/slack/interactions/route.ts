@@ -7,6 +7,7 @@ import {
 import { parseLeadPayload, serializeLeadPayload, beregn, medRabatkode, kr } from "@/lib/tilbudsmotor-pricing";
 import { renderQuoteHtml, renderQuoteText } from "@/lib/quote-html";
 import { sendEmail } from "@/lib/email";
+import { issueQuoteToken } from "@/lib/quote-tokens";
 import { underLimit, recordHit } from "@/lib/rate-limit";
 import type { NextRequest } from "next/server";
 
@@ -237,16 +238,19 @@ async function sendQuote(
   const until = new Date(Date.now() + gyldigDage * 86_400_000);
   const gyldigTil = new Intl.DateTimeFormat("da-DK", { day: "numeric", month: "long", year: "numeric" }).format(until);
 
-  // "Accepter tilbud" peger på en mailto med udfyldt emne, indtil der findes en
-  // rigtig accept-rute. Et dødt "#"-link i en kundemail er værre end en knap der
-  // faktisk åbner et svar. Sæt QUOTE_ACCEPT_URL for at pege på en rute i stedet;
-  // lead-id'et sættes på som ?lead=<id>.
-  const acceptBase = process.env.QUOTE_ACCEPT_URL?.trim();
-  const acceptUrl = acceptBase
-    ? `${acceptBase}${acceptBase.includes("?") ? "&" : "?"}lead=${lead.id}`
-    : company.email
-      ? `mailto:${company.email}?subject=${encodeURIComponent(`Jeg accepterer tilbuddet — ${lead.name}`)}`
-      : undefined;
+  // Ja/Måske/Nej-links: engangs-token (lib/quote-tokens.ts) + app/api/quote-response
+  // håndterer klikket uden login. Falder tilbage til en mailto, hvis basis-URL'en
+  // ikke er sat — en død knap i en kundemail er værre end ingen knap.
+  const responseBase = (process.env.QUOTE_BASE_URL?.trim() || process.env.CRM_BASE_URL?.trim() || "https://crm.karltoffel.dk").replace(/\/$/, "");
+  const token = await issueQuoteToken(lead.id);
+  const responseUrls = {
+    accept: `${responseBase}/api/quote-response?t=${token}&c=accept`,
+    maybe: `${responseBase}/api/quote-response?t=${token}&c=maybe`,
+    decline: `${responseBase}/api/quote-response?t=${token}&c=decline`,
+  };
+  const acceptUrl = company.email
+    ? `mailto:${company.email}?subject=${encodeURIComponent(`Jeg accepterer tilbuddet — ${lead.name}`)}`
+    : undefined;
 
   // Rabatlinjerne SKAL med, når totalen er lavere end summen af linjerne — ellers
   // kan kunden lægge linjepriserne sammen og få et andet tal end totalen.
@@ -265,6 +269,7 @@ async function sendQuote(
     rabatter,
     gyldigTil,
     acceptUrl,
+    responseUrls,
     firma: { navn: company.name, telefon: company.phone, email: company.email },
   };
 
