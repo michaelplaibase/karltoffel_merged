@@ -32,6 +32,36 @@ async function notifyStaff(subject: string, text: string): Promise<void> {
   }
 }
 
+function firstName(name: string): string {
+  return name.trim().split(/\s+/)[0] || name;
+}
+
+/** Skriftlig bekræftelse til kunden ved "Ja tak" — uden den har kunden intet
+ *  andet end en webside, der forsvinder når fanen lukkes. Må ALDRIG vælte
+ *  eller forsinke svaret på selve klikket: samme try/catch-kontrakt som
+ *  notifyStaff, fejl logges men returnerer intet til kunden at reagere på. */
+async function notifyCustomer(to: string, name: string, company: { name: string; phone: string | null; email: string | null }): Promise<void> {
+  const kontakt = [company.phone, company.email].filter(Boolean).join(" · ");
+  const text = [
+    `Hej ${firstName(name)}`,
+    ``,
+    `Tak for din bestilling hos ${company.name}! Vi har modtaget din accept af tilbuddet.`,
+    ``,
+    `Vi ringer til dig snarest for at bekræfte den endelige tid og aftale de sidste detaljer. Der er endnu ikke booket en håndværker eller sendt nogen ud — det sker først, når vi har talt sammen.`,
+    ``,
+    `Har du spørgsmål i mellemtiden, er du velkommen til at kontakte os${kontakt ? `: ${kontakt}` : "."}`,
+    ``,
+    `De bedste hilsner`,
+    company.name,
+  ].join("\n");
+  try {
+    const res = await sendEmail({ to, subject: `Tak for din bestilling hos ${company.name}`, text });
+    if (!res.ok) console.error(`[quote-response] kunde-bekræftelse fejlede: ${res.error}`);
+  } catch (e) {
+    console.error("[quote-response] kunde-bekræftelse exception:", e);
+  }
+}
+
 export async function GET(req: NextRequest) {
   const url = new URL(req.url);
   const token = url.searchParams.get("t") ?? "";
@@ -63,6 +93,10 @@ export async function GET(req: NextRequest) {
           ? `Oprettet som kunde: https://crm.karltoffel.dk/customers/${contactId}\nRing og bekræft tid/pris — abonnementet/ordren afventer stadig godkendelse.`
           : `Kunne IKKE konverteres automatisk (mangler firmaopsætning eller leadet var allerede slettet) — tjek CRM'et manuelt: https://crm.karltoffel.dk/leads`),
     );
+    if (lead.email) {
+      const company = await prisma.company.findFirst();
+      if (company) await notifyCustomer(lead.email, lead.name, company);
+    }
     return page("Tak for dit svar!", "Vi ringer til dig snarest for at bekræfte tid og de sidste detaljer.");
   }
 
