@@ -46,7 +46,16 @@ op og køre").
   trigger the "package" layout too since the cookie mechanism is generic. Not
   yet confirmed whether that's desired for all of them or just the 4 named.
 
-## The actual send flow (confirmed with Michael)
+## The actual send flow (SUPERSEDED 2026-08-05 — see below)
+
+The steps below describe the `karl_cs/LEAD_QUOTE_PLAYBOOK.md` MCP-tool path,
+which Michael has since decided is NOT the canonical flow (2026-08-05). The
+canonical, live flow is `app/api/slack/interactions/route.ts` +
+`lib/slack-lead.ts`: `app/api/leads/route.ts`'s webhook already posts to
+Slack synchronously on every new lead (button-driven "Godkend og send", with
+rabatkode handling and the Ja/Måske/Nej accept/decline links via
+`lib/quote-tokens.ts`) — no scheduler, no Karl agent wake needed. Kept below
+for historical context only.
 
 1. Lead comes in from the website (tilbudsmotoren).
 2. **Kristian** gets pinged in Slack **#kundeservice** (`C0BEE4YBYCC`), tagging
