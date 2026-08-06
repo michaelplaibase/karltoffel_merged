@@ -90,26 +90,40 @@ Besøg os på www.bubble.dk eller ring til os på +45 6069 8700
 	</div>
 </header>
 
-<!-- Svar-hero. section--theme-primary er sitets mørkebrune/gule tema (samme farver som
-     tilbudsmailen og tilbudsmotorens egen kvitteringsskærm), så siden ikke skifter identitet
-     midt i kunderejsen. Teksten sættes af scriptet nedenfor ud fra ?c=accept|maybe|decline. -->
-<div class="section section--type-cta section--theme-primary section--padding-top-large section--padding-bottom-large" id="svar-hero">
+<!-- Svar-hero. Samme sekskantede billede-layout og section--theme-primary (gul baggrund)
+     som "Mindre bøvl og mere overskud"-sektionen på /p/erhverv — samme identitet, ikke en
+     løsrevet kvitteringsboks. Teksten sættes af scriptet nedenfor ud fra ?c=accept|maybe|decline. -->
+<div class="section section--type-standard section--theme-primary section--image-position-left section--image-format-karltoffel section--padding-top-xlarge section--padding-bottom-xlarge" id="svar-hero">
 	<div class="section__background"></div>
 	<div class="grid-container">
-		<div class="grid-x grid-margin-x align-center align-middle">
-			<div class="cell small-12 medium-9 large-7" style="text-align:center;">
-				<div class="section__text rte rte--larger-h2" data-in-view-scope>
-					<h1 id="svar-titel" style="margin-bottom:10px;">Tak, heldige karltoffel!</h1>
-					<p id="svar-tekst" style="font-size:19px;">Vi har modtaget dit svar.</p>
+		<div class="grid-x grid-margin-x align-middle">
+			<div class="cell small-12 large-6">
+				<div class="section__images">
+					<div class="section-slider section-slider--karltoffel swiper">
+						<div class="swiper-wrapper">
+							<div class="swiper-slide">
+								<div class="section-slider__image">
+									<img src="/assets/img/thumb/550eda8e50ff829d070ea6541086930996b91c79_w1600.webp" alt="Heldig karltoffel, der slår benene op" loading="lazy"
+										srcset="/assets/img/thumb/550eda8e50ff829d070ea6541086930996b91c79_w1600.webp 1000w,
+										        /assets/img/thumb/550eda8e50ff829d070ea6541086930996b91c79_w1200.webp 600w,
+										        /assets/img/thumb/550eda8e50ff829d070ea6541086930996b91c79_w800.webp 400w"
+										sizes="100vw">
+								</div>
+							</div>
+						</div>
+					</div>
 				</div>
-				<div class="buttons" style="margin-top:28px;justify-content:center;">
-					<a href="tel:+4522223833" class="button in-view in-view--slide-up"><span>Ring til os: 22 22 38 33</span></a>
+			</div>
+			<div class="cell small-12 large-6 xlarge-5 xlarge-offset-1">
+				<div class="section__text rte rte--limit-text-width" data-in-view-scope>
+					<h1 id="svar-titel">Tak, heldige karltoffel!</h1>
+					<p id="svar-tekst">Vi har modtaget dit svar.</p>
+					<div class="buttons">
+						<a href="tel:+4522223833" class="button in-view in-view--slide-up"><span>Ring til os: 22 22 38 33</span></a>
+					</div>
 				</div>
 			</div>
 		</div>
-	</div>
-	<div class="cta-highlight in-view in-view--slide-up">
-		<img src="/assets/img/design/kartoffelhalv-ny.png" alt="Kartoffelhalv" class="cta-highlight__image">
 	</div>
 </div>
 
@@ -186,8 +200,8 @@ Besøg os på www.bubble.dk eller ring til os på +45 6069 8700
 
 		var COPY = {
 			accept: {
-				titel: "Du er nu en heldig karltoffel, " + hilsen,
-				tekst: "Vi har lagt dig i kalenderen og ringer snarest — typisk inden for et kvarter i åbningstiden — for at bekræfte tid og de sidste detaljer. Naboen bliver grøn af misundelse."
+				titel: "Slå benene op, " + hilsen,
+				tekst: "Vi klarer resten. Vi har lagt dig i kalenderen og ringer snarest — typisk inden for et kvarter i åbningstiden — for at bekræfte tid og de sidste detaljer. Du kan roligt læne dig tilbage, mens naboen bliver grøn af misundelse."
 			},
 			maybe: {
 				titel: "Noteret, " + hilsen,
