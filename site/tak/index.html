@@ -90,6 +90,14 @@ Besøg os på www.bubble.dk eller ring til os på +45 6069 8700
 	</div>
 </header>
 
+<!-- Header-spacer: .main-wrap .section har padding-top:100px !important sitewide (kun
+     section--type-hero er flush under den faste header) — men headeren selv er position:fixed
+     med en negativ bund-margin, så en del af de 100px topluft reelt ligger SKJULT bag headeren.
+     En almindelig sektion lige efter headeren får derfor kun ca. 100-81=19px synlig luft, mens
+     bunden (theme-primary's padding-bottom:100px !important) er fuldt synlig. Højden sættes af
+     scriptet nedenfor til headerens faktiske højde, så synlig top- og bundluft bliver ens. -->
+<div id="header-spacer" style="height:81px"></div>
+
 <!-- Svar-hero. Samme sekskantede billede-layout og section--theme-primary (gul baggrund)
      som "Mindre bøvl og mere overskud"-sektionen på /p/erhverv — samme identitet, ikke en
      løsrevet kvitteringsboks. Teksten sættes af scriptet nedenfor ud fra ?c=accept|maybe|decline. -->
@@ -232,19 +240,16 @@ Besøg os på www.bubble.dk eller ring til os på +45 6069 8700
 		document.getElementById("svar-titel").textContent = valgt.titel;
 		document.getElementById("svar-tekst").textContent = valgt.tekst;
 
-		// header--fixed er position:fixed med en negativ bund-margin (så heroer kan
-		// flyde ind under den) — det betyder at #svar-hero's egen padding-top ligger
-		// DELVIST skjult bag headeren. Uden korrektion bliver afstanden fra menuen ned
-		// til billedet derfor mindre end afstanden fra billedet ned til footeren, selv
-		// om begge padding-værdier er ens i CSS'en. Vi måler headerens faktiske højde
-		// og lægger den oveni, så de to afstande matcher på alle skærmstørrelser.
+		// Se kommentaren ved #header-spacer i markup'et: .section's padding-top:100px
+		// !important ligger delvist skjult bag den faste header, så vi sætter en
+		// spacer i fuld headerhøjde foran sektionen i stedet for at forsøge at
+		// overskrive selve paddingen (umuligt uden også !important, og det ville
+		// stadig ikke virke — headeren er position:fixed og optager ikke normal flow-plads).
 		function rettSpacingUnderHeader() {
 			var header = document.querySelector(".header--fixed");
-			var hero = document.getElementById("svar-hero");
-			if (!header || !hero) return;
-			var headerHøjde = header.getBoundingClientRect().height;
-			var basisPadding = parseFloat(getComputedStyle(hero).paddingBottom) || 0;
-			hero.style.paddingTop = (headerHøjde + basisPadding) + "px";
+			var spacer = document.getElementById("header-spacer");
+			if (!header || !spacer) return;
+			spacer.style.height = header.getBoundingClientRect().height + "px";
 		}
 		rettSpacingUnderHeader();
 		window.addEventListener("resize", rettSpacingUnderHeader);
