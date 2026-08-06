@@ -13,14 +13,17 @@ import type { NextRequest } from "next/server";
 // kan "vinde" kapløbet én gang, aldrig udløse dobbelt-konvertering.
 
 const STAFF_EMAIL = process.env.STAFF_NOTIFY_EMAIL?.trim() || "kristian@karltoffel.dk";
+const SITE_BASE = (process.env.SITE_BASE_URL?.trim() || "https://karltoffel.dk").replace(/\/$/, "");
 
-function page(title: string, body: string, status = 200): Response {
-  const html = `<!doctype html><html lang="da"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>${title} — Karltoffel</title>
-<style>body{font-family:system-ui,sans-serif;background:#4C3718;color:#FFFFF0;max-width:480px;margin:60px auto;padding:0 20px;text-align:center}
-h1{color:#FFF87B;font-size:22px}p{opacity:.9;line-height:1.5}</style></head>
-<body><h1>${title}</h1><p>${body}</p></body></html>`;
-  return new Response(html, { status, headers: { "content-type": "text/html; charset=utf-8" } });
+/** Kunden skal lande på karltoffel.dk, ikke crm.karltoffel.dk — samme brand,
+ *  samme side som resten af sitet (Michael, 2026-08-06: "Den skal være
+ *  KNIVSKARP på brand identiteten"). Selve mutationen (token forbrugt, lead
+ *  opdateret) er allerede sket FØR redirect'et; siden på karltoffel.dk/tak er
+ *  ren visning og vælger sin tekst ud fra ?c=. */
+function tak(outcome: "accept" | "maybe" | "decline" | "already_used" | "expired" | "error", navn?: string): Response {
+  const params = new URLSearchParams({ c: outcome });
+  if (navn) params.set("navn", navn);
+  return Response.redirect(`${SITE_BASE}/tak?${params.toString()}`, 302);
 }
 
 async function notifyStaff(subject: string, text: string): Promise<void> {
@@ -68,17 +71,18 @@ export async function GET(req: NextRequest) {
   const choiceRaw = url.searchParams.get("c") ?? "";
   const choice = (["accept", "maybe", "decline"] as const).find((c) => c === choiceRaw) as Choice | undefined;
 
-  if (!token || !choice) return page("Ugyldigt link", "Linket mangler oplysninger. Ring til os på tlf., så hjælper vi dig videre.", 400);
+  if (!token || !choice) return tak("error");
 
   const result = await consumeQuoteToken(token, choice);
   if (!result.ok) {
-    if (result.reason === "already_used") return page("Allerede besvaret", "Du har allerede svaret på dette tilbud. Har du brug for at ændre dit svar, så ring til os.");
-    if (result.reason === "expired") return page("Linket er udløbet", "Tilbuddet er ikke længere aktivt. Kontakt os, hvis du stadig er interesseret.");
-    return page("Ukendt link", "Vi kan ikke finde dette tilbud. Ring til os på tlf., så hjælper vi dig videre.", 404);
+    if (result.reason === "already_used") return tak("already_used");
+    if (result.reason === "expired") return tak("expired");
+    return tak("error");
   }
 
   const lead = await prisma.lead.findUnique({ where: { id: result.leadId } });
-  if (!lead) return page("Ukendt lead", "Noget gik galt vores side. Ring til os på tlf.", 404);
+  if (!lead) return tak("error");
+  const fornavn = firstName(lead.name);
 
   if (choice === "accept") {
     // Samme konvertering som når staff godkender i CRM'et: opretter kunde +
@@ -97,16 +101,16 @@ export async function GET(req: NextRequest) {
       const company = await prisma.company.findFirst();
       if (company) await notifyCustomer(lead.email, lead.name, company);
     }
-    return page("Tak for dit svar!", "Vi ringer til dig snarest for at bekræfte tid og de sidste detaljer.");
+    return tak("accept", fornavn);
   }
 
   if (choice === "maybe") {
     await notifyStaff(`🤔 ${lead.name} er i tvivl om tilbuddet`, `${lead.name} klikkede "Måske" i tilbudsmailen. Følg op med en opringning: https://crm.karltoffel.dk/leads`);
-    return page("Noteret!", "Vi ringer til dig for at høre, om vi kan svare på nogle spørgsmål.");
+    return tak("maybe", fornavn);
   }
 
   // decline
   await prisma.lead.update({ where: { id: lead.id }, data: { status: "rejected" } });
   await notifyStaff(`❌ ${lead.name} afviste tilbuddet`, `${lead.name} klikkede "Nej tak" i tilbudsmailen. Leadet er markeret afvist i CRM'et.`);
-  return page("Tak for din tid", "Vi håber at høre fra dig en anden gang. God dag!");
+  return tak("decline", fornavn);
 }

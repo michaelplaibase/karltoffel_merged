@@ -1,0 +1,225 @@
+<!--
+Lavet af bubble - Det skarpe i det skæve
+Besøg os på www.bubble.dk eller ring til os på +45 6069 8700
+-->
+
+<!-- Svar-kvittering fra tilbudsmailens Ja/Måske/Nej-knapper. CRM'et (crm.karltoffel.dk/api/quote-response)
+     forbruger tokenet og redirecter hertil med ?c=accept|maybe|decline&navn=Fornavn — så kunden lander på
+     karltoffel.dk, ikke på CRM-domænet, og siden ser ud som resten af sitet. -->
+
+<!doctype html>
+<html lang="da" class="no-js" dir="ltr">
+<head>
+	<meta charset="utf-8">
+	<title>Tak for dit svar - Karltoffel</title>
+	<meta name="description" content="Tak for dit svar på dit tilbud fra Karltoffel.">
+	<meta name="robots" content="noindex">
+	<meta name="apple-mobile-web-app-title" content="Karltoffel">
+	<link rel="stylesheet" type="text/css" href="/assets/css/main.min.css">
+	<script type="text/javascript" charset="UTF-8" src="//cdn.cookie-script.com/s/ef5f34255da71cfcf814c76250b36eb1.js"></script>
+	<!-- Google Tag Manager -->
+	<script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start': new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0], j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src= 'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f); })(window,document,'script','dataLayer','GTM-P3RXDG98');</script>
+	<!-- End Google Tag Manager -->
+	<meta http-equiv="x-ua-compatible" content="ie=edge">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+	<link rel="icon" type="image/png" href="/assets/img/design/favicon.png">
+	<link rel="apple-touch-icon" href="/assets/img/design/appicon.png">
+	<link rel="stylesheet" href="/assets/css/typekit.css">
+	<link rel="stylesheet" type="text/css" href="/assets/css/style.css?v=5">
+	<link rel="stylesheet" href="/assets/css/spacing.css?v=3">
+	<link rel="canonical" href="/tak">
+</head>
+
+<body class="" data-link="/tak">
+	<!-- Google Tag Manager (noscript) -->
+	<noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-P3RXDG98" height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+	<!-- End Google Tag Manager (noscript) -->
+
+	<div class="main-wrap">
+
+<header class="header header--fixed grid-container grid-container--full">
+    <div class="grid-container grid-container--margin grid-container--full">
+        <div class="header__background"></div>
+
+		<div class="header__content show-for-desktop">
+			<a href="/" title="Karltoffel" class="header__logo">
+				<img class="logo" src="/assets/img/design/karltoffel-logo.svg" alt="Karltoffel">
+			</a>
+			<nav class="header__nav">
+				<div class="nav">
+					<ul class="nav__items">
+						<li class="nav__item"><a href="/p/det-vi-ordner" class="nav__link" data-title="Det vi ordner">Det vi ordner</a></li>
+						<li class="nav__item"><a href="/p/pakker-priser" class="nav__link" data-title="Pakker & priser">Pakker & priser</a></li>
+						<li class="nav__item"><a href="/p/erhverv" class="nav__link" data-title="Erhverv">Erhverv</a></li>
+						<li class="nav__item"><a href="/c/det-vi-ordner/gavekort" class="nav__link" data-title="Gavekort">Gavekort</a></li>
+						<li class="nav__item"><a href="/p/om-karltoffel" class="nav__link" data-title="Om Karltoffel">Om Karltoffel</a></li>
+					</ul>
+				</div>
+			</nav>
+			<div class="header__buttons">
+				<div class="buttons">
+					<a href="/#tilbudsmotor" class="button in-view in-view--slide-up"><span>Få et tilbud på mindre bøvl</span></a>
+				</div>
+			</div>
+		</div>
+
+		<div class="header__content show-for-mobile">
+			<a href="/" title="Karltoffel" class="header__logo">
+				<img class="logo" src="/assets/img/design/karltoffel-logo.svg" alt="Karltoffel">
+			</a>
+			<div class="filler"></div>
+			<a href="javascript:void(0)" class="header__toggle js-drawer-open" title="Åben menu">
+				<div class="header__hamburger"><span></span></div>
+			</a>
+		</div>
+    </div>
+	<div class="header__drawer drawer grid-container grid-container--bottom">
+		<div class="drawer__background"></div>
+		<div class="filler"></div>
+		<nav class="drawer__nav">
+			<div class="nav">
+				<ul class="nav__items">
+					<li class="nav__item"><a href="/p/det-vi-ordner" class="nav__link" data-title="Det vi ordner">Det vi ordner</a></li>
+					<li class="nav__item"><a href="/p/pakker-priser" class="nav__link" data-title="Pakker & priser">Pakker & priser</a></li>
+					<li class="nav__item"><a href="/p/erhverv" class="nav__link" data-title="Erhverv">Erhverv</a></li>
+					<li class="nav__item"><a href="/c/det-vi-ordner/gavekort" class="nav__link" data-title="Gavekort">Gavekort</a></li>
+					<li class="nav__item"><a href="/p/om-karltoffel" class="nav__link" data-title="Om Karltoffel">Om Karltoffel</a></li>
+				</ul>
+			</div>
+		</nav>
+	</div>
+</header>
+
+<!-- Svar-hero. section--theme-primary er sitets mørkebrune/gule tema (samme farver som
+     tilbudsmailen og tilbudsmotorens egen kvitteringsskærm), så siden ikke skifter identitet
+     midt i kunderejsen. Teksten sættes af scriptet nedenfor ud fra ?c=accept|maybe|decline. -->
+<div class="section section--type-cta section--theme-primary section--padding-top-large section--padding-bottom-large" id="svar-hero">
+	<div class="section__background"></div>
+	<div class="grid-container">
+		<div class="grid-x grid-margin-x align-center align-middle">
+			<div class="cell small-12 medium-9 large-7" style="text-align:center;">
+				<div class="section__text rte rte--larger-h2" data-in-view-scope>
+					<h1 id="svar-titel" style="margin-bottom:10px;">Tak, heldige karltoffel!</h1>
+					<p id="svar-tekst" style="font-size:19px;">Vi har modtaget dit svar.</p>
+				</div>
+				<div class="buttons" style="margin-top:28px;justify-content:center;">
+					<a href="tel:+4522223833" class="button in-view in-view--slide-up"><span>Ring til os: 22 22 38 33</span></a>
+				</div>
+			</div>
+		</div>
+	</div>
+	<div class="cta-highlight in-view in-view--slide-up">
+		<img src="/assets/img/design/kartoffelhalv-ny.png" alt="Kartoffelhalv" class="cta-highlight__image">
+	</div>
+</div>
+
+<footer class="site-footer section--theme-secondary">
+	<div class="section__anchor" id="footer"></div>
+	<div class="grid-container">
+		<div class="grid-x grid-margin-x grid-margin-y">
+			<div class="cell small-12 medium-6 large-3">
+				<div class="rte rte--no-ul rte--smaller-text" data-in-view-scope>
+					<h4>Karltoffel</h4>
+					<p>Vi tager os af det kedelige omkring hus og have, så du slipper for bøvlet og stadig får alle komplimenterne.</p>
+				</div>
+			</div>
+			<div class="cell small-12 medium-6 large-3">
+				<div class="rte rte--no-ul" data-in-view-scope>
+					<h4>Kontakt</h4>
+					<ul>
+						<li><a href="tel:+4522223833">+45 2222 3833</a></li>
+						<li><a href="mailto:hej@karltoffel.dk">hej@karltoffel.dk</a></li>
+						<li>Mølbjerg 9, 8700 Horsens</li>
+						<li>CVR: 40941894</li>
+					</ul>
+				</div>
+			</div>
+			<div class="cell small-12 medium-6 large-3">
+				<div class="rte rte--no-ul" data-in-view-scope>
+					<h4>Generelt</h4>
+					<ul>
+						<li><a href="/p/om-karltoffel">Om os</a></li>
+						<li><a href="/p/det-vi-ordner">Find vores ydelser</a></li>
+						<li><a href="/p/pakker-priser">Se pakker og priser</a></li>
+					</ul>
+				</div>
+			</div>
+			<div class="cell small-12 medium-6 large-3">
+				<div class="rte rte--no-ul" data-in-view-scope>
+					<h4>De praktiske links</h4>
+					<ul>
+						<li><a href="/p/handelsbetingelser">Handelsbetingelser</a></li>
+						<li><a href="/p/cookiepolitik">Privatlivspolitik</a></li>
+						<li><a href="/p/cookiepolitik">Cookiepolitik</a></li>
+						<li><a href="/#tilbudsmotor">Få et tilbud</a></li>
+					</ul>
+				</div>
+			</div>
+		</div>
+		<div class="site-footer__bottom">
+			<div class="rte rte--inline" data-in-view-scope>
+				<div class="social-container social-container--inline">Følg os på:
+					<div class="social-icons">
+						<a href="https://www.facebook.com/profile.php?id=61590504536922" target="_blank" title="Facebook"><i class="fa-brands fa-facebook-f"></i><span>Facebook</span></a>
+					</div>
+				</div>
+				<p>Udviklet og designet af <a href="https://bubble.dk" target="_blank" rel="nofollow">Bubble</a></p>
+			</div>
+		</div>
+	</div>
+	<div class="site-footer__wordmark">
+		<img src="/assets/img/design/karltoffel-logo-gul.svg" alt="Karltoffel">
+	</div>
+</footer>
+
+	</div>
+
+	<script>
+	(function () {
+		// Ét ord (fornavnet) i klartekst i URL'en er ufarligt (ingen accept/decline-logik
+		// afhænger af det — det er kun til visning), men vi undgår alligevel at lægge
+		// noget følsomt i query-strengen: kun c (svar) og evt. navn sendes af CRM'et.
+		var params = new URLSearchParams(location.search);
+		var c = params.get("c");
+		var navn = (params.get("navn") || "").trim();
+		var hilsen = navn ? navn + "!" : "heldige karltoffel!";
+
+		var COPY = {
+			accept: {
+				titel: "Du er nu en heldig karltoffel, " + hilsen,
+				tekst: "Vi har lagt dig i kalenderen og ringer snarest — typisk inden for et kvarter i åbningstiden — for at bekræfte tid og de sidste detaljer. Naboen bliver grøn af misundelse."
+			},
+			maybe: {
+				titel: "Noteret, " + hilsen,
+				tekst: "Du har stadig et par spørgsmål, og det er helt fair. Vi ringer og reder trådene ud, så du ved præcis hvad du siger ja eller nej til."
+			},
+			decline: {
+				titel: "Tak for din tid, " + hilsen,
+				tekst: "Vi hopper videre uden hårde følelser. Skifter du mening, står tilbuddet stadig — ring eller skriv til os, når det passer dig."
+			},
+			already_used: {
+				titel: "Du har allerede svaret",
+				tekst: "Vi har allerede registreret dit svar på det her tilbud. Skal det ændres, er det hurtigst at ringe til os."
+			},
+			expired: {
+				titel: "Linket er udløbet",
+				tekst: "Tilbuddet er desværre ikke længere aktivt. Er du stadig interesseret, ringer du bare — så laver vi et nyt."
+			},
+			error: {
+				titel: "Hovsa, noget gik galt",
+				tekst: "Vi kunne ikke finde tilbuddet på linket. Ring til os, så finder vi ud af det sammen."
+			}
+		};
+
+		var valgt = COPY[c] || {
+			titel: "Tak for dit svar!",
+			tekst: "Vi har modtaget din besked og vender tilbage."
+		};
+		document.getElementById("svar-titel").textContent = valgt.titel;
+		document.getElementById("svar-tekst").textContent = valgt.tekst;
+	})();
+	</script>
+
+	<script src="/assets/js/script.js"></script>
+</body>
+</html>
