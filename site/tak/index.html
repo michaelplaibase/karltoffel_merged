@@ -231,6 +231,23 @@ Besøg os på www.bubble.dk eller ring til os på +45 6069 8700
 		};
 		document.getElementById("svar-titel").textContent = valgt.titel;
 		document.getElementById("svar-tekst").textContent = valgt.tekst;
+
+		// header--fixed er position:fixed med en negativ bund-margin (så heroer kan
+		// flyde ind under den) — det betyder at #svar-hero's egen padding-top ligger
+		// DELVIST skjult bag headeren. Uden korrektion bliver afstanden fra menuen ned
+		// til billedet derfor mindre end afstanden fra billedet ned til footeren, selv
+		// om begge padding-værdier er ens i CSS'en. Vi måler headerens faktiske højde
+		// og lægger den oveni, så de to afstande matcher på alle skærmstørrelser.
+		function rettSpacingUnderHeader() {
+			var header = document.querySelector(".header--fixed");
+			var hero = document.getElementById("svar-hero");
+			if (!header || !hero) return;
+			var headerHøjde = header.getBoundingClientRect().height;
+			var basisPadding = parseFloat(getComputedStyle(hero).paddingBottom) || 0;
+			hero.style.paddingTop = (headerHøjde + basisPadding) + "px";
+		}
+		rettSpacingUnderHeader();
+		window.addEventListener("resize", rettSpacingUnderHeader);
 	})();
 	</script>
 
