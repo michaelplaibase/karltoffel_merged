@@ -54,4 +54,13 @@
       });
     }
   }
+
+  if (window.location.hash) {
+    var anchor = document.querySelector(window.location.hash);
+    if (anchor) {
+      window.requestAnimationFrame(function () {
+        anchor.scrollIntoView({ block: 'start' });
+      });
+    }
+  }
 }());

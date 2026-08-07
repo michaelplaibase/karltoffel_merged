@@ -11,6 +11,7 @@
   position: relative;
   overflow: hidden;
   padding: 88px 24px;
+  scroll-margin-top: 80px;
   color: #4C3718;
 }
 
