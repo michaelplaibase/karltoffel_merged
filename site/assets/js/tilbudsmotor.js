@@ -409,8 +409,15 @@ function vaelgBetaling(t){
   btPrGang.setAttribute("aria-checked", t === "pr_gang" ? "true" : "false");
   lsVidere.disabled = false;
 }
-btAbo.addEventListener("click", ()=> vaelgBetaling("abonnement"));
-btPrGang.addEventListener("click", ()=> vaelgBetaling("pr_gang"));
+if(btAbo && btPrGang){
+  btAbo.addEventListener("click", ()=> vaelgBetaling("abonnement"));
+  btPrGang.addEventListener("click", ()=> vaelgBetaling("pr_gang"));
+} else {
+  /* Erhvervssiden bruger stadig det enkle løsnings-trin uden betalingskort.
+     Bevar det eksisterende flow som fast aftale i stedet for at stoppe hele
+     scriptet på manglende elementer. */
+  state.betaling = "abonnement";
+}
 
 /* Sæson-månedsprisen for abonnementet: årssummen (efter mængderabat) med
    yderligere 10% abonnements-rabat, fordelt over KUN de 7 havesæson-måneder —
