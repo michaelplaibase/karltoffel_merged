@@ -23,6 +23,7 @@ Besøg os på www.bubble.dk eller ring til os på +45 6069 8700
 		<link rel="apple-touch-icon" href="f/design/appicon.png">
 	<link rel="stylesheet" href="https://use.typekit.net/qfz3lyk.css">
 	<link rel="stylesheet" type="text/css" href="/style.css?282376887">
+	<link rel="stylesheet" href="/assets/css/erhverv.css?v=1">
 		<link rel="preload" as="image"
 		href="f/thumb?src=/f/page/75c3eeccc26ae78c97931a059f470f0af4d04696_thumb.jpg&amp;w=2000&amp;webp"
 		imagesrcset="f/thumb?src=/f/page/75c3eeccc26ae78c97931a059f470f0af4d04696_thumb.jpg&amp;w=2000&amp;webp 2000w,
@@ -209,7 +210,7 @@ Besøg os på www.bubble.dk eller ring til os på +45 6069 8700
 				<div class="grid-x">
 					<div class="cell small-12 ">
 						<div class="rte rte--larger" data-in-view-scope>
-							<h1>Facility management, viceværtservice og ejendomsservice</h1>
+							<h1>Facility management, viceværtservice og ejendomsservice til heldige karltofler</h1>
 <p>Du kender det sikkert. På arbejdet passer bygningen og udendørs arealerne heller ikke sig selv. Derfor har vi også gjort det nemt for dig at tage Karltoffel med på arbejde, så du ikke skal koncentrere dig om andet end dit arbejde når du er der.</p>
 																												</div>
 					</div>
@@ -233,6 +234,31 @@ Besøg os på www.bubble.dk eller ring til os på +45 6069 8700
 
 
 <div id="bottom" class="bottom">							
+	<section class="erhverv-redesign" aria-labelledby="erhverv-pakker-titel">
+		<div class="erhverv-redesign__inner">
+			<div class="erhverv-redesign__intro">
+				<p class="erhverv-redesign__eyebrow">Fast service. Færre løse ender.</p>
+				<h2 id="erhverv-pakker-titel">Tre måder at få styr på ejendommen</h2>
+				<p>Vælg det niveau, der minder mest om jeres hverdag. Vi samler opgaverne i en fast plan og tilpasser den til bygningen, udearealerne og jeres behov.</p>
+			</div>
+			<div class="erhverv-packages">
+				<article class="erhverv-package"><span class="erhverv-package__number">01</span><h3>Basisdrift</h3><p class="erhverv-package__for">Til den mindre ejendom, hvor de faste opgaver bare skal være ordnet.</p><ul><li>Løbende tilsyn med udearealer</li><li>Græs, hæk og ukrudt i fast rul</li><li>Sæsonklargøring og oprydning</li><li>Én samlet kontaktperson</li></ul><a class="erhverv-package__cta" href="#tilbudsmotor">Bed os ringe op</a></article>
+				<article class="erhverv-package"><span class="erhverv-package__number">02</span><h3>Viceværtservice</h3><p class="erhverv-package__for">Til arbejdspladsen eller ejendommen, der løbende har små og store praktiske opgaver.</p><ul><li>Faste viceværtbesøg</li><li>Småreparationer og praktiske opgaver</li><li>Tilsyn med bygning og fællesarealer</li><li>Koordinering af opgaver i en fast plan</li></ul><a class="erhverv-package__cta" href="#tilbudsmotor">Bed os ringe op</a></article>
+				<article class="erhverv-package"><span class="erhverv-package__number">03</span><h3>Komplet ejendomsservice</h3><p class="erhverv-package__for">Til jer, der vil samle vedligeholdet ét sted og slippe for at ringe til mange leverandører.</p><ul><li>Bygning, udearealer og viceværtservice</li><li>Fast vedligeholdelsesplan</li><li>Løbende prioritering og opfølgning</li><li>En løsning tilpasset jeres ejendom</li></ul><a class="erhverv-package__cta" href="#tilbudsmotor">Bed os ringe op</a></article>
+			</div>
+			<div class="erhverv-callback" id="tilbudsmotor">
+				<div class="erhverv-callback__copy"><p class="erhverv-redesign__eyebrow">Ikke mere formular-maraton</p><h2>Hvor skal vi kigge forbi?</h2><p>Giv os adressen og dit nummer. Så ringer vi og finder den rigtige plan sammen med dig.</p></div>
+				<form class="erhverv-callback__form" id="erhverv-callback-form" novalidate>
+					<div class="erhverv-field erhverv-field--wide"><label for="erhverv-adresse">Ejendommens adresse</label><input id="erhverv-adresse" name="address" type="text" autocomplete="street-address" required></div>
+					<div class="erhverv-field"><label for="erhverv-navn">Dit navn</label><input id="erhverv-navn" name="name" type="text" autocomplete="name" required></div>
+					<div class="erhverv-field"><label for="erhverv-telefon">Telefonnummer</label><input id="erhverv-telefon" name="phone" type="tel" autocomplete="tel" inputmode="tel" required></div>
+					<div class="erhverv-field erhverv-field--wide"><label for="erhverv-email">E-mail (valgfri)</label><input id="erhverv-email" name="email" type="email" autocomplete="email"></div>
+					<button type="submit">Bed os ringe dig op</button>
+				</form>
+				<div class="erhverv-form-status" id="erhverv-form-status" role="status" aria-live="polite" hidden></div>
+			</div>
+		</div>
+	</section>
 		
 		
 	
@@ -3197,12 +3223,10 @@ Besøg os på www.bubble.dk eller ring til os på +45 6069 8700
 													<h3>Hvordan bliver jeg faktureret?</h3>
 	<p class="isSelectedEnd">Vi fakturerer efter hver udført service. Det betyder, at du kun modtager en faktura, når vi har været forbi og udført en aftalt ydelse.</p>
 <p>Har du en fast serviceaftale, svarer den samlede betaling over året til den månedlige pris, der er angivet på din pakke.</p>
-	<h3>Kan jeg få servicefradrag på ydelserne?</h3>
-	<p>Ja, flere af vores ydelser kan være omfattet af servicefradraget, hvis de opfylder de gældende regler fra Skattestyrelsen. Det gælder blandt andet udvalgte former for havearbejde og vedligeholdelse omkring boligen.</p>
-<p>Reglerne ændrer sig løbende, og det er altid dit eget ansvar at sikre, at du opfylder betingelserne for fradraget. Er du i tvivl, hjælper vi gerne med at afklare, om den ønskede ydelse kan være omfattet.</p>
-<p>Du kan læse mere om de aktuelle regler på Skattestyrelsens hjemmeside.</p>
+	<h3>Kan aftalen tilpasses vores ejendom?</h3>
+	<p>Ja. Vi tager udgangspunkt i bygningen, udearealerne og de opgaver, I gerne vil slippe for at koordinere. Derefter samler vi det hele i en fast plan.</p>
 	<h3>Tilbyder I faste serviceaftaler?</h3>
-	<p>Ja. Mange kunder vælger en fast aftale, hvor vi løbende vedligeholder haven gennem sæsonen.</p>
+	<p>Ja. Vi kan samle den løbende drift og vedligeholdelse i en fast plan, så opgaverne bliver udført på de aftalte tidspunkter.</p>
 	<h3>Hjælper I også med enkelte opgaver?</h3>
 	<p>Ja. Du kan både booke os til en enkelt opgave eller vælge en fast løsning.</p>
 	<h3> Arbejder I både for private og erhverv?</h3>
@@ -3225,19 +3249,17 @@ Besøg os på www.bubble.dk eller ring til os på +45 6069 8700
 		}
 	  },{
 		"@type": "Question",
-		"name": "Kan jeg få servicefradrag på ydelserne?",
+		"name": "Kan aftalen tilpasses vores ejendom?",
 		"acceptedAnswer": {
 		  "@type": "Answer",
-		  "text": " Ja, flere af vores ydelser kan være omfattet af servicefradraget, hvis de opfylder de gældende regler fra Skattestyrelsen. Det gælder blandt andet udvalgte former for havearbejde og vedligeholdelse omkring boligen. 
- Reglerne ændrer sig løbende, og det er altid dit eget ansvar at sikre, at du opfylder betingelserne for fradraget. Er du i tvivl, hjælper vi gerne med at afklare, om den ønskede ydelse kan være omfattet. 
- Du kan læse mere om de aktuelle regler på Skattestyrelsens hjemmeside. "
+		  "text": " Ja. Vi tager udgangspunkt i bygningen, udearealerne og de opgaver, I gerne vil slippe for at koordinere. Derefter samler vi det hele i en fast plan. "
 		}
 	  },{
 		"@type": "Question",
 		"name": "Tilbyder I faste serviceaftaler?",
 		"acceptedAnswer": {
 		  "@type": "Answer",
-		  "text": " Ja. Mange kunder vælger en fast aftale, hvor vi løbende vedligeholder haven gennem sæsonen. "
+		  "text": " Ja. Vi kan samle den løbende drift og vedligeholdelse i en fast plan, så opgaverne bliver udført på de aftalte tidspunkter. "
 		}
 	  },{
 		"@type": "Question",
@@ -3299,14 +3321,14 @@ Besøg os på www.bubble.dk eller ring til os på +45 6069 8700
 									<div class="cell small-12 medium-6">
 				<div class="section__text rte rte--larger-h2" data-in-view-scope>
 					<h2>Klar til lidt mere overskud?</h2>
-<p>Lad os tage os af det praktiske, så du slipper for bøvlet og stadig får et hjem, der står helt skarpt.</p>
+<p>Lad os tage os af det praktiske, så I slipper for bøvlet og får en ejendom, der står helt skarpt.</p>
 
 									</div>
 			</div>
 					<div class="cell small-12 medium-6">
 				<div class="section__text rte" data-in-view-scope>
 					
-<p>Fra lidt hjælp til fuld bekymringsfrihed. Vælg et fast abonnement, der passer til dit behov, eller sammensæt din egen bland-selv-løsning.</p>
+<p>Fra løbende basisdrift til komplet ejendomsservice. Vi finder den faste plan, der passer til jeres hverdag.</p>
 												<div class="buttons">
 	   <a href="p/faa-et-tilbud" class="button in-view in-view--slide-up"><span>Bliv en heldig karltoffel</span></a>
 		    </div>
@@ -3403,6 +3425,7 @@ Besøg os på www.bubble.dk eller ring til os på +45 6069 8700
 	</div>
 
 		<script src="/script.js?282712716"></script>
+		<script src="/assets/js/erhverv.js?v=1"></script>
 	
 
 
