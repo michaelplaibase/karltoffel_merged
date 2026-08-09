@@ -31,3 +31,8 @@ form button.g-recaptcha:hover{filter:brightness(1.15)}
    ========================================================================== */
 .header__buttons a.button,.drawer__buttons a.button{--theme-color-text:#FFF87B;--theme-color-button-icon:#FFF87B;background:#4C3718;color:#FFF87B;padding:12px 22px;border-radius:999px;display:inline-flex;align-items:center;gap:8px}
 .header__buttons a.button:hover,.header__buttons a.button:focus,.drawer__buttons a.button:hover,.drawer__buttons a.button:focus{background:#5a4322;color:#FFF87B}
+/* Services removed from the package offering. */
+.card__services li:has(.card__service-label[data-title="Vask hus/garage ned"]),
+.card__services li:has(.card__service-label[data-title="Servicering af vinduer og døre"]) {
+	display: none;
+}
