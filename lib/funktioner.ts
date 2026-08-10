@@ -131,7 +131,7 @@ export const OPTIMIZATION: {
     "Abonnementsoptimering er en avanceret funktion, som kan hjælpe med at optimere din kørsel ved at flytte udvalgte abonnementer, dvs. ved at forskubbe ugerytmen.",
     "Venstre kort viser den nuværende ugerytmer for alle dine abonnementer, mens det højre kort viser ugerytmerne efter optimering.",
     "Optimeringen tager også højde for fordeling af arbejdestid på tværs af uger, således at arbejdstiden jævnes ud.",
-    "Fenster foreslår flytning af op til 10 abonnementer ad gangen, hvor du skal bekræfte for hvert abonnement, om det må flyttes. Når flytningen er gennemført sender Fenster en besked til kunden med info om ændringen. Du kan tilpasse beskeden på denne side, hvis du ønsker det.",
+    "Karltoffel foreslår flytning af op til 10 abonnementer ad gangen, hvor du skal bekræfte for hvert abonnement, om det må flyttes. Når flytningen er gennemført sender Karltoffel en besked til kunden med info om ændringen. Du kan tilpasse beskeden på denne side, hvis du ønsker det.",
   ],
   availableTitle: "Abonnementsoptimering er klar",
   availableMsg:

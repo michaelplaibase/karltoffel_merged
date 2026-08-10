@@ -20,7 +20,7 @@ export default function QuizPage() {
   if (!started) {
     return (
       <div className="container-1140" style={{ maxWidth: 720 }}>
-        <h1 className="page-title">Fenster quiz</h1>
+        <h1 className="page-title">Karltoffel quiz</h1>
         <div className="card"><div className="card-body">
           <p className="muted">Test din viden om systemet med {QUESTIONS.length} spørgsmål. Du får svaret med det samme.</p>
           <button className="btn btn-primary" onClick={() => setStarted(true)}>Start quiz</button>
@@ -31,7 +31,7 @@ export default function QuizPage() {
 
   return (
     <div className="container-1140" style={{ maxWidth: 720 }}>
-      <h1 className="page-title">Fenster quiz</h1>
+      <h1 className="page-title">Karltoffel quiz</h1>
       <div className="card"><div className="card-body">
         {done ? (
           <>

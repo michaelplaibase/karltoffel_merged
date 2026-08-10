@@ -2,6 +2,7 @@
 
 import { usePathname } from "next/navigation";
 import Navbar from "./Navbar";
+import FrustrationButton from "./FrustrationButton";
 
 // Create/edit forms render as modal-style pages on a dæmpet baggrund — men MED
 // navbar: uden den er man på mobil fanget uden anden vej væk end browser-back
@@ -20,6 +21,7 @@ export default function Shell({ children }: { children: React.ReactNode }) {
       <>
         <Navbar />
         <div className="app-main form-page form-page--chrome">{children}</div>
+        <FrustrationButton />
       </>
     );
   }
@@ -27,6 +29,7 @@ export default function Shell({ children }: { children: React.ReactNode }) {
     <>
       <Navbar />
       <div className="app-main">{children}</div>
+      <FrustrationButton />
     </>
   );
 }

@@ -1,4 +1,4 @@
-// The 15 Fenster task categories. Each drives the colored letter-chip shown on
+// The 15 Karltoffel task categories. Each drives the colored letter-chip shown on
 // every task line across orders, subscriptions and fixed-price agreements.
 // Hex values are the exact ones observed in the live portal.
 export const CATEGORIES: Record<string, string> = {

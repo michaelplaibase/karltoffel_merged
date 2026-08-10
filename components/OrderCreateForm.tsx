@@ -9,7 +9,7 @@ import TaskLineEditor from "@/components/TaskLineEditor";
 export type WeekOption = { value: string; label: string };
 
 export default function OrderCreateForm({
-  action, contacts, weekOptions, initialContactId, minuteRate,
+  action, contacts, weekOptions, initialContactId, minuteRate, employees,
 }: {
   action: (state: OrderCreateState, formData: FormData) => Promise<OrderCreateState>;
   contacts: ContactOption[];
@@ -17,6 +17,9 @@ export default function OrderCreateForm({
   initialContactId?: number;
   /** Minutpris (kr/min ekskl. moms) — auto-beregner varighed ud fra prisen. */
   minuteRate: number;
+  /** Medarbejdere ordren kan tildeles. Tomt/udeladt felt = "Vælges automatisk"
+   *  (nat-planneren tildeler nærmeste medarbejder). */
+  employees: { id: number; name: string }[];
 }) {
   const [state, formAction, pending] = useActionState(action, {});
 
@@ -45,6 +48,13 @@ export default function OrderCreateForm({
             {weekOptions.map((w) => <option key={w.value} value={w.value}>{w.label}</option>)}
           </select>
           <small className="form-text field-help">Ordren planlægges automatisk i den valgte uge.</small>
+
+          <label className="field-label" style={{ marginTop: 12 }}>Medarbejder</label>
+          <select name="employeeId" defaultValue="" className="form-control form-control-sm">
+            <option value="">Vælges automatisk (nærmeste ledige)</option>
+            {employees.map((e) => <option key={e.id} value={e.id}>{e.name}</option>)}
+          </select>
+          <small className="form-text field-help">Kun den valgte medarbejder ser ordren i sit dagsprogram.</small>
         </div>
       </div>
 

@@ -4,7 +4,7 @@
 // Prisma client in lib/db.ts.
 import { prisma } from "./db";
 import type { Contact, Subscription, Order, TaskLine } from "./data";
-import { planWeek, isoWeek, fmtTime, type Job, type Employee as PlannerEmployee } from "./planner";
+import { planWeek, isoWeek, fmtTime, type Job, type Employee as PlannerEmployee, type DayPlan } from "./planner";
 import { weekLabel } from "./weeks";
 import { coordFor } from "./geo";
 import {
@@ -267,6 +267,14 @@ export async function getEmployeeNames(): Promise<string[]> {
   return ["Ingen", ...users.map((u) => `${u.firstName} ${u.lastName}`)];
 }
 
+/** Employee picker options (id + display name) for the manual order form —
+ *  unlike getEmployeeNames (subscriptions' free-text "Ingen"/name list), a
+ *  manual order stores a real employeeId FK, so the picker needs ids. */
+export async function getEmployeeOptions(): Promise<{ id: number; name: string }[]> {
+  const users = await prisma.user.findMany({ where: { active: true }, orderBy: { id: "asc" } });
+  return users.map((u) => ({ id: u.id, name: `${u.firstName} ${u.lastName}` }));
+}
+
 // ---- Fixed-price agreements --------------------------------------------------
 
 export type FixedPrice = {
@@ -508,11 +516,13 @@ async function buildWeekPlan(weekMonday: string) {
   ]);
   const holiday = await isHolidayWeek(weekMonday);
   const priceById = new Map<number, number>();
+  const completedAtById = new Map<number, Date | null>();
   const metaById = new Map<number, { subNo: number | null; status: string; phone: string | null; tasks: TaskLine[]; comment: string; addressNote: string }>();
   // Ferielukket uge: der PLANLÆGGES intet, men allerede-materialiserede ordrer
   // må aldrig blive usynlige — de vises som "Ikke planlagt (ferielukket)".
   const jobs: Job[] = orders.map((o) => {
     priceById.set(o.id, o.tasks.reduce((a, t) => a + t.price, 0));
+    completedAtById.set(o.id, o.completedAt ?? null);
     metaById.set(o.id, {
       subNo: o.subscription?.displayNo ?? null, status: o.status,
       phone: o.contact.phone ?? null,
@@ -538,6 +548,11 @@ async function buildWeekPlan(weekMonday: string) {
   const placeable = holiday ? [] : jobs.filter((j) => j.fixedEmployeeId != null && activeIds.has(j.fixedEmployeeId));
   const unassigned = holiday ? [] : jobs.filter((j) => j.fixedEmployeeId == null || !activeIds.has(j.fixedEmployeeId));
   const plan = planWeek(placeable, weekMonday, plannerEmps);
+  // Fremryk resten af dagens stops for hver medarbejder, der afsluttede en
+  // opgave hurtigere end planlagt — men KUN for dagens ugedag (i går/i morgen
+  // giver "hurtigere end planlagt" ingen mening at fremrykke visuelt for).
+  const todayIdx = weekdayIdxIfThisWeek(weekMonday);
+  if (todayIdx != null) reflowEarlyCompletions(plan.days.filter((d) => d.weekday === todayIdx), completedAtById);
   const unplanned: { job: Job; reason: "unassigned" | "overflow" | "holiday" }[] = holiday
     ? jobs.map((job) => ({ job, reason: "holiday" as const }))
     : [
@@ -554,6 +569,67 @@ function calStatusOf(status: string): CalStatus {
   if (status.startsWith("Mislykk")) return "mislykket";
   return "afventer";
 }
+
+const CPH_TZ = "Europe/Copenhagen";
+/** Minutter siden midnat (Europe/Copenhagen vægur-tid) for et tidsstempel. */
+function minutesOfDayCph(d: Date): number {
+  const fmt = new Intl.DateTimeFormat("en-GB", { timeZone: CPH_TZ, hour: "2-digit", minute: "2-digit", hour12: false });
+  const parts = fmt.formatToParts(d);
+  const h = Number(parts.find((p) => p.type === "hour")?.value ?? "0") % 24;
+  const m = Number(parts.find((p) => p.type === "minute")?.value ?? "0");
+  return h * 60 + m;
+}
+
+/** dd i dag (Europe/Copenhagen) som yyyy-mm-dd. */
+function todayCphISO(): string {
+  return new Intl.DateTimeFormat("en-CA", { timeZone: CPH_TZ, year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date());
+}
+/** Er "i dag" (Europe/Copenhagen) i den viste uge? Returnerer dagens
+ *  ugedag-indeks (0=man) hvis ja, ellers null — bruges til at afgrænse
+ *  reflowEarlyCompletions til KUN dagens kolonne. */
+function weekdayIdxIfThisWeek(weekMonday: string): number | null {
+  const monday = new Date(`${weekMonday}T00:00:00Z`);
+  const todayISO = todayCphISO();
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(monday.getTime() + i * 864e5);
+    if (ymd(d) === todayISO) return i;
+  }
+  return null;
+}
+
+/**
+ * Rykker resten af en medarbejders dag frem, når en opgave afsluttes hurtigere
+ * end planlagt (mødereferat 2026-08-03: "systemet skal automatisk kunne rykke
+ * opgaver frem i kalenderen, hvis en medarbejder bliver hurtigere færdig end
+ * planlagt"). Ren visningsjustering — planlæggeren gemmer INGEN tidspunkter i
+ * databasen (de genberegnes altid on-read, se buildWeekPlan), så dette er blot
+ * endnu et lag i samme beregning: for stops i dag, sorteret kronologisk, akkumuleres
+ * en "drift" (sparede minutter) fra hver allerede-afsluttet opgave og trækkes fra
+ * de efterfølgende, endnu ikke afsluttede stops' start/sluttid. Kun samme
+ * medarbejder/dag påvirkes; forsinkelser (afsluttet SENERE end planlagt) rykker
+ * IKKE — kun tidligere afslutning fremrykker (som eksplicit efterspurgt).
+ */
+function reflowEarlyCompletions(days: DayPlan[], completedAtById: Map<number, Date | null>): void {
+  for (const day of days) {
+    const stops = [...day.stops].sort((a, b) => a.startMin - b.startMin);
+    let drift = 0;
+    for (const s of stops) {
+      if (drift > 0) {
+        s.startMin = Math.max(0, s.startMin - drift);
+        s.endMin = Math.max(s.startMin, s.endMin - drift);
+      }
+      const completedAt = completedAtById.get(s.job.id);
+      if (!completedAt) continue;
+      const actualEndMin = minutesOfDayCph(completedAt);
+      const savedMin = s.endMin - actualEndMin;
+      if (savedMin > 0) {
+        drift += savedMin;
+        s.endMin = actualEndMin;
+      }
+    }
+  }
+}
+
 
 /** Planned revenue (incl. VAT) for every order in a calendar month. */
 async function monthRevenue(year: number, monthIdx0: number): Promise<number> {
@@ -621,13 +697,17 @@ export async function getCalendarWeek(weekMonday: string): Promise<CalendarWeek>
   };
 }
 
-export async function getDayProgram(dateISO: string): Promise<DayProgram> {
+export async function getDayProgram(dateISO: string, viewer?: { id: number; isAdmin: boolean }): Promise<DayProgram> {
   const date = new Date(`${dateISO}T00:00:00Z`);
   const weekdayIdx = (date.getUTCDay() + 6) % 7; // 0 = Monday
   const mondayISO = ymd(new Date(date.getTime() - weekdayIdx * 864e5));
   const { plan, priceById, metaById, empName } = await buildWeekPlan(mondayISO);
-  // Aggregate across ALL employees working this weekday (one DayPlan per employee).
-  const dayPlans = plan.days.filter((d) => d.weekday === weekdayIdx);
+  // Aggregate across employees working this weekday — ALLE for admin (teamoverblik),
+  // men kun viewer selv for en almindelig medarbejder (Michael, 2026-08-10: en
+  // medarbejder skal kun se sine EGNE opgaver, ikke kollegers). Admin/udeladt
+  // viewer bevarer den hidtidige adfærd (fx daycalendar-PDF-rapporten kalder uden
+  // viewer, og skal stadig vise hele dagen).
+  const dayPlans = plan.days.filter((d) => d.weekday === weekdayIdx && (!viewer || viewer.isAdmin || d.employeeId === viewer.id));
 
   const stops: DayStop[] = dayPlans
     .flatMap((dp) => dp.stops.map((s) => ({ dp, s })))

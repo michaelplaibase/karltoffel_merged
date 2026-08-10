@@ -14,7 +14,7 @@ const DELIVERY: [string, string][] = [
 const PAYMENT = [
   "Send faktura - ubetalt",
   "Send faktura - betalt kontant",
-  "Send ikke faktura fra Fenster",
+  "Send ikke faktura fra Karltoffel",
   "Opret fakturakladde",
   "Registrer på et senere tidspunkt",
 ];

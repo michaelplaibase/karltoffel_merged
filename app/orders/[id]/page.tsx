@@ -130,7 +130,7 @@ export default async function OrderDetail({ params }: { params: Promise<{ id: st
                 <Link href={`/orders/${o.id}/complete`} className="btn btn-outline-primary">Vælg fakturering</Link>
               </div>
             ) : o.dineroInvoiceStatus === "Failed" ||
-              (o.invoiceDecision && o.invoiceDecision !== "Send ikke faktura fra Fenster" && !o.dineroInvoiceStatus) ? (
+              (o.invoiceDecision && o.invoiceDecision !== "Send ikke faktura fra Karltoffel" && !o.dineroInvoiceStatus) ? (
               <form action={retryInvoice.bind(null, o.id)} style={{ marginTop: 12 }}>
                 <button type="submit" className="btn btn-outline-primary">Fakturér igen</button>
               </form>

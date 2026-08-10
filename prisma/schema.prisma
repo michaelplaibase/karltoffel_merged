@@ -209,6 +209,21 @@ model Order {
   dineroError           String?  // seneste fejldetalje (dansk), rydded ved succes
   invoicedAt            DateTime?
   reminderSentAt        DateTime? // "vi kommer i morgen"-påmindelse sendt — idempotens-værn, sendes højst én gang pr. ordre
+  completedAt           DateTime? // Faktisk afslutningstidspunkt (sat af completeOrder ved "Udført") — bruges til at
+                                   // rykke medarbejderens ØVRIGE opgaver samme dag frem, hvis hun/han blev hurtigere
+                                   // færdig end planlagt (Michael, mødereferat 2026-08-03). Se lib/queries.ts buildWeekPlan.
+  // --- Erhvervs-samlefaktura (Michael, 2026-08-10) ---
+  // Erhvervskunder faktureres IKKE pr. ordre: alle ordrer "Udført" i perioden
+  // 20.-19. i næste måned samles i ÉN Dinero-faktura pr. erhvervskontakt, helt
+  // automatisk (ingen godkendelsestrin) — se lib/business-invoicing.ts. Egne
+  // felter, IKKE dineroInvoiceGuid/@unique ovenfor: den er unik PR. ordre og
+  // kan derfor ikke deles af flere ordrer i samme samlefaktura.
+  businessBatchInvoiceGuid      String?
+  businessBatchInvoiceTimeStamp String?
+  businessBatchInvoiceNumber    Int?
+  businessBatchInvoiceStatus    String?  // simulated | Draft | Booked | Sent | Failed
+  businessBatchInvoicedAt       DateTime?
+  businessBatchError            String?
   tasks         TaskLine[]
   createdAt     DateTime  @default(now())
 
@@ -216,6 +231,7 @@ model Order {
   @@index([contactId])
   @@index([subscriptionId])
   @@index([plannedAt])
+  @@index([businessBatchInvoiceGuid])
 }
 
 // Engangs-token udstedt sammen med en tilbudsmail, så kunden kan klikke Ja/

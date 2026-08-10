@@ -9,7 +9,7 @@ const PRESET = [
   "Blank (ingen forudindstilling)",
   "Send faktura - ubetalt",
   "Send faktura - betalt kontant",
-  "Send ikke faktura fra Fenster",
+  "Send ikke faktura fra Karltoffel",
   "Opret fakturakladde",
   "Registrer på et senere tidspunkt",
 ];
@@ -66,7 +66,7 @@ export default function ContactSettingsForm({
             <label style={checkRow}>
               <input type="checkbox" name="skipInvoiceOverSms" defaultChecked={initial.skipInvoiceOverSms} /> Send ikke via SMS
             </label>
-            <small className="form-text field-help">Hvis markeret, så undlader Fenster at sende fakturaen via SMS, selvom SMS er valgt under generelle indstillinger. Det kan f.eks. bruges til erhvervskunder, der ikke ønsker SMS.</small>
+            <small className="form-text field-help">Hvis markeret, så undlader Karltoffel at sende fakturaen via SMS, selvom SMS er valgt under generelle indstillinger. Det kan f.eks. bruges til erhvervskunder, der ikke ønsker SMS.</small>
           </div>
         </div>
 

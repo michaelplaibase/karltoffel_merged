@@ -21,10 +21,10 @@ export const SETTINGS_PAGES: Record<string, SPage> = {
     saveLabel: "Gem alle ændringer",
     sections: [
       {
-        h: "Fenster konto",
+        h: "Karltoffel konto",
         fields: [
-          { t: "note", val: "Indstillinger vedr. din Fenster konto, f.eks. virksomhedsoplysninger, dit Fenster abonnement, kapacitetsforbrug, betalingsoplysninger, fakturahistorik, mv." },
-          { t: "buttons", btns: [["Åbn Fenster konto side ...", "outline-primary"]] },
+          { t: "note", val: "Indstillinger vedr. din Karltoffel konto, f.eks. virksomhedsoplysninger, dit Karltoffel abonnement, kapacitetsforbrug, betalingsoplysninger, fakturahistorik, mv." },
+          { t: "buttons", btns: [["Åbn Karltoffel konto side ...", "outline-primary"]] },
         ],
       },
       {
@@ -48,8 +48,8 @@ export const SETTINGS_PAGES: Record<string, SPage> = {
       {
         h: "Fakturering",
         fields: [
-          { t: "note", val: "Fenster kan sende faktura til dine kunder, forudsat du har aktiveret en integration til et regnskabsprogram, f.eks. Dinero." },
-          { t: "checks", l: "Afsend faktura via", opts: ["SMS", "E-mail"], help: "Faktura udstedes altid af Dinero. Herefter varetager Dinero afsendelse via email, mens Fenster varetager afsendelse via SMS til gældende SMS priser." },
+          { t: "note", val: "Karltoffel kan sende faktura til dine kunder, forudsat du har aktiveret en integration til et regnskabsprogram, f.eks. Dinero." },
+          { t: "checks", l: "Afsend faktura via", opts: ["SMS", "E-mail"], help: "Faktura udstedes altid af Dinero. Herefter varetager Dinero afsendelse via email, mens Karltoffel varetager afsendelse via SMS til gældende SMS priser." },
         ],
       },
       {
@@ -57,9 +57,9 @@ export const SETTINGS_PAGES: Record<string, SPage> = {
         fields: [
           { t: "note", val: "Du kan vælge at lave standard forudindstillinger for felter på siden \"Afslut ordre\", således at du kan spare klik hver gang, du afslutter en ordre. Desuden kan du indstille TrustPilot AFS." },
           { t: "radio", l: "Forudindstilling for 'Leveringsstatus'", opts: ["Blank (ingen forudindstilling)", "Udført", "Anden status"], help: "Vælg hvordan sektionen \"Leveringsstatus\" på siden \"Afslut ordre\" skal forudindstilles som standard." },
-          { t: "radio", l: "Forudindstilling for 'Betaling og fakturering'", opts: ["Blank (ingen forudindstilling)", "Send faktura - ubetalt", "Send faktura - betalt kontant", "Send ikke faktura fra Fenster", "Opret fakturakladde", "Registrer på et senere tidspunkt"], help: "Vælg hvordan sektionen \"Betaling og Fakturering\" på siden \"Afslut ordre\" skal forudindstilles som standard." },
+          { t: "radio", l: "Forudindstilling for 'Betaling og fakturering'", opts: ["Blank (ingen forudindstilling)", "Send faktura - ubetalt", "Send faktura - betalt kontant", "Send ikke faktura fra Karltoffel", "Opret fakturakladde", "Registrer på et senere tidspunkt"], help: "Vælg hvordan sektionen \"Betaling og Fakturering\" på siden \"Afslut ordre\" skal forudindstilles som standard." },
           { t: "radio", l: "Forudindstilling for 'Betaling'", opts: ["Blank (ingen forudindstilling)", "Kontant", "MobilePay Get Paid", "Ikke betalt på adressen", "Registrer på et senere tidspunkt"], help: "Vælg hvordan sektionen \"Betaling\" på siden \"Afslut ordre\" skal forudindstilles som standard." },
-          { t: "text", l: "Trustpilot AFS e-mail", val: "", help: "Indtast din unikke Trustpilot email adresse, såfremt du vil aktivere Trustpilot AFS... Når du afslutter en ordre, beder Fenster Trustpilot om at sende en e-mail til kunden med anmodning om en anmeldelse..." },
+          { t: "text", l: "Trustpilot AFS e-mail", val: "", help: "Indtast din unikke Trustpilot email adresse, såfremt du vil aktivere Trustpilot AFS... Når du afslutter en ordre, beder Karltoffel Trustpilot om at sende en e-mail til kunden med anmodning om en anmeldelse..." },
         ],
       },
       {
@@ -71,21 +71,21 @@ export const SETTINGS_PAGES: Record<string, SPage> = {
           { t: "number", l: "Bestillingsvarsel (timer)", val: "24", help: "...bestemmer, hvor mange timer der min. skal være mellem bestillings- og leveringstidspunkt. Standardværdien er 24 timer" },
           { t: "toggle", l: "Send påmindelse om genbestilling", val: "Ja", on: 1, help: "Sender en påmindelse til online kunder om at bestille igen efter X dage. Sendes kun pba online ordrer, ikke på baggrund af manuelle ordrer eller abonnementskunder." },
           { t: "number", l: "Send påmindelse antal dage efter afsluttet ordre", val: "60", help: "Antal dage der skal gå efter seneste ordre er afsluttet før påmindelse fremsendes til kunden." },
-          { t: "toggle", l: "Deltag i online kundehenvisning", val: "Ja", on: 1, help: "Hvis en online kunde ligger uden for dit serviceområde, så henvises kunden til en anden Fenster Partner (i stedet for at blive afvist og gå tabt). Ligeledes vil du også modtage kundehenvisninger fra andre Fenster Partnere..." },
+          { t: "toggle", l: "Deltag i online kundehenvisning", val: "Ja", on: 1, help: "Hvis en online kunde ligger uden for dit serviceområde, så henvises kunden til en anden Karltoffel Partner (i stedet for at blive afvist og gå tabt). Ligeledes vil du også modtage kundehenvisninger fra andre Karltoffel Partnere..." },
         ],
       },
       {
         h: "Timepriser",
         fields: [
-          { t: "note", val: "Timepriser anvendes af Fenster til at estimere prisen på en ordre, f.eks. hvis du har valgt, at dine kunder kan bestille vinduespudsning online, eller hvis du vælger at gøre brug af prisberegneren, når du manuelt opretter en ordre i kalenderen." },
+          { t: "note", val: "Timepriser anvendes af Karltoffel til at estimere prisen på en ordre, f.eks. hvis du har valgt, at dine kunder kan bestille vinduespudsning online, eller hvis du vælger at gøre brug af prisberegneren, når du manuelt opretter en ordre i kalenderen." },
           { t: "number", l: "Timepris i Lokalområde", val: "600", help: "DKK inkl. moms og eks. kørsel" },
-          { t: "note", val: "Hvert af dine områder er indtegnet på et kort i Fenster. Hvis du ønsker at tilføje eller ændre dine områder (f.eks. navn eller størrelse), så kontakt Fenster Support." },
+          { t: "note", val: "Hvert af dine områder er indtegnet på et kort i Karltoffel. Hvis du ønsker at tilføje eller ændre dine områder (f.eks. navn eller størrelse), så kontakt Karltoffel Support." },
         ],
       },
       {
         h: "Tilpasning af tids-/prisberegner",
         fields: [
-          { t: "note", val: "Beregneren estimerer varighed og pris på en opgave. Teknik og hastighed varierer mellem vinduespudsere, så beregneren kan tilpasses din virksomhed: udfyld et spørgeskema (tager ca. 10-15 min), hvorefter Fenster Support lægger ændringerne ind og giver dig besked via email." },
+          { t: "note", val: "Beregneren estimerer varighed og pris på en opgave. Teknik og hastighed varierer mellem vinduespudsere, så beregneren kan tilpasses din virksomhed: udfyld et spørgeskema (tager ca. 10-15 min), hvorefter Karltoffel Support lægger ændringerne ind og giver dig besked via email." },
           { t: "buttons", btns: [["Klik for at åbne spørgeskemaet", "light"]], help: "(åbner i nyt vindue)" },
         ],
       },
@@ -103,9 +103,9 @@ export const SETTINGS_PAGES: Record<string, SPage> = {
         fields: [
           { t: "note", val: "Sæt indstillinger for logo og grafik her. Anvendes bl.a. på din bestillingsside og til dine e-mails, f.eks. ordrebekræftelse, abonnementsbekræftelse m.fl." },
           { t: "text", l: "Logo højde", val: "60", help: "Dette angiver højden på dit logo i pixels. Anbefalet værdi ml. 50-150." },
-          { t: "buttons", l: "Logo upload", btns: [["Vælg fil ...", "light"]], help: "Du kan anvende formaterne PNG, JPG og GIF. Logoet bør være mindre end 500 kilobytes... Efter upload lægger Fenster Support dit logo ind og giver dig besked via email." },
+          { t: "buttons", l: "Logo upload", btns: [["Vælg fil ...", "light"]], help: "Du kan anvende formaterne PNG, JPG og GIF. Logoet bør være mindre end 500 kilobytes... Efter upload lægger Karltoffel Support dit logo ind og giver dig besked via email." },
           { t: "static", l: "Nuværende logo", val: "(preview af nuværende logo)" },
-          { t: "toggle", l: "Fjern grafik fra e-mails", help: "Fenster indsætter normalt grafik i dine e-mails, f.eks. med en glad, hoppende dame, og lign. Du har mulighed for at fjerne denne grafik her." },
+          { t: "toggle", l: "Fjern grafik fra e-mails", help: "Karltoffel indsætter normalt grafik i dine e-mails, f.eks. med en glad, hoppende dame, og lign. Du har mulighed for at fjerne denne grafik her." },
         ],
       },
       {
@@ -123,7 +123,7 @@ export const SETTINGS_PAGES: Record<string, SPage> = {
         fields: [
           { t: "text", l: "Pris-kommentar", val: "", help: "Eksempel: Prisen er inkl. materialer og gratis pudsning af altanglas, såfremt disse er nemt tilgængelige." },
           { t: "text", l: "Betalings-kommentar", val: "Faktura fremsendes efter udført service", help: "Eksempel: Faktura fremsendes efter udført service." },
-          { t: "note", val: "Bemærk, at der er flere tekster, som kan tilpasses på bestillingssiderne, men det kun kan gøres med hjælp fra Fenster Support. Læs mere i Hjælpecenteret" },
+          { t: "note", val: "Bemærk, at der er flere tekster, som kan tilpasses på bestillingssiderne, men det kun kan gøres med hjælp fra Karltoffel Support. Læs mere i Hjælpecenteret" },
         ],
       },
       {
@@ -137,7 +137,7 @@ export const SETTINGS_PAGES: Record<string, SPage> = {
       {
         h: "Kører ikke på adressen",
         fields: [
-          { t: "note", val: "Hvis kunden indtaster en adresse, som ligger uden for dit område, så vises denne besked. Undtaget hvis du deltager i \"online kundehenvisning\", så henvises kunden til en anden Fenster Partner, der kører på adressen." },
+          { t: "note", val: "Hvis kunden indtaster en adresse, som ligger uden for dit område, så vises denne besked. Undtaget hvis du deltager i \"online kundehenvisning\", så henvises kunden til en anden Karltoffel Partner, der kører på adressen." },
           { t: "textarea", l: "Kører ikke på adressen", val: "Beklager, men vi kører desværre ikke på din adresse" },
           { t: "buttons", btns: [["Se resultat", "light"]] },
         ],
@@ -145,10 +145,10 @@ export const SETTINGS_PAGES: Record<string, SPage> = {
       {
         h: "Konverteringstracking",
         fields: [
-          { t: "note", val: "Her kan du opsætte integration til Google Adwords... tracke (få besked), når en kunde konverterer i Fenster, dvs. når en kunde gennemfører en online bestilling. Tal evt. med dit markedsføringsbureau." },
+          { t: "note", val: "Her kan du opsætte integration til Google Adwords... tracke (få besked), når en kunde konverterer i Karltoffel, dvs. når en kunde gennemfører en online bestilling. Tal evt. med dit markedsføringsbureau." },
           { t: "text", l: "Google Ads Global Site Tag", val: "", help: "Eksempel: AW-123456789." },
           { t: "text", l: "Google Ads Conversion Label", val: "", help: "Eksempel: p2w8CJWe_ZkBEJrl1vIC" },
-          { t: "note", val: "Til øvrige tredjepartssystemer (Meta Pixel, Google Analytics) kan du bygge din egen \"Tak for bestillingen\"-side og bede Fenster Support omdirigere kunderne dertil efter gennemført online bestilling." },
+          { t: "note", val: "Til øvrige tredjepartssystemer (Meta Pixel, Google Analytics) kan du bygge din egen \"Tak for bestillingen\"-side og bede Karltoffel Support omdirigere kunderne dertil efter gennemført online bestilling." },
         ],
       },
     ],
@@ -175,7 +175,7 @@ export const SETTINGS_PAGES: Record<string, SPage> = {
           { t: "checks", l: "Rettigheder", opts: ["Portal admin (har alle rettigheder)", "Må se priser og omsætning", "Må redigere order og abonnementer", "Må håndtere betaling / fakturering", "Må ændre valgmulighed for betaling / fakturering"], on: [0, 1, 2, 3, 4] },
           { t: "buttons", l: "Login-genvej", btns: [["Åbn i nyt vindue", "light"], ["Kopier login-genvej", "light"]], help: "Login-genvejen anvendes til installation af app på f.eks. mobil. Følg instruks i hjælpevideo." },
           { t: "buttons", l: "Link til at ændre kodeord", btns: [["Kopier link til at ændre kodeord", "light"]], help: "...så du f.eks. kan sende til medarbejder, som har glemt sit kodeord" },
-          { t: "buttons", l: "Installer Fenster på brugerens mobil", btns: [["Se og kopier vejledning", "outline-primary"]], help: "Brug knappen til at kopiere en vejledning, som du efterfølgende kan sende til medarbejderen" },
+          { t: "buttons", l: "Installer Karltoffel på brugerens mobil", btns: [["Se og kopier vejledning", "outline-primary"]], help: "Brug knappen til at kopiere en vejledning, som du efterfølgende kan sende til medarbejderen" },
         ],
       },
       {
@@ -198,7 +198,7 @@ export const SETTINGS_PAGES: Record<string, SPage> = {
         h: "Generelle indstillinger",
         fields: [
           { t: "toggle", l: "Luk automatisk kalenderen på helligdage", val: "Ja", on: 1, help: "Hvis valgt, vil officielle danske helligdage automatisk være lukket i kalenderen, f.eks. 2. påskedag." },
-          { t: "toggle", l: "Benyt fleksibel arbejdstid", val: "Ja", on: 1, help: "Fleksibel arbejdstid giver Fenster mulighed for at tage ekstra arbejdstid i brug sidst på dagen, såfremt det medfører en forholdsmæssig besparelse på kørslen, eller hvis ugen er fyldt op med ordrer. Fleksibel arbejdstid anbefales for de fleste..." },
+          { t: "toggle", l: "Benyt fleksibel arbejdstid", val: "Ja", on: 1, help: "Fleksibel arbejdstid giver Karltoffel mulighed for at tage ekstra arbejdstid i brug sidst på dagen, såfremt det medfører en forholdsmæssig besparelse på kørslen, eller hvis ugen er fyldt op med ordrer. Fleksibel arbejdstid anbefales for de fleste..." },
         ],
       },
       {
@@ -228,19 +228,19 @@ export const SETTINGS_PAGES: Record<string, SPage> = {
   "/planning-settings": {
     title: "Planlægning",
     route: "/planning-settings",
-    purpose: "På denne side kan du foretage indstillinger, der påvirker Fensters automatiske kalenderplanlægning.",
+    purpose: "På denne side kan du foretage indstillinger, der påvirker Karltoffels automatiske kalenderplanlægning.",
     saveLabel: "Gem alle ændringer",
     sections: [
       {
         h: "Generelle indstillinger",
         fields: [
-          { t: "buttons", l: "Benyt fleksibel arbejdstid", btns: [["Gå til indstilling", "light"]], help: "Fleksibel arbejdstid giver Fenster mulighed for at tage ekstra arbejdstid i brug sidst på dagen, såfremt det medfører en forholdsmæssig besparelse på kørslen, eller hvis ugen er fyldt op med ordrer. Fleksibel arbejdstid anbefales for de fleste..." },
+          { t: "buttons", l: "Benyt fleksibel arbejdstid", btns: [["Gå til indstilling", "light"]], help: "Fleksibel arbejdstid giver Karltoffel mulighed for at tage ekstra arbejdstid i brug sidst på dagen, såfremt det medfører en forholdsmæssig besparelse på kørslen, eller hvis ugen er fyldt op med ordrer. Fleksibel arbejdstid anbefales for de fleste..." },
         ],
       },
       {
         h: "Kristian Klercke",
         fields: [
-          { t: "checks", opts: ["Udelad kørsel før første ordre på dagen", "Udelad kørsel efter sidste ordre på dagen", "Tilstræb at starte dagen længst væk fra hjemmeadressen"], on: [0, 1, 2], help: "Vælg dette, hvis du vil undgå, at Fenster planlægger kørsel til første ordre / kørsel hjem fra sidste ordre inden for arbejdstiden, eller hvis du ønsker at bruge de tidlige morgentimer på transport." },
+          { t: "checks", opts: ["Udelad kørsel før første ordre på dagen", "Udelad kørsel efter sidste ordre på dagen", "Tilstræb at starte dagen længst væk fra hjemmeadressen"], on: [0, 1, 2], help: "Vælg dette, hvis du vil undgå, at Karltoffel planlægger kørsel til første ordre / kørsel hjem fra sidste ordre inden for arbejdstiden, eller hvis du ønsker at bruge de tidlige morgentimer på transport." },
           { t: "select", l: "Tilladte opgavekategorier", val: "Alle", opts: ["Alle", "Vinduespudsning", "Rentvandsvask", "Tagrenderens", "Overfladerens", "Algebehandling", "Overfladebeskyttelse", "Privatrengøring", "Ejendomsrengøring", "Viceværtservice", "Grøn service", "Ukrudtsbekæmpelse", "Skadedyrsbekæmpelse", "Bilpleje", "Administrativt", "Andet"], help: "Vælg hvilke opgavekategorier, som medarbejderen kan håndtere. For at en ordre kan planlægges i en medarbejders kalender, skal medarbejderen kunne håndtere alle kategorier på ordren. Hvis du fastgør en ordre eller et abonnement til en bestemt medarbejder, så vil ordren blive planlagt til denne medarbejder uagtet de tilladte opgavekategorier." },
         ],
       },
@@ -303,13 +303,13 @@ export const SETTINGS_PAGES: Record<string, SPage> = {
   "/accounting": {
     title: "Regnskab",
     route: "/accounting",
-    purpose: "Skrivebeskyttet statusside for Dinero (Visma) regnskabsintegrationen: den forbundne Dinero-konto, kontonumrene Fenster bogfører på, samt genopfrisk-/afbryd-handlinger.",
+    purpose: "Skrivebeskyttet statusside for Dinero (Visma) regnskabsintegrationen: den forbundne Dinero-konto, kontonumrene Karltoffel bogfører på, samt genopfrisk-/afbryd-handlinger.",
     noSave: true,
     sections: [
       {
         h: "Dinero integration",
         fields: [
-          { t: "note", val: "Fenster er forbundet til følgende Dinero-konto:" },
+          { t: "note", val: "Karltoffel er forbundet til følgende Dinero-konto:" },
           {
             t: "subtable",
             cols: ["Dinero indstilling", "Dinero værdi"],
@@ -326,17 +326,17 @@ export const SETTINGS_PAGES: Record<string, SPage> = {
       {
         h: "Dinero kontoplan",
         fields: [
-          { t: "note", val: "Fenster anvender følgende kontonumre fra din Dinero kontoplan:" },
+          { t: "note", val: "Karltoffel anvender følgende kontonumre fra din Dinero kontoplan:" },
           {
             t: "subtable",
-            cols: ["Dinero kontonr.", "Dinero kontonavn", "Fenster brug"],
+            cols: ["Dinero kontonr.", "Dinero kontonavn", "Karltoffel brug"],
             rows: [
               ["1000", "Salg af varer/ydelser m/moms", "Bogføring af afsendte fakturaer"],
               ["55040", "Kontanter (kasse)", "Bogføring af kontante betalinger"],
               ["Ikke konfigureret", "-", "Bogføring af betalinger modtaget via MobilePay Get Paid (ikke det samme som MobilePay Integreret betaling)"],
             ],
           },
-          { t: "note", val: "Kontakt support@fenster.dk, hvis du ønsker, at Fenster skal anvende andre kontonumre i din Dinero kontoplan." },
+          { t: "note", val: "Kontakt hej@karltoffel.dk, hvis du ønsker, at Karltoffel skal anvende andre kontonumre i din Dinero kontoplan." },
           { t: "buttons", btns: [["Genopfrisk forbindelsen til Dinero", "outline-primary"], ["Fjern forbindelsen til Dinero", "danger"]] },
         ],
       },

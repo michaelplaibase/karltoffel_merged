@@ -1,5 +1,5 @@
 // ============================================================================
-// Weekly route planner — the "auto-scheduler" that Fenster runs every night.
+// Weekly route planner — the "auto-scheduler" that Karltoffel runs every night.
 // Given the jobs due in a week and each employee's working hours + home base,
 // it packs jobs into days and orders each day's stops by nearest-neighbour to
 // minimise driving, producing time-slotted, employee-assigned visits.

@@ -37,7 +37,7 @@ const FETCH_TIMEOUT_MS = 10_000;
 export const INVOICE_DECISIONS = [
   "Send faktura - ubetalt",
   "Send faktura - betalt kontant",
-  "Send ikke faktura fra Fenster",
+  "Send ikke faktura fra Karltoffel",
   "Opret fakturakladde",
   "Registrer på et senere tidspunkt",
 ] as const;
@@ -47,7 +47,7 @@ export function isInvoiceDecision(s: string): s is InvoiceDecision {
 }
 const D_SEND_UNPAID: InvoiceDecision = "Send faktura - ubetalt";
 const D_SEND_CASH: InvoiceDecision = "Send faktura - betalt kontant";
-const D_NONE: InvoiceDecision = "Send ikke faktura fra Fenster";
+const D_NONE: InvoiceDecision = "Send ikke faktura fra Karltoffel";
 const D_DRAFT: InvoiceDecision = "Opret fakturakladde";
 const D_LATER: InvoiceDecision = "Registrer på et senere tidspunkt";
 
@@ -75,8 +75,10 @@ export async function currentCompanyId(): Promise<number> {
 type ActiveConfig = { orgId: string; salesAccountNumber: number; cashAccountNumber: number };
 /** The config to use for real calls, or null when we must dry-run (env unconfigured,
  *  dry-run forced, or org id unresolvable). Account numbers come from the cached
- *  DineroConnection row if present, else the standard-chart defaults. */
-async function loadActiveConfig(): Promise<ActiveConfig | null> {
+ *  DineroConnection row if present, else the standard-chart defaults. Exported for
+ *  lib/business-invoicing.ts (erhvervs-samlefaktura), which needs the same config
+ *  gate and account numbers as the per-order flow. */
+export async function loadActiveConfig(): Promise<ActiveConfig | null> {
   if (!envConfigured() || dryRunForced()) return null;
   const orgId = resolveOrgId();
   if (!orgId) return null;
@@ -94,7 +96,7 @@ async function loadActiveConfig(): Promise<ActiveConfig | null> {
 // fine (token requests are cheap and idempotent).
 let tokenCache: { token: string; exp: number } | null = null;
 
-async function getAccessToken(): Promise<string> {
+export async function getAccessToken(): Promise<string> {
   if (tokenCache && tokenCache.exp - Date.now() > 60_000) return tokenCache.token;
   const url = process.env.DINERO_TOKEN_URL?.trim() || DEFAULT_TOKEN_URL;
   const scope = process.env.DINERO_SCOPE?.trim() || DEFAULT_SCOPE;
@@ -119,7 +121,7 @@ async function getAccessToken(): Promise<string> {
 }
 
 // ─── Low-level resource fetch + response helpers ──────────────────────────────
-class DineroApiError extends Error {
+export class DineroApiError extends Error {
   status: number;
   raw: string;
   constructor(status: number, message: string, raw: string) {
@@ -212,7 +214,7 @@ type ContactLike = {
 };
 
 /** Reuse the stored guid, else dedup (externalReference → CVR → email), else create. */
-async function ensureDineroContact(access: string, org: string, contact: ContactLike): Promise<string> {
+export async function ensureDineroContact(access: string, org: string, contact: ContactLike): Promise<string> {
   let guid = await findContactGuid(access, org, `ExternalReference eq '${qf(contactExtRef(contact.id))}'`);
   if (!guid && contact.isCompany && contact.cvr) guid = await findContactGuid(access, org, `VatNumber eq '${qf(contact.cvr)}'`);
   if (!guid && contact.email) guid = await findContactGuid(access, org, `Email eq '${qf(contact.email)}'`);
@@ -242,7 +244,7 @@ async function ensureDineroContact(access: string, org: string, contact: Contact
 }
 
 // ─── Invoices ─────────────────────────────────────────────────────────────────
-type InvoiceRef = { guid: string; timeStamp: string; number: number | null; totalInclVat: number | null };
+export type InvoiceRef = { guid: string; timeStamp: string; number: number | null; totalInclVat: number | null };
 function toInvoiceRef(o: unknown, guid: string, fallbackTs = ""): InvoiceRef {
   return {
     guid,
@@ -252,7 +254,7 @@ function toInvoiceRef(o: unknown, guid: string, fallbackTs = ""): InvoiceRef {
   };
 }
 
-async function findInvoiceByExternalRef(access: string, org: string, ref: string): Promise<InvoiceRef | null> {
+export async function findInvoiceByExternalRef(access: string, org: string, ref: string): Promise<InvoiceRef | null> {
   const filter = encodeURIComponent(`ExternalReference eq '${qf(ref)}'`);
   const url = `${API_BASE}/${V_INVOICES}/${org}/invoices?queryFilter=${filter}&fields=Guid,TimeStamp,Number,TotalInclVat`;
   const first = coll(await dineroJson("GET", url, access))[0];
@@ -261,11 +263,11 @@ async function findInvoiceByExternalRef(access: string, org: string, ref: string
   return guid ? toInvoiceRef(first, guid) : null;
 }
 
-async function getInvoice(access: string, org: string, guid: string): Promise<InvoiceRef> {
+export async function getInvoice(access: string, org: string, guid: string): Promise<InvoiceRef> {
   return toInvoiceRef(await dineroJson("GET", `${API_BASE}/${V_INVOICES}/${org}/invoices/${guid}`, access), guid);
 }
 
-async function createDraftInvoice(
+export async function createDraftInvoice(
   access: string,
   org: string,
   input: { contactGuid: string; orderId: number; salesAccountNumber: number; tasks: Array<{ description: string; price: number }> },
@@ -300,7 +302,7 @@ async function bookInvoiceOnce(access: string, org: string, guid: string, timeSt
 }
 /** Book, retrying once on a stale-timestamp error (Dinero error code 58). Matches a
  *  structured error code, not any stray "58"/"timestamp" in the body. */
-async function bookInvoice(access: string, org: string, guid: string, timeStamp: string): Promise<InvoiceRef> {
+export async function bookInvoice(access: string, org: string, guid: string, timeStamp: string): Promise<InvoiceRef> {
   try {
     return await bookInvoiceOnce(access, org, guid, timeStamp);
   } catch (e) {
@@ -312,7 +314,7 @@ async function bookInvoice(access: string, org: string, guid: string, timeStamp:
   }
 }
 
-async function emailInvoice(access: string, org: string, guid: string, timeStamp: string): Promise<void> {
+export async function emailInvoice(access: string, org: string, guid: string, timeStamp: string): Promise<void> {
   // Dinero sends the mail (with a public invoice link) — the CRM must NOT also
   // email the invoice via Resend. Receiver defaults to the Dinero contact's email.
   await dineroJson("POST", `${API_BASE}/${V_INVOICES}/${org}/invoices/${guid}/email`, access, {

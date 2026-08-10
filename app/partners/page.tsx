@@ -3,7 +3,7 @@
 import { useState } from "react";
 
 const PARTNERS = [
-  { name: "Dinero", tag: "Regnskab", more: "Dinero er Fensters regnskabsintegration. Fakturaer, du sender fra systemet, bogføres automatisk i din Dinero-konto." },
+  { name: "Dinero", tag: "Regnskab", more: "Dinero er Karltoffels regnskabsintegration. Fakturaer, du sender fra systemet, bogføres automatisk i din Dinero-konto." },
   { name: "Nordic Glass Repair", tag: "Glasreparation", more: "Nordic Glass Repair reparerer ridser og skader i glas. Henvis kunder med beskadigede ruder direkte til dem." },
   { name: "Beckmann Vejledning", tag: "Rådgivning", more: "Beckmann tilbyder forretningsrådgivning til service- og håndværksvirksomheder, herunder prissætning og vækst." },
   { name: "Borgholt", tag: "Forsikring", more: "Borgholt formidler erhvervsforsikringer skræddersyet til vinduespudser- og servicevirksomheder." },
@@ -14,7 +14,7 @@ export default function PartnersPage() {
   return (
     <div className="container-1140" style={{ maxWidth: 900 }}>
       <h1 className="page-title">Samarbejdspartnere</h1>
-      <p className="page-desc">Fenster samarbejder med en række virksomheder, der kan hjælpe din forretning videre.</p>
+      <p className="page-desc">Karltoffel samarbejder med en række virksomheder, der kan hjælpe din forretning videre.</p>
 
       <div className="kpigrid">
         {PARTNERS.map((p, i) => (

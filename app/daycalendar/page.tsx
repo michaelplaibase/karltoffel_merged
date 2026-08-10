@@ -2,7 +2,7 @@ import Link from "next/link";
 import { getDayProgram } from "@/lib/queries";
 import { weekMondayToday } from "@/lib/calendar";
 import DayStopCard from "@/components/DayStopCard";
-import { requireSession } from "@/lib/api-auth";
+import { getSessionUser } from "@/lib/api-auth";
 import { getOpenTimeEntry, cphTime } from "@/lib/timesheet";
 import CheckInOut from "@/components/CheckInOut";
 
@@ -11,9 +11,9 @@ export const metadata = { title: "Dagsprogram · Karltoffel" };
 export default async function DayCalendarPage({ searchParams }: { searchParams: Promise<{ date?: string }> }) {
   const sp = await searchParams;
   const date = /^\d{4}-\d{2}-\d{2}$/.test(sp.date ?? "") ? sp.date! : weekMondayToday();
-  const day = await getDayProgram(date);
-  const userId = await requireSession();
-  const open = userId != null ? await getOpenTimeEntry(userId) : null;
+  const me = await getSessionUser();
+  const day = await getDayProgram(date, me ? { id: me.id, isAdmin: me.isAdmin } : undefined);
+  const open = me != null ? await getOpenTimeEntry(me.id) : null;
 
   return (
     <div className="container-1140">

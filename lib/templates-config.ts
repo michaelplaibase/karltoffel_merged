@@ -324,7 +324,7 @@ De bedste hilsner
     menuLabel: "Fakturaafsendelse",
     heading: "Fakturaafsendelse",
     intro:
-      "Fenster kan sende faktura til dine kunder, når du afslutter en ordre, forudsat at du anvender et eksternt regnskabssystem, som Fenster kan integrere med, f.eks. Dinero. Selve fakturaen bliver ikke udstedt af Fenster, men af det eksterne regnskabssystem. Fenster vedhæfter blot fakturaen til beskeden og sender den til kunden.\n\nHvis du anvender Dinero, så kan du tilpasse skabelonen / beskeden, der bliver sendt til kunden inde i Dinero. Log ind i Dinero og gå til Indstillinger > Sprog > Udsendelse > Fakturaudsendelse. Her kan du redigere teksten, som anvendes til både e-mail og SMS.\n\nVær obs på, at det koster alm. SMS takst at sende faktura via SMS, og at længden på beskeden påvirker, hvor mange SMS'er, der forbruges per faktura.",
+      "Karltoffel kan sende faktura til dine kunder, når du afslutter en ordre, forudsat at du anvender et eksternt regnskabssystem, som Karltoffel kan integrere med, f.eks. Dinero. Selve fakturaen bliver ikke udstedt af Karltoffel, men af det eksterne regnskabssystem. Karltoffel vedhæfter blot fakturaen til beskeden og sender den til kunden.\n\nHvis du anvender Dinero, så kan du tilpasse skabelonen / beskeden, der bliver sendt til kunden inde i Dinero. Log ind i Dinero og gå til Indstillinger > Sprog > Udsendelse > Fakturaudsendelse. Her kan du redigere teksten, som anvendes til både e-mail og SMS.\n\nVær obs på, at det koster alm. SMS takst at sende faktura via SMS, og at længden på beskeden påvirker, hvor mange SMS'er, der forbruges per faktura.",
     editable: false,
     subjects: [],
     variables: [],

@@ -222,7 +222,7 @@ export const GUIDES: Guide[] = [
       },
       {
         "title": "Vælg betaling og fakturering",
-        "body": "I sektionen \"Betaling og fakturering\" (\"Vælg om der skal faktureres via Dinero\") vælger du én af mulighederne:\n1. \"Send faktura - ubetalt\"\n2. \"Send faktura - betalt kontant\"\n3. \"Send ikke faktura fra Fenster\"\n4. \"Opret fakturakladde\"\n5. \"Registrer på et senere tidspunkt\"\nTip: Valget kan være forudindstillet pr. kunde under kundens indstillinger."
+        "body": "I sektionen \"Betaling og fakturering\" (\"Vælg om der skal faktureres via Dinero\") vælger du én af mulighederne:\n1. \"Send faktura - ubetalt\"\n2. \"Send faktura - betalt kontant\"\n3. \"Send ikke faktura fra Karltoffel\"\n4. \"Opret fakturakladde\"\n5. \"Registrer på et senere tidspunkt\"\nTip: Valget kan være forudindstillet pr. kunde under kundens indstillinger."
       },
       {
         "title": "Skriv kommentar og adressebemærkning (valgfrit)",

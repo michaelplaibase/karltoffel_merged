@@ -1,6 +1,6 @@
 // Top-navigation structure of the portal: seven menus, each a dropdown of routes.
 // Mirrors the portal's information architecture (labels in Danish, English hints).
-// This is an internal-use clone: no Fenster plan tiers, so nothing is gated.
+// This is an internal-use clone: no Karltoffel plan tiers, so nothing is gated.
 export type NavItem = { label: string; en: string; href: string };
 export type NavMenu = { label: string; en: string; items: NavItem[] };
 

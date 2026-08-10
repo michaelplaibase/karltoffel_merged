@@ -34,7 +34,18 @@ export async function createOrder(_prev: OrderCreateState, formData: FormData): 
 
   const week = String(formData.get("week") ?? "");
   const plannedAt = week ? new Date(`${week}T10:00:00Z`) : new Date();
-  const user = await prisma.user.findFirst({ where: { active: true } });
+  // Medarbejder: eksplicit valg fra formularen, hvis sat. Ellers falder vi
+  // tilbage til FØRSTE aktive bruger — samme konvention som abonnementers
+  // "Ingen"/fixedEmployee (se lib/recurrence.ts defaultEmployeeId) — IKKE null:
+  // buildWeekPlan (lib/queries.ts) ruter kun ordrer med et sat employeeId
+  // gennem planneren; en null-værdi lander i "unplanned (unassigned)" og bliver
+  // slet ikke planlagt. Pointen med fixet her er at få ÉT bestemt employeeId
+  // sat (så kun den medarbejder ser opgaven, jf. getDayProgram-filtret) — ikke
+  // at fjerne tildelingen. Vælger man en medarbejder i dropdownen, bruges den.
+  const employeeIdRaw = String(formData.get("employeeId") ?? "").trim();
+  const employeeId = employeeIdRaw
+    ? Number(employeeIdRaw) || null
+    : (await prisma.user.findFirst({ where: { active: true }, orderBy: { id: "asc" } }))?.id ?? null;
 
   const order = await prisma.order.create({
     data: {
@@ -42,7 +53,7 @@ export async function createOrder(_prev: OrderCreateState, formData: FormData): 
       deliveryAddress: contact.city ? `${contact.street}, ${contact.city}` : contact.street,
       plannedAt,
       sourceType: "manual",
-      employeeId: user?.id ?? null,
+      employeeId,
       status: "Afventer levering",
       tasks: {
         create: lines.map((l, i) => ({
@@ -161,6 +172,11 @@ export async function completeOrder(orderId: number, _prev: CompleteOrderState, 
       status: STATUS[leveringsstatus],
       comment: comment || null,
       addressNote: addressNote || null,
+      // Faktisk afslutningstidspunkt — kun ved reel udførelse ("Udført"), ikke
+      // ved sprunget-over/genplanlægges/anden status. Bruges af buildWeekPlan
+      // (lib/queries.ts) til at rykke medarbejderens resterende opgaver samme
+      // dag frem, hvis hun/han blev hurtigere færdig end planlagt.
+      ...(leveringsstatus === "udfoert" ? { completedAt: new Date() } : {}),
       // Only overwrite the invoicing decision when one was actually chosen — re-completing
       // an order merely to fix status/comment must not wipe a previously stored decision
       // (the radios have no default selection).
