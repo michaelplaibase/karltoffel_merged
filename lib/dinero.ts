@@ -579,7 +579,34 @@ export async function issueInvoiceForOrder(orderId: number): Promise<IssueResult
     // 5. Send (email) — "Send faktura - ubetalt". Never downgrade a Paid invoice.
     if (decision === D_SEND_UNPAID) {
       if (order.dineroInvoiceStatus !== "Sent" && order.dineroInvoiceStatus !== "Paid") {
-        await emailInvoice(access, org, guid, timeStamp);
+        try {
+          await emailInvoice(access, org, guid, timeStamp);
+        } catch (e) {
+          // Dinero can return code 59 / "Voucher not booked" when a prior run
+          // persisted Booked locally, but Dinero has not yet actually booked the
+          // voucher (observed on live test invoice #54, 2026-08-10). Re-fetch the
+          // current timestamp, book it once, then retry the email exactly once.
+          // This is safer than trusting our local Booked label; a genuinely
+          // booked invoice makes the book endpoint reject/retrieve consistently,
+          // and the outer catch records the exact error without double-sending.
+          if (e instanceof DineroApiError && /"?(errorcode|code)"?\s*:\s*59\b|voucher not booked|bilaget er ikke bogført/i.test(e.raw)) {
+            const fresh = await getInvoice(access, org, guid);
+            const rebooked = await bookInvoice(access, org, guid, fresh.timeStamp || timeStamp);
+            timeStamp = rebooked.timeStamp || fresh.timeStamp || timeStamp;
+            await prisma.order.update({
+              where: { id: orderId },
+              data: {
+                dineroInvoiceNumber: rebooked.number ?? fresh.number ?? order.dineroInvoiceNumber,
+                dineroInvoiceTimeStamp: timeStamp,
+                dineroInvoiceStatus: "Booked",
+                dineroError: null,
+              },
+            });
+            await emailInvoice(access, org, guid, timeStamp);
+          } else {
+            throw e;
+          }
+        }
       }
       await prisma.order.update({
         where: { id: orderId },
