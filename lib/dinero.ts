@@ -491,7 +491,11 @@ export async function issueInvoiceForOrder(orderId: number): Promise<IssueResult
     //    cannot create a second invoice (@unique dineroInvoiceGuid alone can't).
     const ensured = await prisma.$transaction(
       async (tx) => {
-        await tx.$queryRaw`SELECT pg_advisory_xact_lock(${BigInt(orderId)})`;
+        // pg_advisory_xact_lock() returns PostgreSQL void. $queryRaw tries to
+        // deserialize that void column and fails in Prisma 6 ("Failed to
+        // deserialize column of type void"); $executeRaw is the appropriate
+        // no-result primitive and preserves the transaction-scoped lock.
+        await tx.$executeRaw`SELECT pg_advisory_xact_lock(${BigInt(orderId)})`;
         const row = await tx.order.findUnique({
           where: { id: orderId },
           select: { dineroInvoiceGuid: true, dineroInvoiceTimeStamp: true, dineroInvoiceStatus: true },
