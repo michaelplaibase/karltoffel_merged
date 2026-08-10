@@ -256,6 +256,10 @@
 	.erhverv-callback { grid-template-columns: 1fr; gap: 28px; }
 }
 
+@media (min-width: 901px) and (max-width: 1100px) {
+	.erhverv-package h3 { font-size: 24px; }
+}
+
 @media (max-width: 640px) {
 	.erhverv-redesign { padding: 64px 16px; }
 	.erhverv-packages { margin-bottom: 64px; }
