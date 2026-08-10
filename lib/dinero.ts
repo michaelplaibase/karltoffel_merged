@@ -2,32 +2,45 @@
 // pattern as lib/email.ts / lib/gcal.ts). Node-only; never import from middleware
 // or a client component.
 //
-// AUTH: a Dinero Personal API Client (client_credentials, machine-to-machine). The
-// client id/secret live in the environment; there is NO browser consent, NO redirect
-// URI, and NO refresh token — an access token is fetched on demand and cached in
-// memory. The organization id is embedded in the client id (pcc_<orgId>_...).
+// AUTH: Dinero "Personlig Integration" (password grant), IKKE client_credentials.
+// Dette er BEKRÆFTET korrekt mod https://developer.dinero.dk/documentation/personal-integration/
+// (2026-08-10, efter at client_credentials-flowet fejlede med `invalid_client` i
+// produktion). Flowet:
+//   1. DINERO_CLIENT_ID/DINERO_CLIENT_SECRET — genereres i Visma Connect (Personlig
+//      Integration-appen), IKKE organisationsspecifikke. Base64-kodes som
+//      "client_id:client_secret" og sendes som HTTP Basic Authorization-header.
+//   2. DINERO_API_KEY — genereres INDE i den specifikke Dinero-organisation
+//      (Indstillinger → Integrationer → Personlig Integration → Anmod om
+//      API-key). Sendes som BÅDE username og password i en grant_type=password
+//      request til token-endpointet.
+//   3. Token-endpointet er https://authz.dinero.dk/dineroapi/oauth/token —
+//      IKKE connect.visma.com/connect/token (det er kun for offentlige
+//      multi-bruger-integrationer, som ikke er det vi bruger).
+//   4. Scope er "read write" (ikke "dineropublicapi:read/write").
+// Organisations-id kan IKKE længere udledes af client-id'et (personlig
+// integration er ikke organisationsscoped på den måde) — DINERO_ORG_ID er nu
+// PÅKRÆVET, findes på Dineros "Regnskab"-side eller i URL'en når man er logget
+// ind (https://express.dinero.dk/<orgId>/...).
 //
 // Dry-run by default: NOTHING is sent to api.dinero.dk / the token endpoint until
-// DINERO_CLIENT_ID + DINERO_CLIENT_SECRET are set. DINERO_DRY_RUN=1 forces
-// simulation even when configured — keep it "1" on preview/dev so a preview can
-// never book a real invoice in the production org.
+// DINERO_CLIENT_ID + DINERO_CLIENT_SECRET + DINERO_API_KEY + DINERO_ORG_ID are
+// ALLE sat. DINERO_DRY_RUN=1 forces simulation even when configured — keep it
+// "1" on preview/dev so a preview can never book a real invoice in the production org.
 //
 // ─── PROVENANCE / VERIFY BEFORE GO-LIVE ───────────────────────────────────────
-// The Dinero REST shapes (endpoint VERSIONS, PascalCase field names, `fields`
-// selectors, VAT semantics) AND the client_credentials token endpoint/scope were
-// reconstructed from Dinero's docs + open-source clients; the live spec could not be
-// fetched from this environment and Dinero has no sandbox. The token endpoint + scope
-// are overridable via env (DINERO_TOKEN_URL / DINERO_SCOPE) precisely so they can be
-// corrected without a code change once confirmed against the Dinero API-client page.
-// Before flipping DINERO_DRY_RUN off in production, use "Test forbindelse" on
-// /accounting and verify a full draft→book→send→pay cycle on the real org.
+// Selve auth-flowet ovenfor er nu bekræftet mod Dineros officielle dokumentation.
+// De øvrige REST-shapes (PascalCase felt-navne, `fields`-selectors, moms-
+// semantik) er stadig rekonstrueret fra Dineros docs + open-source klienter og
+// IKKE verificeret mod en levende faktura endnu. Før DINERO_DRY_RUN slås fra i
+// produktion, brug "Test forbindelse" på /accounting og verificér en fuld
+// draft→book→send→pay-cyklus på den rigtige organisation.
 import { prisma } from "./db";
 import type { DineroConnection } from "@prisma/client";
 
-// ─── Endpoints (VERSIONS ARE PROVISIONAL — verify against the live OpenAPI) ────
+// ─── Endpoints ─────────────────────────────────────────────────────────────────
 const API_BASE = "https://api.dinero.dk";
-const DEFAULT_TOKEN_URL = "https://connect.visma.com/connect/token";
-const DEFAULT_SCOPE = "dineropublicapi:read dineropublicapi:write";
+const DEFAULT_TOKEN_URL = "https://authz.dinero.dk/dineroapi/oauth/token";
+const DEFAULT_SCOPE = "read write";
 const V_ORGS = "v1";
 const V_CONTACTS = "v1";
 const V_INVOICES = "v1";
@@ -53,18 +66,19 @@ const D_LATER: InvoiceDecision = "Registrer på et senere tidspunkt";
 
 // ─── Config / dry-run detection ───────────────────────────────────────────────
 export function envConfigured(): boolean {
-  return Boolean(process.env.DINERO_CLIENT_ID?.trim() && process.env.DINERO_CLIENT_SECRET?.trim());
+  return Boolean(
+    process.env.DINERO_CLIENT_ID?.trim() &&
+    process.env.DINERO_CLIENT_SECRET?.trim() &&
+    process.env.DINERO_API_KEY?.trim(),
+  );
 }
 function dryRunForced(): boolean {
   return process.env.DINERO_DRY_RUN === "1";
 }
-/** The Dinero organization id: explicit env override, else parsed from the client
- *  id (pcc_<orgId>_...). Every resource path is scoped to it. */
+/** Organisations-id — PÅKRÆVET env (kan ikke udledes af client-id'et i
+ *  personlig-integration-flowet, modsat den tidligere fejlagtige antagelse). */
 export function resolveOrgId(): string | null {
-  const explicit = process.env.DINERO_ORG_ID?.trim();
-  if (explicit) return explicit;
-  const m = (process.env.DINERO_CLIENT_ID ?? "").match(/^[a-z]+_(\d+)_/i);
-  return m ? m[1] : null;
+  return process.env.DINERO_ORG_ID?.trim() || null;
 }
 
 export async function currentCompanyId(): Promise<number> {
@@ -90,24 +104,30 @@ export async function loadActiveConfig(): Promise<ActiveConfig | null> {
   };
 }
 
-// ─── Access token (client_credentials) with a small in-memory cache ───────────
-// No refresh token, no rotation, no replay risk — we can fetch a fresh token
-// whenever the cached one is near expiry. Cache is per serverless instance; that is
-// fine (token requests are cheap and idempotent).
+// ─── Access token (Personlig Integration: password grant) med en lille
+// in-memory cache. Ingen refresh-token i dette flow — vi henter blot et nyt
+// token, når det cachede er ved at udløbe. Cache er pr. serverless-instans.
 let tokenCache: { token: string; exp: number } | null = null;
 
 export async function getAccessToken(): Promise<string> {
   if (tokenCache && tokenCache.exp - Date.now() > 60_000) return tokenCache.token;
   const url = process.env.DINERO_TOKEN_URL?.trim() || DEFAULT_TOKEN_URL;
   const scope = process.env.DINERO_SCOPE?.trim() || DEFAULT_SCOPE;
+  const clientId = process.env.DINERO_CLIENT_ID ?? "";
+  const clientSecret = process.env.DINERO_CLIENT_SECRET ?? "";
+  const apiKey = process.env.DINERO_API_KEY ?? "";
+  const basicAuth = Buffer.from(`${clientId}:${clientSecret}`).toString("base64");
   const res = await fetch(url, {
     method: "POST",
-    headers: { "content-type": "application/x-www-form-urlencoded" },
+    headers: {
+      "content-type": "application/x-www-form-urlencoded",
+      authorization: `Basic ${basicAuth}`,
+    },
     body: new URLSearchParams({
-      grant_type: "client_credentials",
-      client_id: process.env.DINERO_CLIENT_ID ?? "",
-      client_secret: process.env.DINERO_CLIENT_SECRET ?? "",
+      grant_type: "password",
       scope,
+      username: apiKey,
+      password: apiKey,
     }).toString(),
     signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
   });
