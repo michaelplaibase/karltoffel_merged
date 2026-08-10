@@ -121,7 +121,11 @@ export default async function OrderDetail({ params }: { params: Promise<{ id: st
                 {INVOICE_STATUS[o.dineroInvoiceStatus]?.label ?? (o.dineroInvoiceStatus || "Afventer")}
               </span>
               {o.dineroInvoiceNumber ? `\n\nFakturanr.\n${o.dineroInvoiceNumber}` : ""}
-              {o.dineroInvoiceStatus === "Failed" && o.dineroError ? `\n\nFejl\n${o.dineroError}` : ""}
+              {/* Afsendelse kan fejle EFTER en faktura er bogført. Status er da
+                  stadig Booked (må ikke nedgraderes til Failed, da fakturaen er
+                  juridisk bogført), men den præcise Dinero-fejl skal stadig være
+                  synlig — ellers ligner det fejlagtigt en komplet succes. */}
+              {o.dineroError ? `\n\nSeneste Dinero-fejl\n${o.dineroError}` : ""}
             </div>
             {o.invoiceDecision === "Registrer på et senere tidspunkt" ? (
               // "Registrer senere" has no concrete action to resume — send the user to
