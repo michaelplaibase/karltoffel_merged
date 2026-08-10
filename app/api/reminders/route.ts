@@ -13,6 +13,14 @@ import { requireSession, unauthorized } from "@/lib/api-auth";
 // Idempotens: Order.reminderSentAt sættes FØR afsendelsen (samme mønster som
 // tilbudsmailens tilbudSendtAt-værn), så en fejlslagen/gentaget cron-kørsel
 // aldrig sender to påmindelser for samme ordre.
+//
+// MIDLERTIDIGT STOPPET (2026-08-10, Michael): "vi kommer i morgen"-mailen skal
+// IKKE sendes automatisk lige nu — I skriver manuelt til kunderne, indtil
+// systemet er helt på plads. Cron-triggeret i vercel.json er fjernet, og denne
+// route er derudover spærret bag REMINDER_EMAILS_ENABLED som en ekstra
+// sikkerhed mod utilsigtet automatisk afsendelse (fx et manuelt cron-hit).
+// Sæt REMINDER_EMAILS_ENABLED=true og genindsæt cron-linjen i vercel.json for
+// at genaktivere.
 function safeEqual(a: string, b: string): boolean {
   if (a.length !== b.length) return false;
   let diff = 0;
@@ -37,6 +45,10 @@ export async function GET(req: Request) {
   const auth = req.headers.get("authorization") || "";
   const isCron = !!cronSecret && auth.startsWith("Bearer ") && safeEqual(auth.slice(7), cronSecret);
   if (!isCron && (await requireSession()) == null) return unauthorized();
+
+  if (process.env.REMINDER_EMAILS_ENABLED !== "true") {
+    return NextResponse.json({ disabled: true, reason: "Automatiske 'vi kommer i morgen'-mails er midlertidigt stoppet — send manuelt indtil videre." });
+  }
 
   const { start, end } = tomorrowRangeCph(new Date());
 
