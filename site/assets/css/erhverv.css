@@ -100,8 +100,9 @@
 
 .erhverv-package h3 {
 	margin-bottom: 12px;
-	font-size: clamp(30px, 3vw, 42px);
+	font-size: clamp(26px, 2.2vw, 34px);
 	line-height: 1;
+	overflow-wrap: break-word;
 }
 
 .erhverv-package__for {
