@@ -1,6 +1,9 @@
+import { createHash } from "node:crypto";
+
 export type Coordinate = readonly [number, number];
 export type GeocodeStatus = "verified" | "unverified_address";
 export type GeocodeResult = { status: GeocodeStatus; normalizedAddress: string; coordinate: Coordinate | null; provider: "nominatim" };
+export type MatrixPoint = { index: number; lat: number; lon: number; kind: "employee_home" | "job"; stableRef: string };
 export type TravelMatrix = { addresses: string[]; durations: number[][]; provider: string; capturedAt: string };
 export type Calendar2UnplannedReason = "unassigned" | "unverified_address" | "unverified_route" | "fixed_weekday_unavailable" | "overflow";
 
@@ -24,6 +27,23 @@ export type Calendar2Plan = {
 type RoutingOptions = { fetcher?: typeof fetch; sleep?: (ms: number) => Promise<void>; now?: () => number; timeoutMs?: number };
 const USER_AGENT = "Karltoffel-Calendar2-RoutePlanner/1.0 (+https://crm.karltoffel.dk; operations@karltoffel.dk)";
 const normalized = (address: string) => address.trim().replace(/\s+/g, " ");
+
+function canonicalMatrixValue(value: number): number | "unreachable" {
+  return Number.isFinite(value) ? value : "unreachable";
+}
+
+export function calendar2MatrixAuditHash(input: {
+  version: string; provider: string; matrixPoints: MatrixPoint[]; matrixDurations: number[][]; timestamp: string;
+}): string {
+  // timestamp er bevidst ikke del af bindingen, så samme input og matrix giver samme hash.
+  const canonical = JSON.stringify({
+    version: input.version,
+    provider: input.provider,
+    matrixPoints: input.matrixPoints,
+    matrixDurations: input.matrixDurations.map((row) => row.map(canonicalMatrixValue)),
+  });
+  return createHash("sha256").update(canonical).digest("hex");
+}
 
 export function createCalendar2Routing(options: RoutingOptions = {}) {
   const fetcher = options.fetcher ?? fetch;

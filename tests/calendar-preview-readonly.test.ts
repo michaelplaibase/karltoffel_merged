@@ -65,3 +65,30 @@ test("Kalender 2 output auditerer fixed weekdays, geocode, matrixben og eksplici
   assert.match(preview, /fixedEmployeeId: employeeByName\.get\(row\.fixedEmployee\) \?\? null/);
   assert.doesNotMatch(preview, /matrixAddresses\s*:/);
 });
+
+test("uafhængig Kalender 2 source audit er auth-beskyttet GET-only og direkte fra Prisma", async () => {
+  const route = await source("app/api/calendar-2/audit-source/route.ts");
+  const auditSource = await source("lib/calendar2-audit-source.ts");
+  assert.match(route, /export async function GET/);
+  assert.doesNotMatch(route, /export async function (POST|PUT|PATCH|DELETE)/);
+  assert.match(route, /requireSession/);
+  assert.match(route, /unauthorized/);
+  assert.match(route, /["']Cache-Control["']:\s*["']no-store/);
+  assert.match(auditSource, /prisma\.subscription\.findMany/);
+  assert.match(auditSource, /fixedWeekdays:\s*true/);
+  assert.doesNotMatch(auditSource, /getSubscriptionPreview|routeAudit|deliveryAddress|contact:/);
+  assert.doesNotMatch(auditSource, /create|update|delete|upsert|transaction/);
+});
+
+test("route audit publicerer komplet privacy-safe matrixmapping og kanonisk binding", async () => {
+  const preview = await source("lib/subscription-preview-calendar.ts");
+  const types = await source("lib/calendar.ts");
+  for (const marker of ["matrixPoints", "matrixHash", "matrixVersion", "matrixProvider", "matrixCapturedAt", "matrixDurations"]) {
+    assert.match(preview, new RegExp(marker));
+    assert.match(types, new RegExp(marker));
+  }
+  assert.match(types, /stableRef:\s*string/);
+  assert.match(types, /kind:\s*"employee_home"\s*\|\s*"job"/);
+  assert.doesNotMatch(preview, /matrixAddresses\s*:/);
+  assert.doesNotMatch(preview, /process\.env|apiKey|secret/i);
+});

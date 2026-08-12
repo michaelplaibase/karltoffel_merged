@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import {
+  calendar2MatrixAuditHash,
   createCalendar2Routing,
   planCalendar2Week,
   type Calendar2Employee,
@@ -196,4 +197,17 @@ test("alle adresser kan være unverificerede uden falsk rute eller overflow", as
   assert.equal(result.matrix, null);
   const plan = planCalendar2Week([job(1, "A")], "2026-08-10", [employee({ homeAddress: "Hjem" })], matrix([], []));
   assert.equal(plan.unplanned[0].reason, "unverified_address");
+});
+
+test("matrix revisionsspor binder punkter og varigheder deterministisk", () => {
+  const points = [
+    { index: 0, lat: 55.1, lon: 9.1, kind: "employee_home" as const, stableRef: "employee:7" },
+    { index: 1, lat: 55.2, lon: 9.2, kind: "job" as const, stableRef: "subscription:42" },
+  ];
+  const durations = [[0, 5], [6, 0]];
+  const first = calendar2MatrixAuditHash({ version: "calendar2-route-audit-v1", provider: "osrm-table", matrixPoints: points, matrixDurations: durations, timestamp: "2026-08-12T00:00:00Z" });
+  const later = calendar2MatrixAuditHash({ version: "calendar2-route-audit-v1", provider: "osrm-table", matrixPoints: points, matrixDurations: durations, timestamp: "2026-08-13T00:00:00Z" });
+  assert.equal(first, later, "timestamp må ikke påvirke den kanoniske hash");
+  assert.notEqual(first, calendar2MatrixAuditHash({ version: "calendar2-route-audit-v1", provider: "osrm-table", matrixPoints: [{ ...points[0], lat: 55.11 }, points[1]], matrixDurations: durations, timestamp: "2026-08-12T00:00:00Z" }));
+  assert.notEqual(first, calendar2MatrixAuditHash({ version: "calendar2-route-audit-v1", provider: "osrm-table", matrixPoints: points, matrixDurations: [[0, 7], [6, 0]], timestamp: "2026-08-12T00:00:00Z" }));
 });

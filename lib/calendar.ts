@@ -47,8 +47,11 @@ export type UnplannedJob = {
 /** Read-only Kalender 2 route evidence. Contains no customer or employee address. */
 export type Calendar2Audit = {
   optimizationContract: "deterministic-nearest-feasible-not-global-optimum";
+  matrixVersion: "calendar2-route-audit-v1";
+  matrixHash: string;
   matrixProvider: string;
   matrixCapturedAt: string;
+  matrixPoints: { index: number; lat: number; lon: number; kind: "employee_home" | "job"; stableRef: string }[];
   matrixDurations: number[][];
   sources: { subscriptionNo: number; fixedWeekdays: number[] | null; geocodeStatus: "verified" | "unverified_address" }[];
   routes: { employeeId: number; weekday: number; travelLegs: { fromIndex: number; toIndex: number; minutes: number; kind: string }[] }[];

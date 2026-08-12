@@ -1,6 +1,6 @@
 import { prisma } from "./db";
 import { isoWeek } from "./planner";
-import { createCalendar2Routing, planCalendar2Week, type Calendar2Employee, type Calendar2Job } from "./calendar2-routing";
+import { calendar2MatrixAuditHash, createCalendar2Routing, planCalendar2Week, type Calendar2Employee, type Calendar2Job, type MatrixPoint } from "./calendar2-routing";
 import type {
   CalendarMonth, CalendarWeek, CalEvent, Employee, MonthCell, MonthDay,
   MonthMatrixRow, MonthWeek, UnplannedJob, WeekDay,
@@ -111,7 +111,18 @@ async function buildPreviewWeek(weekMonday: string) {
     capturedAt: new Date().toISOString(),
   };
   const plan = planCalendar2Week(jobs, weekMonday, source.plannerEmployees, matrix);
-  return { ...source, visits, jobs, priceById, visitById, plan, geocodeStatus: new Map(routingData.geocodes.map((result) => [result.normalizedAddress, result.status])) };
+  const geocodeByAddress = new Map(routingData.geocodes.map((result) => [result.normalizedAddress, result]));
+  const subscriptionNoByAddress = new Map(visits.map((visit) => [visit.deliveryAddress.trim().replace(/\s+/g, " "), visit.subscriptionNo]));
+  const employeeIdByHome = new Map(source.plannerEmployees.filter((employee) => employee.homeAddress).map((employee) => [employee.homeAddress!.trim().replace(/\s+/g, " "), employee.id]));
+  const matrixPoints: MatrixPoint[] = matrix.addresses.map((address, index) => {
+    const coordinate = geocodeByAddress.get(address)?.coordinate;
+    if (!coordinate) throw new Error(`calendar2_audit_missing_coordinate_${index}`);
+    const employeeId = employeeIdByHome.get(address);
+    return employeeId != null
+      ? { index, lat: coordinate[0], lon: coordinate[1], kind: "employee_home", stableRef: `employee:${employeeId}` }
+      : { index, lat: coordinate[0], lon: coordinate[1], kind: "job", stableRef: `subscription:${subscriptionNoByAddress.get(address) ?? jobs.find((job) => job.address.trim().replace(/\s+/g, " ") === address)?.id}` };
+  });
+  return { ...source, visits, jobs, priceById, visitById, plan, matrixPoints, geocodeStatus: new Map(routingData.geocodes.map((result) => [result.normalizedAddress, result.status])) };
 }
 
 export async function getSubscriptionPreviewWeek(weekMonday: string): Promise<CalendarWeek> {
@@ -171,8 +182,11 @@ export async function getSubscriptionPreviewWeek(weekMonday: string): Promise<Ca
     planned: { weekLabel: `Uge ${weekNo}`, week: weekRevenue, monthLabel: MONTHS[mondayMonth], month: weekRevenue },
     audit: {
       optimizationContract: data.plan.audit.optimizationContract,
+      matrixVersion: "calendar2-route-audit-v1",
+      matrixHash: calendar2MatrixAuditHash({ version: "calendar2-route-audit-v1", provider: data.plan.audit.matrixProvider, matrixPoints: data.matrixPoints, matrixDurations: data.plan.audit.matrixDurations, timestamp: data.plan.audit.matrixCapturedAt }),
       matrixProvider: data.plan.audit.matrixProvider,
       matrixCapturedAt: data.plan.audit.matrixCapturedAt,
+      matrixPoints: data.matrixPoints,
       matrixDurations: data.plan.audit.matrixDurations,
       sources: data.visits.map((visit) => ({
         subscriptionNo: visit.subscriptionNo,
