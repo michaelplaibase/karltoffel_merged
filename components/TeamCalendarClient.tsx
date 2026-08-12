@@ -8,8 +8,8 @@ import { telHref, telDisplay } from "@/components/ui";
 import { setOrderLock, moveOrderWeeks, replanWeek, deleteOrder } from "@/app/actions/orders";
 
 type Props =
-  | { mode: "week"; week: CalendarWeek; nav: { prevWeek: string; nextWeek: string; monthParam: string } }
-  | { mode: "month"; month: CalendarMonth; nav: { prevWeek?: never } };
+  | { mode: "week"; week: CalendarWeek; nav: { prevWeek: string; nextWeek: string; monthParam: string }; readOnly?: boolean; basePath?: string; previewLabel?: string }
+  | { mode: "month"; month: CalendarMonth; nav: { prevWeek?: never }; readOnly?: boolean; basePath?: string; previewLabel?: string };
 
 /** What the context menu needs to act on an order — both board events and unplanned jobs qualify. */
 type MenuTarget = { id: number; contactId: number; subscriptionNo: number | null; phone: string | null };
@@ -61,6 +61,8 @@ const empVar = (color: string) => ({ "--emp": color } as React.CSSProperties);
 const catLetter = (category: string) => (category.charAt(0) || "?").toUpperCase();
 
 export default function TeamCalendarClient(props: Props) {
+  const readOnly = props.readOnly ?? false;
+  const basePath = props.basePath ?? "/calendar";
   const employees = props.mode === "week" ? props.week.employees : props.month.employees;
   const empById = new Map(employees.map((e) => [e.id, e]));
 
@@ -134,15 +136,15 @@ export default function TeamCalendarClient(props: Props) {
       <div className="navlead">
         {props.mode === "week" ? (
           <>
-            <Link className="cbtn" href={`/calendar?week=${props.nav.prevWeek}`}>‹</Link>
-            <Link className="cbtn" href="/calendar">I dag</Link>
-            <Link className="cbtn" href={`/calendar?week=${props.nav.nextWeek}`}>›</Link>
+            <Link className="cbtn" href={`${basePath}?week=${props.nav.prevWeek}`}>‹</Link>
+            <Link className="cbtn" href={basePath}>I dag</Link>
+            <Link className="cbtn" href={`${basePath}?week=${props.nav.nextWeek}`}>›</Link>
           </>
         ) : (
           <>
-            <Link className="cbtn" href={`/calendar?view=month&month=${props.month.prevMonth}`}>‹</Link>
-            <Link className="cbtn" href="/calendar?view=month">I dag</Link>
-            <Link className="cbtn" href={`/calendar?view=month&month=${props.month.nextMonth}`}>›</Link>
+            <Link className="cbtn" href={`${basePath}?view=month&month=${props.month.prevMonth}`}>‹</Link>
+            <Link className="cbtn" href={`${basePath}?view=month`}>I dag</Link>
+            <Link className="cbtn" href={`${basePath}?view=month&month=${props.month.nextMonth}`}>›</Link>
           </>
         )}
       </div>
@@ -153,7 +155,7 @@ export default function TeamCalendarClient(props: Props) {
           : `UGE ${props.month.weekNos[0]}–${props.month.weekNos[props.month.weekNos.length - 1]}`}
       </span>
       <span className="sp" />
-      {props.mode === "week" && (
+      {props.mode === "week" && !readOnly && (
         <button className="cbtn" type="button" disabled={pending} onClick={() => run(() => replanWeek(props.week.monday))}>
           {pending ? "Planlægger…" : "Genplanlæg uge"}
         </button>
@@ -166,9 +168,9 @@ export default function TeamCalendarClient(props: Props) {
       )}
       <div className="seg" title="Uge er standard — skift til måned">
         <Link className={`cbtn${props.mode === "week" ? " on" : ""}`}
-          href={props.mode === "week" ? `/calendar?week=${props.week.monday}` : "/calendar"}>Uge</Link>
+          href={props.mode === "week" ? `${basePath}?week=${props.week.monday}` : basePath}>Uge</Link>
         <Link className={`cbtn${props.mode === "month" ? " on" : ""}`}
-          href={`/calendar?view=month&month=${props.mode === "week" ? props.nav.monthParam : props.month.monthParam}`}>Måned</Link>
+          href={`${basePath}?view=month&month=${props.mode === "week" ? props.nav.monthParam : props.month.monthParam}`}>Måned</Link>
       </div>
       <span ref={usersRef} style={{ position: "relative" }}>
         <button className={`cbtn${usersOpen ? " on" : ""}`} type="button" title="Vælg hvilke kollegaer der vises"
@@ -223,8 +225,8 @@ export default function TeamCalendarClient(props: Props) {
                       {evs.length > 0 ? (
                         <div className="stack">
                           {evs.map((ev) => (
-                            <div key={ev.id} className={`ev ${STATUS_CLASS[ev.status]}`} style={{ cursor: "pointer" }}
-                              onClick={(e) => openMenu(e, ev)}>
+                            <div key={ev.id} className={`ev ${STATUS_CLASS[ev.status]}`} style={{ cursor: readOnly ? "default" : "pointer" }}
+                              onClick={readOnly ? undefined : (e) => openMenu(e, ev)}>
                               <span className="t num">{fmtHM(ev.start)}–{fmtHM(ev.end)}</span>
                               <span className="h">{ev.postal}</span>
                               <span className="s">
@@ -254,8 +256,8 @@ export default function TeamCalendarClient(props: Props) {
             <div className="bin">
               {week.unplanned.map((job) => (
                 <div key={job.id} className={`ev ${STATUS_CLASS[job.status]}`}
-                  style={{ ...empVar("var(--muted)"), width: 200, cursor: "pointer" }}
-                  onClick={(e) => openMenu(e, job)}>
+                  style={{ ...empVar("var(--muted)"), width: 200, cursor: readOnly ? "default" : "pointer" }}
+                  onClick={readOnly ? undefined : (e) => openMenu(e, job)}>
                   <span className="t num">Uge {week.weekNo}</span>
                   <span className="h">{job.postal}</span>
                   <span className="s">
@@ -355,6 +357,12 @@ export default function TeamCalendarClient(props: Props) {
     <div className="teamcal">
       <div className="stage">
         <div className="app">
+          {readOnly && (
+            <div role="status" style={{ padding: "12px 16px", borderBottom: "1px solid var(--tc-line-soft)", background: "var(--tc-soft)", display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
+              <span className="badge acc">{props.previewLabel ?? "Forhåndsvisning"}</span>
+              <span>Read-only projektion af aktive abonnementer. Der oprettes eller ændres ingen ordrer, opgaver eller abonnementer.</span>
+            </div>
+          )}
           {toolbar}
 
           {props.mode === "week"
@@ -383,7 +391,7 @@ export default function TeamCalendarClient(props: Props) {
         </div>
       </div>
 
-      {menu && (
+      {!readOnly && menu && (
         <div className="ctxmenu" ref={menuRef} style={{ left: menu.x, top: menu.y }}>
           {menuTel != null ? (
             <a href={menuTel} className="ctxmenu-item">Ring kunden op · {telDisplay(menu.ev.phone)}</a>
@@ -424,7 +432,7 @@ export default function TeamCalendarClient(props: Props) {
         </div>
       )}
 
-      {confirmDel && (
+      {!readOnly && confirmDel && (
         <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,.4)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 3000 }}
           onClick={() => !pending && setConfirmDel(null)}>
           <div style={{ background: "#fff", borderRadius: 6, padding: "20px 22px", width: 440, maxWidth: "92vw", boxShadow: "0 10px 40px rgba(0,0,0,.25)" }} onClick={(e) => e.stopPropagation()}>

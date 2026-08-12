@@ -5,7 +5,13 @@ export type NavItem = { label: string; en: string; href: string };
 export type NavMenu = { label: string; en: string; items: NavItem[] };
 
 export const TOP_NAV: NavMenu[] = [
-  { label: "Kalender", en: "Calendar", items: [{ label: "Kalender", en: "Calendar", href: "/calendar" }] },
+  {
+    label: "Kalender", en: "Calendar",
+    items: [
+      { label: "Kalender", en: "Calendar", href: "/calendar" },
+      { label: "Kalender 2", en: "Calendar preview", href: "/calendar-2" },
+    ],
+  },
   { label: "Dagsprogram", en: "Day program", items: [{ label: "Dagsprogram", en: "Day program", href: "/daycalendar" }] },
   {
     label: "Indstillinger", en: "Settings",
