@@ -57,6 +57,7 @@ export const TOP_NAV: NavMenu[] = [
       { label: "Samarbejdspartnere", en: "Partners", href: "/partners" },
       { label: "Karltoffel quiz", en: "Quiz", href: "/quiz" },
       { label: "Kontakt support", en: "Support", href: "/support" },
+      { label: "AI Receptionist (prototype)", en: "AI Receptionist (prototype)", href: "/ai-receptionist" },
     ],
   },
 ];
