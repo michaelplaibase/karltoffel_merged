@@ -1,5 +1,6 @@
 import { getCalendarWeek, getCalendarMonth } from "@/lib/queries";
 import TeamCalendarClient from "@/components/TeamCalendarClient";
+import { getSessionUser } from "@/lib/api-auth";
 
 export const metadata = { title: "Kalender · Karltoffel" };
 
@@ -18,13 +19,15 @@ function shift(mondayISO: string, days: number): string {
 
 export default async function CalendarPage({ searchParams }: { searchParams: Promise<{ week?: string; view?: string; month?: string }> }) {
   const sp = await searchParams;
+  const me = await getSessionUser();
+  const viewer = me ? { id: me.id, isAdmin: me.isAdmin } : undefined;
 
   if (sp.view === "month") {
     const now = new Date();
     const anchor = sp.month && /^\d{4}-\d{2}$/.test(sp.month)
       ? sp.month
       : `${now.getUTCFullYear()}-${String(now.getUTCMonth() + 1).padStart(2, "0")}`;
-    const month = await getCalendarMonth(anchor);
+    const month = await getCalendarMonth(anchor, viewer);
     return <TeamCalendarClient mode="month" month={month} nav={{}} />;
   }
 
@@ -32,7 +35,7 @@ export default async function CalendarPage({ searchParams }: { searchParams: Pro
     ? mondayOf(new Date(`${sp.week}T00:00:00Z`))
     : mondayOf(new Date());
 
-  const week = await getCalendarWeek(monday);
+  const week = await getCalendarWeek(monday, viewer);
   return (
     <TeamCalendarClient
       mode="week"

@@ -642,18 +642,24 @@ async function monthRevenue(year: number, monthIdx0: number): Promise<number> {
   return orders.reduce((sum, o) => sum + o.tasks.reduce((a, t) => a + t.price, 0), 0);
 }
 
-export async function getCalendarWeek(weekMonday: string): Promise<CalendarWeek> {
+export async function getCalendarWeek(weekMonday: string, viewer?: { id: number; isAdmin: boolean }): Promise<CalendarWeek> {
   const { start, plan, priceById, metaById, users, unplanned: rawUnplanned } = await buildWeekPlan(weekMonday);
   const year = start.getUTCFullYear();
 
+  // ALLE for admin (teamoverblik), men kun viewer selv for en almindelig
+  // medarbejder — samme regel som getDayProgram (Michael, 2026-08-10: en
+  // medarbejder skal kun se sine EGNE opgaver, ikke kollegers).
+  const visibleDays = plan.days.filter((d) => !viewer || viewer.isAdmin || d.employeeId === viewer.id);
+  const visibleUsers = viewer && !viewer.isAdmin ? users.filter((u) => u.id === viewer.id) : users;
+
   const dayRevenue = Array<number>(7).fill(0);
   const dayDrive = Array<number>(7).fill(0);
-  for (const d of plan.days) {
+  for (const d of visibleDays) {
     dayDrive[d.weekday] = d.driveMin;
     for (const s of d.stops) dayRevenue[d.weekday] += priceById.get(s.job.id) ?? 0;
   }
 
-  const events: CalEvent[] = plan.days.flatMap((d) =>
+  const events: CalEvent[] = visibleDays.flatMap((d) =>
     d.stops.map((s) => {
       const meta = metaById.get(s.job.id);
       return {
@@ -678,11 +684,15 @@ export async function getCalendarWeek(weekMonday: string): Promise<CalendarWeek>
   const weekNo = isoWeek(weekMonday);
   const week = dayRevenue.reduce((a, b) => a + b, 0);
   const month = await monthRevenue(year, monMonth);
-  const employees: Employee[] = users.map((u) => ({
+  const employees: Employee[] = visibleUsers.map((u) => ({
     id: u.id, name: `${u.firstName} ${u.lastName}`, color: u.calendarColor ?? "#a4d5ee", active: u.activeCalendar,
   }));
 
-  const unplanned: UnplannedJob[] = rawUnplanned.map(({ job, reason }) => {
+  // Uassignerede/overflow-ordrer er ikke tilknyttet en bestemt medarbejder —
+  // kun admin har brug for teamets restance-overblik; en almindelig
+  // medarbejder skal ikke se andres kunde-/adressedata via denne liste.
+  const unplannedVisible = !viewer || viewer.isAdmin ? rawUnplanned : [];
+  const unplanned: UnplannedJob[] = unplannedVisible.map(({ job, reason }) => {
     const meta = metaById.get(job.id);
     return {
       id: job.id, postal: job.postal, customer: job.customer, category: job.category,
@@ -749,7 +759,7 @@ export async function getDayProgram(dateISO: string, viewer?: { id: number; isAd
 /** Month overview for the calendar's month mode: a date grid (variant A) and a
  *  week × employee matrix (variant B), both derived from the same week plans so
  *  they agree with the week/day views. `monthParam` is "YYYY-MM". */
-export async function getCalendarMonth(monthParam: string): Promise<CalendarMonth> {
+export async function getCalendarMonth(monthParam: string, viewer?: { id: number; isAdmin: boolean }): Promise<CalendarMonth> {
   let year: number;
   let monthIdx: number;
   const m = /^(\d{4})-(\d{2})$/.exec(monthParam ?? "");
@@ -777,7 +787,7 @@ export async function getCalendarMonth(monthParam: string): Promise<CalendarMont
       const dt = new Date(wm.getTime() + i * 864e5);
       const dateISO = ymd(dt);
       const chips: MonthChip[] = wp.plan.days
-        .filter((dp) => dp.weekday === i)
+        .filter((dp) => dp.weekday === i && (!viewer || viewer.isAdmin || dp.employeeId === viewer.id))
         .flatMap((dp) => dp.stops.map((s) => {
           const meta = wp.metaById.get(s.job.id);
           return {
@@ -797,7 +807,10 @@ export async function getCalendarMonth(monthParam: string): Promise<CalendarMont
   }
 
   // Active users: every buildWeekPlan fetched the same set — reuse the first.
-  const users = weekPlans[0]!.users;
+  // Samme viewer-regel som getCalendarWeek/getDayProgram: en almindelig
+  // medarbejder ser kun sig selv, admin ser hele teamet.
+  const allUsers = weekPlans[0]!.users;
+  const users = viewer && !viewer.isAdmin ? allUsers.filter((u) => u.id === viewer.id) : allUsers;
   const employees: Employee[] = users.map((u) => ({
     id: u.id, name: `${u.firstName} ${u.lastName}`, color: u.calendarColor ?? "#a4d5ee", active: u.activeCalendar,
   }));
