@@ -1,6 +1,6 @@
 import { prisma } from "./db";
-import { coordFor } from "./geo";
-import { isoWeek, planWeek, type Employee as PlannerEmployee, type Job } from "./planner";
+import { isoWeek } from "./planner";
+import { createCalendar2Routing, planCalendar2Week, type Calendar2Employee, type Calendar2Job } from "./calendar2-routing";
 import type {
   CalendarMonth, CalendarWeek, CalEvent, Employee, MonthCell, MonthDay,
   MonthMatrixRow, MonthWeek, UnplannedJob, WeekDay,
@@ -29,7 +29,6 @@ async function loadPreviewSource() {
     prisma.holidayWeek.findMany({ orderBy: { startWeek: "asc" } }),
   ]);
   const employeeByName = new Map(users.map((user) => [`${user.firstName} ${user.lastName}`, user.id]));
-  const fallbackEmployeeId = users[0]?.id ?? null;
   const subscriptions: PreviewSubscription[] = rows.map((row) => ({
     id: row.id,
     displayNo: row.displayNo,
@@ -40,7 +39,7 @@ async function loadPreviewSource() {
     baseInterval: row.baseInterval,
     startWeek: row.startWeek,
     fixedWeekdays: row.fixedWeekdays,
-    fixedEmployeeId: employeeByName.get(row.fixedEmployee) ?? fallbackEmployeeId,
+    fixedEmployeeId: employeeByName.get(row.fixedEmployee) ?? null,
     active: row.active,
     tasks: row.tasks.map((task) => ({
       id: task.id,
@@ -62,10 +61,10 @@ async function loadPreviewSource() {
     color: user.calendarColor ?? "#a4d5ee",
     active: user.activeCalendar,
   }));
-  const plannerEmployees: PlannerEmployee[] = users.map((user) => ({
+  const plannerEmployees: Calendar2Employee[] = users.map((user) => ({
     id: user.id,
     name: `${user.firstName} ${user.lastName}`,
-    home: coordFor(user.homeAddress ?? ""),
+    homeAddress: user.homeAddress,
     workStartMin: 8 * 60,
     workEndMin: 16 * 60,
     flexMin: 60,
@@ -73,6 +72,8 @@ async function loadPreviewSource() {
   }));
   return { subscriptions, employees, plannerEmployees, holidays };
 }
+
+const routing = createCalendar2Routing();
 
 async function buildPreviewWeek(weekMonday: string) {
   const source = await loadPreviewSource();
@@ -83,7 +84,7 @@ async function buildPreviewWeek(weekMonday: string) {
   }).filter((visit) => visit.week === weekMonday);
   const priceById = new Map<number, number>();
   const visitById = new Map<number, PreviewVisit>();
-  const jobs: Job[] = visits.map((visit) => {
+  const jobs: Calendar2Job[] = visits.map((visit) => {
     const id = previewId(visit);
     priceById.set(id, visit.tasks.reduce((sum, task) => sum + task.price, 0));
     visitById.set(id, visit);
@@ -100,11 +101,17 @@ async function buildPreviewWeek(weekMonday: string) {
       fixedEmployeeId: visit.fixedEmployeeId ?? undefined,
     };
   });
-  const activeIds = new Set(source.employees.map((employee) => employee.id));
-  const placeable = jobs.filter((job) => job.fixedEmployeeId != null && activeIds.has(job.fixedEmployeeId));
-  const unassigned = jobs.filter((job) => job.fixedEmployeeId == null || !activeIds.has(job.fixedEmployeeId));
-  const plan = planWeek(placeable, weekMonday, source.plannerEmployees);
-  return { ...source, visits, jobs, priceById, visitById, plan, unassigned };
+  const addresses = [...source.plannerEmployees.map((employee) => employee.homeAddress).filter((address): address is string => Boolean(address?.trim())), ...jobs.map((job) => job.address)];
+  const routingData = await routing.buildMatrix(addresses);
+  const verifiedAddresses = new Set(routingData.geocodes.filter((result) => result.status === "verified").map((result) => result.normalizedAddress));
+  const matrix = routingData.matrix ?? {
+    addresses: [...verifiedAddresses],
+    durations: Array.from({ length: verifiedAddresses.size }, (_, row) => Array.from({ length: verifiedAddresses.size }, (_, col) => row === col ? 0 : Number.POSITIVE_INFINITY)),
+    provider: "unverified",
+    capturedAt: new Date().toISOString(),
+  };
+  const plan = planCalendar2Week(jobs, weekMonday, source.plannerEmployees, matrix);
+  return { ...source, visits, jobs, priceById, visitById, plan, geocodeStatus: new Map(routingData.geocodes.map((result) => [result.normalizedAddress, result.status])) };
 }
 
 export async function getSubscriptionPreviewWeek(weekMonday: string): Promise<CalendarWeek> {
@@ -137,8 +144,7 @@ export async function getSubscriptionPreviewWeek(weekMonday: string): Promise<Ca
       tasks: visit.tasks,
     };
   }));
-  const unplannedJobs = [...data.plan.unplanned, ...data.unassigned];
-  const unplanned: UnplannedJob[] = unplannedJobs.map((job) => ({
+  const unplanned: UnplannedJob[] = data.plan.unplanned.map(({ job, reason }) => ({
     id: job.id,
     postal: job.postal,
     customer: job.customer,
@@ -148,7 +154,7 @@ export async function getSubscriptionPreviewWeek(weekMonday: string): Promise<Ca
     subscriptionNo: data.visitById.get(job.id)?.subscriptionNo ?? null,
     phone: data.visitById.get(job.id)?.phone ?? null,
     tasks: data.visitById.get(job.id)?.tasks ?? [],
-    reason: data.unassigned.includes(job) ? "unassigned" : "overflow",
+    reason,
   }));
   const mondayMonth = start.getUTCMonth();
   const sundayMonth = new Date(start.getTime() + 6 * 864e5).getUTCMonth();
@@ -163,6 +169,27 @@ export async function getSubscriptionPreviewWeek(weekMonday: string): Promise<Ca
     events,
     unplanned,
     planned: { weekLabel: `Uge ${weekNo}`, week: weekRevenue, monthLabel: MONTHS[mondayMonth], month: weekRevenue },
+    audit: {
+      optimizationContract: data.plan.audit.optimizationContract,
+      matrixProvider: data.plan.audit.matrixProvider,
+      matrixCapturedAt: data.plan.audit.matrixCapturedAt,
+      matrixDurations: data.plan.audit.matrixDurations,
+      sources: data.visits.map((visit) => ({
+        subscriptionNo: visit.subscriptionNo,
+        fixedWeekdays: visit.fixedWeekdays ?? null,
+        geocodeStatus: data.geocodeStatus.get(visit.deliveryAddress.trim().replace(/\s+/g, " ")) ?? "unverified_address",
+      })),
+      routes: data.plan.days.map((day) => ({
+        employeeId: day.employeeId,
+        weekday: day.weekday,
+        travelLegs: day.travelLegs.map((leg) => ({
+          fromIndex: data.plan.audit.matrixAddresses.indexOf(leg.from),
+          toIndex: data.plan.audit.matrixAddresses.indexOf(leg.to),
+          minutes: leg.minutes,
+          kind: leg.kind,
+        })),
+      })),
+    },
   };
 }
 

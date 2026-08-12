@@ -41,7 +41,17 @@ export type UnplannedJob = {
   status: CalStatus; contactId: number; subscriptionNo: number | null;
   phone: string | null;
   tasks?: CalendarTaskDetail[];  // only populated by the read-only subscription preview
-  reason: "unassigned" | "overflow" | "holiday"; // no employee / didn't fit / ferielukket uge
+  reason: "unassigned" | "overflow" | "holiday" | "unverified_address" | "unverified_route" | "fixed_weekday_unavailable";
+};
+
+/** Read-only Kalender 2 route evidence. Contains no customer or employee address. */
+export type Calendar2Audit = {
+  optimizationContract: "deterministic-nearest-feasible-not-global-optimum";
+  matrixProvider: string;
+  matrixCapturedAt: string;
+  matrixDurations: number[][];
+  sources: { subscriptionNo: number; fixedWeekdays: number[] | null; geocodeStatus: "verified" | "unverified_address" }[];
+  routes: { employeeId: number; weekday: number; travelLegs: { fromIndex: number; toIndex: number; minutes: number; kind: string }[] }[];
 };
 
 export type CalendarWeek = {
@@ -53,6 +63,7 @@ export type CalendarWeek = {
   events: CalEvent[];
   unplanned: UnplannedJob[];
   planned: { weekLabel: string; week: number; monthLabel: string; month: number };
+  audit?: Calendar2Audit;
 };
 
 // ---------- Month view ----------

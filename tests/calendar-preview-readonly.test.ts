@@ -33,3 +33,23 @@ test("read-only viser ingen mutationer, kontekstmenuer eller redigeringslinks", 
   assert.match(component, /readOnly \? "default" : "pointer"/);
   assert.doesNotMatch(await source("app/calendar-2/page.tsx"), /setOrderLock|moveOrderWeeks|replanWeek|deleteOrder|\/orders\/|\/subscriptions\//);
 });
+
+test("Kalender 2 bruger kun den additive matrixplanner og ændrer ikke aktiv /calendar", async () => {
+  const preview = await source("lib/subscription-preview-calendar.ts");
+  assert.match(preview, /createCalendar2Routing/);
+  assert.match(preview, /planCalendar2Week/);
+  assert.doesNotMatch(preview, /fallbackEmployeeId|coordFor|planWeek/);
+  const active = await source("lib/queries.ts");
+  assert.match(active, /from "\.\/planner"/);
+  assert.match(active, /from "\.\/geo"/);
+  assert.doesNotMatch(active, /calendar2-routing/);
+});
+
+test("Kalender 2 output auditerer fixed weekdays, geocode, matrixben og eksplicitte reasons uden fulde adresser", async () => {
+  const preview = await source("lib/subscription-preview-calendar.ts");
+  for (const marker of ["fixedWeekdays", "geocodeStatus", "matrixDurations", "travelLegs", "unverified_address"]) {
+    assert.match(preview, new RegExp(marker));
+  }
+  assert.match(preview, /fixedEmployeeId: employeeByName\.get\(row\.fixedEmployee\) \?\? null/);
+  assert.doesNotMatch(preview, /matrixAddresses\s*:/);
+});
