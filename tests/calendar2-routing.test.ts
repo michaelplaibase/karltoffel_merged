@@ -47,14 +47,18 @@ test("ukendt postnummer falder aldrig tilbage til Horsens og geocode-fejl er eks
   assert.equal(result.coordinate, null);
 });
 
-test("geocoder cacher fejl og håndterer timeout/netværksfejl", async () => {
+test("geocoder retryer begrænset og cacher ikke en transient fejl permanent", async () => {
   let calls = 0;
   const routing = createCalendar2Routing({
-    fetcher: async () => { calls++; throw new Error("network"); }, sleep: async () => {}, now: () => 1,
+    fetcher: async () => {
+      calls++;
+      if (calls <= 2) throw new Error("network");
+      return new Response(JSON.stringify([{ lat: "55.8", lon: "9.8" }]));
+    }, sleep: async () => {}, now: () => 1,
   });
   assert.equal((await routing.geocode("Fejlvej 1, 8990 Fårup")).status, "unverified_address");
-  assert.equal((await routing.geocode("Fejlvej 1, 8990 Fårup")).status, "unverified_address");
-  assert.equal(calls, 1);
+  assert.equal((await routing.geocode("Fejlvej 1, 8990 Fårup")).status, "verified");
+  assert.equal(calls, 3);
 });
 
 test("matrix bruger OSRM-varigheder og deduplikerer samme koordinatsæt", async () => {
@@ -71,6 +75,66 @@ test("matrix bruger OSRM-varigheder og deduplikerer samme koordinatsæt", async 
   assert.deepEqual(first.matrix?.durations, [[0, 10, 15], [10, 0, 5], [15, 5, 0]]);
   assert.deepEqual(second.matrix, first.matrix);
   assert.equal(calls, 1);
+});
+
+test("én fejlet geocode udelukker kun adressen fra den verificerede matrix", async () => {
+  const fetcher: typeof fetch = async (input) => {
+    const url = String(input);
+    if (url.includes("nominatim")) return new Response(url.includes("Fejl") ? "[]" : JSON.stringify([{ lat: url.includes("Hjem") ? "55.0" : "55.1", lon: "9.0" }]));
+    return new Response(JSON.stringify({ code: "Ok", durations: [[0, 300], [300, 0]] }));
+  };
+  const routing = createCalendar2Routing({ fetcher, sleep: async () => {}, now: () => 1 });
+  const result = await routing.buildMatrix(["Hjem", "Gyldig", "Fejl"]);
+  assert.deepEqual(result.matrix?.addresses, ["Hjem", "Gyldig"]);
+  assert.deepEqual(result.matrix?.durations, [[0, 5], [5, 0]]);
+  assert.equal(result.geocodes.find((item) => item.normalizedAddress === "Fejl")?.status, "unverified_address");
+});
+
+test("null i ét matrixben forgifter kun ruter som kræver benet", async () => {
+  const fetcher: typeof fetch = async (input) => {
+    const url = String(input);
+    if (url.includes("nominatim")) return new Response(JSON.stringify([{ lat: url.includes("Hjem") ? "55.0" : url.includes("A") ? "55.1" : "55.2", lon: "9.0" }]));
+    return new Response(JSON.stringify({ code: "Ok", durations: [[0, 300, null], [300, 0, null], [null, null, 0]] }));
+  };
+  const routing = createCalendar2Routing({ fetcher, sleep: async () => {}, now: () => 1 });
+  const result = await routing.buildMatrix(["Hjem", "A", "B"]);
+  const plan = planCalendar2Week([job(1, "A"), job(2, "B")], "2026-08-10", [employee({ homeAddress: "Hjem" })], result.matrix!);
+  assert.deepEqual(plan.days.flatMap((day) => day.stops.map((stop) => stop.job.id)), [1]);
+  assert.equal(plan.unplanned.find((item) => item.job.id === 2)?.reason, "unverified_route");
+});
+
+test("matrix-requestfejl caches ikke og kan isoleres mellem medarbejdermatricer", async () => {
+  let matrixCalls = 0;
+  const fetcher: typeof fetch = async (input) => {
+    const url = String(input);
+    if (url.includes("nominatim")) return new Response(JSON.stringify([{ lat: url.includes("H1") ? "55.0" : url.includes("A") ? "55.1" : url.includes("H2") ? "56.0" : "56.1", lon: "9.0" }]));
+    matrixCalls++;
+    if (matrixCalls === 1) throw new Error("osrm down");
+    return new Response(JSON.stringify({ code: "Ok", durations: [[0, 300], [300, 0]] }));
+  };
+  const routing = createCalendar2Routing({ fetcher, sleep: async () => {}, now: () => 1 });
+  assert.equal((await routing.buildMatrix(["H1", "A"])).matrix, null);
+  assert.ok((await routing.buildMatrix(["H2", "B"])).matrix);
+  assert.ok((await routing.buildMatrix(["H1", "A"])).matrix);
+  assert.equal(matrixCalls, 3);
+});
+
+test("isoleret matrix bevarer succesfuld medarbejderrute når en anden request fejler", async () => {
+  let matrixCalls = 0;
+  const fetcher: typeof fetch = async (input) => {
+    const url = String(input);
+    if (url.includes("nominatim")) return new Response(JSON.stringify([{ lat: url.includes("H1") ? "55.0" : url.includes("A") ? "55.1" : url.includes("H2") ? "56.0" : "56.1", lon: "9.0" }]));
+    matrixCalls++;
+    if (matrixCalls === 1) throw new Error("osrm down");
+    return new Response(JSON.stringify({ code: "Ok", durations: [[0, 300], [300, 0]] }));
+  };
+  const routing = createCalendar2Routing({ fetcher, sleep: async () => {}, now: () => 1 });
+  const result = await routing.buildIsolatedMatrix([["H1", "A"], ["H2", "B"]]);
+  const employees = [employee({ id: 1, homeAddress: "H1" }), employee({ id: 2, homeAddress: "H2" })];
+  const jobs = [job(1, "A", { fixedEmployeeId: 1 }), job(2, "B", { fixedEmployeeId: 2 })];
+  const plan = planCalendar2Week(jobs, "2026-08-10", employees, result.matrix!);
+  assert.equal(plan.unplanned.find((item) => item.job.id === 1)?.reason, "unverified_route");
+  assert.deepEqual(plan.days.flatMap((day) => day.stops.map((stop) => stop.job.id)), [2]);
 });
 
 test("ukendt medarbejder er unassigned og manglende hjem er unverified_address", () => {
@@ -123,5 +187,13 @@ test("matrixfejl bliver eksplicit unverified_route og aldrig overflow", () => {
 test("ugyldig jobadresse bliver eksplicit unverified_address", () => {
   const m = matrix([employee().homeAddress!], [[0]]);
   const plan = planCalendar2Week([job(1, "Mangler")], "2026-08-10", [employee()], m);
+  assert.equal(plan.unplanned[0].reason, "unverified_address");
+});
+
+test("alle adresser kan være unverificerede uden falsk rute eller overflow", async () => {
+  const routing = createCalendar2Routing({ fetcher: async () => new Response("[]"), sleep: async () => {}, now: () => 1 });
+  const result = await routing.buildMatrix(["Hjem", "A"]);
+  assert.equal(result.matrix, null);
+  const plan = planCalendar2Week([job(1, "A")], "2026-08-10", [employee({ homeAddress: "Hjem" })], matrix([], []));
   assert.equal(plan.unplanned[0].reason, "unverified_address");
 });

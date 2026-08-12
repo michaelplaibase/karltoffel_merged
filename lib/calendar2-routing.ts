@@ -41,17 +41,17 @@ export function createCalendar2Routing(options: RoutingOptions = {}) {
     if (cached) return cached;
     const pending = (async (): Promise<GeocodeResult> => {
       if (!address) return { status: "unverified_address", normalizedAddress: address, coordinate: null, provider: "nominatim" };
-      const wait = Math.max(0, 1_000 - (now() - lastGeocodeAt));
-      if (wait) await sleep(wait);
-      lastGeocodeAt = now();
-      try {
+      for (let attempt = 0; attempt < 2; attempt++) try {
+        const wait = Math.max(0, 1_000 - (now() - lastGeocodeAt));
+        if (wait) await sleep(wait);
+        lastGeocodeAt = now();
         const url = new URL("https://nominatim.openstreetmap.org/search");
         url.searchParams.set("q", `${address}, Danmark`);
         url.searchParams.set("format", "jsonv2");
         url.searchParams.set("limit", "1");
         url.searchParams.set("countrycodes", "dk");
         url.searchParams.set("addressdetails", "0");
-        const response = await fetcher(url, { headers: { "User-Agent": USER_AGENT, Accept: "application/json" }, signal: AbortSignal.timeout(timeoutMs), cache: "force-cache", next: { revalidate: 30 * 86400 } });
+        const response = await fetcher(url, { headers: { "User-Agent": USER_AGENT, Accept: "application/json" }, signal: AbortSignal.timeout(timeoutMs), cache: "no-store" });
         if (!response.ok) throw new Error(`geocode_http_${response.status}`);
         const body = await response.json() as Array<{ lat?: string; lon?: string }>;
         const lat = Number(body[0]?.lat); const lon = Number(body[0]?.lon);
@@ -60,10 +60,12 @@ export function createCalendar2Routing(options: RoutingOptions = {}) {
         }
         return { status: "verified", normalizedAddress: address, coordinate: [lat, lon], provider: "nominatim" };
       } catch {
-        return { status: "unverified_address", normalizedAddress: address, coordinate: null, provider: "nominatim" };
+        if (attempt === 1) return { status: "unverified_address", normalizedAddress: address, coordinate: null, provider: "nominatim" };
       }
+      return { status: "unverified_address", normalizedAddress: address, coordinate: null, provider: "nominatim" };
     })();
     geocodeCache.set(key, pending);
+    pending.then((result) => { if (result.status !== "verified") geocodeCache.delete(key); });
     return pending;
   };
 
@@ -75,26 +77,50 @@ export function createCalendar2Routing(options: RoutingOptions = {}) {
     const pending = (async () => {
       const geocodes: GeocodeResult[] = [];
       for (const address of addresses) geocodes.push(await geocode(address));
-      if (geocodes.some((result) => result.status !== "verified" || !result.coordinate)) return { matrix: null, geocodes };
+      const verified = geocodes.filter((result): result is GeocodeResult & { coordinate: Coordinate } => result.status === "verified" && Boolean(result.coordinate));
+      const verifiedAddresses = verified.map((result) => result.normalizedAddress);
+      if (!verified.length) return { matrix: null, geocodes };
       try {
-        const coords = geocodes.map((result) => `${result.coordinate![1]},${result.coordinate![0]}`).join(";");
+        const coords = verified.map((result) => `${result.coordinate[1]},${result.coordinate[0]}`).join(";");
         const url = new URL(`https://router.project-osrm.org/table/v1/driving/${coords}`);
         url.searchParams.set("annotations", "duration");
-        const response = await fetcher(url, { headers: { "User-Agent": USER_AGENT, Accept: "application/json" }, signal: AbortSignal.timeout(timeoutMs), cache: "force-cache", next: { revalidate: 30 * 86400 } });
+        const response = await fetcher(url, { headers: { "User-Agent": USER_AGENT, Accept: "application/json" }, signal: AbortSignal.timeout(timeoutMs), cache: "no-store" });
         if (!response.ok) throw new Error(`matrix_http_${response.status}`);
         const body = await response.json() as { code?: string; durations?: Array<Array<number | null>> };
-        if (body.code !== "Ok" || !body.durations || body.durations.length !== addresses.length || body.durations.some((row) => row.length !== addresses.length || row.some((v) => v == null || !Number.isFinite(v)))) throw new Error("invalid_matrix");
-        const durations = body.durations.map((row) => row.map((seconds) => Math.ceil(Number(seconds) / 60)));
-        return { matrix: { addresses, durations, provider: "osrm-table", capturedAt: new Date(now()).toISOString() }, geocodes };
+        if (body.code !== "Ok" || !body.durations || body.durations.length !== verified.length || body.durations.some((row) => row.length !== verified.length)) throw new Error("invalid_matrix");
+        const durations = body.durations.map((row) => row.map((seconds) => seconds == null || !Number.isFinite(seconds) ? Number.POSITIVE_INFINITY : Math.ceil(Number(seconds) / 60)));
+        const partial = durations.some((row) => row.some((minutes) => !Number.isFinite(minutes)));
+        return { matrix: { addresses: verifiedAddresses, durations, provider: partial ? "osrm-table-partial" : "osrm-table", capturedAt: new Date(now()).toISOString() }, geocodes };
       } catch {
         return { matrix: null, geocodes };
       }
     })();
     matrixCache.set(key, pending);
+    pending.then((result) => { if (!result.matrix) matrixCache.delete(key); });
     return pending;
   };
 
-  return { geocode, buildMatrix };
+  const buildIsolatedMatrix = async (groups: string[][], rawAddresses = groups.flat()) => {
+    const addresses = [...new Set(rawAddresses.map(normalized))];
+    const geocodes: GeocodeResult[] = [];
+    for (const address of addresses) geocodes.push(await geocode(address));
+    const verifiedAddresses = geocodes.filter((result) => result.status === "verified").map((result) => result.normalizedAddress);
+    if (!verifiedAddresses.length) return { matrix: null, geocodes };
+    const durations = Array.from({ length: verifiedAddresses.length }, (_, row) => Array.from({ length: verifiedAddresses.length }, (_, col) => row === col ? 0 : Number.POSITIVE_INFINITY));
+    const index = new Map(verifiedAddresses.map((address, position) => [address, position]));
+    let complete = true;
+    for (const group of groups) {
+      const result = await buildMatrix(group);
+      if (!result.matrix) { complete = false; continue; }
+      result.matrix.addresses.forEach((from, row) => result.matrix!.addresses.forEach((to, col) => {
+        durations[index.get(from)!][index.get(to)!] = result.matrix!.durations[row][col];
+      }));
+      if (result.matrix.provider.endsWith("partial")) complete = false;
+    }
+    return { matrix: { addresses: verifiedAddresses, durations, provider: complete ? "osrm-table-isolated" : "osrm-table-isolated-partial", capturedAt: new Date(now()).toISOString() }, geocodes };
+  };
+
+  return { geocode, buildMatrix, buildIsolatedMatrix };
 }
 
 const uniqueDays = (days: number[]) => [...new Set(days)].filter((day) => Number.isInteger(day) && day >= 0 && day <= 6).sort((a, b) => a - b);
@@ -156,7 +182,13 @@ export function planCalendar2Week(jobs: Calendar2Job[], weekMonday: string, empl
       }
     }
   }
-  for (const job of remaining) unplanned.push({ job, reason: matrix.provider === "unverified" ? "unverified_route" : "overflow" });
+  for (const job of remaining) {
+    const employee = employeeById.get(job.fixedEmployeeId!);
+    const home = employee?.homeAddress ? matrixIndex.get(normalized(employee.homeAddress)) : undefined;
+    const destination = matrixIndex.get(normalized(job.address));
+    const routeVerified = home != null && destination != null && Number.isFinite(matrix.durations[home]?.[destination]) && Number.isFinite(matrix.durations[destination]?.[home]);
+    unplanned.push({ job, reason: matrix.provider === "unverified" || !routeVerified ? "unverified_route" : "overflow" });
+  }
   unplanned.sort((a, b) => a.job.id - b.job.id);
   return { weekMonday, days, unplanned, audit: { optimizationContract: "deterministic-nearest-feasible-not-global-optimum", matrixProvider: matrix.provider, matrixCapturedAt: matrix.capturedAt, matrixAddresses: matrix.addresses, matrixDurations: matrix.durations } };
 }

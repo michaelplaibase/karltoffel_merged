@@ -34,6 +34,18 @@ test("read-only viser ingen mutationer, kontekstmenuer eller redigeringslinks", 
   assert.doesNotMatch(await source("app/calendar-2/page.tsx"), /setOrderLock|moveOrderWeeks|replanWeek|deleteOrder|\/orders\/|\/subscriptions\//);
 });
 
+test("read-only viser unplanned reasons sandfærdigt", async () => {
+  const component = await source("components/TeamCalendarClient.tsx");
+  assert.match(component, /unverified_address[\s\S]*Adresse ikke verificeret/);
+  assert.match(component, /unverified_route[\s\S]*Køretidsmatrix ikke verificeret/);
+  assert.match(component, /fixed_weekday_unavailable[\s\S]*Fast ugedag er ikke en arbejdsdag/);
+  assert.match(component, /unassigned[\s\S]*Ikke tildelt kollega/);
+  assert.match(component, /overflow[\s\S]*Ingen plads i ugen/);
+  assert.match(component, /holiday[\s\S]*Ferielukket uge/);
+  assert.match(component, /Ukendt årsag/);
+  assert.doesNotMatch(component, /reason[^\n]*\?[^\n]*Ingen plads i ugen/);
+});
+
 test("Kalender 2 bruger kun den additive matrixplanner og ændrer ikke aktiv /calendar", async () => {
   const preview = await source("lib/subscription-preview-calendar.ts");
   assert.match(preview, /createCalendar2Routing/);

@@ -102,7 +102,7 @@ async function buildPreviewWeek(weekMonday: string) {
     };
   });
   const addresses = [...source.plannerEmployees.map((employee) => employee.homeAddress).filter((address): address is string => Boolean(address?.trim())), ...jobs.map((job) => job.address)];
-  const routingData = await routing.buildMatrix(addresses);
+  const routingData = await routing.buildIsolatedMatrix(source.plannerEmployees.map((employee) => [employee.homeAddress, ...jobs.filter((job) => job.fixedEmployeeId === employee.id).map((job) => job.address)].filter((address): address is string => Boolean(address?.trim()))), addresses);
   const verifiedAddresses = new Set(routingData.geocodes.filter((result) => result.status === "verified").map((result) => result.normalizedAddress));
   const matrix = routingData.matrix ?? {
     addresses: [...verifiedAddresses],

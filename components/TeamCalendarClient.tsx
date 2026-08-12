@@ -29,6 +29,14 @@ const STATUS_LEGEND: [string, string][] = [
 ];
 
 const DAY_HEADS = ["Man", "Tir", "Ons", "Tor", "Fre", "Lør", "Søn"];
+const UNPLANNED_REASON_LABEL: Record<string, string> = {
+  unverified_address: "Adresse ikke verificeret",
+  unverified_route: "Køretidsmatrix ikke verificeret",
+  fixed_weekday_unavailable: "Fast ugedag er ikke en arbejdsdag",
+  unassigned: "Ikke tildelt kollega",
+  overflow: "Ingen plads i ugen",
+  holiday: "Ferielukket uge — skal flyttes",
+};
 
 /** Decimal hours → "HH:MM" (8.5 → "08:30"). */
 function fmtHM(h: number): string {
@@ -282,7 +290,7 @@ export default function TeamCalendarClient(props: Props) {
                   <span className="h">{job.postal}</span>
                   <span className="s">
                     <i className="cat" style={{ "--cat": categoryColor(job.category) } as React.CSSProperties}>{catLetter(job.category)}</i>
-                    <span className="txt">{job.customer} · {job.reason === "unassigned" ? "Ikke tildelt kollega" : job.reason === "holiday" ? "Ferielukket uge — skal flyttes" : "Ingen plads i ugen"}</span>
+                    <span className="txt">{job.customer} · {UNPLANNED_REASON_LABEL[job.reason] ?? "Ukendt årsag"}</span>
                   </span>
                   {readOnly && <PreviewTaskDetails tasks={job.tasks ?? []} />}
                 </div>
