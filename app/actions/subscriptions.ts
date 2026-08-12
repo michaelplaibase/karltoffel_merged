@@ -191,11 +191,15 @@ export async function updateSubscription(pk: number, _prev: SubscriptionState, f
     }),
   ]);
 
-  await regenerateFutureOrders(pk); // propagate the edit to future (pending, unlocked) orders
+  // propagate the edit to future (pending, unlocked) orders; fully-locked
+  // future orders (e.g. imported from WorkMaker) are never touched here —
+  // skippedLocked tells the edit page how many still carry the old schedule.
+  const { skippedLocked } = await regenerateFutureOrders(pk);
   const sub = await prisma.subscription.findUnique({ where: { id: pk }, select: { displayNo: true, contactId: true } });
   revalidatePath("/subscriptions");
   revalidatePath("/orders");
   revalidatePath("/calendar");
   if (sub) revalidatePath(`/customers/${sub.contactId}`);
-  redirect(`/subscriptions/${sub?.displayNo ?? ""}`);
+  const query = skippedLocked > 0 ? `?skippedLocked=${skippedLocked}` : "";
+  redirect(`/subscriptions/${sub?.displayNo ?? ""}${query}`);
 }

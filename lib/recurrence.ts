@@ -196,8 +196,17 @@ export async function generateForSubscriptionId(id: number, ref: Date = new Date
  * NEXT week onward that are still pending and not locked (history, completed and
  * locked orders, and the current week's plan, are left untouched), then
  * regenerate from the updated template.
+ *
+ * Fully-locked future orders (lockedFully: true, e.g. imported from WorkMaker)
+ * are intentionally never touched here — they're left as-is. `skippedLocked`
+ * reports how many such orders exist in the future window so callers can warn
+ * the user that they still carry the old schedule.
  */
-export async function regenerateFutureOrders(id: number, ref: Date = new Date(), horizonWeeks = DEFAULT_HORIZON_WEEKS): Promise<number> {
+export async function regenerateFutureOrders(
+  id: number,
+  ref: Date = new Date(),
+  horizonWeeks = DEFAULT_HORIZON_WEEKS
+): Promise<{ generated: number; skippedLocked: number }> {
   const nextMonday = new Date(mondayOf(ref).getTime() + WEEK_MS);
   const stale = await prisma.order.findMany({
     where: { subscriptionId: id, plannedAt: { gte: nextMonday }, status: "Afventer levering", lockedFully: false },
@@ -210,5 +219,9 @@ export async function regenerateFutureOrders(id: number, ref: Date = new Date(),
       prisma.order.deleteMany({ where: { id: { in: ids } } }),
     ]);
   }
-  return generateForSubscriptionId(id, ref, horizonWeeks);
+  const skippedLocked = await prisma.order.count({
+    where: { subscriptionId: id, plannedAt: { gte: nextMonday }, lockedFully: true },
+  });
+  const generated = await generateForSubscriptionId(id, ref, horizonWeeks);
+  return { generated, skippedLocked };
 }
