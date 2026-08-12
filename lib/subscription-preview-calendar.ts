@@ -50,6 +50,10 @@ async function loadPreviewSource() {
       durationMin: task.durationMin,
       intervalMultiplier: task.intervalMultiplier,
       startWeek: task.startWeek,
+      pauseActive: task.pauseActive,
+      pauseStart: task.pauseStart,
+      pauseEnd: task.pauseEnd,
+      pauseYearly: task.pauseYearly,
     })),
   }));
   const employees: Employee[] = users.map((user) => ({
@@ -130,6 +134,7 @@ export async function getSubscriptionPreviewWeek(weekMonday: string): Promise<Ca
       contactId: stop.job.contactId,
       subscriptionNo: visit.subscriptionNo,
       phone: visit.phone,
+      tasks: visit.tasks,
     };
   }));
   const unplannedJobs = [...data.plan.unplanned, ...data.unassigned];
@@ -142,6 +147,7 @@ export async function getSubscriptionPreviewWeek(weekMonday: string): Promise<Ca
     contactId: job.contactId,
     subscriptionNo: data.visitById.get(job.id)?.subscriptionNo ?? null,
     phone: data.visitById.get(job.id)?.phone ?? null,
+    tasks: data.visitById.get(job.id)?.tasks ?? [],
     reason: data.unassigned.includes(job) ? "unassigned" : "overflow",
   }));
   const mondayMonth = start.getUTCMonth();

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { Fragment, useEffect, useRef, useState, useSyncExternalStore, useTransition } from "react";
-import type { CalendarMonth, CalendarWeek, CalStatus } from "@/lib/calendar";
+import type { CalendarMonth, CalendarTaskDetail, CalendarWeek, CalStatus } from "@/lib/calendar";
 import { categoryColor } from "@/lib/categories";
 import { telHref, telDisplay } from "@/components/ui";
 import { setOrderLock, moveOrderWeeks, replanWeek, deleteOrder } from "@/app/actions/orders";
@@ -59,6 +59,25 @@ const localTodayISO = () => {
 };
 const empVar = (color: string) => ({ "--emp": color } as React.CSSProperties);
 const catLetter = (category: string) => (category.charAt(0) || "?").toUpperCase();
+
+function PreviewTaskDetails({ tasks }: { tasks: CalendarTaskDetail[] }) {
+  if (!tasks.length) return null;
+  return (
+    <details style={{ marginTop: 5, borderTop: "1px solid var(--tc-line-soft)", paddingTop: 4 }}>
+      <summary style={{ cursor: "pointer", fontSize: 11, fontWeight: 700 }}>
+        {tasks.length} {tasks.length === 1 ? "opgave" : "opgaver"} · vis detaljer
+      </summary>
+      <div style={{ display: "grid", gap: 5, marginTop: 5 }}>
+        {tasks.map((task) => (
+          <div key={task.id} style={{ fontSize: 11, lineHeight: 1.35 }}>
+            <strong>{task.category}</strong> · {task.description}<br />
+            <span>{task.intervalMultiplier ?? "Hver gang"} · {task.durationMin} min.</span>
+          </div>
+        ))}
+      </div>
+    </details>
+  );
+}
 
 export default function TeamCalendarClient(props: Props) {
   const readOnly = props.readOnly ?? false;
@@ -233,6 +252,7 @@ export default function TeamCalendarClient(props: Props) {
                                 <i className="cat" style={{ "--cat": categoryColor(ev.category) } as React.CSSProperties}>{catLetter(ev.category)}</i>
                                 <span className="txt">{ev.customer}</span>
                               </span>
+                              {readOnly && <PreviewTaskDetails tasks={ev.tasks ?? []} />}
                             </div>
                           ))}
                         </div>
@@ -264,6 +284,7 @@ export default function TeamCalendarClient(props: Props) {
                     <i className="cat" style={{ "--cat": categoryColor(job.category) } as React.CSSProperties}>{catLetter(job.category)}</i>
                     <span className="txt">{job.customer} · {job.reason === "unassigned" ? "Ikke tildelt kollega" : job.reason === "holiday" ? "Ferielukket uge — skal flyttes" : "Ingen plads i ugen"}</span>
                   </span>
+                  {readOnly && <PreviewTaskDetails tasks={job.tasks ?? []} />}
                 </div>
               ))}
               <span className="hint">Ordrer uden kollega eller uden plads i ugen.</span>

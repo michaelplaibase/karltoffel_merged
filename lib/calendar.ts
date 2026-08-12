@@ -10,6 +10,11 @@ export type CalStatus = "afsluttet" | "afventer" | "ikke_afsluttet" | "mislykket
 export type CalType = "abonnement" | "online" | "manuel";
 export type LockState = "fastlaast" | "delvist" | "frigjort";
 
+export type CalendarTaskDetail = {
+  id: number; category: string; description: string;
+  intervalMultiplier: string | null; durationMin: number;
+};
+
 export type CalEvent = {
   id: number;
   day: number;      // 0 = Monday … 6 = Sunday
@@ -25,6 +30,7 @@ export type CalEvent = {
   contactId: number;            // → /customers/{contactId}
   subscriptionNo: number | null; // source "Abo. nr." → /subscriptions/{no} (null for manual/online)
   phone: string | null;          // customer phone for "Ring kunden op" (null when missing)
+  tasks?: CalendarTaskDetail[];  // only populated by the read-only subscription preview
 };
 
 export type WeekDay = { label: string; date: string; revenue: number; driving?: string };
@@ -34,6 +40,7 @@ export type UnplannedJob = {
   id: number; postal: string; customer: string; category: string;
   status: CalStatus; contactId: number; subscriptionNo: number | null;
   phone: string | null;
+  tasks?: CalendarTaskDetail[];  // only populated by the read-only subscription preview
   reason: "unassigned" | "overflow" | "holiday"; // no employee / didn't fit / ferielukket uge
 };
 

@@ -8,6 +8,10 @@ export type PreviewTask = {
   durationMin: number;
   intervalMultiplier: string | null;
   startWeek: string | null;
+  pauseActive: boolean;
+  pauseStart: string | null;
+  pauseEnd: string | null;
+  pauseYearly: boolean;
 };
 
 export type PreviewSubscription = {
@@ -76,8 +80,46 @@ function parseMultiplier(label: string | null): number | null {
 
 function parseWeekLabel(label: string | null): number | null {
   if (!label) return null;
-  const match = label.match(/Uge\s+(\d+)/i);
-  return match ? Number(match[1]) : null;
+  const match = label.trim().match(/^(?:Uge\s*)?(\d{1,2})$/i);
+  const week = match ? Number(match[1]) : 0;
+  return week >= 1 && week <= 53 ? week : null;
+}
+
+function isoWeekYear(date: Date): number {
+  const thursday = new Date(mondayOf(date).getTime() + 3 * 864e5);
+  return thursday.getUTCFullYear();
+}
+
+function nextIsoWeek(referenceMonday: number, week: number): number {
+  const year = isoWeekYear(new Date(referenceMonday));
+  for (const candidateYear of [year, year + 1]) {
+    const candidate = mondayOfIsoWeek(candidateYear, week);
+    if (isoWeekYear(candidate) === candidateYear && candidate.getTime() >= referenceMonday) return candidate.getTime();
+  }
+  return mondayOfIsoWeek(year + 2, week).getTime();
+}
+
+function phaseIsoWeek(referenceMonday: number, week: number): number {
+  const year = isoWeekYear(new Date(referenceMonday));
+  const candidate = mondayOfIsoWeek(year, week);
+  if (isoWeekYear(candidate) === year) return candidate.getTime();
+  return nextIsoWeek(referenceMonday, week);
+}
+
+function isTaskPaused(task: PreviewTask, week: number): boolean {
+  if (!task.pauseActive || !task.pauseStart || !task.pauseEnd) return false;
+  const start = new Date(`${task.pauseStart}T00:00:00Z`);
+  const end = new Date(`${task.pauseEnd}T00:00:00Z`);
+  if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) return false;
+  if (!task.pauseYearly) return week >= start.getTime() && week <= end.getTime();
+
+  const date = new Date(week);
+  const value = (date.getUTCMonth() + 1) * 100 + date.getUTCDate();
+  const startValue = (start.getUTCMonth() + 1) * 100 + start.getUTCDate();
+  const endValue = (end.getUTCMonth() + 1) * 100 + end.getUTCDate();
+  return startValue <= endValue
+    ? value >= startValue && value <= endValue
+    : value >= startValue || value <= endValue;
 }
 
 function fixedWeekdays(value: string | null): number[] | undefined {
@@ -104,7 +146,6 @@ export function projectSubscriptionVisits(
   const horizonWeeks = Math.max(0, options.horizonWeeks ?? 26);
   const thisMonday = mondayOf(options.referenceDate).getTime();
   const horizonEnd = thisMonday + horizonWeeks * WEEK_MS;
-  const refYear = options.referenceDate.getUTCFullYear();
   const isHoliday = (week: number) => options.holidays.some((holiday) =>
     week >= mondayOf(holiday.startWeek).getTime() && week <= mondayOf(holiday.endWeek).getTime());
   const visits: PreviewVisit[] = [];
@@ -115,24 +156,19 @@ export function projectSubscriptionVisits(
     const subscriptionWeek = parseWeekLabel(subscription.startWeek);
     if (subscriptionWeek == null) continue;
 
-    const step = base * WEEK_MS;
-    let anchor = mondayOfIsoWeek(refYear, subscriptionWeek).getTime();
-    if (anchor > horizonEnd) anchor = mondayOfIsoWeek(refYear - 1, subscriptionWeek).getTime();
-
     const tasks = subscription.tasks.map((item) => ({
       item,
       multiplier: parseMultiplier(item.intervalMultiplier),
-      offset: Math.round(((parseWeekLabel(item.startWeek) ?? subscriptionWeek) - subscriptionWeek) / base),
+      anchor: phaseIsoWeek(thisMonday, parseWeekLabel(item.startWeek) ?? subscriptionWeek),
     }));
 
-    let visitWeek = anchor;
-    if (visitWeek < thisMonday) visitWeek += Math.ceil((thisMonday - visitWeek) / step) * step;
-
-    for (; visitWeek <= horizonEnd; visitWeek += step) {
+    for (let visitWeek = thisMonday; visitWeek < horizonEnd; visitWeek += WEEK_MS) {
       if (isHoliday(visitWeek)) continue;
-      const visitIndex = Math.round((visitWeek - anchor) / step);
       const due = tasks
-        .filter(({ multiplier, offset }) => multiplier != null && visitIndex >= offset && (visitIndex - offset) % multiplier === 0)
+        .filter(({ item, multiplier, anchor: taskAnchor }) => multiplier != null
+          && visitWeek >= taskAnchor
+          && (visitWeek - taskAnchor) % (base * WEEK_MS * multiplier) === 0
+          && !isTaskPaused(item, visitWeek))
         .map(({ item }) => ({ ...item }));
       if (!due.length) continue;
 
