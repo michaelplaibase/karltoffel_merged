@@ -7,6 +7,7 @@ import { prisma } from "@/lib/db";
 import { guardAction } from "@/lib/api-auth";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { regenerateFutureOrders } from "@/lib/recurrence";
 
 export type ContactFormState = { error?: string };
 
@@ -103,7 +104,22 @@ export async function updateContact(id: number, _prev: ContactFormState, formDat
   const data = toData(f);
   if (!data.name) return { error: "Angiv et navn." };
   await prisma.contact.update({ where: { id }, data });
+
+  // Propagate the (possibly changed) address to this contact's subscriptions
+  // and their pending future orders — mirrors updateSubscription's handling.
+  const deliveryAddress = data.city ? `${data.street}, ${data.city}` : data.street;
+  const subs = await prisma.subscription.findMany({ where: { contactId: id }, select: { id: true } });
+  for (const sub of subs) {
+    await prisma.subscription.update({ where: { id: sub.id }, data: { deliveryAddress } });
+    await regenerateFutureOrders(sub.id);
+  }
+
   revalidatePath("/customers");
   revalidatePath(`/customers/${id}`);
+  if (subs.length) {
+    revalidatePath("/subscriptions");
+    revalidatePath("/orders");
+    revalidatePath("/calendar");
+  }
   redirect(`/customers/${id}`);
 }
