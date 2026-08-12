@@ -49,12 +49,20 @@ export async function resolveRecipients(group: string, dateISO: string, weekISO:
   const notDone = g.includes("ikke-afsluttede") ? { status: { not: "Afsluttet" } } : {};
   const activeSubContactIds = async () => new Set((await prisma.subscription.findMany({ where: { active: true }, select: { contactId: true } })).map((s) => s.contactId));
 
-  if (g.includes("dato") && /^\d{4}-\d{2}-\d{2}$/.test(dateISO)) {
-    const s = new Date(`${dateISO}T00:00:00Z`), e = new Date(s.getTime() + 864e5);
-    (await prisma.order.findMany({ where: { plannedAt: { gte: s, lt: e }, ...notDone }, select: { contactId: true } })).forEach((o) => ids.add(o.contactId));
-  } else if (g.includes("uge") && /^\d{4}-\d{2}-\d{2}$/.test(weekISO)) {
-    const s = new Date(`${weekISO}T00:00:00Z`), e = new Date(s.getTime() + 7 * 864e5);
-    (await prisma.order.findMany({ where: { plannedAt: { gte: s, lt: e }, ...notDone }, select: { contactId: true } })).forEach((o) => ids.add(o.contactId));
+  if (g.includes("dato")) {
+    // Date-scoped group: a missing/invalid date must yield zero recipients,
+    // never fall through to the "all customers" catch-all below.
+    if (/^\d{4}-\d{2}-\d{2}$/.test(dateISO)) {
+      const s = new Date(`${dateISO}T00:00:00Z`), e = new Date(s.getTime() + 864e5);
+      (await prisma.order.findMany({ where: { plannedAt: { gte: s, lt: e }, ...notDone }, select: { contactId: true } })).forEach((o) => ids.add(o.contactId));
+    }
+  } else if (g.includes("uge")) {
+    // Week-scoped group: a missing/invalid week must yield zero recipients,
+    // never fall through to the "all customers" catch-all below.
+    if (/^\d{4}-\d{2}-\d{2}$/.test(weekISO)) {
+      const s = new Date(`${weekISO}T00:00:00Z`), e = new Date(s.getTime() + 7 * 864e5);
+      (await prisma.order.findMany({ where: { plannedAt: { gte: s, lt: e }, ...notDone }, select: { contactId: true } })).forEach((o) => ids.add(o.contactId));
+    }
   } else if (g.includes("abonnementskunder")) {
     (await activeSubContactIds()).forEach((id) => ids.add(id));
   } else if (g.includes("online")) {
