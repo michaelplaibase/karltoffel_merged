@@ -361,7 +361,7 @@ function rydState(){ try { sessionStorage.removeItem(PERSIST_KEY); } catch(e){} 
    (forside-modal + header-switch), så valget følger kunden begge veje. */
 const KUNDETYPE_KEY = "kt-kundetype-v1";
 const ktPrivat = $("kt-privat"), ktErhverv = $("kt-erhverv"),
-      ktVidere = $("kt-videre"), ktNote = $("kt-note");
+      ktVidere = $("kt-videre"), ktNote = $("kt-note"), ktCvrWrap = $("k-cvr-wrap");
 function vaelgKundetype(t){
   state.kundetype = t;
   ktPrivat.classList.toggle("selected", t === "privat");
@@ -369,6 +369,7 @@ function vaelgKundetype(t){
   ktPrivat.setAttribute("aria-checked", t === "privat" ? "true" : "false");
   ktErhverv.setAttribute("aria-checked", t === "erhverv" ? "true" : "false");
   ktNote.classList.toggle("show", t === "erhverv");
+  if(ktCvrWrap) ktCvrWrap.hidden = (t !== "erhverv");
   ktVidere.disabled = false;
   /* Spejl valget til den sitedækkende præference (to-vejs-synk med
      kundetype.js). Best-effort — private mode må aldrig vælte flowet. */
@@ -529,6 +530,65 @@ if(rkInput){
   rkInput.addEventListener("keydown", (e)=>{ if(e.key === "Enter"){ e.preventDefault(); tjekRabatkode(); } });
 }
 
+/* ============ CVR-OPSLAG (erhverv, kontakt-trinnet) ============ */
+/* Slås op server-side via sitets read-only relay (/api/cvr?cvr=XXXXXXXX →
+   { found, name?, address?, zipcode?, city?, reason? }). Udfylder firmanavn
+   + firmaadresse automatisk, men felterne forbliver fuldt redigerbare — et
+   forkert/ukendt CVR eller et nede CVR-API må ALDRIG blokere indsendelsen;
+   kunden taster bare oplysningerne manuelt. Auto-opslag ved 8 cifre, plus
+   blur/Enter som fallback (samme mønster som rabatkoden). Stale-guard: kun
+   svaret på det nyeste opslag bruges. */
+const cvrInput = $("k-cvr"), cvrStatus = $("k-cvr-status"),
+      firmaInput = $("k-firma"), firmaAdrInput = $("k-firma-adr");
+let cvrReq = 0;
+function cvrNote(cls, tekst){
+  if(!cvrStatus) return;
+  cvrStatus.className = "rk-note " + cls;
+  cvrStatus.textContent = tekst;
+  cvrStatus.hidden = false;
+}
+function tjekCvr(){
+  if(!cvrInput) return;
+  const cvr = cvrInput.value.replace(/\D/g,"");
+  const req = ++cvrReq;
+  if(cvr.length !== 8){
+    if(cvrStatus){ cvrStatus.hidden = true; cvrStatus.textContent = ""; }
+    if(cvr) cvrNote("rk-ukendt", "CVR skal være 8 cifre");
+    return;
+  }
+  cvrNote("rk-ok", "Slår CVR op…");
+  fetch("/api/cvr?cvr=" + encodeURIComponent(cvr))
+    .then(r => r.ok ? r.json() : (r.status === 400 ? r.json() : { found:false, reason:"unavailable" }))
+    .then(d => {
+      if(req !== cvrReq) return;   /* forældet svar — brugeren har rettet CVR-nummeret */
+      if(d && d.found){
+        if(firmaInput && !firmaInput.value.trim()) firmaInput.value = d.name || "";
+        if(firmaAdrInput && !firmaAdrInput.value.trim()){
+          const adr = [d.address, [d.zipcode, d.city].filter(Boolean).join(" ")].filter(Boolean).join(", ");
+          firmaAdrInput.value = adr;
+        }
+        cvrNote("rk-ok", "Fundet: " + (d.name || ""));
+      } else if(d && d.reason === "not_found"){
+        cvrNote("rk-ukendt", "CVR ikke fundet — udfyld firmaoplysninger manuelt");
+      } else {
+        /* API nede/kvote/timeout/ugyldigt format — degrader roligt, flowet fortsætter uændret. */
+        cvrNote("rk-ukendt", "CVR-opslag ikke tilgængeligt lige nu — udfyld manuelt");
+      }
+    })
+    .catch(()=>{
+      if(req !== cvrReq) return;
+      cvrNote("rk-ukendt", "CVR-opslag ikke tilgængeligt lige nu — udfyld manuelt");
+    });
+}
+if(cvrInput){
+  cvrInput.addEventListener("input", ()=>{
+    cvrInput.value = cvrInput.value.replace(/\D/g,"").slice(0,8);
+    if(cvrInput.value.length === 8) tjekCvr();
+  });
+  cvrInput.addEventListener("blur", tjekCvr);
+  cvrInput.addEventListener("keydown", (e)=>{ if(e.key === "Enter"){ e.preventDefault(); tjekCvr(); } });
+}
+
 $("btn-send").addEventListener("click", ()=>{
   const navn = $("k-navn").value.trim(), mail = $("k-mail").value.trim(), tlf = $("k-tlf").value.trim();
   /* Telefon er obligatorisk — hele løftet er et opkald. E-mail er valgfri,
@@ -561,6 +621,16 @@ $("btn-send").addEventListener("click", ()=>{
   };
   /* KONTRAKT: feltnavn `rabatkode` (streng, trimmet + uppercased) — kun med når koden er valid. */
   if(state.rabatkode.valid) payload.rabatkode = state.rabatkode.code;
+  /* Erhverv: CVR + firmaoplysninger er valgfrie ekstra felter på leadet —
+     blot informative for CRM'et, blokerer aldrig indsendelsen (se tjekCvr). */
+  if(state.kundetype === "erhverv"){
+    const cvrVal = cvrInput ? cvrInput.value.replace(/\D/g,"") : "";
+    const firmaVal = firmaInput ? firmaInput.value.trim() : "";
+    const firmaAdrVal = firmaAdrInput ? firmaAdrInput.value.trim() : "";
+    if(cvrVal) payload.cvr = cvrVal;
+    if(firmaVal) payload.firma = firmaVal;
+    if(firmaAdrVal) payload.firmaAdresse = firmaAdrVal;
+  }
   /* Hvilken pakke kunden kom ind fra (sat som cookie af pakker-priser-siden,
      samme cookie som den gamle Bubble-formular bruger — se script.js). Ryddes
      efter brug så et evt. senere besøg uden pakke-klik ikke arver den. */

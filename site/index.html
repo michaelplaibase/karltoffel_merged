@@ -414,6 +414,15 @@ Besøg os på www.bubble.dk eller ring til os på +45 6069 8700
 	  <section class="step kontakt" id="step-kontakt" aria-labelledby="tm-h2k">
 	    <h2 id="tm-h2k">Næsten i mål</h2>
 	    <p>Vi ringer og bekræfter tallene, før noget koster dig en krone.</p>
+	    <div id="k-cvr-wrap" class="k-cvr-wrap" hidden>
+	      <label for="k-cvr">CVR-nummer (valgfrit — udfylder firmaoplysninger automatisk)</label>
+	      <input id="k-cvr" type="text" inputmode="numeric" autocomplete="off" maxlength="8" placeholder="8 cifre">
+	      <div class="rk-note" id="k-cvr-status" role="status" aria-live="polite" hidden></div>
+	      <label for="k-firma">Firmanavn</label>
+	      <input id="k-firma" type="text" autocomplete="organization" maxlength="200">
+	      <label for="k-firma-adr">Firmaadresse</label>
+	      <input id="k-firma-adr" type="text" autocomplete="street-address" maxlength="200" placeholder="Vejnavn og nr., postnr. og by">
+	    </div>
 	    <label for="k-navn">Fulde navn</label>
 	    <input id="k-navn" type="text" autocomplete="name" maxlength="120">
 	    <label for="k-tlf">Telefon</label>
