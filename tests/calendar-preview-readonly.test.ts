@@ -88,6 +88,8 @@ test("route audit publicerer komplet privacy-safe matrixmapping og kanonisk bind
     assert.match(types, new RegExp(marker));
   }
   assert.match(types, /stableRef:\s*string/);
+  assert.match(types, /stableRefs:\s*string\[\]/);
+  assert.match(preview, /stableRefs/);
   assert.match(types, /kind:\s*"employee_home"\s*\|\s*"job"/);
   assert.doesNotMatch(preview, /matrixAddresses\s*:/);
   assert.doesNotMatch(preview, /process\.env|apiKey|secret/i);

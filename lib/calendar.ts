@@ -51,7 +51,7 @@ export type Calendar2Audit = {
   matrixHash: string;
   matrixProvider: string;
   matrixCapturedAt: string;
-  matrixPoints: { index: number; lat: number; lon: number; kind: "employee_home" | "job"; stableRef: string }[];
+  matrixPoints: { index: number; lat: number; lon: number; kind: "employee_home" | "job"; stableRef: string; stableRefs: string[] }[];
   matrixDurations: number[][];
   sources: { subscriptionNo: number; fixedWeekdays: number[] | null; geocodeStatus: "verified" | "unverified_address" }[];
   routes: { employeeId: number; weekday: number; travelLegs: { fromIndex: number; toIndex: number; minutes: number; kind: string }[] }[];

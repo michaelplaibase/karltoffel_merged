@@ -1,6 +1,6 @@
 import { prisma } from "./db";
 import { isoWeek } from "./planner";
-import { calendar2MatrixAuditHash, createCalendar2Routing, planCalendar2Week, type Calendar2Employee, type Calendar2Job, type MatrixPoint } from "./calendar2-routing";
+import { calendar2MatrixAuditHash, calendar2MatrixStableRefs, createCalendar2Routing, planCalendar2Week, type Calendar2Employee, type Calendar2Job, type MatrixPoint } from "./calendar2-routing";
 import type {
   CalendarMonth, CalendarWeek, CalEvent, Employee, MonthCell, MonthDay,
   MonthMatrixRow, MonthWeek, UnplannedJob, WeekDay,
@@ -114,13 +114,17 @@ async function buildPreviewWeek(weekMonday: string) {
   const geocodeByAddress = new Map(routingData.geocodes.map((result) => [result.normalizedAddress, result]));
   const subscriptionNoByAddress = new Map(visits.map((visit) => [visit.deliveryAddress.trim().replace(/\s+/g, " "), visit.subscriptionNo]));
   const employeeIdByHome = new Map(source.plannerEmployees.filter((employee) => employee.homeAddress).map((employee) => [employee.homeAddress!.trim().replace(/\s+/g, " "), employee.id]));
+  const stableRefs = calendar2MatrixStableRefs(matrix.addresses, [
+    ...source.plannerEmployees.filter((employee) => employee.homeAddress).map((employee) => ({ address: employee.homeAddress!, stableRef: `employee:${employee.id}` })),
+    ...visits.map((visit) => ({ address: visit.deliveryAddress, stableRef: `subscription:${visit.subscriptionNo}` })),
+  ]);
   const matrixPoints: MatrixPoint[] = matrix.addresses.map((address, index) => {
     const coordinate = geocodeByAddress.get(address)?.coordinate;
     if (!coordinate) throw new Error(`calendar2_audit_missing_coordinate_${index}`);
     const employeeId = employeeIdByHome.get(address);
     return employeeId != null
-      ? { index, lat: coordinate[0], lon: coordinate[1], kind: "employee_home", stableRef: `employee:${employeeId}` }
-      : { index, lat: coordinate[0], lon: coordinate[1], kind: "job", stableRef: `subscription:${subscriptionNoByAddress.get(address) ?? jobs.find((job) => job.address.trim().replace(/\s+/g, " ") === address)?.id}` };
+      ? { index, lat: coordinate[0], lon: coordinate[1], kind: "employee_home", stableRef: `employee:${employeeId}`, stableRefs: stableRefs[index] }
+      : { index, lat: coordinate[0], lon: coordinate[1], kind: "job", stableRef: `subscription:${subscriptionNoByAddress.get(address) ?? jobs.find((job) => job.address.trim().replace(/\s+/g, " ") === address)?.id}`, stableRefs: stableRefs[index] };
   });
   return { ...source, visits, jobs, priceById, visitById, plan, matrixPoints, geocodeStatus: new Map(routingData.geocodes.map((result) => [result.normalizedAddress, result.status])) };
 }

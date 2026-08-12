@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import {
   calendar2MatrixAuditHash,
+  calendar2MatrixStableRefs,
   createCalendar2Routing,
   planCalendar2Week,
   type Calendar2Employee,
@@ -201,8 +202,8 @@ test("alle adresser kan være unverificerede uden falsk rute eller overflow", as
 
 test("matrix revisionsspor binder punkter og varigheder deterministisk", () => {
   const points = [
-    { index: 0, lat: 55.1, lon: 9.1, kind: "employee_home" as const, stableRef: "employee:7" },
-    { index: 1, lat: 55.2, lon: 9.2, kind: "job" as const, stableRef: "subscription:42" },
+    { index: 0, lat: 55.1, lon: 9.1, kind: "employee_home" as const, stableRef: "employee:7", stableRefs: ["employee:7"] },
+    { index: 1, lat: 55.2, lon: 9.2, kind: "job" as const, stableRef: "subscription:42", stableRefs: ["subscription:42"] },
   ];
   const durations = [[0, 5], [6, 0]];
   const first = calendar2MatrixAuditHash({ version: "calendar2-route-audit-v1", provider: "osrm-table", matrixPoints: points, matrixDurations: durations, timestamp: "2026-08-12T00:00:00Z" });
@@ -210,4 +211,22 @@ test("matrix revisionsspor binder punkter og varigheder deterministisk", () => {
   assert.equal(first, later, "timestamp må ikke påvirke den kanoniske hash");
   assert.notEqual(first, calendar2MatrixAuditHash({ version: "calendar2-route-audit-v1", provider: "osrm-table", matrixPoints: [{ ...points[0], lat: 55.11 }, points[1]], matrixDurations: durations, timestamp: "2026-08-12T00:00:00Z" }));
   assert.notEqual(first, calendar2MatrixAuditHash({ version: "calendar2-route-audit-v1", provider: "osrm-table", matrixPoints: points, matrixDurations: [[0, 7], [6, 0]], timestamp: "2026-08-12T00:00:00Z" }));
+  assert.notEqual(first, calendar2MatrixAuditHash({ version: "calendar2-route-audit-v1", provider: "osrm-table", matrixPoints: [points[0], { ...points[1], stableRefs: ["subscription:42", "subscription:43"] }], matrixDurations: durations, timestamp: "2026-08-12T00:00:00Z" }));
+});
+
+test("matrix aliases binder alle privacy-safe refs for en deduplikeret adresse", () => {
+  const aliases = calendar2MatrixStableRefs(
+    ["Hjem 1", "Samme Vej 2"],
+    [
+      { address: "Hjem 1", stableRef: "employee:7" },
+      { address: " Samme   Vej 2 ", stableRef: "subscription:42" },
+      { address: "Samme Vej 2", stableRef: "subscription:43" },
+      { address: "Samme Vej 2", stableRef: "subscription:43" },
+    ],
+  );
+  assert.deepEqual(aliases, [["employee:7"], ["subscription:42", "subscription:43"]]);
+  assert.equal(new Set(aliases.flat()).size, aliases.flat().length);
+  assert.ok(aliases.every((refs) => refs.length > 0));
+  assert.ok(aliases.flat().every((ref) => /^(employee|subscription):\d+$/.test(ref)));
+  assert.doesNotMatch(JSON.stringify(aliases), /Hjem|Samme|Vej/);
 });

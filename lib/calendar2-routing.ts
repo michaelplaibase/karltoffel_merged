@@ -3,7 +3,7 @@ import { createHash } from "node:crypto";
 export type Coordinate = readonly [number, number];
 export type GeocodeStatus = "verified" | "unverified_address";
 export type GeocodeResult = { status: GeocodeStatus; normalizedAddress: string; coordinate: Coordinate | null; provider: "nominatim" };
-export type MatrixPoint = { index: number; lat: number; lon: number; kind: "employee_home" | "job"; stableRef: string };
+export type MatrixPoint = { index: number; lat: number; lon: number; kind: "employee_home" | "job"; stableRef: string; stableRefs: string[] };
 export type TravelMatrix = { addresses: string[]; durations: number[][]; provider: string; capturedAt: string };
 export type Calendar2UnplannedReason = "unassigned" | "unverified_address" | "unverified_route" | "fixed_weekday_unavailable" | "overflow";
 
@@ -27,6 +27,17 @@ export type Calendar2Plan = {
 type RoutingOptions = { fetcher?: typeof fetch; sleep?: (ms: number) => Promise<void>; now?: () => number; timeoutMs?: number };
 const USER_AGENT = "Karltoffel-Calendar2-RoutePlanner/1.0 (+https://crm.karltoffel.dk; operations@karltoffel.dk)";
 const normalized = (address: string) => address.trim().replace(/\s+/g, " ");
+
+export function calendar2MatrixStableRefs(addresses: string[], refs: { address: string; stableRef: string }[]): string[][] {
+  const refsByAddress = new Map<string, string[]>();
+  for (const ref of refs) {
+    const key = normalized(ref.address);
+    const values = refsByAddress.get(key) ?? [];
+    if (!values.includes(ref.stableRef)) values.push(ref.stableRef);
+    refsByAddress.set(key, values);
+  }
+  return addresses.map((address) => refsByAddress.get(normalized(address)) ?? []);
+}
 
 function canonicalMatrixValue(value: number): number | "unreachable" {
   return Number.isFinite(value) ? value : "unreachable";
