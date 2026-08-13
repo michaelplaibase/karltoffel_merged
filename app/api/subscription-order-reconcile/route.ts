@@ -7,6 +7,7 @@ import { getSubscriptionOrderAudit } from "@/lib/subscription-order-audit";
 import { planSubscriptionOrderReconciliation } from "@/lib/subscription-order-reconciliation";
 
 export const dynamic = "force-dynamic";
+export const maxDuration = 300;
 const REFERENCE_DATE = new Date("2026-08-13T12:00:00.000Z");
 const HORIZON_WEEKS = 26;
 const CONFIRM = "APPLY_ALL_FUTURE_SUBSCRIPTION_ORDERS";
@@ -77,37 +78,51 @@ export async function POST(request: Request) {
       plan: stable(plan),
       createdOrderIds: "[]",
     } });
-    const createdOrderIds: number[] = [];
-    for (const action of plan.actions) {
-      if (action.kind === "delete") {
-        await tx.taskLine.deleteMany({ where: { orderId: action.orderId! } });
-        await tx.order.delete({ where: { id: action.orderId! } });
-      } else if (action.kind === "update") {
-        const target = action.desired!;
-        await tx.taskLine.deleteMany({ where: { orderId: action.orderId! } });
-        await tx.order.update({ where: { id: action.orderId! }, data: {
+    const deletes = plan.actions.filter((action) => action.kind === "delete");
+    const updates = plan.actions.filter((action) => action.kind === "update");
+    const creates = plan.actions.filter((action) => action.kind === "create");
+    const deleteIds = deletes.map((action) => action.orderId!);
+    const updateIds = updates.map((action) => action.orderId!);
+    const replacedTaskOrderIds = [...deleteIds, ...updateIds];
+    if (replacedTaskOrderIds.length) await tx.taskLine.deleteMany({ where: { orderId: { in: replacedTaskOrderIds } } });
+    if (deleteIds.length) await tx.order.deleteMany({ where: { id: { in: deleteIds } } });
+    await Promise.all(updates.map((action) => {
+      const target = action.desired!;
+      return tx.order.update({ where: { id: action.orderId! }, data: {
           contactId: target.contactId,
           deliveryAddress: target.deliveryAddress,
           employeeId: target.employeeId,
           sourceWeek: new Date(`${target.sourceWeek}T00:00:00.000Z`),
-        } });
-        await tx.taskLine.createMany({ data: target.tasks.map((task) => taskData(task, action.orderId!)) });
-      } else if (action.kind === "create") {
-        const target = action.desired!;
-        const created = await tx.order.create({ data: {
-          contactId: target.contactId,
-          deliveryAddress: target.deliveryAddress,
-          plannedAt: new Date(`${target.sourceWeek}T10:00:00.000Z`),
-          sourceWeek: new Date(`${target.sourceWeek}T00:00:00.000Z`),
-          status: "Afventer levering",
-          sourceType: "subscription",
-          subscriptionId: target.subscriptionId,
-          employeeId: target.employeeId,
-        } });
-        createdOrderIds.push(created.id);
-        await tx.taskLine.createMany({ data: target.tasks.map((task) => taskData(task, created.id)) });
-      }
-    }
+      } });
+    }));
+    if (creates.length) await tx.order.createMany({ data: creates.map((action) => {
+      const target = action.desired!;
+      return {
+        contactId: target.contactId,
+        deliveryAddress: target.deliveryAddress,
+        plannedAt: new Date(`${target.sourceWeek}T10:00:00.000Z`),
+        sourceWeek: new Date(`${target.sourceWeek}T00:00:00.000Z`),
+        status: "Afventer levering",
+        sourceType: "subscription",
+        subscriptionId: target.subscriptionId,
+        employeeId: target.employeeId,
+      };
+    }) });
+    const createdRows = creates.length ? await tx.order.findMany({
+      where: { OR: creates.map((action) => ({ subscriptionId: action.subscriptionId, sourceWeek: new Date(`${action.sourceWeek}T00:00:00.000Z`) })) },
+      select: { id: true, subscriptionId: true, sourceWeek: true },
+    }) : [];
+    const createdByKey = new Map(createdRows.map((order) => [`${order.subscriptionId}:${order.sourceWeek!.toISOString().slice(0, 10)}`, order.id]));
+    const createdOrderIds = createdRows.map((order) => order.id).sort((a, b) => a - b);
+    const taskRows = [
+      ...updates.flatMap((action) => action.desired!.tasks.map((task) => taskData(task, action.orderId!))),
+      ...creates.flatMap((action) => {
+        const id = createdByKey.get(`${action.subscriptionId}:${action.sourceWeek}`);
+        if (id == null) throw new Error(`Created order missing for ${action.subscriptionId}:${action.sourceWeek}`);
+        return action.desired!.tasks.map((task) => taskData(task, id));
+      }),
+    ];
+    if (taskRows.length) await tx.taskLine.createMany({ data: taskRows });
     await tx.orderReconciliationRun.update({ where: { id: run.id }, data: { createdOrderIds: JSON.stringify(createdOrderIds) } });
     return { runId: run.id, snapshotHash: source.snapshotHash, planHash, summary: plan.summary, actionCount: plan.actions.length, createdOrderIds };
   }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable, timeout: 120000 });

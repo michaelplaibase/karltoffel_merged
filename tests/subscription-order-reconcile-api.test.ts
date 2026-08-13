@@ -14,6 +14,9 @@ test("one-shot apply is admin-only, hash-gated, transactional and journaled", as
   assert.match(route, /Serializable/);
   assert.match(route, /orderReconciliationRun\.create/);
   assert.match(route, /orderReconciliationRun\.update/);
+  assert.match(route, /order\.createMany/);
+  assert.match(route, /taskLine\.createMany/);
+  assert.match(route, /Promise\.all\(updates\.map/);
   assert.doesNotMatch(route, /export async function GET/);
 });
 
