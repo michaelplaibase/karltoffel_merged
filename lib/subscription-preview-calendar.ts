@@ -1,11 +1,11 @@
 import { prisma } from "./db";
 import { isoWeek } from "./planner";
-import { calendar2MatrixAuditHash, calendar2MatrixStableRefs, createCalendar2Routing, planCalendar2Week, type Calendar2Employee, type Calendar2Job, type MatrixPoint } from "./calendar2-routing";
+import { calendar2MatrixAuditHash, calendar2MatrixStableRefs, createCalendar2Routing, normalizeDanishAddress, planCalendar2Horizon, type Calendar2Employee, type Calendar2Job, type Calendar2Series, type MatrixPoint } from "./calendar2-routing";
 import type {
   CalendarMonth, CalendarWeek, CalEvent, Employee, MonthCell, MonthDay,
   MonthMatrixRow, MonthWeek, UnplannedJob, WeekDay,
 } from "./calendar";
-import { projectSubscriptionVisits, ymd, type PreviewSubscription, type PreviewVisit } from "./subscription-preview";
+import { mondayOf, projectSubscriptionVisits, ymd, type PreviewSubscription, type PreviewVisit } from "./subscription-preview";
 
 const WEEK_MS = 7 * 864e5;
 const MON_SHORT = ["jan.", "feb.", "mar.", "apr.", "maj", "jun.", "jul.", "aug.", "sep.", "okt.", "nov.", "dec."];
@@ -77,11 +77,12 @@ const routing = createCalendar2Routing();
 
 async function buildPreviewWeek(weekMonday: string) {
   const source = await loadPreviewSource();
+  const horizonStart = ymd(mondayOf(new Date()));
   const visits = projectSubscriptionVisits(source.subscriptions, {
-    referenceDate: new Date(),
+    referenceDate: new Date(`${horizonStart}T12:00:00Z`),
     horizonWeeks: 26,
     holidays: source.holidays,
-  }).filter((visit) => visit.week === weekMonday);
+  });
   const priceById = new Map<number, number>();
   const visitById = new Map<number, PreviewVisit>();
   const jobs: Calendar2Job[] = visits.map((visit) => {
@@ -95,7 +96,7 @@ async function buildPreviewWeek(weekMonday: string) {
       address: visit.deliveryAddress,
       postal: postalOf(visit.deliveryAddress),
       category: visit.tasks[0]?.category ?? "Andet",
-      durationMin: visit.tasks.reduce((sum, task) => sum + task.durationMin, 0) || 30,
+      durationMin: visit.tasks.reduce((sum, task) => sum + task.durationMin, 0),
       source: `Abo. #${visit.subscriptionNo}`,
       fixedWeekdays: visit.fixedWeekdays,
       fixedEmployeeId: visit.fixedEmployeeId ?? undefined,
@@ -110,10 +111,20 @@ async function buildPreviewWeek(weekMonday: string) {
     provider: "unverified",
     capturedAt: new Date().toISOString(),
   };
-  const plan = planCalendar2Week(jobs, weekMonday, source.plannerEmployees, matrix);
+  const seriesBySubscription = new Map<number, Calendar2Series>();
+  for (const visit of visits) {
+    const current = seriesBySubscription.get(visit.subscriptionId) ?? { seriesId: visit.subscriptionId, sourceStartWeek: visit.week, occurrences: [] };
+    current.occurrences.push({ sourceWeek: visit.week, job: jobs.find((candidate) => candidate.id === previewId(visit))! });
+    seriesBySubscription.set(visit.subscriptionId, current);
+  }
+  const horizonPlan = planCalendar2Horizon([...seriesBySubscription.values()], horizonStart, 26, source.plannerEmployees, matrix);
+  const plan = horizonPlan.weeks.find((item) => item.weekMonday === weekMonday)?.plan
+    ?? planCalendar2Horizon([], weekMonday, 1, source.plannerEmployees, matrix).weeks[0].plan;
+  const placementByJob = new Map(horizonPlan.placements.map((placement) => [placement.jobId, placement]));
+  const seriesAuditById = new Map(horizonPlan.seriesAudit.map((audit) => [audit.seriesId, audit]));
   const geocodeByAddress = new Map(routingData.geocodes.map((result) => [result.normalizedAddress, result]));
-  const subscriptionNoByAddress = new Map(visits.map((visit) => [visit.deliveryAddress.trim().replace(/\s+/g, " "), visit.subscriptionNo]));
-  const employeeIdByHome = new Map(source.plannerEmployees.filter((employee) => employee.homeAddress).map((employee) => [employee.homeAddress!.trim().replace(/\s+/g, " "), employee.id]));
+  const subscriptionNoByAddress = new Map(visits.map((visit) => [normalizeDanishAddress(visit.deliveryAddress), visit.subscriptionNo]));
+  const employeeIdByHome = new Map(source.plannerEmployees.filter((employee) => employee.homeAddress).map((employee) => [normalizeDanishAddress(employee.homeAddress!), employee.id]));
   const stableRefs = calendar2MatrixStableRefs(matrix.addresses, [
     ...source.plannerEmployees.filter((employee) => employee.homeAddress).map((employee) => ({ address: employee.homeAddress!, stableRef: `employee:${employee.id}` })),
     ...visits.map((visit) => ({ address: visit.deliveryAddress, stableRef: `subscription:${visit.subscriptionNo}` })),
@@ -124,9 +135,9 @@ async function buildPreviewWeek(weekMonday: string) {
     const employeeId = employeeIdByHome.get(address);
     return employeeId != null
       ? { index, lat: coordinate[0], lon: coordinate[1], kind: "employee_home", stableRef: `employee:${employeeId}`, stableRefs: stableRefs[index] }
-      : { index, lat: coordinate[0], lon: coordinate[1], kind: "job", stableRef: `subscription:${subscriptionNoByAddress.get(address) ?? jobs.find((job) => job.address.trim().replace(/\s+/g, " ") === address)?.id}`, stableRefs: stableRefs[index] };
+      : { index, lat: coordinate[0], lon: coordinate[1], kind: "job", stableRef: `subscription:${subscriptionNoByAddress.get(address) ?? jobs.find((job) => normalizeDanishAddress(job.address) === address)?.id}`, stableRefs: stableRefs[index] };
   });
-  return { ...source, visits, jobs, priceById, visitById, plan, matrixPoints, geocodeStatus: new Map(routingData.geocodes.map((result) => [result.normalizedAddress, result.status])) };
+  return { ...source, visits, jobs, priceById, visitById, plan, matrixPoints, horizonPlan, placementByJob, seriesAuditById, geocodeStatus: new Map(routingData.geocodes.map((result) => [result.normalizedAddress, result.status])), geocodeProvider: new Map(routingData.geocodes.map((result) => [result.normalizedAddress, result.provider])) };
 }
 
 export async function getSubscriptionPreviewWeek(weekMonday: string): Promise<CalendarWeek> {
@@ -157,6 +168,11 @@ export async function getSubscriptionPreviewWeek(weekMonday: string): Promise<Ca
       subscriptionNo: visit.subscriptionNo,
       phone: visit.phone,
       tasks: visit.tasks,
+      previewOverrideReason: data.placementByJob.get(stop.job.id)?.sourceWeek !== data.placementByJob.get(stop.job.id)?.previewWeek
+        ? "capacity_deferred_to_next_week"
+        : stop.audit.sourceWeekdayOverridden ? stop.audit.overrideReason ?? undefined : undefined,
+      sourceStartWeek: data.seriesAuditById.get(visit.subscriptionId)?.sourceStartWeek,
+      previewStartWeek: data.seriesAuditById.get(visit.subscriptionId)?.previewStartWeek ?? undefined,
     };
   }));
   const unplanned: UnplannedJob[] = data.plan.unplanned.map(({ job, reason }) => ({
@@ -171,6 +187,10 @@ export async function getSubscriptionPreviewWeek(weekMonday: string): Promise<Ca
     tasks: data.visitById.get(job.id)?.tasks ?? [],
     reason,
   }));
+  for (const audit of data.horizonPlan.seriesAudit) if (audit.reason === "no_capacity_in_horizon" && audit.sourceStartWeek === weekMonday) {
+    const visit = data.visits.find((candidate) => candidate.subscriptionId === audit.seriesId && candidate.week === audit.sourceStartWeek);
+    if (visit) unplanned.push({ id: previewId(visit), postal: postalOf(visit.deliveryAddress), customer: visit.customer, category: visit.tasks[0]?.category ?? "Andet", status: "afventer", contactId: visit.contactId, subscriptionNo: visit.subscriptionNo, phone: visit.phone, tasks: visit.tasks, reason: "no_capacity_in_horizon" });
+  }
   const mondayMonth = start.getUTCMonth();
   const sundayMonth = new Date(start.getTime() + 6 * 864e5).getUTCMonth();
   const weekNo = isoWeek(weekMonday);
@@ -195,7 +215,11 @@ export async function getSubscriptionPreviewWeek(weekMonday: string): Promise<Ca
       sources: data.visits.map((visit) => ({
         subscriptionNo: visit.subscriptionNo,
         fixedWeekdays: visit.fixedWeekdays ?? null,
-        geocodeStatus: data.geocodeStatus.get(visit.deliveryAddress.trim().replace(/\s+/g, " ")) ?? "unverified_address",
+        geocodeStatus: data.geocodeStatus.get(normalizeDanishAddress(visit.deliveryAddress)) ?? "unverified_address",
+        geocodeProvider: data.geocodeProvider.get(normalizeDanishAddress(visit.deliveryAddress)) ?? "nominatim",
+        sourceStartWeek: data.seriesAuditById.get(visit.subscriptionId)?.sourceStartWeek ?? visit.week,
+        previewStartWeek: data.seriesAuditById.get(visit.subscriptionId)?.previewStartWeek ?? null,
+        schedulingReason: data.seriesAuditById.get(visit.subscriptionId)?.reason ?? null,
       })),
       routes: data.plan.days.map((day) => ({
         employeeId: day.employeeId,

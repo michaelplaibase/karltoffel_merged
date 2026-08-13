@@ -31,6 +31,9 @@ export type CalEvent = {
   subscriptionNo: number | null; // source "Abo. nr." → /subscriptions/{no} (null for manual/online)
   phone: string | null;          // customer phone for "Ring kunden op" (null when missing)
   tasks?: CalendarTaskDetail[];  // only populated by the read-only subscription preview
+  previewOverrideReason?: "invalid_source_weekday_reassigned" | "capacity_overflow_rebalanced" | "capacity_deferred_to_next_week";
+  sourceStartWeek?: string;
+  previewStartWeek?: string;
 };
 
 export type WeekDay = { label: string; date: string; revenue: number; driving?: string };
@@ -41,7 +44,7 @@ export type UnplannedJob = {
   status: CalStatus; contactId: number; subscriptionNo: number | null;
   phone: string | null;
   tasks?: CalendarTaskDetail[];  // only populated by the read-only subscription preview
-  reason: "unassigned" | "overflow" | "holiday" | "unverified_address" | "unverified_route" | "fixed_weekday_unavailable";
+  reason: "unassigned" | "overflow" | "holiday" | "unverified_address" | "unverified_route" | "fixed_weekday_unavailable" | "invalid_duration" | "exceeds_daily_capacity" | "no_capacity_in_horizon";
 };
 
 /** Read-only Kalender 2 route evidence. Contains no customer or employee address. */
@@ -53,7 +56,7 @@ export type Calendar2Audit = {
   matrixCapturedAt: string;
   matrixPoints: { index: number; lat: number; lon: number; kind: "employee_home" | "job"; stableRef: string; stableRefs: string[] }[];
   matrixDurations: number[][];
-  sources: { subscriptionNo: number; fixedWeekdays: number[] | null; geocodeStatus: "verified" | "unverified_address" }[];
+  sources: { subscriptionNo: number; fixedWeekdays: number[] | null; geocodeStatus: "verified" | "unverified_address"; geocodeProvider: "nominatim" | "dawa"; sourceStartWeek: string; previewStartWeek: string | null; schedulingReason: string | null }[];
   routes: { employeeId: number; weekday: number; travelLegs: { fromIndex: number; toIndex: number; minutes: number; kind: string }[] }[];
 };
 

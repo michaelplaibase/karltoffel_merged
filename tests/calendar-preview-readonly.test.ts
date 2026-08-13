@@ -41,15 +41,27 @@ test("read-only viser unplanned reasons sandfærdigt", async () => {
   assert.match(component, /fixed_weekday_unavailable[\s\S]*Fast ugedag er ikke en arbejdsdag/);
   assert.match(component, /unassigned[\s\S]*Ikke tildelt kollega/);
   assert.match(component, /overflow[\s\S]*Ingen plads i ugen/);
+  assert.match(component, /invalid_duration[\s\S]*Besøget mangler gyldig varighed/);
+  assert.match(component, /exceeds_daily_capacity[\s\S]*Besøget er længere end en arbejdsdag/);
   assert.match(component, /holiday[\s\S]*Ferielukket uge/);
   assert.match(component, /Ukendt årsag/);
   assert.doesNotMatch(component, /reason[^\n]*\?[^\n]*Ingen plads i ugen/);
 });
 
+test("Kalender 2 viser read-only preview overrides som forslag og korrekt ikke-planlagt titel", async () => {
+  const component = await source("components/TeamCalendarClient.tsx");
+  const preview = await source("lib/subscription-preview-calendar.ts");
+  assert.match(component, /<b>Ikke planlagt<\/b><span>Se årsagen på hvert kort<\/span>/);
+  assert.match(component, /Automatisk forslag/);
+  assert.match(preview, /sourceWeekdayOverridden/);
+  assert.match(preview, /overrideReason/);
+  assert.doesNotMatch(preview, /durationMin:[^\n]*\|\| 30/);
+});
+
 test("Kalender 2 bruger kun den additive matrixplanner og ændrer ikke aktiv /calendar", async () => {
   const preview = await source("lib/subscription-preview-calendar.ts");
   assert.match(preview, /createCalendar2Routing/);
-  assert.match(preview, /planCalendar2Week/);
+  assert.match(preview, /planCalendar2Horizon/);
   assert.doesNotMatch(preview, /fallbackEmployeeId|coordFor|planWeek/);
   const active = await source("lib/queries.ts");
   assert.match(active, /from "\.\/planner"/);

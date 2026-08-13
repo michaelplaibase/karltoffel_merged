@@ -35,6 +35,9 @@ const UNPLANNED_REASON_LABEL: Record<string, string> = {
   fixed_weekday_unavailable: "Fast ugedag er ikke en arbejdsdag",
   unassigned: "Ikke tildelt kollega",
   overflow: "Ingen plads i ugen",
+  invalid_duration: "Besøget mangler gyldig varighed",
+  exceeds_daily_capacity: "Besøget er længere end en arbejdsdag",
+  no_capacity_in_horizon: "Ingen plads i de næste 26 uger",
   holiday: "Ferielukket uge — skal flyttes",
 };
 
@@ -261,6 +264,13 @@ export default function TeamCalendarClient(props: Props) {
                                 <span className="txt">{ev.customer}</span>
                               </span>
                               {readOnly && <PreviewTaskDetails tasks={ev.tasks ?? []} />}
+                              {readOnly && ev.previewOverrideReason && (
+                                <span className="hint">
+                                  Automatisk forslag
+                                  {ev.sourceStartWeek && ev.previewStartWeek ? ` · kilde ${ev.sourceStartWeek} · preview ${ev.previewStartWeek}` : ""}
+                                  {ev.previewOverrideReason !== "capacity_deferred_to_next_week" ? " · abonnementets ugedag er ikke ændret" : ""}
+                                </span>
+                              )}
                             </div>
                           ))}
                         </div>
@@ -279,7 +289,7 @@ export default function TeamCalendarClient(props: Props) {
           <div className="lane">
             <div className="lbl">
               <span className="ava" style={empVar("var(--danger)")}>!</span>
-              <span className="who"><b>Ikke planlagt</b><span>Mangler medarbejder / plads</span></span>
+              <span className="who"><b>Ikke planlagt</b><span>Se årsagen på hvert kort</span></span>
             </div>
             <div className="bin">
               {week.unplanned.map((job) => (

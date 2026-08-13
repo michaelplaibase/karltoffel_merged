@@ -63,6 +63,48 @@ test("geocoder retryer begrænset og cacher ikke en transient fejl permanent", a
   assert.equal(calls, 3);
 });
 
+test("dansk adresse normaliseres og DAWA fallback kræver samme postnummer og husnummer", async () => {
+  const calls: string[] = [];
+  const routing = createCalendar2Routing({
+    fetcher: async (input) => {
+      const url = String(input); calls.push(url);
+      if (url.includes("nominatim")) return new Response("[]");
+      return new Response(JSON.stringify([{ vejnavn: "Sankt Pauls Gade", husnr: "11", postnr: "8000", postnrnavn: "Aarhus C", x: 10.21, y: 56.15 }]));
+    },
+    sleep: async () => {}, now: () => 1,
+  });
+  const result = await routing.geocode(". Skt. Pauls G. 11, 8000 Aarhus C");
+  assert.equal(result.status, "verified");
+  assert.equal(result.provider, "dawa");
+  assert.deepEqual(result.coordinate, [56.15, 10.21]);
+  assert.match(result.normalizedAddress, /^Sankt Pauls Gade 11, 8000 Aarhus C$/);
+  assert.equal(calls.filter((url) => url.includes("dataforsyningen")).length, 1);
+
+  const mismatch = createCalendar2Routing({
+    fetcher: async (input) => String(input).includes("nominatim")
+      ? new Response("[]")
+      : new Response(JSON.stringify([{ vejnavn: "Sankt Pauls Gade", husnr: "12", postnr: "8000", postnrnavn: "Aarhus C", x: 10.21, y: 56.15 }])),
+    sleep: async () => {}, now: () => 1,
+  });
+  assert.equal((await mismatch.geocode("Skt. Pauls G. 11, 8000 Aarhus C")).status, "unverified_address");
+});
+
+test("DAWA fejl caches ikke permanent, men verificeret fallback gør", async () => {
+  let dawaCalls = 0;
+  const routing = createCalendar2Routing({
+    fetcher: async (input) => {
+      if (String(input).includes("nominatim")) return new Response("[]");
+      dawaCalls++;
+      if (dawaCalls <= 2) throw new Error("dawa down");
+      return new Response(JSON.stringify([{ vejnavn: "Testvej", husnr: "4", postnr: "8700", postnrnavn: "Horsens", x: 9.8, y: 55.8 }]));
+    }, sleep: async () => {}, now: () => 1,
+  });
+  assert.equal((await routing.geocode("Testvej 4, 8700 Horsens")).status, "unverified_address");
+  assert.equal((await routing.geocode("Testvej 4, 8700 Horsens")).status, "verified");
+  assert.equal((await routing.geocode("Testvej 4, 8700 Horsens")).status, "verified");
+  assert.equal(dawaCalls, 3);
+});
+
 test("matrix bruger OSRM-varigheder og deduplikerer samme koordinatsæt", async () => {
   let calls = 0;
   const fetcher: typeof fetch = async (input) => {
@@ -154,7 +196,48 @@ test("fixedWeekdays og weekend respekteres auditerbart", () => {
   assert.deepEqual(plan.days[0].stops[0].audit.fixedWeekdays, [2]);
   assert.ok(plan.days.every((day) => day.weekday < 5));
   const weekendOnly = planCalendar2Week([job(2, "A", { fixedWeekdays: [5] })], "2026-08-10", [employee()], m);
-  assert.equal(weekendOnly.unplanned[0].reason, "fixed_weekday_unavailable");
+  assert.equal(weekendOnly.days[0].weekday, 0);
+  assert.equal(weekendOnly.days[0].employeeId, 7);
+  assert.equal(weekendOnly.days[0].stops[0].audit.sourceWeekdayOverridden, true);
+  assert.equal(weekendOnly.days[0].stops[0].audit.overrideReason, "invalid_source_weekday_reassigned");
+  assert.ok(weekendOnly.days.every((day) => day.weekday < 5));
+});
+
+test("ugyldig varighed og besøg længere end arbejdsdagen planlægges aldrig", () => {
+  const home = employee().homeAddress!;
+  const m = matrix([home, "A", "B"], [[0, 5, 5], [5, 0, 2], [5, 2, 0]]);
+  const plan = planCalendar2Week([
+    job(1, "A", { durationMin: 0 }),
+    job(2, "B", { durationMin: 541 }),
+  ], "2026-08-10", [employee()], m);
+  assert.equal(plan.days.length, 0);
+  assert.equal(plan.unplanned.find((item) => item.job.id === 1)?.reason, "invalid_duration");
+  assert.equal(plan.unplanned.find((item) => item.job.id === 2)?.reason, "exceeds_daily_capacity");
+});
+
+test("fixed fredag-overflow rebalanceres samme medarbejder med mindst marginal kørsel og tidligste dag", () => {
+  const home = employee().homeAddress!;
+  const m = matrix(
+    [home, "Mandag", "Fredag fast", "Fredag overflow"],
+    [
+      [0, 10, 10, 10],
+      [10, 0, 10, 2],
+      [10, 10, 0, 10],
+      [10, 2, 10, 0],
+    ],
+  );
+  const plan = planCalendar2Week([
+    job(1, "Mandag", { fixedWeekdays: [0], durationMin: 60 }),
+    job(2, "Fredag fast", { fixedWeekdays: [4], durationMin: 400 }),
+    job(3, "Fredag overflow", { fixedWeekdays: [4], durationMin: 180 }),
+  ], "2026-08-10", [employee()], m);
+  const placement = new Map(plan.days.flatMap((day) => day.stops.map((stop) => [stop.job.id, { day: day.weekday, employeeId: day.employeeId, audit: stop.audit }] as const)));
+  assert.equal(placement.get(2)?.day, 4, "allerede feasible fixed besøg bliver stående");
+  assert.equal(placement.get(3)?.day, 0, "mandag har laveste marginale kørsel og vinder også earliest tie");
+  assert.equal(placement.get(3)?.employeeId, 7, "medarbejderen må aldrig ændres");
+  assert.equal(placement.get(3)?.audit.sourceWeekdayOverridden, true);
+  assert.equal(placement.get(3)?.audit.overrideReason, "capacity_overflow_rebalanced");
+  assert.equal(plan.unplanned.length, 0);
 });
 
 test("kapacitet inkluderer hjem til første, matrixben og retur hjem", () => {
