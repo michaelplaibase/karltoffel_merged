@@ -14,6 +14,7 @@ import {
   type MonthCell, type MonthMatrixRow, type CalendarMonth,
 } from "./calendar";
 import type { Prisma } from "@prisma/client";
+import { effectiveCalendarTaskDuration } from "./calendar-duration";
 
 /** The order-source display label ("Abo. #…" / "Online ordre" / …). */
 function sourceLabel(type: string, subDisplayNo?: number | null): string {
@@ -467,7 +468,7 @@ export async function getPlannerJobs(weekMonday: string): Promise<Job[]> {
     address: o.deliveryAddress,
     postal: postalOf(o.deliveryAddress),
     category: o.tasks[0]?.category ?? "Andet",
-    durationMin: o.tasks.reduce((a, t) => a + t.durationMin, 0) || 30,
+    durationMin: o.tasks.reduce((a, t) => a + effectiveCalendarTaskDuration(t.durationMin), 0),
     source: sourceLabel(o.sourceType, o.subscription?.displayNo),
     // Hard planning constraints only — a subscription can pin fixed weekdays.
     // "Fast medarb." is "Ingen" in the demo, so no fixed-employee constraint.
@@ -533,7 +534,7 @@ async function buildWeekPlan(weekMonday: string) {
       id: o.id, contactId: o.contactId, customer: o.contact.name,
       address: o.deliveryAddress, postal: postalOf(o.deliveryAddress),
       category: o.tasks[0]?.category ?? "Andet",
-      durationMin: o.tasks.reduce((a, t) => a + t.durationMin, 0) || 30,
+      durationMin: o.tasks.reduce((a, t) => a + effectiveCalendarTaskDuration(t.durationMin), 0),
       source: sourceLabel(o.sourceType, o.subscription?.displayNo),
       fixedWeekdays: o.subscription?.fixedWeekdays ? o.subscription.fixedWeekdays.split("").map(Number) : undefined,
       fixedEmployeeId: o.employeeId ?? undefined,

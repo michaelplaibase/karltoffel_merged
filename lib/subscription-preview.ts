@@ -1,3 +1,5 @@
+import { effectiveCalendarTaskDuration } from "./calendar-duration";
+
 const WEEK_MS = 7 * 864e5;
 
 export type PreviewTask = {
@@ -6,6 +8,7 @@ export type PreviewTask = {
   description: string;
   price: number;
   durationMin: number;
+  durationDefaulted?: boolean;
   intervalMultiplier: string | null;
   startWeek: string | null;
   pauseActive: boolean;
@@ -169,7 +172,11 @@ export function projectSubscriptionVisits(
           && visitWeek >= taskAnchor
           && (visitWeek - taskAnchor) % (base * WEEK_MS * multiplier) === 0
           && !isTaskPaused(item, visitWeek))
-        .map(({ item }) => ({ ...item }));
+        .map(({ item }) => ({
+          ...item,
+          durationMin: effectiveCalendarTaskDuration(item.durationMin),
+          durationDefaulted: !(Number.isFinite(item.durationMin) && item.durationMin > 0),
+        }));
       if (!due.length) continue;
 
       visits.push({

@@ -12,7 +12,7 @@ export type LockState = "fastlaast" | "delvist" | "frigjort";
 
 export type CalendarTaskDetail = {
   id: number; category: string; description: string;
-  intervalMultiplier: string | null; durationMin: number;
+  intervalMultiplier: string | null; durationMin: number; durationDefaulted?: boolean;
 };
 
 export type CalEvent = {

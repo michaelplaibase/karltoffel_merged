@@ -83,7 +83,7 @@ function PreviewTaskDetails({ tasks }: { tasks: CalendarTaskDetail[] }) {
         {tasks.map((task) => (
           <div key={task.id} style={{ fontSize: 11, lineHeight: 1.35 }}>
             <strong>{task.category}</strong> · {task.description}<br />
-            <span>{task.intervalMultiplier ?? "Hver gang"} · {task.durationMin} min.</span>
+            <span>{task.intervalMultiplier ?? "Hver gang"} · {task.durationDefaulted ? "60 min. (standardtid)" : `${task.durationMin} min.`}</span>
           </div>
         ))}
       </div>

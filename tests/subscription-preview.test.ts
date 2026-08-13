@@ -89,6 +89,19 @@ test("McDonald's-lignende fem-opgave fixture bevarer alle individuelle kadencer"
   assert.deepEqual(isoWeeks(visits, 5), ["2026-08-17", "2026-08-31", "2026-09-14", "2026-09-28"]);
 });
 
+test("manglende opgavetid får 60 minutter pr. opgave uden at ændre input", () => {
+  const tasks = [task({ id: 1, durationMin: 0 }), task({ id: 2, durationMin: 30 })];
+  const before = structuredClone(tasks);
+  const visits = project([subscription({ tasks })], "2026-08-10", 1);
+
+  assert.equal(visits.length, 1);
+  assert.deepEqual(visits[0].tasks.map(({ durationMin, durationDefaulted }) => ({ durationMin, durationDefaulted })), [
+    { durationMin: 60, durationDefaulted: true },
+    { durationMin: 30, durationDefaulted: false },
+  ]);
+  assert.deepEqual(tasks, before);
+});
+
 test("pause filtrerer kun opgaven, er inklusiv og fjerner besøget når alle opgaver er pauset", () => {
   const visits = project([subscription({ tasks: [
     task({ id: 1 }),

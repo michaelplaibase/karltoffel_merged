@@ -25,6 +25,12 @@ test("read-only kort har keyboard-tilgængelige detaljer med kategori, beskrivel
   assert.ok((component.match(/<PreviewTaskDetails/g) ?? []).length >= 2, "både events og unplanned skal vise detaljer");
 });
 
+test("read-only markerer den effektive 60 minutters standardtid", async () => {
+  const component = await source("components/TeamCalendarClient.tsx");
+  assert.match(component, /task\.durationDefaulted/);
+  assert.match(component, /60 min\. \(standardtid\)/);
+});
+
 test("read-only kort er klikbare som kalenderkort, men menuen indeholder kun sikre visningslinks", async () => {
   const component = await source("components/TeamCalendarClient.tsx");
   const previewPage = await source("app/calendar-2/page.tsx");
@@ -66,10 +72,10 @@ test("alle ikke-planlagte kort viser fuld årsag på en selvstændig, tilgængel
   assert.doesNotMatch(component, /Ordrer uden kollega eller uden plads i ugen\./);
 });
 
-test("aktiv kalender bevarer sin hidtidige 30-minutters fallback og planneradfærd", async () => {
+test("aktiv kalender bruger 60 minutter pr. manglende opgavetid og bevarer planneradfærd", async () => {
   const planner = await source("lib/planner.ts");
   const queries = await source("lib/queries.ts");
-  assert.match(queries, /durationMin:\s*o\.tasks\.reduce\(\(a, t\) => a \+ t\.durationMin, 0\) \|\| 30/g);
+  assert.match(queries, /durationMin:\s*o\.tasks\.reduce\(\(a, t\) => a \+ effectiveCalendarTaskDuration\(t\.durationMin\), 0\)/g);
   assert.doesNotMatch(planner, /calendarJobDurationReason|invalidIds|\.\.\.invalid/);
 });
 
@@ -81,7 +87,7 @@ test("Kalender 2 viser read-only preview overrides som forslag og korrekt ikke-p
   assert.match(await source("lib/calendar2-presentation.ts"), /Automatisk forslag/);
   assert.match(preview, /sourceWeekdayOverridden/);
   assert.match(preview, /overrideReason/);
-  assert.doesNotMatch(preview, /durationMin:[^\n]*\|\| 30/);
+  assert.doesNotMatch(preview, /durationMin:[^\n]*\|\| (?:30|60)/);
 });
 
 test("Kalender 2 bruger kun den additive matrixplanner og ændrer ikke aktiv /calendar", async () => {
