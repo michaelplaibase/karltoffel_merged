@@ -30,6 +30,13 @@ export async function getSubscriptionOrderAudit(referenceDate = new Date(), hori
         id: true, contactId: true, deliveryAddress: true, plannedAt: true, startAt: true,
         status: true, sourceType: true, subscriptionId: true, employeeId: true,
         lockedFully: true, sourceWeek: true, createdAt: true,
+        comment: true, addressNote: true, reminderSentAt: true, completedAt: true,
+        invoiceDecision: true, dineroInvoiceGuid: true, dineroInvoiceTimeStamp: true,
+        dineroInvoiceNumber: true, dineroInvoiceStatus: true, dineroPaymentGuid: true,
+        dineroError: true, invoicedAt: true, businessBatchInvoiceGuid: true,
+        businessBatchInvoiceTimeStamp: true, businessBatchInvoiceNumber: true,
+        businessBatchInvoiceStatus: true, businessBatchInvoicedAt: true,
+        businessBatchError: true,
         tasks: { select: {
           id: true, category: true, letter: true, description: true, price: true,
           durationMin: true, intervalMultiplier: true, startWeek: true,

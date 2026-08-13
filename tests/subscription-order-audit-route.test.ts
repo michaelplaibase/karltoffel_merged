@@ -21,5 +21,8 @@ test("audit reads authoritative subscriptions and future orders without writes",
   assert.match(audit, /prisma\.subscriptionWeekSkip\.findMany/);
   assert.match(audit, /sourceWeek/);
   assert.match(audit, /lockedFully/);
+  assert.match(audit, /businessBatchInvoiceGuid/);
+  assert.match(audit, /dineroInvoiceGuid/);
+  assert.match(audit, /comment/);
   assert.doesNotMatch(audit, /\.(create|update|delete|upsert|executeRaw|transaction)\(/);
 });
