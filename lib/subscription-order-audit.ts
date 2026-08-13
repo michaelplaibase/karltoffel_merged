@@ -19,7 +19,8 @@ export async function getSubscriptionOrderAudit(referenceDate = new Date(), hori
           id: true, category: true, letter: true, description: true, price: true,
           durationMin: true, intervalMultiplier: true, startWeek: true,
           pauseActive: true, pauseStart: true, pauseEnd: true, pauseYearly: true,
-          sort: true,
+          customerPresenceRequired: true, isStandardTask: true, fromSubscription: true,
+          subscriptionId: true, fixedPriceId: true, orderId: true, color: true, sort: true,
         }, orderBy: { sort: "asc" } },
       },
       orderBy: { id: "asc" },
@@ -29,6 +30,7 @@ export async function getSubscriptionOrderAudit(referenceDate = new Date(), hori
       select: {
         id: true, contactId: true, deliveryAddress: true, plannedAt: true, startAt: true,
         status: true, sourceType: true, subscriptionId: true, employeeId: true,
+        fixedPriceId: true,
         lockedFully: true, sourceWeek: true, createdAt: true,
         comment: true, addressNote: true, reminderSentAt: true, completedAt: true,
         invoiceDecision: true, dineroInvoiceGuid: true, dineroInvoiceTimeStamp: true,
@@ -40,7 +42,9 @@ export async function getSubscriptionOrderAudit(referenceDate = new Date(), hori
         tasks: { select: {
           id: true, category: true, letter: true, description: true, price: true,
           durationMin: true, intervalMultiplier: true, startWeek: true,
-          fromSubscription: true, sort: true,
+          pauseActive: true, pauseStart: true, pauseEnd: true, pauseYearly: true,
+          customerPresenceRequired: true, isStandardTask: true, fromSubscription: true,
+          subscriptionId: true, fixedPriceId: true, orderId: true, color: true, sort: true,
         }, orderBy: { sort: "asc" } },
       },
       orderBy: [{ subscriptionId: "asc" }, { sourceWeek: "asc" }, { id: "asc" }],
