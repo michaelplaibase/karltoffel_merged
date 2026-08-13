@@ -52,7 +52,8 @@ test("Kalender 2 viser read-only preview overrides som forslag og korrekt ikke-p
   const component = await source("components/TeamCalendarClient.tsx");
   const preview = await source("lib/subscription-preview-calendar.ts");
   assert.match(component, /<b>Ikke planlagt<\/b><span>Se årsagen på hvert kort<\/span>/);
-  assert.match(component, /Automatisk forslag/);
+  assert.match(component, /previewSuggestion/);
+  assert.match(await source("lib/calendar2-presentation.ts"), /Automatisk forslag/);
   assert.match(preview, /sourceWeekdayOverridden/);
   assert.match(preview, /overrideReason/);
   assert.doesNotMatch(preview, /durationMin:[^\n]*\|\| 30/);

@@ -264,13 +264,7 @@ export default function TeamCalendarClient(props: Props) {
                                 <span className="txt">{ev.customer}</span>
                               </span>
                               {readOnly && <PreviewTaskDetails tasks={ev.tasks ?? []} />}
-                              {readOnly && ev.previewOverrideReason && (
-                                <span className="hint">
-                                  Automatisk forslag
-                                  {ev.sourceStartWeek && ev.previewStartWeek ? ` · kilde ${ev.sourceStartWeek} · preview ${ev.previewStartWeek}` : ""}
-                                  {ev.previewOverrideReason !== "capacity_deferred_to_next_week" ? " · abonnementets ugedag er ikke ændret" : ""}
-                                </span>
-                              )}
+                              {readOnly && ev.previewSuggestion && <span className="hint">{ev.previewSuggestion}</span>}
                             </div>
                           ))}
                         </div>

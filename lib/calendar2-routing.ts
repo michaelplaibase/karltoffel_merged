@@ -34,6 +34,7 @@ export type Calendar2HorizonResult = {
   placements: { seriesId: number; sourceWeek: string; previewWeek: string; jobId: number }[];
   outOfHorizon: { seriesId: number; sourceWeek: string; previewWeek: string; jobId: number }[];
   seriesAudit: { seriesId: number; sourceStartWeek: string; previewStartWeek: string | null; reason: Calendar2SeriesReason }[];
+  unplanned: { seriesId: number; sourceWeek: string; job: Calendar2Job; reason: Calendar2UnplannedReason | "no_capacity_in_horizon" }[];
 };
 
 type RoutingOptions = { fetcher?: typeof fetch; sleep?: (ms: number) => Promise<void>; now?: () => number; timeoutMs?: number };
@@ -317,6 +318,7 @@ export function planCalendar2Horizon(
   const placements: Calendar2HorizonResult["placements"] = [];
   const outOfHorizon: Calendar2HorizonResult["outOfHorizon"] = [];
   const seriesAudit: Calendar2HorizonResult["seriesAudit"] = [];
+  const unplanned: Calendar2HorizonResult["unplanned"] = [];
 
   for (const series of inputSeries) {
     const occurrences = [...series.occurrences].sort((a, b) => a.sourceWeek.localeCompare(b.sourceWeek) || a.job.id - b.job.id);
@@ -329,6 +331,7 @@ export function planCalendar2Horizon(
     const dataError = validation.unplanned[0]?.reason;
     if (dataError && dataError !== "overflow") {
       seriesAudit.push({ seriesId: series.seriesId, sourceStartWeek: series.sourceStartWeek, previewStartWeek: null, reason: dataError });
+      for (const occurrence of occurrences) unplanned.push({ seriesId: series.seriesId, sourceWeek: occurrence.sourceWeek, job: occurrence.job, reason: dataError });
       continue;
     }
 
@@ -358,6 +361,7 @@ export function planCalendar2Horizon(
 
     if (!accepted) {
       seriesAudit.push({ seriesId: series.seriesId, sourceStartWeek: series.sourceStartWeek, previewStartWeek: null, reason: "no_capacity_in_horizon" });
+      for (const occurrence of occurrences) unplanned.push({ seriesId: series.seriesId, sourceWeek: occurrence.sourceWeek, job: occurrence.job, reason: "no_capacity_in_horizon" });
       continue;
     }
     for (const occurrence of occurrences) {
@@ -378,5 +382,6 @@ export function planCalendar2Horizon(
     placements: placements.sort((a, b) => a.previewWeek.localeCompare(b.previewWeek) || a.seriesId - b.seriesId || a.jobId - b.jobId),
     outOfHorizon: outOfHorizon.sort((a, b) => a.previewWeek.localeCompare(b.previewWeek) || a.seriesId - b.seriesId),
     seriesAudit,
+    unplanned: unplanned.sort((a, b) => a.sourceWeek.localeCompare(b.sourceWeek) || a.seriesId - b.seriesId || a.job.id - b.job.id),
   };
 }

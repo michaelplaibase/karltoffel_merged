@@ -6,6 +6,7 @@ import type {
   MonthMatrixRow, MonthWeek, UnplannedJob, WeekDay,
 } from "./calendar";
 import { mondayOf, projectSubscriptionVisits, ymd, type PreviewSubscription, type PreviewVisit } from "./subscription-preview";
+import { previewSuggestionText } from "./calendar2-presentation";
 
 const WEEK_MS = 7 * 864e5;
 const MON_SHORT = ["jan.", "feb.", "mar.", "apr.", "maj", "jun.", "jul.", "aug.", "sep.", "okt.", "nov.", "dec."];
@@ -152,6 +153,10 @@ export async function getSubscriptionPreviewWeek(weekMonday: string): Promise<Ca
   }));
   const events: CalEvent[] = data.plan.days.flatMap((day) => day.stops.map((stop) => {
     const visit = data.visitById.get(stop.job.id)!;
+    const placement = data.placementByJob.get(stop.job.id);
+    const previewOverrideReason = placement?.sourceWeek !== placement?.previewWeek
+      ? "capacity_deferred_to_next_week"
+      : stop.audit.sourceWeekdayOverridden ? stop.audit.overrideReason ?? undefined : undefined;
     return {
       id: stop.job.id,
       day: day.weekday,
@@ -168,11 +173,10 @@ export async function getSubscriptionPreviewWeek(weekMonday: string): Promise<Ca
       subscriptionNo: visit.subscriptionNo,
       phone: visit.phone,
       tasks: visit.tasks,
-      previewOverrideReason: data.placementByJob.get(stop.job.id)?.sourceWeek !== data.placementByJob.get(stop.job.id)?.previewWeek
-        ? "capacity_deferred_to_next_week"
-        : stop.audit.sourceWeekdayOverridden ? stop.audit.overrideReason ?? undefined : undefined,
+      previewOverrideReason,
       sourceStartWeek: data.seriesAuditById.get(visit.subscriptionId)?.sourceStartWeek,
       previewStartWeek: data.seriesAuditById.get(visit.subscriptionId)?.previewStartWeek ?? undefined,
+      previewSuggestion: placement ? previewSuggestionText({ sourceWeek: placement.sourceWeek, previewWeek: placement.previewWeek, sourceWeekdayOverridden: stop.audit.sourceWeekdayOverridden, reason: previewOverrideReason ?? null }) ?? undefined : undefined,
     };
   }));
   const unplanned: UnplannedJob[] = data.plan.unplanned.map(({ job, reason }) => ({
@@ -187,9 +191,9 @@ export async function getSubscriptionPreviewWeek(weekMonday: string): Promise<Ca
     tasks: data.visitById.get(job.id)?.tasks ?? [],
     reason,
   }));
-  for (const audit of data.horizonPlan.seriesAudit) if (audit.reason === "no_capacity_in_horizon" && audit.sourceStartWeek === weekMonday) {
-    const visit = data.visits.find((candidate) => candidate.subscriptionId === audit.seriesId && candidate.week === audit.sourceStartWeek);
-    if (visit) unplanned.push({ id: previewId(visit), postal: postalOf(visit.deliveryAddress), customer: visit.customer, category: visit.tasks[0]?.category ?? "Andet", status: "afventer", contactId: visit.contactId, subscriptionNo: visit.subscriptionNo, phone: visit.phone, tasks: visit.tasks, reason: "no_capacity_in_horizon" });
+  for (const rejected of data.horizonPlan.unplanned.filter((item) => item.sourceWeek === weekMonday)) {
+    const visit = data.visitById.get(rejected.job.id);
+    if (visit && !unplanned.some((item) => item.id === rejected.job.id)) unplanned.push({ id: rejected.job.id, postal: rejected.job.postal, customer: rejected.job.customer, category: rejected.job.category, status: "afventer", contactId: rejected.job.contactId, subscriptionNo: visit.subscriptionNo, phone: visit.phone, tasks: visit.tasks, reason: rejected.reason });
   }
   const mondayMonth = start.getUTCMonth();
   const sundayMonth = new Date(start.getTime() + 6 * 864e5).getUTCMonth();

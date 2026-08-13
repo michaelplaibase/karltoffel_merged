@@ -34,6 +34,7 @@ export type CalEvent = {
   previewOverrideReason?: "invalid_source_weekday_reassigned" | "capacity_overflow_rebalanced" | "capacity_deferred_to_next_week";
   sourceStartWeek?: string;
   previewStartWeek?: string;
+  previewSuggestion?: string;
 };
 
 export type WeekDay = { label: string; date: string; revenue: number; driving?: string };
