@@ -51,7 +51,7 @@ export async function getCalendar2AuditSource() {
     }),
     employees: users.map((user) => ({
       stableRef: `employee:${user.id}`, employeeId: user.id, active: user.active, activeCalendar: user.activeCalendar,
-      workStartMin: 480, workEndMin: 960, flexMin: 60, workdays: [0, 1, 2, 3, 4],
+      workStartMin: 480, workEndMin: 1080, flexMin: 0, workdays: [0, 1, 2, 3, 4],
     })),
     holidays: holidays.map((holiday) => ({ stableRef: `holiday:${holiday.id}`, holidayId: holiday.id, startWeek: holiday.startWeek.toISOString(), endWeek: holiday.endWeek.toISOString() })),
   };

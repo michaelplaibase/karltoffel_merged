@@ -32,15 +32,8 @@ const DAY_HEADS = ["Man", "Tir", "Ons", "Tor", "Fre", "Lør", "Søn"];
 const UNPLANNED_REASON_LABEL: Record<string, string> = {
   unverified_address: "Adresse ikke verificeret",
   unverified_route: "Køretidsmatrix ikke verificeret",
-  fixed_weekday_unavailable: "Fast ugedag er ikke en arbejdsdag",
   unassigned: "Ikke tildelt kollega",
-  overflow: "Ingen plads i ugen",
   invalid_duration: "Besøget mangler gyldig varighed",
-  exceeds_daily_capacity: "Besøget er længere end en arbejdsdag",
-  no_capacity_in_horizon: "Ingen plads i de næste 26 uger",
-  multi_day_continuation: "Fortsætter næste lovlige arbejdsdag",
-  cascade_shift: "Flyttet af tidligere fortsættelse",
-  holiday: "Ferielukket uge — skal flyttes",
 };
 
 /** Decimal hours → "HH:MM" (8.5 → "08:30"). */
@@ -197,6 +190,7 @@ export default function TeamCalendarClient(props: Props) {
           : `UGE ${props.month.weekNos[0]}–${props.month.weekNos[props.month.weekNos.length - 1]}`}
       </span>
       <span className="sp" />
+      {readOnly && <span className="badge">Arbejdsdag 08:00–18:00 · kapacitet rulles til første ledige hverdag</span>}
       {props.mode === "week" && !readOnly && (
         <button className="cbtn" type="button" disabled={pending} onClick={() => run(() => replanWeek(props.week.monday))}>
           {pending ? "Planlægger…" : "Genplanlæg uge"}

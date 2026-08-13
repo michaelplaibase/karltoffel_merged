@@ -11,7 +11,7 @@ import {
 
 const employee = (overrides: Partial<Calendar2Employee> = {}): Calendar2Employee => ({
   id: 7, name: "Planlægger", homeAddress: "Hjem", workStartMin: 8 * 60,
-  workEndMin: 16 * 60, flexMin: 0, workdays: [0, 1, 2, 3, 4], ...overrides,
+  workEndMin: 18 * 60, flexMin: 0, workdays: [0, 1, 2, 3, 4], ...overrides,
 });
 const job = (id: number, overrides: Partial<Calendar2Job> = {}): Calendar2Job => ({
   id, contactId: id, customer: `Kunde ${id}`, address: `A${id}`, postal: "8000",
@@ -34,17 +34,17 @@ const placed = (result: ReturnType<typeof planCalendar2Horizon>, seriesId: numbe
   .map((item) => item.previewWeek);
 
 function blockers(week: string, firstId: number): Calendar2Series[] {
-  return Array.from({ length: 5 }, (_, day) => series(firstId + day, [week], { durationMin: 480, fixedWeekdays: [day] }));
+  return Array.from({ length: 5 }, (_, day) => series(firstId + day, [week], { durationMin: 600, fixedWeekdays: [day] }));
 }
 
-test("fuld sourceuge flytter faseanker og interval 2 til første fremtidige uge", () => {
+test("fuld sourcedag flytter faseanker og interval 2 til første efterfølgende hverdag", () => {
   const source = series(1, ["2026-08-10", "2026-08-24", "2026-09-07"]);
   const before = structuredClone(source);
   const input = [...blockers("2026-08-10", 10), source];
   const result = planCalendar2Horizon(input, "2026-08-10", 26, [employee()], matrixFor(input));
   assert.deepEqual(placed(result, 1), ["2026-08-17", "2026-08-31", "2026-09-14"]);
   assert.equal(result.seriesAudit.find((item) => item.seriesId === 1)?.previewStartWeek, "2026-08-17");
-  assert.equal(result.seriesAudit.find((item) => item.seriesId === 1)?.reason, "capacity_deferred_to_next_week");
+  assert.equal(result.seriesAudit.find((item) => item.seriesId === 1)?.reason, "capacity_shifted_to_earliest_day");
   assert.deepEqual(source, before, "kildeserien må ikke muteres");
 });
 
@@ -56,7 +56,7 @@ test("ledig anden hverdag bevarer sourceStartWeek", () => {
 test("to fulde uger udskyder til tredje uge", () => {
   const input = [...blockers("2026-08-10", 10), ...blockers("2026-08-17", 20), series(1, ["2026-08-10"])];
   const result = planCalendar2Horizon(input, "2026-08-10", 26, [employee()], matrixFor(input));
-  assert.deepEqual(placed(result, 1), ["2026-08-24"]);
+  assert.deepEqual(placed(result, 1), ["2026-08-17"]);
 });
 
 test("ISO uge 53 og årsskifte bruger kalenderdatoer uden ugearitmetik", () => {
@@ -65,15 +65,17 @@ test("ISO uge 53 og årsskifte bruger kalenderdatoer uden ugearitmetik", () => {
   assert.deepEqual(placed(result, 1), ["2027-01-04", "2027-01-18"]);
 });
 
-test("ingen kapacitet i 26 positioner giver no_capacity_in_horizon", () => {
+test("26-ugers grænsen er kun visning og kapacitet ruller til første dag udenfor", () => {
   const all = Array.from({ length: 26 }, (_, index) => {
     const d = new Date(Date.UTC(2026, 7, 10 + index * 7)).toISOString().slice(0, 10);
     return blockers(d, 100 + index * 10);
   }).flat();
-  const input = [...all, series(1, ["2026-08-10"])];
+  const input = [...all, series(1, ["2027-02-01"])];
   const result = planCalendar2Horizon(input, "2026-08-10", 26, [employee()], matrixFor(input));
-  assert.equal(result.seriesAudit.find((item) => item.seriesId === 1)?.reason, "no_capacity_in_horizon");
+  assert.equal(result.seriesAudit.find((item) => item.seriesId === 1)?.reason, "capacity_deferred_outside_display_horizon");
   assert.equal(placed(result, 1).length, 0);
+  assert.deepEqual(result.outOfHorizon.filter((item) => item.seriesId === 1).map((item) => item.previewWeek), ["2027-02-08"]);
+  assert.equal(result.unplanned.length, 0);
 });
 
 test("defer ændrer aldrig medarbejder, weekend eller overtid", () => {
@@ -82,7 +84,7 @@ test("defer ændrer aldrig medarbejder, weekend eller overtid", () => {
   const stop = result.weeks.flatMap((week) => week.plan.days).flatMap((day) => day.stops.map((s) => ({ day, stop: s }))).find(({ stop }) => stop.job.id === 100)!;
   assert.equal(stop.day.employeeId, 7);
   assert.ok(stop.day.weekday >= 0 && stop.day.weekday <= 4);
-  assert.ok(stop.stop.endMin + stop.day.returnHomeMin <= 16 * 60);
+  assert.ok(stop.stop.endMin + stop.day.returnHomeMin <= 18 * 60);
 });
 
 test("datafejl prioriteres og maskeres ikke af kapacitetssøgning", () => {
@@ -103,7 +105,7 @@ test("flere deferred serier deler reservationer deterministisk", () => {
   const b = planCalendar2Horizon(structuredClone(input), "2026-08-10", 26, [employee({ workdays: [0] })], m);
   assert.deepEqual(a, b);
   assert.deepEqual(placed(a, 1), ["2026-08-17"]);
-  assert.deepEqual(placed(a, 2), ["2026-08-24"]);
+  assert.deepEqual(placed(a, 2), ["2026-08-17"]);
 });
 
 test("begrænset eksakt feasibility finder arrangement som greedy insertion overser", () => {
@@ -140,15 +142,14 @@ test("source-afvisning publicerer alle ægte task-identiteter med effektiv 60-mi
   assert.deepEqual(result.unplanned[0].rejectedTasks, calendar2RejectedTasks(sourceJob));
 });
 
-test("horizon-rest publicerer kun resterende task-minutter uden opfundne ID'er", () => {
+test("lang task ruller videre uden kapacitetsafvisning selv ved kort visningshorisont", () => {
   const sourceJob = job(901, {
-    durationMin: 600,
-    sourceTasks: [{ id: "task-long", durationMin: 600 }],
+    durationMin: 700,
+    sourceTasks: [{ id: "task-long", durationMin: 700 }],
   });
   const result = planCalendar2Horizon([{ seriesId: 10, sourceStartWeek: "2026-08-10", occurrences: [{ sourceWeek: "2026-08-10", job: sourceJob }] }], "2026-08-10", 1, [employee({ workdays: [0] })], matrix(["Hjem", "A901"]));
-  assert.equal(result.unplanned[0].reason, "no_capacity_in_horizon");
-  assert.deepEqual(result.unplanned[0].rejectedTasks, [{ sourceTaskId: "task-long", effectiveMinutes: 120 }]);
-  assert.equal(result.unplanned[0].remainingMinutes, 120);
+  assert.equal(result.unplanned.length, 0);
+  assert.equal(result.outOfHorizon.length, 1);
 });
 
 test("taskminutter bevares eksakt uden tab eller dubletter på tværs af planlagt og afvist", () => {
@@ -170,11 +171,44 @@ test("taskminutter bevares eksakt uden tab eller dubletter på tværs af planlag
     assert.ok(stop.audit.sourceTaskId, "planlagt segment skal have ægte task-ID");
     actual.set(stop.audit.sourceTaskId, (actual.get(stop.audit.sourceTaskId) ?? 0) + (stop.audit.segmentMinutes ?? stop.job.durationMin));
   }
-  for (const rejected of result.unplanned.flatMap((item) => item.rejectedTasks)) {
-    actual.set(rejected.sourceTaskId, (actual.get(rejected.sourceTaskId) ?? 0) + rejected.effectiveMinutes);
-  }
+  for (const segment of result.outOfHorizon.flatMap((item) => item.segments)) actual.set(segment.sourceTaskId, (actual.get(segment.sourceTaskId) ?? 0) + segment.minutes);
   assert.deepEqual(actual, expected);
-  assert.equal(result.unplanned.reduce((sum, item) => sum + (item.remainingMinutes ?? 0), 0), 560);
+  assert.equal(result.unplanned.length, 0);
+});
+
+test("fuld mandag vælger ledig onsdag før torsdag", () => {
+  const input = [
+    series(10, ["2026-08-10"], { durationMin: 600, fixedWeekdays: [0] }),
+    series(11, ["2026-08-10"], { durationMin: 600, fixedWeekdays: [1] }),
+    series(1, ["2026-08-10"], { durationMin: 60, fixedWeekdays: [0] }),
+  ];
+  const result = planCalendar2Horizon(input, "2026-08-10", 26, [employee()], matrixFor(input));
+  const target = result.weeks[0].plan.days.flatMap((day) => day.stops.map((stop) => ({ day, stop }))).find(({ stop }) => stop.job.id === 100)!;
+  assert.equal(target.day.weekday, 2);
+  assert.equal(result.unplanned.length, 0);
+});
+
+test("fredags-overflow ruller til mandag og aldrig weekend", () => {
+  const input = [series(10, ["2026-08-10"], { durationMin: 600, fixedWeekdays: [4] }), series(1, ["2026-08-10"], { fixedWeekdays: [4] })];
+  const result = planCalendar2Horizon(input, "2026-08-10", 2, [employee()], matrixFor(input));
+  const target = result.weeks[1].plan.days.flatMap((day) => day.stops.map((stop) => ({ day, stop }))).find(({ stop }) => stop.job.id === 100)!;
+  assert.equal(target.day.weekday, 0);
+  assert.ok(result.weeks.flatMap((week) => week.plan.days).every((day) => day.weekday < 5));
+});
+
+test("recurrence rephaser til samme forskudte ugedag", () => {
+  const recurring = series(1, ["2026-08-10", "2026-08-24"], { fixedWeekdays: [0] });
+  const input = [series(10, ["2026-08-10"], { durationMin: 600, fixedWeekdays: [0] }), recurring];
+  const result = planCalendar2Horizon(input, "2026-08-10", 4, [employee()], matrixFor(input));
+  const targetDays = result.weeks.flatMap((week) => week.plan.days.flatMap((day) => day.stops.filter((stop) => stop.job.id === 100 || stop.job.id === 101).map(() => day.weekday)));
+  assert.deepEqual(targetDays, [1, 1]);
+});
+
+test("kapacitetsrelateret unplanned er altid nul under kaskade", () => {
+  const input = Array.from({ length: 40 }, (_, id) => series(id + 1, ["2026-08-10"], { durationMin: 600, fixedWeekdays: [0] }));
+  const result = planCalendar2Horizon(input, "2026-08-10", 1, [employee()], matrixFor(input));
+  assert.equal(result.unplanned.length, 0);
+  assert.ok(result.outOfHorizon.length > 0);
 });
 
 test("routefejl før segmentering afviser én række pr. ægte source task", () => {

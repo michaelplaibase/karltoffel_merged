@@ -32,13 +32,13 @@ export type Calendar2Series = {
   sourceStartWeek: string;
   occurrences: { sourceWeek: string; job: Calendar2Job }[];
 };
-export type Calendar2SeriesReason = Calendar2UnplannedReason | "capacity_deferred_to_next_week" | "no_capacity_in_horizon" | null;
+export type Calendar2SeriesReason = Calendar2UnplannedReason | "capacity_shifted_to_earliest_day" | "capacity_deferred_outside_display_horizon" | null;
 export type Calendar2HorizonResult = {
   weeks: { weekMonday: string; plan: Calendar2Plan }[];
   placements: { seriesId: number; sourceWeek: string; previewWeek: string; jobId: number }[];
-  outOfHorizon: { seriesId: number; sourceWeek: string; previewWeek: string; jobId: number }[];
+  outOfHorizon: { seriesId: number; sourceWeek: string; previewWeek: string; jobId: number; segments: { sourceTaskId: string; minutes: number; weekday: number }[] }[];
   seriesAudit: { seriesId: number; sourceStartWeek: string; previewStartWeek: string | null; reason: Calendar2SeriesReason }[];
-  unplanned: { seriesId: number; sourceWeek: string; job: Calendar2Job; reason: Calendar2UnplannedReason | "no_capacity_in_horizon"; rejectedTasks: { sourceTaskId: string; effectiveMinutes: number }[]; remainingMinutes?: number; remainingTaskIds?: string[] }[];
+  unplanned: { seriesId: number; sourceWeek: string; job: Calendar2Job; reason: Calendar2UnplannedReason; rejectedTasks: { sourceTaskId: string; effectiveMinutes: number }[] }[];
 };
 
 export type Calendar2HorizonOptions = { blockedWeeks?: ReadonlySet<string> };
@@ -263,7 +263,7 @@ export function planCalendar2Week(jobs: Calendar2Job[], weekMonday: string, empl
     const home = matrixIndex.get(normalized(employee.homeAddress));
     if (home == null) continue;
     for (const weekday of uniqueDays(employee.workdays)) {
-      const hardEnd = employee.workEndMin + employee.flexMin;
+      const hardEnd = employee.workEndMin;
       let cursor = employee.workStartMin;
       let current = home;
       const stops: Calendar2Stop[] = [];
@@ -313,7 +313,7 @@ export function planCalendar2Week(jobs: Calendar2Job[], weekMonday: string, empl
       for (let position = 0; position < points.length - 1; position++) {
         const marginal = matrix.durations[points[position]][destination] + matrix.durations[destination][points[position + 1]] - matrix.durations[points[position]][points[position + 1]];
         const service = (day?.serviceMin ?? 0) + job.durationMin;
-        if (!Number.isFinite(marginal) || service + oldTravel + marginal > employee.workEndMin + employee.flexMin - employee.workStartMin) continue;
+        if (!Number.isFinite(marginal) || service + oldTravel + marginal > employee.workEndMin - employee.workStartMin) continue;
         if (!best || marginal < best.marginal || (marginal === best.marginal && weekday < best.weekday)) best = { weekday, position, marginal };
       }
     }
@@ -357,19 +357,13 @@ const effectiveTasks = (job: Calendar2Job) => (job.sourceTasks?.length
 export const calendar2RejectedTasks = (job: Calendar2Job) => (job.sourceTasks ?? [])
   .map((task) => ({ sourceTaskId: task.id, effectiveMinutes: task.durationMin && task.durationMin > 0 ? task.durationMin : 60 }));
 
-const rejectedSegmentTasks = (segments: Calendar2Job[]) => [...segments.reduce((tasks, segment) => {
-  const taskId = segment.previewSegment?.sourceTaskId;
-  if (taskId) tasks.set(taskId, (tasks.get(taskId) ?? 0) + segment.durationMin);
-  return tasks;
-}, new Map<string, number>())].map(([sourceTaskId, effectiveMinutes]) => ({ sourceTaskId, effectiveMinutes }));
-
 function previewSegments(job: Calendar2Job, sourceWeek: string, employee: Calendar2Employee, matrix: TravelMatrix): Calendar2Job[] {
   const index = new Map(matrix.addresses.map((address, position) => [normalized(address), position]));
   const home = employee.homeAddress ? index.get(normalized(employee.homeAddress)) : undefined;
   const destination = index.get(normalized(job.address));
   const roundTrip = home == null || destination == null ? 0 : matrix.durations[home][destination] + matrix.durations[destination][home];
-  const hardEnd = Math.min(employee.workEndMin + employee.flexMin, 17 * 60);
-  const serviceCapacity = Math.max(1, Math.min(540, hardEnd - employee.workStartMin - roundTrip));
+  const hardEnd = employee.workEndMin;
+  const serviceCapacity = Math.max(1, hardEnd - employee.workStartMin - roundTrip);
   const chunks = effectiveTasks(job).flatMap((task) => {
     const result: { taskId: string; minutes: number }[] = [];
     for (let remaining = task.minutes; remaining > 0;) {
@@ -383,8 +377,23 @@ function previewSegments(job: Calendar2Job, sourceWeek: string, employee: Calend
       originalSourceWeek: sourceWeek, reason: position === 0 ? "cascade_shift" : "multi_day_continuation" } }));
 }
 
-/** Plans the complete read-only preview in one deterministic pass. Earlier
- * accepted series remain reservations when later series are evaluated. */
+const dayTime = (date: string) => new Date(`${date}T00:00:00Z`).getTime();
+const dateAt = (date: string, days: number) => new Date(dayTime(date) + days * 864e5).toISOString().slice(0, 10);
+const mondayForDate = (date: string) => {
+  const weekday = (new Date(`${date}T00:00:00Z`).getUTCDay() + 6) % 7;
+  return dateAt(date, -weekday);
+};
+const weekdayForDate = (date: string) => (new Date(`${date}T00:00:00Z`).getUTCDay() + 6) % 7;
+const sourceDate = (week: string, job: Calendar2Job, employee: Calendar2Employee) => {
+  const requested = uniqueDays(job.fixedWeekdays ?? []).find((day) => employee.workdays.includes(day));
+  return dateAt(week, requested ?? uniqueDays(employee.workdays)[0] ?? 0);
+};
+
+/** Calendar2 capacity contract: 08:00 to hard end 18:00 in production,
+ * including home-first, interstop and return-home travel. flexMin is retained
+ * in the input shape for compatibility, but never extends Calendar2 hard end.
+ * Capacity is searched beyond the display horizon and can never become an
+ * unplanned reason. */
 export function planCalendar2Horizon(
   inputSeries: readonly Calendar2Series[], horizonStartWeek: string, horizonWeeks: number,
   employees: Calendar2Employee[], matrix: TravelMatrix, options: Calendar2HorizonOptions = {},
@@ -399,112 +408,76 @@ export function planCalendar2Horizon(
   const seriesAudit: Calendar2HorizonResult["seriesAudit"] = [];
   const unplanned: Calendar2HorizonResult["unplanned"] = [];
 
-  for (const series of inputSeries) {
+  const MAX_SEARCH_WORKDAYS = 5_200;
+  const orderedSeries = inputSeries.map((series, inputIndex) => ({ series, inputIndex }))
+    .sort((a, b) => (a.series.occurrences[0]?.sourceWeek ?? a.series.sourceStartWeek).localeCompare(b.series.occurrences[0]?.sourceWeek ?? b.series.sourceStartWeek) || a.inputIndex - b.inputIndex);
+
+  for (const { series } of orderedSeries) {
     const occurrences = [...series.occurrences].sort((a, b) => a.sourceWeek.localeCompare(b.sourceWeek) || a.job.id - b.job.id);
     const first = occurrences[0];
     if (!first) {
-      seriesAudit.push({ seriesId: series.seriesId, sourceStartWeek: series.sourceStartWeek, previewStartWeek: null, reason: "no_capacity_in_horizon" });
+      seriesAudit.push({ seriesId: series.seriesId, sourceStartWeek: series.sourceStartWeek, previewStartWeek: null, reason: "invalid_duration" });
       continue;
     }
     const firstEmployee = employees.find((employee) => employee.id === first.job.fixedEmployeeId);
-    const needsCascade = Boolean(firstEmployee) && occurrences.some(({ job }) => {
-      const total = effectiveTasks(job).reduce((sum, task) => sum + task.minutes, 0);
-      return Boolean(job.sourceTasks?.length) || total > Math.min(540, Math.min(firstEmployee!.workEndMin + firstEmployee!.flexMin, 17 * 60) - firstEmployee!.workStartMin);
-    });
-    if (needsCascade && firstEmployee) {
-      const validationSegment = previewSegments(first.job, first.sourceWeek, firstEmployee, matrix)[0];
-      const validation = validationSegment ? planCalendar2Week([validationSegment], first.sourceWeek, employees, matrix) : null;
-      const dataError = validation?.unplanned[0]?.reason;
-      if (dataError && dataError !== "overflow") {
-        seriesAudit.push({ seriesId: series.seriesId, sourceStartWeek: series.sourceStartWeek, previewStartWeek: null, reason: dataError });
-        for (const occurrence of occurrences) unplanned.push({ seriesId: series.seriesId, sourceWeek: occurrence.sourceWeek, job: occurrence.job, reason: dataError, rejectedTasks: calendar2RejectedTasks(occurrence.job) });
-        continue;
-      }
-      let failed = false;
-      let previewStartWeek: string | null = null;
-      for (const occurrence of occurrences) {
-        const segments = previewSegments(occurrence.job, occurrence.sourceWeek, firstEmployee, matrix);
-        let searchWeek = occurrence.sourceWeek < horizonStartWeek ? horizonStartWeek : occurrence.sourceWeek;
-        let afterWeekday = -1;
-        for (let segmentIndex = 0; segmentIndex < segments.length; segmentIndex++) {
-          let placed: { week: string; plan: Calendar2Plan; job: Calendar2Job; weekday: number } | null = null;
-          while (horizonSet.has(searchWeek)) {
-            if (options.blockedWeeks?.has(searchWeek)) { searchWeek = weekAt(searchWeek, 1); afterWeekday = -1; continue; }
-            const allowed = uniqueDays(firstEmployee.workdays).filter((day) => day >= afterWeekday);
-            if (!allowed.length) { searchWeek = weekAt(searchWeek, 1); afterWeekday = -1; continue; }
-            const segment = { ...segments[segmentIndex], fixedWeekdays: segmentIndex === 0 && segments[segmentIndex].fixedWeekdays?.length ? segments[segmentIndex].fixedWeekdays : allowed };
-            const combined = [...(reserved.get(searchWeek) ?? []), segment];
-            const plan = planCalendar2Week(combined, searchWeek, employees, matrix);
-            const hit = plan.days.flatMap((day) => day.stops.map((stop) => ({ day, stop }))).find(({ stop }) => stop.job.previewSegment?.sourceJobId === occurrence.job.id && stop.job.previewSegment.index === segmentIndex + 1);
-            if (hit) { placed = { week: searchWeek, plan, job: segment, weekday: hit.day.weekday }; break; }
-            searchWeek = weekAt(searchWeek, 1); afterWeekday = -1;
-          }
-          if (!placed) {
-            const remaining = segments.slice(segmentIndex);
-            unplanned.push({ seriesId: series.seriesId, sourceWeek: occurrence.sourceWeek, job: occurrence.job, reason: "no_capacity_in_horizon", rejectedTasks: rejectedSegmentTasks(remaining), remainingMinutes: remaining.reduce((sum, item) => sum + item.durationMin, 0), remainingTaskIds: [...new Set(remaining.map((item) => item.previewSegment!.sourceTaskId))] });
-            failed = true; break;
-          }
-          reserved.get(placed.week)!.push(placed.job);
-          plans.set(placed.week, placed.plan);
-          previewStartWeek ??= placed.week;
-          searchWeek = placed.week; afterWeekday = placed.weekday;
-        }
-        if (failed) break;
-        placements.push({ seriesId: series.seriesId, sourceWeek: occurrence.sourceWeek, previewWeek: searchWeek, jobId: occurrence.job.id });
-      }
-      seriesAudit.push({ seriesId: series.seriesId, sourceStartWeek: series.sourceStartWeek, previewStartWeek, reason: failed ? "no_capacity_in_horizon" : previewStartWeek !== series.sourceStartWeek ? "capacity_deferred_to_next_week" : null });
+    if (!first.job.sourceTasks?.length && (!Number.isFinite(first.job.durationMin) || first.job.durationMin <= 0)) {
+      seriesAudit.push({ seriesId: series.seriesId, sourceStartWeek: series.sourceStartWeek, previewStartWeek: null, reason: "invalid_duration" });
+      for (const occurrence of occurrences) unplanned.push({ seriesId: series.seriesId, sourceWeek: occurrence.sourceWeek, job: occurrence.job, reason: "invalid_duration", rejectedTasks: calendar2RejectedTasks(occurrence.job) });
       continue;
     }
-    const validation = planCalendar2Week([first.job], first.sourceWeek, employees, matrix);
-    const dataError = validation.unplanned[0]?.reason;
-    if (dataError && dataError !== "overflow") {
-      seriesAudit.push({ seriesId: series.seriesId, sourceStartWeek: series.sourceStartWeek, previewStartWeek: null, reason: dataError });
-      for (const occurrence of occurrences) unplanned.push({ seriesId: series.seriesId, sourceWeek: occurrence.sourceWeek, job: occurrence.job, reason: dataError, rejectedTasks: calendar2RejectedTasks(occurrence.job) });
+    const validationJob = firstEmployee ? previewSegments(first.job, first.sourceWeek, firstEmployee, matrix)[0] : first.job;
+    const validation = planCalendar2Week(validationJob ? [validationJob] : [first.job], first.sourceWeek, employees, matrix);
+    const rawReason = validation.unplanned[0]?.reason;
+    const dataError = rawReason && !["overflow", "exceeds_daily_capacity", "fixed_weekday_unavailable"].includes(rawReason) ? rawReason : null;
+    if (!firstEmployee || dataError) {
+      const reason: Calendar2UnplannedReason = firstEmployee ? dataError! : "unassigned";
+      seriesAudit.push({ seriesId: series.seriesId, sourceStartWeek: series.sourceStartWeek, previewStartWeek: null, reason });
+      for (const occurrence of occurrences) unplanned.push({ seriesId: series.seriesId, sourceWeek: occurrence.sourceWeek, job: occurrence.job, reason, rejectedTasks: calendar2RejectedTasks(occurrence.job) });
       continue;
     }
-
-    const sourceOffset = Math.round((weekTime(series.sourceStartWeek) - weekTime(horizonStartWeek)) / (7 * 864e5));
-    let accepted: { shift: number; weekPlans: Map<string, Calendar2Plan> } | null = null;
-    for (let shift = Math.max(0, -sourceOffset); shift < count; shift++) {
-      const candidateByWeek = new Map<string, Calendar2Job[]>();
-      for (const occurrence of occurrences) {
-        const previewWeek = weekAt(occurrence.sourceWeek, shift);
-        if (!horizonSet.has(previewWeek) || options.blockedWeeks?.has(previewWeek)) continue;
-        const jobs = candidateByWeek.get(previewWeek) ?? [];
-        jobs.push(occurrence.job);
-        candidateByWeek.set(previewWeek, jobs);
-      }
-      if (!candidateByWeek.size || occurrences.some((occurrence) => {
-        const previewWeek = weekAt(occurrence.sourceWeek, shift);
-        return horizonSet.has(previewWeek) && options.blockedWeeks?.has(previewWeek);
-      })) continue;
-      const weekPlans = new Map<string, Calendar2Plan>();
-      let feasible = true;
-      for (const [week, candidates] of [...candidateByWeek].sort(([a], [b]) => a.localeCompare(b))) {
-        const combined = [...(reserved.get(week) ?? []), ...candidates];
-        const plan = planCalendar2Week(combined, week, employees, matrix);
-        const plannedIds = new Set(plan.days.flatMap((day) => day.stops.map((stop) => stop.job.id)));
-        if (combined.some((candidate) => !plannedIds.has(candidate.id))) { feasible = false; break; }
-        weekPlans.set(week, plan);
-      }
-      if (feasible) { accepted = { shift, weekPlans }; break; }
-    }
-
-    if (!accepted) {
-      seriesAudit.push({ seriesId: series.seriesId, sourceStartWeek: series.sourceStartWeek, previewStartWeek: null, reason: "no_capacity_in_horizon" });
-      for (const occurrence of occurrences) unplanned.push({ seriesId: series.seriesId, sourceWeek: occurrence.sourceWeek, job: occurrence.job, reason: "no_capacity_in_horizon", rejectedTasks: calendar2RejectedTasks(occurrence.job) });
-      continue;
-    }
+    let phaseDays = 0;
+    let previewStartWeek: string | null = null;
     for (const occurrence of occurrences) {
-      const previewWeek = weekAt(occurrence.sourceWeek, accepted.shift);
+      const segments = previewSegments(occurrence.job, occurrence.sourceWeek, firstEmployee, matrix);
+      let searchDate = dateAt(sourceDate(occurrence.sourceWeek, occurrence.job, firstEmployee), phaseDays);
+      let occurrenceFirstDate: string | null = null;
+      const outsideSegments: { sourceTaskId: string; minutes: number; weekday: number }[] = [];
+      for (const originalSegment of segments) {
+        let placed = false;
+        for (let workday = 0; workday < MAX_SEARCH_WORKDAYS; searchDate = dateAt(searchDate, 1)) {
+          const weekday = weekdayForDate(searchDate);
+          if (weekday >= 5 || !firstEmployee.workdays.includes(weekday)) continue;
+          workday++;
+          const week = mondayForDate(searchDate);
+          if (options.blockedWeeks?.has(week)) continue;
+          const segment = { ...originalSegment, fixedWeekdays: [weekday] };
+          const combined = [...(reserved.get(week) ?? []), segment];
+          const plan = planCalendar2Week(combined, week, employees, matrix);
+          const hit = plan.days.find((day) => day.employeeId === firstEmployee.id && day.weekday === weekday)?.stops.find((stop) => stop.job.previewSegment?.sourceJobId === occurrence.job.id && stop.job.previewSegment?.index === segment.previewSegment?.index);
+          if (!hit || plan.unplanned.length) continue;
+          reserved.set(week, combined);
+          plans.set(week, plan);
+          occurrenceFirstDate ??= searchDate;
+          if (horizonSet.has(week)) {
+            // A placement denotes the source occurrence. Segment detail remains in the week plan.
+          } else outsideSegments.push({ sourceTaskId: segment.previewSegment!.sourceTaskId, minutes: segment.durationMin, weekday });
+          placed = true;
+          break;
+        }
+        if (!placed) throw new Error("calendar2_system_error_search_ceiling");
+      }
+      if (!occurrenceFirstDate) throw new Error("calendar2_system_error_empty_occurrence");
+      const previewWeek = mondayForDate(occurrenceFirstDate);
       const record = { seriesId: series.seriesId, sourceWeek: occurrence.sourceWeek, previewWeek, jobId: occurrence.job.id };
-      if (!horizonSet.has(previewWeek)) { outOfHorizon.push(record); continue; }
-      placements.push(record);
-      reserved.get(previewWeek)!.push(occurrence.job);
+      if (horizonSet.has(previewWeek)) placements.push(record);
+      if (!horizonSet.has(previewWeek) || outsideSegments.length) outOfHorizon.push({ ...record, segments: outsideSegments });
+      if (occurrence === first) {
+        phaseDays = Math.max(0, Math.round((dayTime(occurrenceFirstDate) - dayTime(sourceDate(occurrence.sourceWeek, occurrence.job, firstEmployee))) / 864e5));
+        previewStartWeek = previewWeek;
+      }
     }
-    for (const [week, plan] of accepted.weekPlans) plans.set(week, plan);
-    const previewStartWeek = weekAt(series.sourceStartWeek, accepted.shift);
-    seriesAudit.push({ seriesId: series.seriesId, sourceStartWeek: series.sourceStartWeek, previewStartWeek, reason: accepted.shift > 0 ? "capacity_deferred_to_next_week" : null });
+    const outside = previewStartWeek != null && !horizonSet.has(previewStartWeek);
+    seriesAudit.push({ seriesId: series.seriesId, sourceStartWeek: series.sourceStartWeek, previewStartWeek, reason: outside ? "capacity_deferred_outside_display_horizon" : phaseDays > 0 ? "capacity_shifted_to_earliest_day" : null });
   }
 
   for (const week of horizon) if (!plans.has(week)) plans.set(week, planCalendar2Week(reserved.get(week) ?? [], week, employees, matrix));

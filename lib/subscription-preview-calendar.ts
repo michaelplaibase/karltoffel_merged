@@ -78,8 +78,8 @@ async function loadPreviewSource() {
     name: `${user.firstName} ${user.lastName}`,
     homeAddress: user.homeAddress,
     workStartMin: 8 * 60,
-    workEndMin: 16 * 60,
-    flexMin: 60,
+    workEndMin: 18 * 60,
+    flexMin: 0,
     workdays: [0, 1, 2, 3, 4],
   }));
   return { subscriptions, employees, plannerEmployees, holidays };
@@ -185,14 +185,18 @@ export async function getCalendar2HorizonAudit(horizonWeeks = 26) {
       previewStartWeek: series.previewStartWeek,
       reason: series.reason,
     })),
+    outsideDisplayHorizon: data.horizonPlan.outOfHorizon.map((item) => ({
+      subscriptionNo: subscriptionNoByJob.get(item.jobId) ?? null,
+      sourceWeek: item.sourceWeek,
+      previewWeek: item.previewWeek,
+      segments: item.segments,
+    })),
     rejected: data.horizonPlan.unplanned.map((item) => ({
       subscriptionNo: subscriptionNoByJob.get(item.job.id) ?? null,
       sourceWeek: item.sourceWeek,
       reason: item.reason,
       durationMin: item.job.durationMin,
       rejectedTasks: item.rejectedTasks,
-      remainingMinutes: item.remainingMinutes ?? null,
-      remainingTaskIds: item.remainingTaskIds ?? [],
     })),
     weeks: data.horizonPlan.weeks.map(({ weekMonday, plan }) => ({
       weekMonday,

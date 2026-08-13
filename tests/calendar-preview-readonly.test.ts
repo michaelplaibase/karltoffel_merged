@@ -50,13 +50,10 @@ test("read-only viser unplanned reasons sandfærdigt", async () => {
   const component = await source("components/TeamCalendarClient.tsx");
   assert.match(component, /unverified_address[\s\S]*Adresse ikke verificeret/);
   assert.match(component, /unverified_route[\s\S]*Køretidsmatrix ikke verificeret/);
-  assert.match(component, /fixed_weekday_unavailable[\s\S]*Fast ugedag er ikke en arbejdsdag/);
   assert.match(component, /unassigned[\s\S]*Ikke tildelt kollega/);
-  assert.match(component, /overflow[\s\S]*Ingen plads i ugen/);
   assert.match(component, /invalid_duration[\s\S]*Besøget mangler gyldig varighed/);
-  assert.match(component, /exceeds_daily_capacity[\s\S]*Besøget er længere end en arbejdsdag/);
-  assert.match(component, /no_capacity_in_horizon[\s\S]*Ingen plads i de næste 26 uger/);
-  assert.match(component, /holiday[\s\S]*Ferielukket uge/);
+  assert.doesNotMatch(component, /no_capacity_in_horizon[\s\S]*Ingen plads i de næste 26 uger/);
+  assert.match(component, /Arbejdsdag 08:00–18:00/);
   assert.match(component, /Ukendt årsag/);
   assert.doesNotMatch(component, /reason[^\n]*\?[^\n]*Ingen plads i ugen/);
 });
@@ -145,7 +142,8 @@ test("horizon-audit binder segmenter og afvisninger til source occurrence og tas
   assert.match(preview, /rejected:\s*data\.horizonPlan\.unplanned\.map/);
   assert.match(preview, /sourceWeek:\s*item\.sourceWeek/);
   assert.match(preview, /rejectedTasks:\s*item\.rejectedTasks/);
-  assert.match(preview, /remainingTaskIds:\s*item\.remainingTaskIds/);
+  assert.match(preview, /outsideDisplayHorizon:\s*data\.horizonPlan\.outOfHorizon\.map/);
+  assert.match(preview, /segments:\s*item\.segments/);
 });
 
 test("horizon-audit publicerer bounded privacy-safe matrixceller og indekser for hvert ben", async () => {

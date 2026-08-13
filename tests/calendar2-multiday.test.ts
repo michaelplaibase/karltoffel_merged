@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { planCalendar2Horizon, type Calendar2Employee, type Calendar2Series, type TravelMatrix } from "../lib/calendar2-routing";
 
-const emp: Calendar2Employee = { id: 7, name: "Kristian", homeAddress: "Hjem", workStartMin: 480, workEndMin: 960, flexMin: 60, workdays: [0,1,2,3,4] };
+const emp: Calendar2Employee = { id: 7, name: "Kristian", homeAddress: "Hjem", workStartMin: 480, workEndMin: 1080, flexMin: 0, workdays: [0,1,2,3,4] };
 const matrix: TravelMatrix = { addresses: ["Hjem","A","B"], durations: [[0,10,10],[10,0,5],[10,5,0]], provider: "test-osrm", capturedAt: "2026-01-01T00:00:00Z" };
 const series = (id:number, sourceWeek:string, durationMin:number, address="A", tasks?: { id:string; durationMin:number|null }[]): Calendar2Series => ({ seriesId:id, sourceStartWeek:sourceWeek, occurrences:[{ sourceWeek, job:{ id, contactId:id, customer:`K${id}`, address, postal:"8700", category:"Test", durationMin, source:`Abo. #${id}`, fixedWeekdays:[4], fixedEmployeeId:7, sourceTasks:tasks } }] });
 const stops = (r:ReturnType<typeof planCalendar2Horizon>) => r.weeks.flatMap(w => w.plan.days.flatMap(d => d.stops.map(s => ({week:w.weekMonday, day:d, stop:s}))));
@@ -14,7 +14,7 @@ test("1276 minutters source task fortsætter fredag til mindst tre lovlige arbej
   assert.deepEqual(parts.map(p => [p.week,p.day.weekday]).slice(0,2), [["2026-08-10",4],["2026-08-17",0]]);
   assert.equal(parts.reduce((n,p)=>n+p.stop.job.durationMin,0),1276);
   assert.deepEqual(parts.map(p=>p.stop.audit.segmentIndex), parts.map((_,i)=>i+1));
-  assert.ok(parts.every(p => p.stop.endMin + p.day.returnHomeMin <= 1020));
+  assert.ok(parts.every(p => p.stop.endMin + p.day.returnHomeMin <= 1080));
   assert.ok(parts.every(p => p.day.travelLegs.at(-1)?.kind === "return_home"));
 });
 
@@ -31,7 +31,7 @@ test("splitter ved source task-grænser før en task segmenteres og default 0 bl
   assert.equal(result.unplanned.length,0);
 });
 
-test("senere job kaskaderer efter continuation og horizon exhaustion er eksplicit", () => {
+test("senere job kaskaderer efter continuation uden horizon-afvisning", () => {
   const long=series(1,"2026-08-10",828); long.occurrences[0].job.fixedWeekdays=[0];
   const later=series(2,"2026-08-10",60,"B"); later.occurrences[0].job.fixedWeekdays=[0];
   const result=planCalendar2Horizon([long,later],"2026-08-10",26,[emp],matrix);
@@ -40,9 +40,8 @@ test("senere job kaskaderer efter continuation og horizon exhaustion er eksplici
   const laterPlacement=result.placements.find(p=>p.seriesId===2)!;
   assert.ok(laterPlacement.previewWeek >= "2026-08-10");
   const tiny=planCalendar2Horizon([series(3,"2026-08-14",1276)],"2026-08-10",1,[emp],matrix);
-  assert.equal(tiny.unplanned[0]?.reason,"no_capacity_in_horizon");
-  assert.ok((tiny.unplanned[0]?.remainingMinutes ?? 0)>0);
-  assert.ok((tiny.unplanned[0]?.remainingTaskIds?.length ?? 0)>0);
+  assert.equal(tiny.unplanned.length,0);
+  assert.equal(tiny.outOfHorizon.length,1);
 });
 
 test("multiday planning er deterministisk og bevarer medarbejderen", () => {
