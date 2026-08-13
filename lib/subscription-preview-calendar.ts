@@ -165,10 +165,20 @@ export async function getCalendar2HorizonAudit(horizonWeeks = 26) {
       previewStartWeek: series.previewStartWeek,
       reason: series.reason,
     })),
+    rejected: data.horizonPlan.unplanned.map((item) => ({
+      subscriptionNo: subscriptionNoByJob.get(item.job.id) ?? null,
+      sourceWeek: item.sourceWeek,
+      reason: item.reason,
+      durationMin: item.job.durationMin,
+      sourceTaskId: item.job.previewSegment?.sourceTaskId ?? null,
+      remainingMinutes: item.remainingMinutes ?? null,
+      remainingTaskIds: item.remainingTaskIds ?? [],
+    })),
     weeks: data.horizonPlan.weeks.map(({ weekMonday, plan }) => ({
       weekMonday,
       planned: plan.days.flatMap((day) => day.stops.map((stop) => ({
         subscriptionNo: subscriptionNoByJob.get(stop.job.id) ?? null,
+        sourceWeek: data.placementByJob.get(stop.job.id)?.sourceWeek ?? null,
         employeeId: day.employeeId,
         weekday: day.weekday,
         startMin: stop.startMin,

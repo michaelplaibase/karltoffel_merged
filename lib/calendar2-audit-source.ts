@@ -9,8 +9,12 @@ export async function getCalendar2AuditSource() {
     prisma.subscription.findMany({
       where: { active: true },
       select: {
-        id: true, displayNo: true, fixedWeekdays: true, fixedEmployee: true, active: true,
-        tasks: { select: { id: true, durationMin: true }, orderBy: { sort: "asc" } },
+        id: true, displayNo: true, baseInterval: true, startWeek: true,
+        fixedWeekdays: true, fixedEmployee: true, active: true,
+        tasks: { select: {
+          id: true, durationMin: true, intervalMultiplier: true, startWeek: true,
+          pauseActive: true, pauseStart: true, pauseEnd: true, pauseYearly: true,
+        }, orderBy: { sort: "asc" } },
       },
       orderBy: { id: "asc" },
     }),
@@ -32,11 +36,17 @@ export async function getCalendar2AuditSource() {
         subscriptionId: subscription.id,
         subscriptionNo: subscription.displayNo,
         active: subscription.active,
+        baseInterval: subscription.baseInterval,
+        startWeek: subscription.startWeek,
         fixedWeekdays: parseFixedWeekdays(subscription.fixedWeekdays),
         fixedEmployeeIdentity: noEmployee ? null : fixedEmployeeId == null ? "unresolved" : `employee:${fixedEmployeeId}`,
         fixedEmployeeId,
         fixedEmployeeResolution: noEmployee ? "none" : fixedEmployeeId == null ? "unresolved" : "resolved",
-        tasks: subscription.tasks.map((task) => ({ stableRef: `task:${task.id}`, taskId: task.id, durationMin: task.durationMin })),
+        tasks: subscription.tasks.map((task) => ({
+          stableRef: `task:${task.id}`, taskId: task.id, durationMin: task.durationMin,
+          intervalMultiplier: task.intervalMultiplier, startWeek: task.startWeek,
+          pauseActive: task.pauseActive, pauseStart: task.pauseStart, pauseEnd: task.pauseEnd, pauseYearly: task.pauseYearly,
+        })),
       };
     }),
     employees: users.map((user) => ({

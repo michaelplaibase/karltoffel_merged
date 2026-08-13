@@ -132,8 +132,20 @@ test("uafhængig Kalender 2 source audit er auth-beskyttet GET-only og direkte f
   assert.match(route, /["']Cache-Control["']:\s*["']no-store/);
   assert.match(auditSource, /prisma\.subscription\.findMany/);
   assert.match(auditSource, /fixedWeekdays:\s*true/);
+  for (const field of ["baseInterval", "startWeek", "intervalMultiplier", "pauseActive", "pauseStart", "pauseEnd", "pauseYearly"]) {
+    assert.match(auditSource, new RegExp(`${field}:\\s*true`), `source audit mangler ${field}`);
+  }
   assert.doesNotMatch(auditSource, /getSubscriptionPreview|routeAudit|deliveryAddress|contact:/);
   assert.doesNotMatch(auditSource, /create|update|delete|upsert|transaction/);
+});
+
+test("horizon-audit binder segmenter og afvisninger til source occurrence og task", async () => {
+  const preview = await source("lib/subscription-preview-calendar.ts");
+  assert.match(preview, /sourceWeek:\s*data\.placementByJob\.get\(stop\.job\.id\)\?\.sourceWeek/);
+  assert.match(preview, /rejected:\s*data\.horizonPlan\.unplanned\.map/);
+  assert.match(preview, /sourceWeek:\s*item\.sourceWeek/);
+  assert.match(preview, /sourceTaskId:\s*item\.job\.previewSegment\?\.sourceTaskId/);
+  assert.match(preview, /remainingTaskIds:\s*item\.remainingTaskIds/);
 });
 
 test("route audit publicerer komplet privacy-safe matrixmapping og kanonisk binding", async () => {
