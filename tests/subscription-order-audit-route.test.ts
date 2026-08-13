@@ -27,5 +27,7 @@ test("audit reads authoritative subscriptions and future orders without writes",
   assert.match(audit, /customerPresenceRequired/);
   assert.match(audit, /isStandardTask/);
   assert.match(audit, /fixedPriceId/);
-  assert.doesNotMatch(audit, /\.(create|update|delete|upsert|executeRaw|transaction)\(/);
+  assert.match(audit, /createHash/);
+  assert.match(audit, /snapshotHash/);
+  assert.doesNotMatch(audit, /prisma(?:\.[A-Za-z]+)?\.(create|update|delete|upsert|executeRaw|transaction)\(/);
 });

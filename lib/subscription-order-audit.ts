@@ -1,4 +1,5 @@
 import { prisma } from "./db";
+import { createHash } from "node:crypto";
 
 function mondayOf(date: Date): Date {
   const weekday = (date.getUTCDay() + 6) % 7;
@@ -63,9 +64,8 @@ export async function getSubscriptionOrderAudit(referenceDate = new Date(), hori
     }),
   ]);
 
-  return {
+  const snapshot = {
     version: "subscription-order-audit-v1",
-    generatedAt: new Date().toISOString(),
     range: { from: from.toISOString(), through: through.toISOString(), horizonWeeks },
     counts: { subscriptions: subscriptions.length, orders: orders.length, skips: skips.length },
     subscriptions,
@@ -74,4 +74,6 @@ export async function getSubscriptionOrderAudit(referenceDate = new Date(), hori
     holidays,
     users: users.map((user) => ({ ...user, name: `${user.firstName} ${user.lastName}` })),
   };
+  const snapshotHash = createHash("sha256").update(JSON.stringify(snapshot)).digest("hex");
+  return { ...snapshot, generatedAt: new Date().toISOString(), snapshotHash };
 }
