@@ -22,6 +22,58 @@ const matrix = (addresses: string[], durations: number[][]): TravelMatrix => ({
   addresses, durations, provider: "test-matrix", capturedAt: "2026-08-12T00:00:00.000Z",
 });
 
+test("isolated matrix geocoder danske adresser parallelt med request-local dedupe", async () => {
+  let active = 0; let maxActive = 0; let dawaCalls = 0;
+  const routing = createCalendar2Routing({
+    fetcher: async (input) => {
+      const url = new URL(String(input));
+      if (url.hostname === "api.dataforsyningen.dk") {
+        active++; maxActive = Math.max(maxActive, active); dawaCalls++;
+        await new Promise((resolve) => setTimeout(resolve, 10)); active--;
+        const q = url.searchParams.get("q") ?? "";
+        const house = q.match(/ (\d+),/)?.[1] ?? "1";
+        return new Response(JSON.stringify([{ vejnavn: "Testvej", husnr: house, postnr: "8700", postnrnavn: "Horsens", x: 9.8 + Number(house) / 100, y: 55.8 }]));
+      }
+      return new Response(JSON.stringify({ code: "Ok", durations: [[0,60,60],[60,0,60],[60,60,0]] }));
+    }, sleep: async () => {}, now: () => 1, geocodeConcurrency: 2,
+  });
+  await routing.buildIsolatedMatrix([["Testvej 1, 8700 Horsens", "Testvej 2, 8700 Horsens", "Testvej 1, 8700 Horsens"]]);
+  assert.equal(dawaCalls, 2);
+  assert.equal(maxActive, 2);
+});
+
+test("isolated matrix bevarer adresseorden og isolerer ét fejlet geocode under bounded concurrency", async () => {
+  let active = 0; let maxActive = 0;
+  const routing = createCalendar2Routing({
+    geocodeConcurrency: 2,
+    fetcher: async (input) => {
+      const url = new URL(String(input));
+      if (url.hostname === "api.dataforsyningen.dk") {
+        active++; maxActive = Math.max(maxActive, active);
+        const q = url.searchParams.get("q") ?? "";
+        await new Promise((resolve) => setTimeout(resolve, q.includes(" 1,") ? 15 : 2));
+        active--;
+        if (q.includes("Fejlvej")) throw new Error("isolated failure");
+        const house = q.match(/ (\d+),/)?.[1] ?? "1";
+        return new Response(JSON.stringify([{ vejnavn: "Testvej", husnr: house, postnr: "8700", postnrnavn: "Horsens", x: 9.8 + Number(house) / 100, y: 55.8 }]));
+      }
+      const points = url.pathname.split("/").at(-1)?.split(";").length ?? 0;
+      return new Response(JSON.stringify({ code: "Ok", durations: Array.from({ length: points }, (_, row) => Array.from({ length: points }, (_, col) => row === col ? 0 : 60)) }));
+    }, sleep: async () => {}, now: () => 1,
+  });
+  const result = await routing.buildIsolatedMatrix([
+    ["Testvej 1, 8700 Horsens", "Testvej 2, 8700 Horsens"],
+    ["Fejlvej 9, 8700 Horsens", "Testvej 3, 8700 Horsens"],
+  ]);
+  assert.equal(maxActive, 2);
+  assert.deepEqual(result.geocodes.map((item) => item.normalizedAddress), [
+    "Testvej 1, 8700 Horsens", "Testvej 2, 8700 Horsens", "Fejlvej 9, 8700 Horsens", "Testvej 3, 8700 Horsens",
+  ]);
+  assert.deepEqual(result.matrix?.addresses, ["Testvej 1, 8700 Horsens", "Testvej 2, 8700 Horsens", "Testvej 3, 8700 Horsens"]);
+  assert.equal(result.geocodes[2].status, "unverified_address");
+  assert.equal(result.matrix?.durations[0][1], 1);
+});
+
 test("danske adresser bruger hurtig DAWA først, skelner samme postnummer og cacher deduplikeret", async () => {
   const calls: string[] = [];
   const fetcher: typeof fetch = async (input) => {

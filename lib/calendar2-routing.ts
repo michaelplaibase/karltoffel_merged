@@ -43,7 +43,7 @@ export type Calendar2HorizonResult = {
 
 export type Calendar2HorizonOptions = { blockedWeeks?: ReadonlySet<string> };
 
-type RoutingOptions = { fetcher?: typeof fetch; sleep?: (ms: number) => Promise<void>; now?: () => number; timeoutMs?: number };
+type RoutingOptions = { fetcher?: typeof fetch; sleep?: (ms: number) => Promise<void>; now?: () => number; timeoutMs?: number; geocodeConcurrency?: number };
 const USER_AGENT = "Karltoffel-Calendar2-RoutePlanner/1.0 (+https://crm.karltoffel.dk; operations@karltoffel.dk)";
 export const normalizeDanishAddress = (address: string) => address.trim().replace(/^[.,;:\s]+/, "").replace(/\bSkt\./gi, "Sankt").replace(/\bG\.(?=\s|\d)/gi, "Gade").replace(/\s+/g, " ");
 const normalized = normalizeDanishAddress;
@@ -86,6 +86,7 @@ export function createCalendar2Routing(options: RoutingOptions = {}) {
   const sleep = options.sleep ?? ((ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms)));
   const now = options.now ?? Date.now;
   const timeoutMs = options.timeoutMs ?? 8_000;
+  const geocodeConcurrency = Math.max(1, Math.min(8, Math.floor(options.geocodeConcurrency ?? 3)));
   const geocodeCache = new Map<string, Promise<GeocodeResult>>();
   const matrixCache = new Map<string, Promise<{ matrix: TravelMatrix | null; geocodes: GeocodeResult[] }>>();
   let lastGeocodeAt = -Infinity;
@@ -205,8 +206,14 @@ export function createCalendar2Routing(options: RoutingOptions = {}) {
 
   const buildIsolatedMatrix = async (groups: string[][], rawAddresses = groups.flat()) => {
     const addresses = [...new Set(rawAddresses.map(normalized))];
-    const geocodes: GeocodeResult[] = [];
-    for (const address of addresses) geocodes.push(await geocode(address));
+    const geocodes = new Array<GeocodeResult>(addresses.length);
+    let nextAddress = 0;
+    await Promise.all(Array.from({ length: Math.min(geocodeConcurrency, addresses.length) }, async () => {
+      while (nextAddress < addresses.length) {
+        const index = nextAddress++;
+        geocodes[index] = await geocode(addresses[index]);
+      }
+    }));
     const verifiedAddresses = geocodes.filter((result) => result.status === "verified").map((result) => result.normalizedAddress);
     if (!verifiedAddresses.length) return { matrix: null, geocodes };
     const durations = Array.from({ length: verifiedAddresses.length }, (_, row) => Array.from({ length: verifiedAddresses.length }, (_, col) => row === col ? 0 : Number.POSITIVE_INFINITY));
