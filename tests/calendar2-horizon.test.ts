@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import {
+  calendar2RejectedTasks,
   planCalendar2Horizon,
   type Calendar2Employee,
   type Calendar2Job,
@@ -122,4 +123,30 @@ test("phase shift uden for præcis 26 positioner rapporteres, ikke tabes eller d
   const result = planCalendar2Horizon(input, "2026-08-10", 26, [employee()], matrixFor(input));
   assert.equal(result.placements.filter((item) => item.seriesId === 1).length, 1);
   assert.deepEqual(result.outOfHorizon.map((item) => [item.seriesId, item.sourceWeek, item.previewWeek]), [[1, last, "2027-02-08"]]);
+});
+
+test("source-afvisning publicerer alle ægte task-identiteter med effektiv 60-minutters standard", () => {
+  const sourceJob = job(900, {
+    address: "Ukendt",
+    durationMin: 180,
+    sourceTasks: [{ id: "task-a", durationMin: 120 }, { id: "task-b", durationMin: 0 }],
+  });
+  assert.deepEqual(calendar2RejectedTasks(sourceJob), [
+    { sourceTaskId: "task-a", effectiveMinutes: 120 },
+    { sourceTaskId: "task-b", effectiveMinutes: 60 },
+  ]);
+  const result = planCalendar2Horizon([{ seriesId: 9, sourceStartWeek: "2026-08-10", occurrences: [{ sourceWeek: "2026-08-10", job: sourceJob }] }], "2026-08-10", 1, [employee()], matrix(["Hjem"]));
+  assert.equal(result.unplanned[0].reason, "unverified_address");
+  assert.deepEqual(result.unplanned[0].rejectedTasks, calendar2RejectedTasks(sourceJob));
+});
+
+test("horizon-rest publicerer kun resterende task-minutter uden opfundne ID'er", () => {
+  const sourceJob = job(901, {
+    durationMin: 600,
+    sourceTasks: [{ id: "task-long", durationMin: 600 }],
+  });
+  const result = planCalendar2Horizon([{ seriesId: 10, sourceStartWeek: "2026-08-10", occurrences: [{ sourceWeek: "2026-08-10", job: sourceJob }] }], "2026-08-10", 1, [employee({ workdays: [0] })], matrix(["Hjem", "A901"]));
+  assert.equal(result.unplanned[0].reason, "no_capacity_in_horizon");
+  assert.deepEqual(result.unplanned[0].rejectedTasks, [{ sourceTaskId: "task-long", effectiveMinutes: 120 }]);
+  assert.equal(result.unplanned[0].remainingMinutes, 120);
 });

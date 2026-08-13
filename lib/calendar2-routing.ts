@@ -38,7 +38,7 @@ export type Calendar2HorizonResult = {
   placements: { seriesId: number; sourceWeek: string; previewWeek: string; jobId: number }[];
   outOfHorizon: { seriesId: number; sourceWeek: string; previewWeek: string; jobId: number }[];
   seriesAudit: { seriesId: number; sourceStartWeek: string; previewStartWeek: string | null; reason: Calendar2SeriesReason }[];
-  unplanned: { seriesId: number; sourceWeek: string; job: Calendar2Job; reason: Calendar2UnplannedReason | "no_capacity_in_horizon"; remainingMinutes?: number; remainingTaskIds?: string[] }[];
+  unplanned: { seriesId: number; sourceWeek: string; job: Calendar2Job; reason: Calendar2UnplannedReason | "no_capacity_in_horizon"; rejectedTasks: { sourceTaskId: string; effectiveMinutes: number }[]; remainingMinutes?: number; remainingTaskIds?: string[] }[];
 };
 
 export type Calendar2HorizonOptions = { blockedWeeks?: ReadonlySet<string> };
@@ -354,6 +354,15 @@ const effectiveTasks = (job: Calendar2Job) => (job.sourceTasks?.length
   ? job.sourceTasks.map((task) => ({ id: task.id, minutes: task.durationMin && task.durationMin > 0 ? task.durationMin : 60 }))
   : [{ id: `job:${job.id}`, minutes: job.durationMin > 0 ? job.durationMin : 60 }]);
 
+export const calendar2RejectedTasks = (job: Calendar2Job) => (job.sourceTasks ?? [])
+  .map((task) => ({ sourceTaskId: task.id, effectiveMinutes: task.durationMin && task.durationMin > 0 ? task.durationMin : 60 }));
+
+const rejectedSegmentTasks = (segments: Calendar2Job[]) => [...segments.reduce((tasks, segment) => {
+  const taskId = segment.previewSegment?.sourceTaskId;
+  if (taskId) tasks.set(taskId, (tasks.get(taskId) ?? 0) + segment.durationMin);
+  return tasks;
+}, new Map<string, number>())].map(([sourceTaskId, effectiveMinutes]) => ({ sourceTaskId, effectiveMinutes }));
+
 function previewSegments(job: Calendar2Job, sourceWeek: string, employee: Calendar2Employee, matrix: TravelMatrix): Calendar2Job[] {
   const index = new Map(matrix.addresses.map((address, position) => [normalized(address), position]));
   const home = employee.homeAddress ? index.get(normalized(employee.homeAddress)) : undefined;
@@ -408,7 +417,7 @@ export function planCalendar2Horizon(
       const dataError = validation?.unplanned[0]?.reason;
       if (dataError && dataError !== "overflow") {
         seriesAudit.push({ seriesId: series.seriesId, sourceStartWeek: series.sourceStartWeek, previewStartWeek: null, reason: dataError });
-        for (const occurrence of occurrences) unplanned.push({ seriesId: series.seriesId, sourceWeek: occurrence.sourceWeek, job: occurrence.job, reason: dataError });
+        for (const occurrence of occurrences) unplanned.push({ seriesId: series.seriesId, sourceWeek: occurrence.sourceWeek, job: occurrence.job, reason: dataError, rejectedTasks: calendar2RejectedTasks(occurrence.job) });
         continue;
       }
       let failed = false;
@@ -432,7 +441,7 @@ export function planCalendar2Horizon(
           }
           if (!placed) {
             const remaining = segments.slice(segmentIndex);
-            unplanned.push({ seriesId: series.seriesId, sourceWeek: occurrence.sourceWeek, job: occurrence.job, reason: "no_capacity_in_horizon", remainingMinutes: remaining.reduce((sum, item) => sum + item.durationMin, 0), remainingTaskIds: [...new Set(remaining.map((item) => item.previewSegment!.sourceTaskId))] });
+            unplanned.push({ seriesId: series.seriesId, sourceWeek: occurrence.sourceWeek, job: occurrence.job, reason: "no_capacity_in_horizon", rejectedTasks: rejectedSegmentTasks(remaining), remainingMinutes: remaining.reduce((sum, item) => sum + item.durationMin, 0), remainingTaskIds: [...new Set(remaining.map((item) => item.previewSegment!.sourceTaskId))] });
             failed = true; break;
           }
           reserved.get(placed.week)!.push(placed.job);
@@ -450,7 +459,7 @@ export function planCalendar2Horizon(
     const dataError = validation.unplanned[0]?.reason;
     if (dataError && dataError !== "overflow") {
       seriesAudit.push({ seriesId: series.seriesId, sourceStartWeek: series.sourceStartWeek, previewStartWeek: null, reason: dataError });
-      for (const occurrence of occurrences) unplanned.push({ seriesId: series.seriesId, sourceWeek: occurrence.sourceWeek, job: occurrence.job, reason: dataError });
+      for (const occurrence of occurrences) unplanned.push({ seriesId: series.seriesId, sourceWeek: occurrence.sourceWeek, job: occurrence.job, reason: dataError, rejectedTasks: calendar2RejectedTasks(occurrence.job) });
       continue;
     }
 
@@ -483,7 +492,7 @@ export function planCalendar2Horizon(
 
     if (!accepted) {
       seriesAudit.push({ seriesId: series.seriesId, sourceStartWeek: series.sourceStartWeek, previewStartWeek: null, reason: "no_capacity_in_horizon" });
-      for (const occurrence of occurrences) unplanned.push({ seriesId: series.seriesId, sourceWeek: occurrence.sourceWeek, job: occurrence.job, reason: "no_capacity_in_horizon" });
+      for (const occurrence of occurrences) unplanned.push({ seriesId: series.seriesId, sourceWeek: occurrence.sourceWeek, job: occurrence.job, reason: "no_capacity_in_horizon", rejectedTasks: calendar2RejectedTasks(occurrence.job) });
       continue;
     }
     for (const occurrence of occurrences) {

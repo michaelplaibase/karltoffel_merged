@@ -144,8 +144,25 @@ test("horizon-audit binder segmenter og afvisninger til source occurrence og tas
   assert.match(preview, /sourceWeek:\s*data\.placementByJob\.get\(stop\.job\.id\)\?\.sourceWeek/);
   assert.match(preview, /rejected:\s*data\.horizonPlan\.unplanned\.map/);
   assert.match(preview, /sourceWeek:\s*item\.sourceWeek/);
-  assert.match(preview, /sourceTaskId:\s*item\.job\.previewSegment\?\.sourceTaskId/);
+  assert.match(preview, /rejectedTasks:\s*item\.rejectedTasks/);
   assert.match(preview, /remainingTaskIds:\s*item\.remainingTaskIds/);
+});
+
+test("horizon-audit publicerer bounded privacy-safe matrixceller og indekser for hvert ben", async () => {
+  const preview = await source("lib/subscription-preview-calendar.ts");
+  for (const marker of ["matrixVersion", "matrixHash", "matrixProvider", "matrixCapturedAt", "matrixPoints", "matrixDurations", "durationRounding", "fromIndex", "toIndex"]) {
+    assert.match(preview, new RegExp(marker), `horizon audit mangler ${marker}`);
+  }
+  assert.match(preview, /durationRounding:\s*"ceil-seconds-to-whole-minutes"/);
+  assert.match(preview, /fromIndex:\s*plan\.audit\.matrixAddresses\.indexOf\(leg\.from\)/);
+  assert.match(preview, /toIndex:\s*plan\.audit\.matrixAddresses\.indexOf\(leg\.to\)/);
+  assert.doesNotMatch(preview, /matrixAddresses\s*:/);
+});
+
+test("horizon-audit publicerer rejectedTasks med task-ID og effektive minutter uden null-identitet", async () => {
+  const preview = await source("lib/subscription-preview-calendar.ts");
+  assert.match(preview, /rejectedTasks:\s*item\.rejectedTasks/);
+  assert.doesNotMatch(preview, /sourceTaskId:\s*item\.job\.previewSegment\?\.sourceTaskId\s*\?\?\s*null/);
 });
 
 test("route audit publicerer komplet privacy-safe matrixmapping og kanonisk binding", async () => {

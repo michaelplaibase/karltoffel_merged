@@ -150,10 +150,19 @@ export async function getCalendar2HorizonAudit(horizonWeeks = 26) {
   const boundedWeeks = Number.isInteger(horizonWeeks) ? Math.min(26, Math.max(1, horizonWeeks)) : 26;
   const data = await buildPreviewWeek(ymd(mondayOf(new Date())), boundedWeeks);
   const subscriptionNoByJob = new Map(data.visits.map((visit) => [previewId(visit), visit.subscriptionNo]));
+  const auditMatrixPoints = data.matrixPoints.map((point) => ({ ...point, lat: Number(point.lat.toFixed(5)), lon: Number(point.lon.toFixed(5)) }));
   return {
     version: "calendar2-horizon-audit-v1",
     range: { from: data.horizonPlan.weeks[0]?.weekMonday ?? ymd(mondayOf(new Date())), weeks: boundedWeeks },
-    matrix: { provider: data.horizonPlan.weeks[0]?.plan.audit.matrixProvider ?? "none", pointCount: data.matrixPoints.length },
+    matrix: {
+      matrixVersion: "calendar2-route-audit-v1",
+      matrixHash: calendar2MatrixAuditHash({ version: "calendar2-route-audit-v1", provider: data.plan.audit.matrixProvider, matrixPoints: auditMatrixPoints, matrixDurations: data.plan.audit.matrixDurations, timestamp: data.plan.audit.matrixCapturedAt }),
+      matrixProvider: data.plan.audit.matrixProvider,
+      matrixCapturedAt: data.plan.audit.matrixCapturedAt,
+      durationRounding: "ceil-seconds-to-whole-minutes",
+      matrixPoints: auditMatrixPoints,
+      matrixDurations: data.plan.audit.matrixDurations,
+    },
     placements: data.horizonPlan.placements.map((placement) => ({
       subscriptionNo: subscriptionNoByJob.get(placement.jobId) ?? null,
       sourceWeek: placement.sourceWeek,
@@ -170,7 +179,7 @@ export async function getCalendar2HorizonAudit(horizonWeeks = 26) {
       sourceWeek: item.sourceWeek,
       reason: item.reason,
       durationMin: item.job.durationMin,
-      sourceTaskId: item.job.previewSegment?.sourceTaskId ?? null,
+      rejectedTasks: item.rejectedTasks,
       remainingMinutes: item.remainingMinutes ?? null,
       remainingTaskIds: item.remainingTaskIds ?? [],
     })),
@@ -190,7 +199,7 @@ export async function getCalendar2HorizonAudit(horizonWeeks = 26) {
         segmentMinutes: stop.audit.segmentMinutes ?? stop.job.durationMin,
       }))),
       unplanned: plan.unplanned.map(({ job, reason }) => ({ subscriptionNo: subscriptionNoByJob.get(job.id) ?? null, reason, durationMin: job.durationMin })),
-      routes: plan.days.map((day) => ({ employeeId: day.employeeId, weekday: day.weekday, driveMin: day.driveMin, serviceMin: day.serviceMin, returnHomeMin: day.returnHomeMin, travelLegs: day.travelLegs.map((leg) => ({ minutes: leg.minutes, kind: leg.kind })) })),
+      routes: plan.days.map((day) => ({ employeeId: day.employeeId, weekday: day.weekday, driveMin: day.driveMin, serviceMin: day.serviceMin, returnHomeMin: day.returnHomeMin, travelLegs: day.travelLegs.map((leg) => ({ fromIndex: plan.audit.matrixAddresses.indexOf(leg.from), toIndex: plan.audit.matrixAddresses.indexOf(leg.to), minutes: leg.minutes, kind: leg.kind })) })),
     })),
   };
 }
