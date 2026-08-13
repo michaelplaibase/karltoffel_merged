@@ -22,13 +22,14 @@ const matrix = (addresses: string[], durations: number[][]): TravelMatrix => ({
   addresses, durations, provider: "test-matrix", capturedAt: "2026-08-12T00:00:00.000Z",
 });
 
-test("geocoder bruger fuld adresse, skelner samme postnummer og cacher deduplikeret", async () => {
+test("danske adresser bruger hurtig DAWA først, skelner samme postnummer og cacher deduplikeret", async () => {
   const calls: string[] = [];
   const fetcher: typeof fetch = async (input) => {
-    const url = new URL(String(input)); calls.push(url.searchParams.get("q") ?? "");
+    const url = new URL(String(input)); calls.push(url.toString());
     const q = url.searchParams.get("q") ?? "";
-    const lat = q.includes("Gade 1") ? "55.1" : "55.2";
-    return new Response(JSON.stringify([{ lat, lon: "9.9", display_name: q }]), { status: 200 });
+    const house = q.includes("Gade 1") ? "1" : "2";
+    const lat = q.includes("Gade 1") ? 55.1 : 55.2;
+    return new Response(JSON.stringify([{ vejnavn: "Gade", husnr: house, postnr: "8700", postnrnavn: "Horsens", x: 9.9, y: lat }]), { status: 200 });
   };
   const routing = createCalendar2Routing({ fetcher, sleep: async () => {}, now: () => 1 });
   const a = await routing.geocode("Gade 1, 8700 Horsens");
@@ -37,7 +38,25 @@ test("geocoder bruger fuld adresse, skelner samme postnummer og cacher deduplike
   assert.notDeepEqual(a.coordinate, b.coordinate);
   assert.deepEqual(again.coordinate, a.coordinate);
   assert.equal(calls.length, 2);
-  assert.ok(calls.every((q) => q.includes("Danmark")));
+  assert.ok(calls.every((url) => url.includes("dataforsyningen")));
+  assert.equal(a.provider, "dawa");
+});
+
+test("DAWA-first geocoder undgår Nominatims globale sekund-rate-limit for danske adresser", async () => {
+  let slept = 0;
+  const routing = createCalendar2Routing({
+    fetcher: async (input) => {
+      const url = new URL(String(input));
+      assert.match(url.hostname, /dataforsyningen\.dk$/);
+      const q = url.searchParams.get("q") ?? "";
+      const house = q.includes(" 1,") ? "1" : "2";
+      return new Response(JSON.stringify([{ vejnavn: "Testvej", husnr: house, postnr: "8700", postnrnavn: "Horsens", x: 9.8, y: 55.8 }]));
+    },
+    sleep: async (ms) => { slept += ms; }, now: () => 1,
+  });
+  assert.equal((await routing.geocode("Testvej 1, 8700 Horsens")).status, "verified");
+  assert.equal((await routing.geocode("Testvej 2, 8700 Horsens")).status, "verified");
+  assert.equal(slept, 0);
 });
 
 test("ukendt postnummer falder aldrig tilbage til Horsens og geocode-fejl er eksplicit", async () => {
@@ -55,7 +74,7 @@ test("geocoder retryer begrænset og cacher ikke en transient fejl permanent", a
     fetcher: async () => {
       calls++;
       if (calls <= 2) throw new Error("network");
-      return new Response(JSON.stringify([{ lat: "55.8", lon: "9.8" }]));
+      return new Response(JSON.stringify([{ vejnavn: "Fejlvej", husnr: "1", postnr: "8990", postnrnavn: "Fårup", x: 9.8, y: 55.8 }]));
     }, sleep: async () => {}, now: () => 1,
   });
   assert.equal((await routing.geocode("Fejlvej 1, 8990 Fårup")).status, "unverified_address");
@@ -63,12 +82,11 @@ test("geocoder retryer begrænset og cacher ikke en transient fejl permanent", a
   assert.equal(calls, 3);
 });
 
-test("dansk adresse normaliseres og DAWA fallback kræver samme postnummer og husnummer", async () => {
+test("dansk adresse normaliseres og DAWA kræver samme postnummer og husnummer", async () => {
   const calls: string[] = [];
   const routing = createCalendar2Routing({
     fetcher: async (input) => {
       const url = String(input); calls.push(url);
-      if (url.includes("nominatim")) return new Response("[]");
       return new Response(JSON.stringify([{ vejnavn: "Sankt Pauls Gade", husnr: "11", postnr: "8000", postnrnavn: "Aarhus C", x: 10.21, y: 56.15 }]));
     },
     sleep: async () => {}, now: () => 1,
@@ -81,9 +99,7 @@ test("dansk adresse normaliseres og DAWA fallback kræver samme postnummer og hu
   assert.equal(calls.filter((url) => url.includes("dataforsyningen")).length, 1);
 
   const mismatch = createCalendar2Routing({
-    fetcher: async (input) => String(input).includes("nominatim")
-      ? new Response("[]")
-      : new Response(JSON.stringify([{ vejnavn: "Sankt Pauls Gade", husnr: "12", postnr: "8000", postnrnavn: "Aarhus C", x: 10.21, y: 56.15 }])),
+    fetcher: async () => new Response(JSON.stringify([{ vejnavn: "Sankt Pauls Gade", husnr: "12", postnr: "8000", postnrnavn: "Aarhus C", x: 10.21, y: 56.15 }])),
     sleep: async () => {}, now: () => 1,
   });
   assert.equal((await mismatch.geocode("Skt. Pauls G. 11, 8000 Aarhus C")).status, "unverified_address");

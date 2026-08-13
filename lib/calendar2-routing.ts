@@ -90,7 +90,34 @@ export function createCalendar2Routing(options: RoutingOptions = {}) {
     const cached = geocodeCache.get(key);
     if (cached) return cached;
     const pending = (async (): Promise<GeocodeResult> => {
-      if (!address) return { status: "unverified_address", normalizedAddress: address, coordinate: null, provider: "nominatim" };
+      if (!address) return { status: "unverified_address", normalizedAddress: address, coordinate: null, provider: "dawa" };
+
+      // All CRM addresses are Danish. Resolve structured Danish addresses with
+      // DAWA first: it has no Nominatim-style global one-request-per-second
+      // throttle and verifies the exact house number + postcode. Nominatim is
+      // retained only for unstructured inputs that DAWA cannot identify.
+      const identity = addressIdentity(address);
+      if (identity) {
+        for (let attempt = 0; attempt < 2; attempt++) try {
+          const dawaUrl = new URL("https://api.dataforsyningen.dk/adresser");
+          dawaUrl.searchParams.set("q", address);
+          dawaUrl.searchParams.set("struktur", "mini");
+          dawaUrl.searchParams.set("per_side", "1");
+          const response = await fetcher(dawaUrl, { headers: { "User-Agent": USER_AGENT, Accept: "application/json" }, signal: AbortSignal.timeout(timeoutMs), cache: "no-store" });
+          if (!response.ok) throw new Error(`dawa_http_${response.status}`);
+          const dawa = await response.json() as Array<{ vejnavn?: string; husnr?: string; postnr?: string; postnrnavn?: string; x?: number; y?: number }>;
+          const hit = dawa[0];
+          const hitHouse = hit?.husnr?.toLocaleLowerCase("da-DK");
+          const lat = Number(hit?.y); const lon = Number(hit?.x);
+          if (hitHouse !== identity.house || hit?.postnr !== identity.postcode || !Number.isFinite(lat) || !Number.isFinite(lon) || lat < 54.4 || lat > 57.9 || lon < 7.5 || lon > 15.3) {
+            return { status: "unverified_address", normalizedAddress: address, coordinate: null, provider: "dawa" };
+          }
+          return { status: "verified", normalizedAddress: address, coordinate: [lat, lon], provider: "dawa" };
+        } catch {
+          if (attempt === 1) return { status: "unverified_address", normalizedAddress: address, coordinate: null, provider: "dawa" };
+        }
+      }
+
       for (let attempt = 0; attempt < 2; attempt++) try {
         const wait = Math.max(0, 1_000 - (now() - lastGeocodeAt));
         if (wait) await sleep(wait);
@@ -108,22 +135,7 @@ export function createCalendar2Routing(options: RoutingOptions = {}) {
         if (Number.isFinite(lat) && Number.isFinite(lon) && lat >= 54.4 && lat <= 57.9 && lon >= 7.5 && lon <= 15.3) {
           return { status: "verified", normalizedAddress: address, coordinate: [lat, lon], provider: "nominatim" };
         }
-        const identity = addressIdentity(address);
-        if (!identity) return { status: "unverified_address", normalizedAddress: address, coordinate: null, provider: "dawa" };
-        const dawaUrl = new URL("https://api.dataforsyningen.dk/adresser");
-        dawaUrl.searchParams.set("q", address);
-        dawaUrl.searchParams.set("struktur", "mini");
-        dawaUrl.searchParams.set("per_side", "1");
-        const dawaResponse = await fetcher(dawaUrl, { headers: { "User-Agent": USER_AGENT, Accept: "application/json" }, signal: AbortSignal.timeout(timeoutMs), cache: "no-store" });
-        if (!dawaResponse.ok) throw new Error(`dawa_http_${dawaResponse.status}`);
-        const dawa = await dawaResponse.json() as Array<{ vejnavn?: string; husnr?: string; postnr?: string; postnrnavn?: string; x?: number; y?: number }>;
-        const hit = dawa[0];
-        const hitHouse = hit?.husnr?.toLocaleLowerCase("da-DK");
-        const dawaLat = Number(hit?.y); const dawaLon = Number(hit?.x);
-        if (hitHouse !== identity.house || hit?.postnr !== identity.postcode || !Number.isFinite(dawaLat) || !Number.isFinite(dawaLon) || dawaLat < 54.4 || dawaLat > 57.9 || dawaLon < 7.5 || dawaLon > 15.3) {
-          return { status: "unverified_address", normalizedAddress: address, coordinate: null, provider: "dawa" };
-        }
-        return { status: "verified", normalizedAddress: address, coordinate: [dawaLat, dawaLon], provider: "dawa" };
+        return { status: "unverified_address", normalizedAddress: address, coordinate: null, provider: "nominatim" };
       } catch {
         if (attempt === 1) return { status: "unverified_address", normalizedAddress: address, coordinate: null, provider: "nominatim" };
       }
