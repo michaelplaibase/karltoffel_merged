@@ -10,13 +10,17 @@ export type Calendar2UnplannedReason = "unassigned" | "unverified_address" | "un
 export type Calendar2Job = {
   id: number; contactId: number; customer: string; address: string; postal: string; category: string;
   durationMin: number; source: string; fixedWeekdays?: number[]; fixedEmployeeId?: number;
+  /** Optional source-task detail. Calendar2 keeps this read-only identity while
+   * a long visit is represented by several preview-only job segments. */
+  sourceTasks?: { id: string; durationMin: number | null }[];
+  previewSegment?: { sourceJobId: number; sourceTaskId: string; index: number; count: number; minutes: number; originalSourceWeek: string; reason: "multi_day_continuation" | "cascade_shift" };
 };
 export type Calendar2Employee = {
   id: number; name: string; homeAddress: string | null; workStartMin: number; workEndMin: number;
   flexMin: number; workdays: number[];
 };
 export type TravelLeg = { from: string; to: string; minutes: number; kind: "home_to_stop" | "interstop" | "return_home" };
-export type Calendar2Stop = { job: Calendar2Job; startMin: number; endMin: number; driveMin: number; audit: { fixedWeekdays: number[] | null; matrixFromIndex: number; matrixToIndex: number; sourceWeekdayOverridden: boolean; overrideReason: "invalid_source_weekday_reassigned" | "capacity_overflow_rebalanced" | null } };
+export type Calendar2Stop = { job: Calendar2Job; startMin: number; endMin: number; driveMin: number; audit: { fixedWeekdays: number[] | null; matrixFromIndex: number; matrixToIndex: number; sourceWeekdayOverridden: boolean; overrideReason: "invalid_source_weekday_reassigned" | "capacity_overflow_rebalanced" | null; sourceJobId?: number; sourceTaskId?: string; segmentIndex?: number; segmentCount?: number; segmentMinutes?: number; originalSourceWeek?: string; previewWeek?: string; cascadeReason?: "multi_day_continuation" | "cascade_shift" } };
 export type Calendar2Day = { employeeId: number; weekday: number; stops: Calendar2Stop[]; travelLegs: TravelLeg[]; driveMin: number; serviceMin: number; returnHomeMin: number };
 export type Calendar2Unplanned = { job: Calendar2Job; reason: Calendar2UnplannedReason };
 export type Calendar2Plan = {
@@ -34,8 +38,10 @@ export type Calendar2HorizonResult = {
   placements: { seriesId: number; sourceWeek: string; previewWeek: string; jobId: number }[];
   outOfHorizon: { seriesId: number; sourceWeek: string; previewWeek: string; jobId: number }[];
   seriesAudit: { seriesId: number; sourceStartWeek: string; previewStartWeek: string | null; reason: Calendar2SeriesReason }[];
-  unplanned: { seriesId: number; sourceWeek: string; job: Calendar2Job; reason: Calendar2UnplannedReason | "no_capacity_in_horizon" }[];
+  unplanned: { seriesId: number; sourceWeek: string; job: Calendar2Job; reason: Calendar2UnplannedReason | "no_capacity_in_horizon"; remainingMinutes?: number; remainingTaskIds?: string[] }[];
 };
+
+export type Calendar2HorizonOptions = { blockedWeeks?: ReadonlySet<string> };
 
 type RoutingOptions = { fetcher?: typeof fetch; sleep?: (ms: number) => Promise<void>; now?: () => number; timeoutMs?: number };
 const USER_AGENT = "Karltoffel-Calendar2-RoutePlanner/1.0 (+https://crm.karltoffel.dk; operations@karltoffel.dk)";
@@ -236,7 +242,7 @@ export function planCalendar2Week(jobs: Calendar2Job[], weekMonday: string, empl
   reject((job) => !Number.isFinite(job.durationMin) || job.durationMin <= 0, "invalid_duration");
   reject((job) => {
     const employee = employeeById.get(job.fixedEmployeeId!);
-    return Boolean(employee) && job.durationMin > employee!.workEndMin + employee!.flexMin - employee!.workStartMin;
+    return Boolean(employee) && job.durationMin > employee!.workEndMin + employee!.flexMin - employee!.workStartMin && !job.previewSegment;
   }, "exceeds_daily_capacity");
   reject((job) => !matrixIndex.has(normalized(job.address)), "unverified_address");
   reject((job) => {
@@ -272,7 +278,8 @@ export function planCalendar2Week(jobs: Calendar2Job[], weekMonday: string, empl
         if (!best) break;
         const candidate = remaining.splice(best.remainingIndex, 1)[0];
         const startMin = cursor + best.drive;
-        stops.push({ job: candidate, startMin, endMin: startMin + candidate.durationMin, driveMin: best.drive, audit: { fixedWeekdays: candidate.fixedWeekdays ?? null, matrixFromIndex: current, matrixToIndex: best.matrixIndex, sourceWeekdayOverridden: invalidSourceWeekday.has(candidate.id), overrideReason: invalidSourceWeekday.has(candidate.id) ? "invalid_source_weekday_reassigned" : null } });
+        const segment = candidate.previewSegment;
+        stops.push({ job: candidate, startMin, endMin: startMin + candidate.durationMin, driveMin: best.drive, audit: { fixedWeekdays: candidate.fixedWeekdays ?? null, matrixFromIndex: current, matrixToIndex: best.matrixIndex, sourceWeekdayOverridden: invalidSourceWeekday.has(candidate.id), overrideReason: invalidSourceWeekday.has(candidate.id) ? "invalid_source_weekday_reassigned" : null, ...(segment ? { sourceJobId: segment.sourceJobId, sourceTaskId: segment.sourceTaskId, segmentIndex: segment.index, segmentCount: segment.count, segmentMinutes: segment.minutes, originalSourceWeek: segment.originalSourceWeek, previewWeek: weekMonday, cascadeReason: segment.reason } : {}) } });
         travelLegs.push({ from: matrix.addresses[current], to: matrix.addresses[best.matrixIndex], minutes: best.drive, kind: current === home && stops.length === 1 ? "home_to_stop" : "interstop" });
         cursor = startMin + candidate.durationMin;
         current = best.matrixIndex;
@@ -286,7 +293,7 @@ export function planCalendar2Week(jobs: Calendar2Job[], weekMonday: string, empl
   }
   for (let remainingIndex = remaining.length - 1; remainingIndex >= 0; remainingIndex--) {
     const job = remaining[remainingIndex];
-    if (!job.fixedWeekdays?.length) continue;
+    if (!job.fixedWeekdays?.length || job.previewSegment) continue;
     const employee = employeeById.get(job.fixedEmployeeId!);
     const home = employee?.homeAddress ? matrixIndex.get(normalized(employee.homeAddress)) : undefined;
     const destination = matrixIndex.get(normalized(job.address));
@@ -336,11 +343,35 @@ export function planCalendar2Week(jobs: Calendar2Job[], weekMonday: string, empl
 const weekTime = (week: string) => new Date(`${week}T00:00:00Z`).getTime();
 const weekAt = (start: string, offset: number) => new Date(weekTime(start) + offset * 7 * 864e5).toISOString().slice(0, 10);
 
+const effectiveTasks = (job: Calendar2Job) => (job.sourceTasks?.length
+  ? job.sourceTasks.map((task) => ({ id: task.id, minutes: task.durationMin && task.durationMin > 0 ? task.durationMin : 60 }))
+  : [{ id: `job:${job.id}`, minutes: job.durationMin > 0 ? job.durationMin : 60 }]);
+
+function previewSegments(job: Calendar2Job, sourceWeek: string, employee: Calendar2Employee, matrix: TravelMatrix): Calendar2Job[] {
+  const index = new Map(matrix.addresses.map((address, position) => [normalized(address), position]));
+  const home = employee.homeAddress ? index.get(normalized(employee.homeAddress)) : undefined;
+  const destination = index.get(normalized(job.address));
+  const roundTrip = home == null || destination == null ? 0 : matrix.durations[home][destination] + matrix.durations[destination][home];
+  const hardEnd = Math.min(employee.workEndMin + employee.flexMin, 17 * 60);
+  const serviceCapacity = Math.max(1, Math.min(540, hardEnd - employee.workStartMin - roundTrip));
+  const chunks = effectiveTasks(job).flatMap((task) => {
+    const result: { taskId: string; minutes: number }[] = [];
+    for (let remaining = task.minutes; remaining > 0;) {
+      const minutes = Math.min(serviceCapacity, remaining);
+      result.push({ taskId: task.id, minutes }); remaining -= minutes;
+    }
+    return result;
+  });
+  return chunks.map((chunk, position) => ({ ...job, durationMin: chunk.minutes, fixedWeekdays: position === 0 ? job.fixedWeekdays : undefined,
+    previewSegment: { sourceJobId: job.id, sourceTaskId: chunk.taskId, index: position + 1, count: chunks.length, minutes: chunk.minutes,
+      originalSourceWeek: sourceWeek, reason: position === 0 ? "cascade_shift" : "multi_day_continuation" } }));
+}
+
 /** Plans the complete read-only preview in one deterministic pass. Earlier
  * accepted series remain reservations when later series are evaluated. */
 export function planCalendar2Horizon(
   inputSeries: readonly Calendar2Series[], horizonStartWeek: string, horizonWeeks: number,
-  employees: Calendar2Employee[], matrix: TravelMatrix,
+  employees: Calendar2Employee[], matrix: TravelMatrix, options: Calendar2HorizonOptions = {},
 ): Calendar2HorizonResult {
   const count = Math.max(0, horizonWeeks);
   const horizon = Array.from({ length: count }, (_, index) => weekAt(horizonStartWeek, index));
@@ -359,6 +390,55 @@ export function planCalendar2Horizon(
       seriesAudit.push({ seriesId: series.seriesId, sourceStartWeek: series.sourceStartWeek, previewStartWeek: null, reason: "no_capacity_in_horizon" });
       continue;
     }
+    const firstEmployee = employees.find((employee) => employee.id === first.job.fixedEmployeeId);
+    const needsCascade = Boolean(firstEmployee) && occurrences.some(({ job }) => {
+      const total = effectiveTasks(job).reduce((sum, task) => sum + task.minutes, 0);
+      return Boolean(job.sourceTasks?.length) || total > Math.min(540, Math.min(firstEmployee!.workEndMin + firstEmployee!.flexMin, 17 * 60) - firstEmployee!.workStartMin);
+    });
+    if (needsCascade && firstEmployee) {
+      const validationSegment = previewSegments(first.job, first.sourceWeek, firstEmployee, matrix)[0];
+      const validation = validationSegment ? planCalendar2Week([validationSegment], first.sourceWeek, employees, matrix) : null;
+      const dataError = validation?.unplanned[0]?.reason;
+      if (dataError && dataError !== "overflow") {
+        seriesAudit.push({ seriesId: series.seriesId, sourceStartWeek: series.sourceStartWeek, previewStartWeek: null, reason: dataError });
+        for (const occurrence of occurrences) unplanned.push({ seriesId: series.seriesId, sourceWeek: occurrence.sourceWeek, job: occurrence.job, reason: dataError });
+        continue;
+      }
+      let failed = false;
+      let previewStartWeek: string | null = null;
+      for (const occurrence of occurrences) {
+        const segments = previewSegments(occurrence.job, occurrence.sourceWeek, firstEmployee, matrix);
+        let searchWeek = occurrence.sourceWeek < horizonStartWeek ? horizonStartWeek : occurrence.sourceWeek;
+        let afterWeekday = -1;
+        for (let segmentIndex = 0; segmentIndex < segments.length; segmentIndex++) {
+          let placed: { week: string; plan: Calendar2Plan; job: Calendar2Job; weekday: number } | null = null;
+          while (horizonSet.has(searchWeek)) {
+            if (options.blockedWeeks?.has(searchWeek)) { searchWeek = weekAt(searchWeek, 1); afterWeekday = -1; continue; }
+            const allowed = uniqueDays(firstEmployee.workdays).filter((day) => day >= afterWeekday);
+            if (!allowed.length) { searchWeek = weekAt(searchWeek, 1); afterWeekday = -1; continue; }
+            const segment = { ...segments[segmentIndex], fixedWeekdays: segmentIndex === 0 && segments[segmentIndex].fixedWeekdays?.length ? segments[segmentIndex].fixedWeekdays : allowed };
+            const combined = [...(reserved.get(searchWeek) ?? []), segment];
+            const plan = planCalendar2Week(combined, searchWeek, employees, matrix);
+            const hit = plan.days.flatMap((day) => day.stops.map((stop) => ({ day, stop }))).find(({ stop }) => stop.job.previewSegment?.sourceJobId === occurrence.job.id && stop.job.previewSegment.index === segmentIndex + 1);
+            if (hit) { placed = { week: searchWeek, plan, job: segment, weekday: hit.day.weekday }; break; }
+            searchWeek = weekAt(searchWeek, 1); afterWeekday = -1;
+          }
+          if (!placed) {
+            const remaining = segments.slice(segmentIndex);
+            unplanned.push({ seriesId: series.seriesId, sourceWeek: occurrence.sourceWeek, job: occurrence.job, reason: "no_capacity_in_horizon", remainingMinutes: remaining.reduce((sum, item) => sum + item.durationMin, 0), remainingTaskIds: [...new Set(remaining.map((item) => item.previewSegment!.sourceTaskId))] });
+            failed = true; break;
+          }
+          reserved.get(placed.week)!.push(placed.job);
+          plans.set(placed.week, placed.plan);
+          previewStartWeek ??= placed.week;
+          searchWeek = placed.week; afterWeekday = placed.weekday;
+        }
+        if (failed) break;
+        placements.push({ seriesId: series.seriesId, sourceWeek: occurrence.sourceWeek, previewWeek: searchWeek, jobId: occurrence.job.id });
+      }
+      seriesAudit.push({ seriesId: series.seriesId, sourceStartWeek: series.sourceStartWeek, previewStartWeek, reason: failed ? "no_capacity_in_horizon" : previewStartWeek !== series.sourceStartWeek ? "capacity_deferred_to_next_week" : null });
+      continue;
+    }
     const validation = planCalendar2Week([first.job], first.sourceWeek, employees, matrix);
     const dataError = validation.unplanned[0]?.reason;
     if (dataError && dataError !== "overflow") {
@@ -373,12 +453,15 @@ export function planCalendar2Horizon(
       const candidateByWeek = new Map<string, Calendar2Job[]>();
       for (const occurrence of occurrences) {
         const previewWeek = weekAt(occurrence.sourceWeek, shift);
-        if (!horizonSet.has(previewWeek)) continue;
+        if (!horizonSet.has(previewWeek) || options.blockedWeeks?.has(previewWeek)) continue;
         const jobs = candidateByWeek.get(previewWeek) ?? [];
         jobs.push(occurrence.job);
         candidateByWeek.set(previewWeek, jobs);
       }
-      if (!candidateByWeek.size) continue;
+      if (!candidateByWeek.size || occurrences.some((occurrence) => {
+        const previewWeek = weekAt(occurrence.sourceWeek, shift);
+        return horizonSet.has(previewWeek) && options.blockedWeeks?.has(previewWeek);
+      })) continue;
       const weekPlans = new Map<string, Calendar2Plan>();
       let feasible = true;
       for (const [week, candidates] of [...candidateByWeek].sort(([a], [b]) => a.localeCompare(b))) {

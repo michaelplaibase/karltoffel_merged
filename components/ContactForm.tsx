@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useActionState, useState } from "react";
 import type { ContactFormState } from "@/app/actions/contacts";
+import AddressFinder from "@/components/AddressFinder";
 
 export type ContactInitial = {
   isCompany: boolean; companyName: string; cvr: string; ean: string;
@@ -75,7 +76,7 @@ export default function ContactForm({
         </div>
         <div className="f2">
           <label>Adresse</label>
-          <input name="address" defaultValue={initial.address} className="form-control form-control-sm" placeholder="Vejnavn husnr., postnr. by" />
+          <AddressFinder name="address" initialValue={initial.address} />
         </div>
         <div className="f2">
           <label>Adressebemærkning</label>

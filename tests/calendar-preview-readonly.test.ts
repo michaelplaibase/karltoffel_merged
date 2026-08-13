@@ -101,6 +101,18 @@ test("Kalender 2 bruger kun den additive matrixplanner og ændrer ikke aktiv /ca
   assert.doesNotMatch(active, /calendar2-routing/);
 });
 
+test("segmenteret Calendar2-omsætning tæller sourcebesøgets pris præcis én gang", async () => {
+  const preview = await source("lib/subscription-preview-calendar.ts");
+  assert.match(preview, /segmentIndex\s*===\s*1/);
+  assert.doesNotMatch(preview, /for \(const day of data\.plan\.days\) for \(const stop of day\.stops\) revenue\[day\.weekday\] \+= data\.priceById\.get\(stop\.job\.id\) \?\? 0/);
+});
+
+test("Calendar2 segmentkort bruger en sammensat React-nøgle", async () => {
+  const component = await source("components/TeamCalendarClient.tsx");
+  assert.doesNotMatch(component, /<div key=\{ev\.id\} className={`ev/);
+  assert.match(component, /key=\{`\$\{ev\.id\}:/);
+});
+
 test("Kalender 2 output auditerer fixed weekdays, geocode, matrixben og eksplicitte reasons uden fulde adresser", async () => {
   const preview = await source("lib/subscription-preview-calendar.ts");
   for (const marker of ["fixedWeekdays", "geocodeStatus", "matrixDurations", "travelLegs", "unverified_address"]) {

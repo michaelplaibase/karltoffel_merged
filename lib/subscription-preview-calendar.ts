@@ -98,6 +98,7 @@ async function buildPreviewWeek(weekMonday: string) {
       postal: postalOf(visit.deliveryAddress),
       category: visit.tasks[0]?.category ?? "Andet",
       durationMin: visit.tasks.reduce((sum, task) => sum + task.durationMin, 0),
+      sourceTasks: visit.tasks.map((task) => ({ id: String(task.id), durationMin: task.durationMin })),
       source: `Abo. #${visit.subscriptionNo}`,
       fixedWeekdays: visit.fixedWeekdays,
       fixedEmployeeId: visit.fixedEmployeeId ?? undefined,
@@ -118,7 +119,11 @@ async function buildPreviewWeek(weekMonday: string) {
     current.occurrences.push({ sourceWeek: visit.week, job: jobs.find((candidate) => candidate.id === previewId(visit))! });
     seriesBySubscription.set(visit.subscriptionId, current);
   }
-  const horizonPlan = planCalendar2Horizon([...seriesBySubscription.values()], horizonStart, 26, source.plannerEmployees, matrix);
+  const blockedWeeks = new Set<string>();
+  for (const holiday of source.holidays) {
+    for (let week = mondayOf(holiday.startWeek); week <= mondayOf(holiday.endWeek); week = new Date(week.getTime() + WEEK_MS)) blockedWeeks.add(ymd(week));
+  }
+  const horizonPlan = planCalendar2Horizon([...seriesBySubscription.values()], horizonStart, 26, source.plannerEmployees, matrix, { blockedWeeks });
   const plan = horizonPlan.weeks.find((item) => item.weekMonday === weekMonday)?.plan
     ?? planCalendar2Horizon([], weekMonday, 1, source.plannerEmployees, matrix).weeks[0].plan;
   const placementByJob = new Map(horizonPlan.placements.map((placement) => [placement.jobId, placement]));
@@ -145,7 +150,9 @@ export async function getSubscriptionPreviewWeek(weekMonday: string): Promise<Ca
   const data = await buildPreviewWeek(weekMonday);
   const start = new Date(`${weekMonday}T00:00:00Z`);
   const revenue = Array<number>(7).fill(0);
-  for (const day of data.plan.days) for (const stop of day.stops) revenue[day.weekday] += data.priceById.get(stop.job.id) ?? 0;
+  for (const day of data.plan.days) for (const stop of day.stops) {
+    if (!stop.audit.segmentIndex || stop.audit.segmentIndex === 1) revenue[day.weekday] += data.priceById.get(stop.job.id) ?? 0;
+  }
   const days: WeekDay[] = Array.from({ length: 7 }, (_, index) => ({
     label: DA_DAYS[index],
     date: String(new Date(start.getTime() + index * 864e5).getUTCDate()),
@@ -164,7 +171,9 @@ export async function getSubscriptionPreviewWeek(weekMonday: string): Promise<Ca
       end: stop.endMin / 60,
       postal: stop.job.postal,
       customer: stop.job.customer,
-      category: stop.job.category,
+      category: stop.audit.segmentCount && stop.audit.segmentCount > 1
+        ? `${stop.job.category} · Del ${stop.audit.segmentIndex}/${stop.audit.segmentCount} · ${stop.audit.segmentMinutes} min.`
+        : stop.job.category,
       status: "afventer",
       type: "abonnement",
       lock: "frigjort",
@@ -172,7 +181,9 @@ export async function getSubscriptionPreviewWeek(weekMonday: string): Promise<Ca
       contactId: stop.job.contactId,
       subscriptionNo: visit.subscriptionNo,
       phone: visit.phone,
-      tasks: visit.tasks,
+      tasks: stop.audit.sourceTaskId
+        ? visit.tasks.filter((task) => String(task.id) === stop.audit.sourceTaskId).map((task) => ({ ...task, durationMin: stop.audit.segmentMinutes ?? task.durationMin }))
+        : visit.tasks,
       previewOverrideReason,
       sourceStartWeek: data.seriesAuditById.get(visit.subscriptionId)?.sourceStartWeek,
       previewStartWeek: data.seriesAuditById.get(visit.subscriptionId)?.previewStartWeek ?? undefined,

@@ -20,7 +20,8 @@ test("forslagstekst findes kun ved faktisk flyttet dag eller uge", () => {
 
 test("data-invalid uge33-serier bevares som synlige unplanned med eksakte reasons", () => {
   const result = planCalendar2Horizon([series(235828, 0), series(235865, 481)], "2026-08-10", 26, [employee], matrix);
-  assert.deepEqual(result.unplanned.map((item) => [item.seriesId, item.sourceWeek, item.reason]), [[235828, "2026-08-10", "invalid_duration"], [235865, "2026-08-10", "exceeds_daily_capacity"]]);
+  assert.deepEqual(result.unplanned.map((item) => [item.seriesId, item.sourceWeek, item.reason]), [[235828, "2026-08-10", "invalid_duration"]]);
+  assert.equal(result.placements.find((item) => item.seriesId === 235865)?.previewWeek, "2026-08-10");
 });
 
 test("canonical horizon giver samme previewfase uanset hvilken uge UI efterspørger", () => {

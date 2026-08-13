@@ -14,7 +14,8 @@
     "db:reset": "prisma migrate reset --force",
     "smoke:booking": "tsx scripts/booking-smoke.ts",
     "smoke:weekend": "tsx scripts/weekend-window-smoke.ts",
-    "smoke:slack": "tsx scripts/slack-lead-smoke.ts"
+    "smoke:slack": "tsx scripts/slack-lead-smoke.ts",
+    "smoke:calendar2-address": "tsx scripts/calendar2-real-address-smoke.ts"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"

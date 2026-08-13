@@ -38,6 +38,8 @@ const UNPLANNED_REASON_LABEL: Record<string, string> = {
   invalid_duration: "Besøget mangler gyldig varighed",
   exceeds_daily_capacity: "Besøget er længere end en arbejdsdag",
   no_capacity_in_horizon: "Ingen plads i de næste 26 uger",
+  multi_day_continuation: "Fortsætter næste lovlige arbejdsdag",
+  cascade_shift: "Flyttet af tidligere fortsættelse",
   holiday: "Ferielukket uge — skal flyttes",
 };
 
@@ -265,7 +267,7 @@ export default function TeamCalendarClient(props: Props) {
                       {evs.length > 0 ? (
                         <div className="stack">
                           {evs.map((ev) => (
-                            <div key={ev.id} className={`ev ${STATUS_CLASS[ev.status]}`} style={{ cursor: "pointer" }}
+                            <div key={`${ev.id}:${ev.day}:${ev.start}:${ev.end}`} className={`ev ${STATUS_CLASS[ev.status]}`} style={{ cursor: "pointer" }}
                               role={readOnly ? "button" : undefined}
                               tabIndex={readOnly ? 0 : undefined}
                               aria-label={readOnly ? `Åbn visningsmenu for ${ev.customer}` : undefined}

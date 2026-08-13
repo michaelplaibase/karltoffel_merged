@@ -92,7 +92,7 @@ test("datafejl prioriteres og maskeres ikke af kapacitetssøgning", () => {
     series(4, ["2026-08-10"], { address: "Ukendt" }),
   ];
   const result = planCalendar2Horizon(inputs, "2026-08-10", 26, [employee()], matrix(["Hjem", "A100", "A200", "A300"]));
-  assert.deepEqual(result.seriesAudit.map((item) => item.reason), ["unassigned", "invalid_duration", "exceeds_daily_capacity", "unverified_address"]);
+  assert.deepEqual(result.seriesAudit.map((item) => item.reason), ["unassigned", "invalid_duration", null, "unverified_address"]);
 });
 
 test("flere deferred serier deler reservationer deterministisk", () => {
