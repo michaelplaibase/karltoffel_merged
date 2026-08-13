@@ -175,7 +175,7 @@ export function projectSubscriptionVisits(
         .map(({ item }) => ({
           ...item,
           durationMin: effectiveCalendarTaskDuration(item.durationMin),
-          durationDefaulted: !(Number.isFinite(item.durationMin) && item.durationMin > 0),
+          durationDefaulted: item.durationMin == null || item.durationMin === 0,
         }));
       if (!due.length) continue;
 
