@@ -5,7 +5,8 @@
 import { prisma, isUniqueViolation } from "@/lib/db";
 import { guardAction } from "@/lib/api-auth";
 import { categoryColor } from "@/lib/categories";
-import { generateForSubscriptionId, generateAllSubscriptionOrders, regenerateFutureOrders } from "@/lib/recurrence";
+import { generateForSubscriptionId, generateAllSubscriptionOrders } from "@/lib/recurrence";
+import { reconcileEditedSubscriptionInTransaction } from "@/lib/subscription-order-consistency";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
@@ -178,9 +179,9 @@ export async function updateSubscription(pk: number, _prev: SubscriptionState, f
   if (!contact) return { error: "Kunden blev ikke fundet." };
   const nextWeek = p.lines.map((l) => l.nextWeek).find(Boolean) || p.startWeek || null;
 
-  await prisma.$transaction([
-    prisma.taskLine.deleteMany({ where: { subscriptionId: pk } }),
-    prisma.subscription.update({
+  await prisma.$transaction(async (tx) => {
+    await tx.taskLine.deleteMany({ where: { subscriptionId: pk } });
+    await tx.subscription.update({
       where: { id: pk },
       data: {
         contactId: p.contactId,
@@ -188,18 +189,15 @@ export async function updateSubscription(pk: number, _prev: SubscriptionState, f
         baseInterval: p.baseInterval, startWeek: p.startWeek || null, nextWeek,
         fixedEmployee: p.fixedEmployee, tasks: { create: taskCreate(p.lines) },
       },
-    }),
-  ]);
-
-  // propagate the edit to future (pending, unlocked) orders; fully-locked
-  // future orders (e.g. imported from WorkMaker) are never touched here —
-  // skippedLocked tells the edit page how many still carry the old schedule.
-  const { skippedLocked } = await regenerateFutureOrders(pk);
+    });
+    // Subscription edit + future-order propagation are one atomic commit.
+    // Fully locked imports are remediated; plannedAt/manual moves survive.
+    await reconcileEditedSubscriptionInTransaction(tx, pk);
+  });
   const sub = await prisma.subscription.findUnique({ where: { id: pk }, select: { displayNo: true, contactId: true } });
   revalidatePath("/subscriptions");
   revalidatePath("/orders");
   revalidatePath("/calendar");
   if (sub) revalidatePath(`/customers/${sub.contactId}`);
-  const query = skippedLocked > 0 ? `?skippedLocked=${skippedLocked}` : "";
-  redirect(`/subscriptions/${sub?.displayNo ?? ""}${query}`);
+  redirect(`/subscriptions/${sub?.displayNo ?? ""}`);
 }
