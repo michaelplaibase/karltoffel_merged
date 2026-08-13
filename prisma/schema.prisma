@@ -264,6 +264,19 @@ model SubscriptionWeekSkip {
   @@unique([subscriptionId, week])
 }
 
+model OrderReconciliationRun {
+  id              String    @id @default(uuid())
+  snapshotHash    String
+  planHash        String
+  status          String    @default("applied")
+  snapshot        String
+  plan            String
+  createdOrderIds String
+  createdAt       DateTime  @default(now())
+  appliedAt       DateTime  @default(now())
+  rolledBackAt    DateTime?
+}
+
 model DiscountCode {
   id         Int      @id @default(autoincrement())
   code       String

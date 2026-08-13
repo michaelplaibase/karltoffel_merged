@@ -1,4 +1,5 @@
 import { prisma } from "./db";
+import type { Prisma, PrismaClient } from "@prisma/client";
 import { createHash } from "node:crypto";
 
 function mondayOf(date: Date): Date {
@@ -6,11 +7,13 @@ function mondayOf(date: Date): Date {
   return new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()) - weekday * 864e5);
 }
 
-export async function getSubscriptionOrderAudit(referenceDate = new Date(), horizonWeeks = 26) {
+type AuditDb = PrismaClient | Prisma.TransactionClient;
+
+export async function getSubscriptionOrderAudit(referenceDate = new Date(), horizonWeeks = 26, db: AuditDb = prisma) {
   const from = mondayOf(referenceDate);
   const through = new Date(from.getTime() + Math.max(0, horizonWeeks) * 7 * 864e5);
   const [subscriptions, orders, skips, holidays, users] = await Promise.all([
-    prisma.subscription.findMany({
+    db.subscription.findMany({
       select: {
         id: true, displayNo: true, contactId: true, deliveryAddress: true, baseInterval: true,
         startWeek: true, nextWeek: true, fixedWeekdays: true, fixedTimeOfDay: true,
@@ -26,8 +29,14 @@ export async function getSubscriptionOrderAudit(referenceDate = new Date(), hori
       },
       orderBy: { id: "asc" },
     }),
-    prisma.order.findMany({
-      where: { sourceType: "subscription", plannedAt: { gte: from, lte: through } },
+    db.order.findMany({
+      where: {
+        sourceType: "subscription",
+        OR: [
+          { plannedAt: { gte: from, lt: through } },
+          { sourceWeek: { gte: from, lt: through } },
+        ],
+      },
       select: {
         id: true, contactId: true, deliveryAddress: true, plannedAt: true, startAt: true,
         status: true, sourceType: true, subscriptionId: true, employeeId: true,
@@ -50,15 +59,15 @@ export async function getSubscriptionOrderAudit(referenceDate = new Date(), hori
       },
       orderBy: [{ subscriptionId: "asc" }, { sourceWeek: "asc" }, { id: "asc" }],
     }),
-    prisma.subscriptionWeekSkip.findMany({
+    db.subscriptionWeekSkip.findMany({
       where: { week: { gte: from, lte: through } },
       select: { id: true, subscriptionId: true, week: true, createdAt: true },
       orderBy: [{ subscriptionId: "asc" }, { week: "asc" }],
     }),
-    prisma.holidayWeek.findMany({
+    db.holidayWeek.findMany({
       select: { id: true, startWeek: true, endWeek: true }, orderBy: { startWeek: "asc" },
     }),
-    prisma.user.findMany({
+    db.user.findMany({
       select: { id: true, firstName: true, lastName: true, active: true, activeCalendar: true },
       orderBy: { id: "asc" },
     }),
