@@ -193,23 +193,22 @@ export async function generateForSubscriptionId(id: number, ref: Date = new Date
 
 /**
  * Propagate a subscription edit to its future orders: delete the sub's orders in
- * NEXT week onward that are still pending and not locked (history, completed and
- * locked orders, and the current week's plan, are left untouched), then
+ * NEXT week onward that are still pending (history, completed orders, and the
+ * current week's plan are left untouched), then
  * regenerate from the updated template.
  *
- * Fully-locked future orders (lockedFully: true, e.g. imported from WorkMaker)
- * are intentionally never touched here — they're left as-is. `skippedLocked`
- * reports how many such orders exist in the future window so callers can warn
- * the user that they still carry the old schedule.
+ * Fully-locked future imports are included: the lock preserves manual calendar
+ * placement during normal use, but must not preserve a stale recurrence after
+ * the authoritative subscription has been edited.
  */
 export async function regenerateFutureOrders(
   id: number,
   ref: Date = new Date(),
   horizonWeeks = DEFAULT_HORIZON_WEEKS
-): Promise<{ generated: number; skippedLocked: number }> {
+): Promise<{ generated: number }> {
   const nextMonday = new Date(mondayOf(ref).getTime() + WEEK_MS);
   const stale = await prisma.order.findMany({
-    where: { subscriptionId: id, plannedAt: { gte: nextMonday }, status: "Afventer levering", lockedFully: false },
+    where: { subscriptionId: id, plannedAt: { gte: nextMonday }, status: "Afventer levering" },
     select: { id: true },
   });
   const ids = stale.map((o) => o.id);
@@ -219,9 +218,6 @@ export async function regenerateFutureOrders(
       prisma.order.deleteMany({ where: { id: { in: ids } } }),
     ]);
   }
-  const skippedLocked = await prisma.order.count({
-    where: { subscriptionId: id, plannedAt: { gte: nextMonday }, lockedFully: true },
-  });
   const generated = await generateForSubscriptionId(id, ref, horizonWeeks);
-  return { generated, skippedLocked };
+  return { generated };
 }
