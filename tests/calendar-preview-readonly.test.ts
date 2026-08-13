@@ -25,13 +25,19 @@ test("read-only kort har keyboard-tilgængelige detaljer med kategori, beskrivel
   assert.ok((component.match(/<PreviewTaskDetails/g) ?? []).length >= 2, "både events og unplanned skal vise detaljer");
 });
 
-test("read-only viser ingen mutationer, kontekstmenuer eller redigeringslinks", async () => {
+test("read-only kort er klikbare som kalenderkort, men menuen indeholder kun sikre visningslinks", async () => {
   const component = await source("components/TeamCalendarClient.tsx");
-  assert.match(component, /onClick=\{readOnly \? undefined :/);
-  assert.match(component, /\{!readOnly && menu &&/);
-  assert.match(component, /\{!readOnly && confirmDel &&/);
-  assert.match(component, /readOnly \? "default" : "pointer"/);
-  assert.doesNotMatch(await source("app/calendar-2/page.tsx"), /setOrderLock|moveOrderWeeks|replanWeek|deleteOrder|\/orders\/|\/subscriptions\//);
+  const previewPage = await source("app/calendar-2/page.tsx");
+  assert.match(component, /function openReadOnlyMenu/);
+  assert.match(component, /role=\{readOnly \? "button" : undefined\}/);
+  assert.match(component, /tabIndex=\{readOnly \? 0 : undefined\}/);
+  assert.match(component, /onKeyDown=\{readOnly \? \(e\) =>/);
+  assert.ok((component.match(/openReadOnlyMenu\(e, /g) ?? []).length >= 2, "både planlagte og ikke-planlagte kort skal åbne menuen");
+  assert.match(component, /Gå til kundedetaljer/);
+  assert.match(component, /Gå til abonnement/);
+  assert.match(component, /Ring kunden op/);
+  assert.match(component, /\{readOnly && menu &&/);
+  assert.doesNotMatch(previewPage, /setOrderLock|moveOrderWeeks|replanWeek|deleteOrder|\/orders\//);
 });
 
 test("read-only viser unplanned reasons sandfærdigt", async () => {

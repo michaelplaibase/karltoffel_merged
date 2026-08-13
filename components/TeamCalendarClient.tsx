@@ -74,7 +74,8 @@ const catLetter = (category: string) => (category.charAt(0) || "?").toUpperCase(
 function PreviewTaskDetails({ tasks }: { tasks: CalendarTaskDetail[] }) {
   if (!tasks.length) return null;
   return (
-    <details style={{ marginTop: 5, borderTop: "1px solid var(--tc-line-soft)", paddingTop: 4 }}>
+    <details onClick={(event) => event.stopPropagation()}
+      style={{ marginTop: 5, borderTop: "1px solid var(--tc-line-soft)", paddingTop: 4 }}>
       <summary style={{ cursor: "pointer", fontSize: 11, fontWeight: 700 }}>
         {tasks.length} {tasks.length === 1 ? "opgave" : "opgaver"} · vis detaljer
       </summary>
@@ -142,6 +143,15 @@ export default function TeamCalendarClient(props: Props) {
     e.stopPropagation();
     setExpanded(null);
     setMenu({ x: Math.min(e.clientX, window.innerWidth - 250), y: e.clientY, ev });
+  }
+
+  function openReadOnlyMenu(e: React.MouseEvent | React.KeyboardEvent, ev: MenuTarget) {
+    e.stopPropagation();
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = "clientX" in e && e.clientX > 0 ? e.clientX : rect.left + Math.min(rect.width, 24);
+    const y = "clientY" in e && e.clientY > 0 ? e.clientY : rect.top + Math.min(rect.height, 24);
+    setExpanded(null);
+    setMenu({ x: Math.min(x, window.innerWidth - 250), y, ev });
   }
 
   function run(fn: () => Promise<void>) {
@@ -255,8 +265,14 @@ export default function TeamCalendarClient(props: Props) {
                       {evs.length > 0 ? (
                         <div className="stack">
                           {evs.map((ev) => (
-                            <div key={ev.id} className={`ev ${STATUS_CLASS[ev.status]}`} style={{ cursor: readOnly ? "default" : "pointer" }}
-                              onClick={readOnly ? undefined : (e) => openMenu(e, ev)}>
+                            <div key={ev.id} className={`ev ${STATUS_CLASS[ev.status]}`} style={{ cursor: "pointer" }}
+                              role={readOnly ? "button" : undefined}
+                              tabIndex={readOnly ? 0 : undefined}
+                              aria-label={readOnly ? `Åbn visningsmenu for ${ev.customer}` : undefined}
+                              onKeyDown={readOnly ? (e) => {
+                                if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openReadOnlyMenu(e, ev); }
+                              } : undefined}
+                              onClick={readOnly ? (e) => openReadOnlyMenu(e, ev) : (e) => openMenu(e, ev)}>
                               <span className="t num">{fmtHM(ev.start)}–{fmtHM(ev.end)}</span>
                               <span className="h">{ev.postal}</span>
                               <span className="s">
@@ -288,8 +304,14 @@ export default function TeamCalendarClient(props: Props) {
             <div className="bin">
               {week.unplanned.map((job) => (
                 <div key={job.id} className={`ev ${STATUS_CLASS[job.status]}`}
-                  style={{ ...empVar("var(--muted)"), width: 200, cursor: readOnly ? "default" : "pointer" }}
-                  onClick={readOnly ? undefined : (e) => openMenu(e, job)}>
+                  style={{ ...empVar("var(--muted)"), width: 200, cursor: "pointer" }}
+                  role={readOnly ? "button" : undefined}
+                  tabIndex={readOnly ? 0 : undefined}
+                  aria-label={readOnly ? `Åbn visningsmenu for ${job.customer}. Årsag: ${UNPLANNED_REASON_LABEL[job.reason] ?? "Ukendt årsag"}` : undefined}
+                  onKeyDown={readOnly ? (e) => {
+                    if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openReadOnlyMenu(e, job); }
+                  } : undefined}
+                  onClick={readOnly ? (e) => openReadOnlyMenu(e, job) : (e) => openMenu(e, job)}>
                   <span className="t num">Uge {week.weekNo}</span>
                   <span className="h">{job.postal}</span>
                   <span className="s">
@@ -464,6 +486,22 @@ export default function TeamCalendarClient(props: Props) {
               <div className="ctxmenu-item" style={{ paddingLeft: 34, color: "var(--danger, #C4183C)" }}
                 onClick={() => { setConfirmDel(menu.ev); setMenu(null); }}>Slet ordre …</div>
             </>
+          )}
+        </div>
+      )}
+
+      {readOnly && menu && (
+        <div className="ctxmenu" ref={menuRef} role="menu" aria-label="Vis opgave"
+          style={{ left: menu.x, top: menu.y }}>
+          {menuTel != null ? (
+            <a href={menuTel} className="ctxmenu-item" role="menuitem">Ring kunden op · {telDisplay(menu.ev.phone)}</a>
+          ) : (
+            <div className="ctxmenu-item" style={{ color: "var(--muted)", opacity: 0.55, cursor: "default" }}>Intet telefonnummer</div>
+          )}
+          <div className="ctxmenu-sep" />
+          <Link href={`/customers/${menu.ev.contactId}`} className="ctxmenu-item" role="menuitem">Gå til kundedetaljer …</Link>
+          {menu.ev.subscriptionNo != null && (
+            <Link href={`/subscriptions/${menu.ev.subscriptionNo}`} className="ctxmenu-item" role="menuitem">Gå til abonnement …</Link>
           )}
         </div>
       )}
