@@ -19,6 +19,17 @@ function previewId(visit: PreviewVisit): number {
   return -(visit.subscriptionId * 100_000_000 + Math.floor(new Date(`${visit.week}T00:00:00Z`).getTime() / WEEK_MS));
 }
 
+function auditUnplannedSegment({ job, reason }: { job: Calendar2Job; reason: string }) {
+  const segment = job.previewSegment;
+  if (!segment) throw new Error("calendar2_audit_unplanned_missing_source_task");
+  return {
+    job,
+    reason,
+    sourceTaskId: segment.sourceTaskId,
+    segmentMinutes: segment.minutes,
+  };
+}
+
 async function loadPreviewSource() {
   const [rows, users, holidays] = await Promise.all([
     prisma.subscription.findMany({
@@ -198,7 +209,13 @@ export async function getCalendar2HorizonAudit(horizonWeeks = 26) {
         segmentCount: stop.audit.segmentCount ?? null,
         segmentMinutes: stop.audit.segmentMinutes ?? stop.job.durationMin,
       }))),
-      unplanned: plan.unplanned.map(({ job, reason }) => ({ subscriptionNo: subscriptionNoByJob.get(job.id) ?? null, reason, durationMin: job.durationMin })),
+      unplanned: plan.unplanned.map(auditUnplannedSegment).map(({ job, reason, sourceTaskId, segmentMinutes }) => ({
+        subscriptionNo: subscriptionNoByJob.get(job.id) ?? null,
+        reason,
+        durationMin: job.durationMin,
+        sourceTaskId,
+        segmentMinutes,
+      })),
       routes: plan.days.map((day) => ({ employeeId: day.employeeId, weekday: day.weekday, driveMin: day.driveMin, serviceMin: day.serviceMin, returnHomeMin: day.returnHomeMin, travelLegs: day.travelLegs.map((leg) => ({ fromIndex: plan.audit.matrixAddresses.indexOf(leg.from), toIndex: plan.audit.matrixAddresses.indexOf(leg.to), minutes: leg.minutes, kind: leg.kind })) })),
     })),
   };

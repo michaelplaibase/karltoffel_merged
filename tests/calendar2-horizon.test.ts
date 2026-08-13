@@ -150,3 +150,50 @@ test("horizon-rest publicerer kun resterende task-minutter uden opfundne ID'er",
   assert.deepEqual(result.unplanned[0].rejectedTasks, [{ sourceTaskId: "task-long", effectiveMinutes: 120 }]);
   assert.equal(result.unplanned[0].remainingMinutes, 120);
 });
+
+test("taskminutter bevares eksakt uden tab eller dubletter på tværs af planlagt og afvist", () => {
+  const sourceJob = job(902, {
+    durationMin: 1020,
+    sourceTasks: [
+      { id: "task-a", durationMin: 400 },
+      { id: "task-default", durationMin: 0 },
+      { id: "task-b", durationMin: 560 },
+    ],
+  });
+  const expected = new Map([["task-a", 400], ["task-default", 60], ["task-b", 560]]);
+  const result = planCalendar2Horizon(
+    [{ seriesId: 11, sourceStartWeek: "2026-08-10", occurrences: [{ sourceWeek: "2026-08-10", job: sourceJob }] }],
+    "2026-08-10", 1, [employee({ workdays: [0] })], matrix(["Hjem", "A902"]),
+  );
+  const actual = new Map<string, number>();
+  for (const stop of result.weeks.flatMap((week) => week.plan.days.flatMap((day) => day.stops))) {
+    assert.ok(stop.audit.sourceTaskId, "planlagt segment skal have ægte task-ID");
+    actual.set(stop.audit.sourceTaskId, (actual.get(stop.audit.sourceTaskId) ?? 0) + (stop.audit.segmentMinutes ?? stop.job.durationMin));
+  }
+  for (const rejected of result.unplanned.flatMap((item) => item.rejectedTasks)) {
+    actual.set(rejected.sourceTaskId, (actual.get(rejected.sourceTaskId) ?? 0) + rejected.effectiveMinutes);
+  }
+  assert.deepEqual(actual, expected);
+  assert.equal(result.unplanned.reduce((sum, item) => sum + (item.remainingMinutes ?? 0), 0), 560);
+});
+
+test("routefejl før segmentering afviser én række pr. ægte source task", () => {
+  const sourceJob = job(903, {
+    durationMin: 180,
+    sourceTasks: [{ id: "route-a", durationMin: 120 }, { id: "route-default", durationMin: null }],
+  });
+  const brokenRoute: TravelMatrix = {
+    ...matrix(["Hjem", "A903"]),
+    durations: [[0, Number.POSITIVE_INFINITY], [Number.POSITIVE_INFINITY, 0]],
+  };
+  const result = planCalendar2Horizon(
+    [{ seriesId: 12, sourceStartWeek: "2026-08-10", occurrences: [{ sourceWeek: "2026-08-10", job: sourceJob }] }],
+    "2026-08-10", 1, [employee()], brokenRoute,
+  );
+  assert.equal(result.unplanned[0].reason, "unverified_route");
+  assert.deepEqual(result.unplanned[0].rejectedTasks, [
+    { sourceTaskId: "route-a", effectiveMinutes: 120 },
+    { sourceTaskId: "route-default", effectiveMinutes: 60 },
+  ]);
+  assert.equal(result.weeks.flatMap((week) => week.plan.unplanned).length, 0);
+});

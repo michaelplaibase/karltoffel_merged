@@ -165,6 +165,16 @@ test("horizon-audit publicerer rejectedTasks med task-ID og effektive minutter u
   assert.doesNotMatch(preview, /sourceTaskId:\s*item\.job\.previewSegment\?\.sourceTaskId\s*\?\?\s*null/);
 });
 
+test("horizon-audit binder hvert uge-unplanned segment til source task og segmentminutter", async () => {
+  const preview = await source("lib/subscription-preview-calendar.ts");
+  assert.match(preview, /unplanned:\s*plan\.unplanned\.map\(auditUnplannedSegment\)/);
+  assert.match(preview, /function auditUnplannedSegment/);
+  assert.match(preview, /if \(!segment\) throw new Error\("calendar2_audit_unplanned_missing_source_task"\)/);
+  assert.match(preview, /sourceTaskId:\s*segment\.sourceTaskId/);
+  assert.match(preview, /segmentMinutes:\s*segment\.minutes/);
+  assert.doesNotMatch(preview, /sourceTaskId:\s*job\.previewSegment\?\.sourceTaskId\s*\?\?\s*null/);
+});
+
 test("route audit publicerer komplet privacy-safe matrixmapping og kanonisk binding", async () => {
   const preview = await source("lib/subscription-preview-calendar.ts");
   const types = await source("lib/calendar.ts");
