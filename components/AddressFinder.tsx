@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useId, useRef, useState } from "react";
-import { ADDRESS_FINDER_DEBOUNCE_MS, ADDRESS_FINDER_ENDPOINT, type CanonicalAddress, parseAdressevaelgerHit } from "@/lib/address-finder";
+import { ADDRESS_FINDER_DEBOUNCE_MS, ADDRESS_FINDER_ENDPOINT, type AdressevaelgerHit, type CanonicalAddress, parseAdressevaelgerHit } from "@/lib/address-finder";
 
 export default function AddressFinder({ name, initialValue = "" }: { name: string; initialValue?: string }) {
   const listId = useId();
@@ -19,7 +19,7 @@ export default function AddressFinder({ name, initialValue = "" }: { name: strin
       try {
         const response = await fetch(ADDRESS_FINDER_ENDPOINT + encodeURIComponent(query.trim()), { signal: controller.signal });
         if (!response.ok) throw new Error("address_lookup_failed");
-        const body = await response.json() as { fund?: { titel?: string; id?: string; type?: string; x?: number; y?: number }[] };
+        const body = await response.json() as { fund?: AdressevaelgerHit[] };
         if (current !== request.current) return;
         const hits = (body.fund ?? []).map(parseAdressevaelgerHit).filter((hit): hit is CanonicalAddress => Boolean(hit));
         setItems(hits); setActive(hits.length ? 0 : -1); setStatus(hits.length ? "idle" : "empty");

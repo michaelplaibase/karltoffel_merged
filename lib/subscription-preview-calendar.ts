@@ -76,12 +76,12 @@ async function loadPreviewSource() {
 
 const routing = createCalendar2Routing();
 
-async function buildPreviewWeek(weekMonday: string) {
+async function buildPreviewWeek(weekMonday: string, horizonWeeks = 26) {
   const source = await loadPreviewSource();
   const horizonStart = ymd(mondayOf(new Date()));
   const visits = projectSubscriptionVisits(source.subscriptions, {
     referenceDate: new Date(`${horizonStart}T12:00:00Z`),
-    horizonWeeks: 26,
+    horizonWeeks,
     holidays: source.holidays,
   });
   const priceById = new Map<number, number>();
@@ -123,7 +123,7 @@ async function buildPreviewWeek(weekMonday: string) {
   for (const holiday of source.holidays) {
     for (let week = mondayOf(holiday.startWeek); week <= mondayOf(holiday.endWeek); week = new Date(week.getTime() + WEEK_MS)) blockedWeeks.add(ymd(week));
   }
-  const horizonPlan = planCalendar2Horizon([...seriesBySubscription.values()], horizonStart, 26, source.plannerEmployees, matrix, { blockedWeeks });
+  const horizonPlan = planCalendar2Horizon([...seriesBySubscription.values()], horizonStart, horizonWeeks, source.plannerEmployees, matrix, { blockedWeeks });
   const plan = horizonPlan.weeks.find((item) => item.weekMonday === weekMonday)?.plan
     ?? planCalendar2Horizon([], weekMonday, 1, source.plannerEmployees, matrix).weeks[0].plan;
   const placementByJob = new Map(horizonPlan.placements.map((placement) => [placement.jobId, placement]));
@@ -144,6 +144,45 @@ async function buildPreviewWeek(weekMonday: string) {
       : { index, lat: coordinate[0], lon: coordinate[1], kind: "job", stableRef: `subscription:${subscriptionNoByAddress.get(address) ?? jobs.find((job) => normalizeDanishAddress(job.address) === address)?.id}`, stableRefs: stableRefs[index] };
   });
   return { ...source, visits, jobs, priceById, visitById, plan, matrixPoints, horizonPlan, placementByJob, seriesAuditById, geocodeStatus: new Map(routingData.geocodes.map((result) => [result.normalizedAddress, result.status])), geocodeProvider: new Map(routingData.geocodes.map((result) => [result.normalizedAddress, result.provider])) };
+}
+
+export async function getCalendar2HorizonAudit(horizonWeeks = 26) {
+  const boundedWeeks = Number.isInteger(horizonWeeks) ? Math.min(26, Math.max(1, horizonWeeks)) : 26;
+  const data = await buildPreviewWeek(ymd(mondayOf(new Date())), boundedWeeks);
+  const subscriptionNoByJob = new Map(data.visits.map((visit) => [previewId(visit), visit.subscriptionNo]));
+  return {
+    version: "calendar2-horizon-audit-v1",
+    range: { from: data.horizonPlan.weeks[0]?.weekMonday ?? ymd(mondayOf(new Date())), weeks: boundedWeeks },
+    matrix: { provider: data.horizonPlan.weeks[0]?.plan.audit.matrixProvider ?? "none", pointCount: data.matrixPoints.length },
+    placements: data.horizonPlan.placements.map((placement) => ({
+      subscriptionNo: subscriptionNoByJob.get(placement.jobId) ?? null,
+      sourceWeek: placement.sourceWeek,
+      previewWeek: placement.previewWeek,
+    })),
+    series: data.horizonPlan.seriesAudit.map((series) => ({
+      subscriptionId: series.seriesId,
+      sourceStartWeek: series.sourceStartWeek,
+      previewStartWeek: series.previewStartWeek,
+      reason: series.reason,
+    })),
+    weeks: data.horizonPlan.weeks.map(({ weekMonday, plan }) => ({
+      weekMonday,
+      planned: plan.days.flatMap((day) => day.stops.map((stop) => ({
+        subscriptionNo: subscriptionNoByJob.get(stop.job.id) ?? null,
+        employeeId: day.employeeId,
+        weekday: day.weekday,
+        startMin: stop.startMin,
+        endMin: stop.endMin,
+        driveMin: stop.driveMin,
+        sourceTaskId: stop.audit.sourceTaskId ?? null,
+        segmentIndex: stop.audit.segmentIndex ?? null,
+        segmentCount: stop.audit.segmentCount ?? null,
+        segmentMinutes: stop.audit.segmentMinutes ?? stop.job.durationMin,
+      }))),
+      unplanned: plan.unplanned.map(({ job, reason }) => ({ subscriptionNo: subscriptionNoByJob.get(job.id) ?? null, reason, durationMin: job.durationMin })),
+      routes: plan.days.map((day) => ({ employeeId: day.employeeId, weekday: day.weekday, driveMin: day.driveMin, serviceMin: day.serviceMin, returnHomeMin: day.returnHomeMin, travelLegs: day.travelLegs.map((leg) => ({ minutes: leg.minutes, kind: leg.kind })) })),
+    })),
+  };
 }
 
 export async function getSubscriptionPreviewWeek(weekMonday: string): Promise<CalendarWeek> {
