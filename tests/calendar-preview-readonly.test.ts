@@ -43,9 +43,21 @@ test("read-only viser unplanned reasons sandfærdigt", async () => {
   assert.match(component, /overflow[\s\S]*Ingen plads i ugen/);
   assert.match(component, /invalid_duration[\s\S]*Besøget mangler gyldig varighed/);
   assert.match(component, /exceeds_daily_capacity[\s\S]*Besøget er længere end en arbejdsdag/);
+  assert.match(component, /no_capacity_in_horizon[\s\S]*Ingen plads i de næste 26 uger/);
   assert.match(component, /holiday[\s\S]*Ferielukket uge/);
   assert.match(component, /Ukendt årsag/);
   assert.doesNotMatch(component, /reason[^\n]*\?[^\n]*Ingen plads i ugen/);
+});
+
+test("alle ikke-planlagte kort viser fuld årsag på en selvstændig, tilgængelig linje", async () => {
+  const component = await source("components/TeamCalendarClient.tsx");
+  const css = await source("app/globals.css");
+  assert.match(component, /className="unplanned-reason"/);
+  assert.match(component, /aria-label=\{`Årsag: /);
+  assert.match(component, /className="unplanned-reason-label">Årsag:<\/span>/);
+  assert.match(css, /\.teamcal \.unplanned-reason[\s\S]*white-space:\s*normal/);
+  assert.match(css, /\.teamcal \.unplanned-reason[\s\S]*overflow-wrap:\s*anywhere/);
+  assert.doesNotMatch(component, /Ordrer uden kollega eller uden plads i ugen\./);
 });
 
 test("Kalender 2 viser read-only preview overrides som forslag og korrekt ikke-planlagt titel", async () => {

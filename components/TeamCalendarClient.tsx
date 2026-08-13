@@ -294,12 +294,15 @@ export default function TeamCalendarClient(props: Props) {
                   <span className="h">{job.postal}</span>
                   <span className="s">
                     <i className="cat" style={{ "--cat": categoryColor(job.category) } as React.CSSProperties}>{catLetter(job.category)}</i>
-                    <span className="txt">{job.customer} · {UNPLANNED_REASON_LABEL[job.reason] ?? "Ukendt årsag"}</span>
+                    <span className="txt">{job.customer}</span>
+                  </span>
+                  <span className="unplanned-reason" aria-label={`Årsag: ${UNPLANNED_REASON_LABEL[job.reason] ?? "Ukendt årsag"}`}>
+                    <span className="unplanned-reason-label">Årsag:</span>
+                    {UNPLANNED_REASON_LABEL[job.reason] ?? "Ukendt årsag"}
                   </span>
                   {readOnly && <PreviewTaskDetails tasks={job.tasks ?? []} />}
                 </div>
               ))}
-              <span className="hint">Ordrer uden kollega eller uden plads i ugen.</span>
             </div>
           </div>
         )}
