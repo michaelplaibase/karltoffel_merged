@@ -4,7 +4,7 @@
 // Prisma client in lib/db.ts.
 import { prisma } from "./db";
 import type { Contact, Subscription, Order, TaskLine } from "./data";
-import { planWeek, isoWeek, fmtTime, calendarJobDurationReason, type Job, type Employee as PlannerEmployee, type DayPlan } from "./planner";
+import { planWeek, isoWeek, fmtTime, type Job, type Employee as PlannerEmployee, type DayPlan } from "./planner";
 import { weekLabel } from "./weeks";
 import { coordFor } from "./geo";
 import {
@@ -467,7 +467,7 @@ export async function getPlannerJobs(weekMonday: string): Promise<Job[]> {
     address: o.deliveryAddress,
     postal: postalOf(o.deliveryAddress),
     category: o.tasks[0]?.category ?? "Andet",
-    durationMin: o.tasks.reduce((a, t) => a + t.durationMin, 0),
+    durationMin: o.tasks.reduce((a, t) => a + t.durationMin, 0) || 30,
     source: sourceLabel(o.sourceType, o.subscription?.displayNo),
     // Hard planning constraints only — a subscription can pin fixed weekdays.
     // "Fast medarb." is "Ingen" in the demo, so no fixed-employee constraint.
@@ -533,7 +533,7 @@ async function buildWeekPlan(weekMonday: string) {
       id: o.id, contactId: o.contactId, customer: o.contact.name,
       address: o.deliveryAddress, postal: postalOf(o.deliveryAddress),
       category: o.tasks[0]?.category ?? "Andet",
-      durationMin: o.tasks.reduce((a, t) => a + t.durationMin, 0),
+      durationMin: o.tasks.reduce((a, t) => a + t.durationMin, 0) || 30,
       source: sourceLabel(o.sourceType, o.subscription?.displayNo),
       fixedWeekdays: o.subscription?.fixedWeekdays ? o.subscription.fixedWeekdays.split("").map(Number) : undefined,
       fixedEmployeeId: o.employeeId ?? undefined,
@@ -553,17 +553,10 @@ async function buildWeekPlan(weekMonday: string) {
   // giver "hurtigere end planlagt" ingen mening at fremrykke visuelt for).
   const todayIdx = weekdayIdxIfThisWeek(weekMonday);
   if (todayIdx != null) reflowEarlyCompletions(plan.days.filter((d) => d.weekday === todayIdx), completedAtById);
-  const plannerEmployeeById = new Map(plannerEmps.map((employee) => [employee.id, employee]));
-  const unplanned: { job: Job; reason: "unassigned" | "overflow" | "holiday" | "invalid_duration" | "exceeds_daily_capacity" }[] = holiday
+  const unplanned: { job: Job; reason: "unassigned" | "overflow" | "holiday" }[] = holiday
     ? jobs.map((job) => ({ job, reason: "holiday" as const }))
     : [
-        ...plan.unplanned.map((job) => {
-          const employee = job.fixedEmployeeId == null ? null : plannerEmployeeById.get(job.fixedEmployeeId);
-          const reason: "overflow" | "invalid_duration" | "exceeds_daily_capacity" = employee
-            ? calendarJobDurationReason(job, employee) ?? "overflow"
-            : "overflow";
-          return { job, reason };
-        }),
+        ...plan.unplanned.map((job) => ({ job, reason: "overflow" as const })),
         ...unassigned.map((job) => ({ job, reason: "unassigned" as const })),
       ];
   const empName = new Map(users.map((u) => [u.id, `${u.firstName} ${u.lastName}`]));

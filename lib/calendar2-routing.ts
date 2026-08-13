@@ -107,9 +107,29 @@ export function createCalendar2Routing(options: RoutingOptions = {}) {
           if (!response.ok) throw new Error(`dawa_http_${response.status}`);
           const dawa = await response.json() as Array<{ vejnavn?: string; husnr?: string; postnr?: string; postnrnavn?: string; x?: number; y?: number }>;
           const hit = dawa[0];
-          const hitHouse = hit?.husnr?.toLocaleLowerCase("da-DK");
-          const lat = Number(hit?.y); const lon = Number(hit?.x);
-          if (hitHouse !== identity.house || hit?.postnr !== identity.postcode || !Number.isFinite(lat) || !Number.isFinite(lon) || lat < 54.4 || lat > 57.9 || lon < 7.5 || lon > 15.3) {
+          if (!hit) {
+            const washUrl = new URL("https://api.dataforsyningen.dk/datavask/adresser");
+            washUrl.searchParams.set("betegnelse", address);
+            const washResponse = await fetcher(washUrl, { headers: { "User-Agent": USER_AGENT, Accept: "application/json" }, signal: AbortSignal.timeout(timeoutMs), cache: "no-store" });
+            if (!washResponse.ok) throw new Error(`dawa_wash_http_${washResponse.status}`);
+            const wash = await washResponse.json() as { resultater?: Array<{ adresse?: { href?: string; husnr?: string; postnr?: string } }> };
+            const result = wash.resultater?.length === 1 ? wash.resultater[0]?.adresse : null;
+            const href = result?.href ? new URL(result.href) : null;
+            if (result?.husnr?.toLocaleLowerCase("da-DK") !== identity.house || result?.postnr !== identity.postcode || href?.hostname !== "api.dataforsyningen.dk") {
+              return { status: "unverified_address", normalizedAddress: address, coordinate: null, provider: "dawa" };
+            }
+            const canonicalResponse = await fetcher(href, { headers: { "User-Agent": USER_AGENT, Accept: "application/json" }, signal: AbortSignal.timeout(timeoutMs), cache: "no-store" });
+            if (!canonicalResponse.ok) throw new Error(`dawa_canonical_http_${canonicalResponse.status}`);
+            const canonical = await canonicalResponse.json() as { husnr?: string; postnr?: string; x?: number; y?: number };
+            const lat = Number(canonical.y); const lon = Number(canonical.x);
+            if (canonical.husnr?.toLocaleLowerCase("da-DK") !== identity.house || canonical.postnr !== identity.postcode || !Number.isFinite(lat) || !Number.isFinite(lon) || lat < 54.4 || lat > 57.9 || lon < 7.5 || lon > 15.3) {
+              return { status: "unverified_address", normalizedAddress: address, coordinate: null, provider: "dawa" };
+            }
+            return { status: "verified", normalizedAddress: address, coordinate: [lat, lon], provider: "dawa" };
+          }
+          const hitHouse = hit.husnr?.toLocaleLowerCase("da-DK");
+          const lat = Number(hit.y); const lon = Number(hit.x);
+          if (hitHouse !== identity.house || hit.postnr !== identity.postcode || !Number.isFinite(lat) || !Number.isFinite(lon) || lat < 54.4 || lat > 57.9 || lon < 7.5 || lon > 15.3) {
             return { status: "unverified_address", normalizedAddress: address, coordinate: null, provider: "dawa" };
           }
           return { status: "verified", normalizedAddress: address, coordinate: [lat, lon], provider: "dawa" };

@@ -57,15 +57,6 @@ export type WeekPlan = {
   unplanned: Job[];
 };
 
-export type CalendarJobDurationReason = "invalid_duration" | "exceeds_daily_capacity" | null;
-
-/** Shared validation for calendar jobs before route placement. */
-export function calendarJobDurationReason(job: Job, employee: Employee): CalendarJobDurationReason {
-  if (!Number.isFinite(job.durationMin) || job.durationMin <= 0) return "invalid_duration";
-  const dailyCapacity = employee.workEndMin + employee.flexMin - employee.workStartMin;
-  return job.durationMin > dailyCapacity ? "exceeds_daily_capacity" : null;
-}
-
 const DEFAULT_EMPLOYEE: Employee = {
   id: 1535, name: "Kristian Klercke", home: HOME,
   workStartMin: 8 * 60, workEndMin: 16 * 60, flexMin: 60, workdays: [0, 1, 2, 3, 4],
@@ -88,13 +79,7 @@ export function isoWeek(mondayISO: string): number {
  * respecting the job's fixed weekday/employee. Moves to the next day when full.
  */
 export function planWeek(jobs: Job[], weekMonday: string, employees: Employee[] = [DEFAULT_EMPLOYEE]): WeekPlan {
-  const employeeById = new Map(employees.map((employee) => [employee.id, employee]));
-  const invalid = jobs.filter((job) => {
-    const employee = job.fixedEmployeeId == null ? null : employeeById.get(job.fixedEmployeeId);
-    return employee ? calendarJobDurationReason(job, employee) !== null : false;
-  });
-  const invalidIds = new Set(invalid.map((job) => job.id));
-  const remaining = jobs.filter((job) => !invalidIds.has(job.id));
+  const remaining = [...jobs];
   const days: DayPlan[] = [];
 
   for (const emp of employees) {
@@ -153,7 +138,7 @@ export function planWeek(jobs: Job[], weekMonday: string, employees: Employee[] 
     }
   }
 
-  return { weekMonday, days, unplanned: [...remaining, ...invalid] };
+  return { weekMonday, days, unplanned: remaining };
 }
 
 export const fmtTime = (min: number) => `${String(Math.floor(min / 60)).padStart(2, "0")}:${String(min % 60).padStart(2, "0")}`;

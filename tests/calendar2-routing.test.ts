@@ -42,6 +42,39 @@ test("danske adresser bruger hurtig DAWA først, skelner samme postnummer og cac
   assert.equal(a.provider, "dawa");
 });
 
+test("DAWA datavask normaliserer kun entydigt hit med samme husnummer og postnummer", async () => {
+  const calls: string[] = [];
+  const routing = createCalendar2Routing({
+    fetcher: async (input) => {
+      const url = new URL(String(input)); calls.push(url.toString());
+      if (url.pathname === "/adresser" && url.searchParams.has("q")) return new Response("[]");
+      if (url.pathname === "/datavask/adresser") return new Response(JSON.stringify({
+        kategori: "B",
+        resultater: [{ adresse: { href: "https://api.dataforsyningen.dk/adresser/canonical", husnr: "26", postnr: "8700" } }],
+      }));
+      if (url.pathname === "/adresser/canonical") return new Response(JSON.stringify({ husnr: "26", postnr: "8700", x: 9.8759, y: 55.8680 }));
+      throw new Error(`unexpected ${url}`);
+    },
+    sleep: async () => {}, now: () => 1,
+  });
+  const result = await routing.geocode("H C Andersensgade 26, 8700 Horsens");
+  assert.equal(result.status, "verified");
+  assert.deepEqual(result.coordinate, [55.8680, 9.8759]);
+  assert.ok(calls.some((url) => url.includes("/datavask/adresser")));
+  assert.ok(calls.some((url) => url.includes("/adresser/canonical")));
+
+  const mismatch = createCalendar2Routing({
+    fetcher: async (input) => {
+      const url = new URL(String(input));
+      if (url.pathname === "/adresser") return new Response("[]");
+      if (url.pathname === "/datavask/adresser") return new Response(JSON.stringify({ kategori: "B", resultater: [{ adresse: { href: "https://api.dataforsyningen.dk/adresser/wrong", husnr: "27", postnr: "8700" } }] }));
+      if (url.hostname.includes("nominatim")) return new Response("[]");
+      throw new Error(`unexpected ${url}`);
+    }, sleep: async () => {}, now: () => 1,
+  });
+  assert.equal((await mismatch.geocode("H C Andersensgade 26, 8700 Horsens")).status, "unverified_address");
+});
+
 test("DAWA-first geocoder undgår Nominatims globale sekund-rate-limit for danske adresser", async () => {
   let slept = 0;
   const routing = createCalendar2Routing({

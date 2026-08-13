@@ -66,6 +66,13 @@ test("alle ikke-planlagte kort viser fuld årsag på en selvstændig, tilgængel
   assert.doesNotMatch(component, /Ordrer uden kollega eller uden plads i ugen\./);
 });
 
+test("aktiv kalender bevarer sin hidtidige 30-minutters fallback og planneradfærd", async () => {
+  const planner = await source("lib/planner.ts");
+  const queries = await source("lib/queries.ts");
+  assert.match(queries, /durationMin:\s*o\.tasks\.reduce\(\(a, t\) => a \+ t\.durationMin, 0\) \|\| 30/g);
+  assert.doesNotMatch(planner, /calendarJobDurationReason|invalidIds|\.\.\.invalid/);
+});
+
 test("Kalender 2 viser read-only preview overrides som forslag og korrekt ikke-planlagt titel", async () => {
   const component = await source("components/TeamCalendarClient.tsx");
   const preview = await source("lib/subscription-preview-calendar.ts");
