@@ -266,7 +266,7 @@ model SubscriptionWeekSkip {
 
 model OrderReconciliationRun {
   id              String    @id @default(uuid())
-  snapshotHash    String
+  snapshotHash    String    @unique
   planHash        String
   status          String    @default("applied")
   snapshot        String
