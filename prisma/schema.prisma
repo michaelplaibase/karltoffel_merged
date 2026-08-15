@@ -1,7 +1,8 @@
 // Data model for karltoffel_crm — derived from docs/fenster-blueprint/MASTER-BLUEPRINT.md.
-// Local dev runs on SQLite (zero-server); production would switch `provider` to
-// postgresql + a hosted DATABASE_URL. All scalar types are chosen to be portable
-// across both (no enums, no Json — status/tier are plain strings, settings is text).
+// Runs on PostgreSQL (Neon) in every environment — pooled URL for the app runtime,
+// direct URL for migrations. Scalar types stay deliberately portable (no enums, no
+// Json — status/tier are plain strings, settings/blobs are text), which is why JSON
+// payloads are stored as String columns throughout.
 
 generator client {
   provider = "prisma-client-js"
@@ -9,130 +10,164 @@ generator client {
 
 datasource db {
   provider  = "postgresql"
-  url       = env("DATABASE_URL")  // pooled (-pooler) — app runtime
-  directUrl = env("DIRECT_URL")    // direct — migrations
+  url       = env("DATABASE_URL") // pooled (-pooler) — app runtime
+  directUrl = env("DIRECT_URL") // direct — migrations
 }
 
 model Company {
-  id            Int       @id @default(autoincrement())
-  name          String
-  cvr           String?
-  phone         String?
-  email         String?
-  planTier      String    @default("Pro") // Free | Pro | Premium
-  hourlyPrice   Int       @default(600)   // DKK incl. VAT, excl. driving
-  minutePriceOere Int     @default(860)   // øre pr. minut EKSKL. moms (8,60 kr/min) — prisberegner: varighed = (pris inkl. moms / 1,25) / (minutePriceOere/100)
-  users         User[]
-  contacts      Contact[]
-  standardTasks StandardTask[]
-  leads         Lead[]
-  settings      String?   // JSON blob (SQLite has no native Json)
+  id               Int               @id @default(autoincrement())
+  name             String
+  cvr              String?
+  phone            String?
+  email            String?
+  planTier         String            @default("Pro") // Free | Pro | Premium
+  hourlyPrice      Int               @default(600) // DKK incl. VAT, excl. driving
+  minutePriceOere  Int               @default(860) // øre pr. minut EKSKL. moms (8,60 kr/min) — prisberegner: varighed = (pris inkl. moms / 1,25) / (minutePriceOere/100)
+  users            User[]
+  contacts         Contact[]
+  standardTasks    StandardTask[]
+  leads            Lead[]
+  settings         String? // JSON blob (SQLite has no native Json)
   dineroConnection DineroConnection?
-  createdAt     DateTime  @default(now())
+  createdAt        DateTime          @default(now())
 }
 
 model User {
-  id               Int      @id @default(autoincrement())
-  company          Company  @relation(fields: [companyId], references: [id])
-  companyId        Int
-  username         String   @unique
-  passwordHash     String?  // scrypt "salt:hash"; null = cannot log in
-  firstName        String
-  lastName         String
-  email            String?
-  calendarColor    String?  // hex
-  activeCalendar   Boolean  @default(true)
-  canReceiveOnline Boolean  @default(false)
-  homeAddress      String?
-  active           Boolean  @default(true)   // soft-delete: false = deaktiveret (kan ikke logge ind, skjult i vælgere)
-  isAdmin          Boolean  @default(false)
-  canSeePrices     Boolean  @default(true)
-  canEditOrders    Boolean  @default(true)
-  canHandlePayment Boolean  @default(true)
-  canChangePaymentOption Boolean @default(true)
-  payModel         String   @default("fast")  // lønmodel: "fast" | "akkord"
-  commissionPct    Int?     // akkord: provisionssats i % (fx 40)
-  monthlySalary    Int?     // fast løn: manuelt beløb (kr/md)
-  orders           Order[]
-  timeEntries      TimeEntry[]
+  id                     Int         @id @default(autoincrement())
+  company                Company     @relation(fields: [companyId], references: [id])
+  companyId              Int
+  username               String      @unique
+  passwordHash           String? // scrypt "salt:hash"; null = cannot log in
+  firstName              String
+  lastName               String
+  email                  String?
+  calendarColor          String? // hex
+  activeCalendar         Boolean     @default(true)
+  canReceiveOnline       Boolean     @default(false)
+  homeAddress            String?
+  active                 Boolean     @default(true) // soft-delete: false = deaktiveret (kan ikke logge ind, skjult i vælgere)
+  isAdmin                Boolean     @default(false)
+  canSeePrices           Boolean     @default(true)
+  canEditOrders          Boolean     @default(true)
+  canHandlePayment       Boolean     @default(true)
+  canChangePaymentOption Boolean     @default(true)
+  payModel               String      @default("fast") // lønmodel: "fast" | "akkord"
+  commissionPct          Int? // akkord: provisionssats i % (fx 40)
+  monthlySalary          Int? // fast løn: manuelt beløb (kr/md)
+  // --- Session-tilbagekaldelse (audit F8) ---
+  // Statsløse 7-dages tokens kan ikke slettes serverside. Et token udstedt FØR
+  // dette tidspunkt afvises. Sættes ved deaktivering og ved kodeordsskift, så
+  // en fyret medarbejder mister adgang med det samme i stedet for om 7 dage.
+  sessionsValidFrom      DateTime?
+  // --- Arbejdstid (audit F15) ---
+  // Ét sted at hente arbejdstid fra. Var hardkodet tre steder med to forskellige
+  // svar (planner.ts 08–16+flex vs. calendar2 08–18), så de to planlæggere var
+  // uenige om hvad der kunne nå at blive lavet på en dag.
+  workStartMin           Int         @default(480) // minutter fra midnat, 480 = 08:00
+  workEndMin             Int         @default(1080) // 1080 = 18:00
+  flexMin                Int         @default(0) // ekstra minutter i slutningen af dagen
+  workdays               String      @default("01234") // cifre, 0=mandag … 6=søndag
+  // --- Cachet geokodning af hjemmeadressen (audit F3) ---
+  homeLat                Float?
+  homeLon                Float?
+  homeGeocodedAt         DateTime?
+  homeGeocodeProvider    String?
+  orders                 Order[]
+  timeEntries            TimeEntry[]
 
   @@index([companyId])
 }
 
 model Contact {
-  id            Int       @id @default(autoincrement())
-  company       Company   @relation(fields: [companyId], references: [id])
-  companyId     Int
-  isCompany     Boolean   @default(false)
-  companyName   String?
-  cvr           String?
-  ean           String?
-  name          String
-  email         String?
-  phone         String?
-  street        String    // "Ørnedvej 4"
-  city          String    // "8660 Skanderborg" (postal + city)
-  att           String?   // attention / contact person
-  note          String?   // internal address remark
+  id                           Int                   @id @default(autoincrement())
+  company                      Company               @relation(fields: [companyId], references: [id])
+  companyId                    Int
+  isCompany                    Boolean               @default(false)
+  companyName                  String?
+  cvr                          String?
+  ean                          String?
+  name                         String
+  email                        String?
+  phone                        String?
+  street                       String // "Ørnedvej 4"
+  city                         String // "8660 Skanderborg" (postal + city)
+  att                          String? // attention / contact person
+  note                         String? // internal address remark
   // display figures shown on the customer list (seeded for parity; recomputed later)
-  revenueYtd         Int?  // "Omsætning ÅTD"; null renders as "-"
-  avgYearlyFromSubs  Int   @default(0) // "Gns. oms/år fra abo."
+  revenueYtd                   Int? // "Omsætning ÅTD"; null renders as "-"
+  avgYearlyFromSubs            Int                   @default(0) // "Gns. oms/år fra abo."
   // per-contact invoice overrides
-  skipDeliveryAddressOnInvoice Boolean @default(false)
-  showDeliveryNameOnInvoice    Boolean @default(false)
-  skipInvoiceOverSms           Boolean @default(false)
-  invoiceChoicePreselect       String  @default("default")
+  skipDeliveryAddressOnInvoice Boolean               @default(false)
+  showDeliveryNameOnInvoice    Boolean               @default(false)
+  skipInvoiceOverSms           Boolean               @default(false)
+  invoiceChoicePreselect       String                @default("default")
   // Dinero (Visma) kontakt-guid — sættes ved første fakturering af kunden, så
   // efterfølgende ordrer kan springe opslag/oprettelse over. @unique er et værn
   // mod at oprette den samme kontakt to gange i Dinero.
-  dineroContactGuid            String? @unique
-  subscriptions Subscription[]
-  fixedPrices   FixedPriceAgreement[]
-  orders        Order[]
-  leads         Lead[]
-  createdAt     DateTime  @default(now())
+  dineroContactGuid            String?               @unique
+  // --- Cachet geokodning af leveringsadressen (audit F3) ---
+  // En adresse geokodes én gang i sin levetid, ikke én gang pr. sidevisning.
+  // geocodeStatus: "verified" | "unverified_address". Ryddes når street/city ændres.
+  geoLat                       Float?
+  geoLon                       Float?
+  geocodedAt                   DateTime?
+  geocodeStatus                String?
+  geocodeProvider              String?
+  subscriptions                Subscription[]
+  fixedPrices                  FixedPriceAgreement[]
+  orders                       Order[]
+  leads                        Lead[]
+  createdAt                    DateTime              @default(now())
 
   @@index([companyId])
 }
 
 model StandardTask {
-  id          Int      @id @default(autoincrement())
-  company     Company  @relation(fields: [companyId], references: [id])
-  companyId   Int
-  category    String
-  description String
-  letter      String?
+  id                       Int     @id @default(autoincrement())
+  company                  Company @relation(fields: [companyId], references: [id])
+  companyId                Int
+  category                 String
+  description              String
+  letter                   String?
   customerPresenceRequired Boolean @default(false)
-  isSystem    Boolean  @default(false) // locked, cannot edit/deactivate
-  active      Boolean  @default(true)
+  isSystem                 Boolean @default(false) // locked, cannot edit/deactivate
+  active                   Boolean @default(true)
 
   @@index([companyId])
 }
 
 model TaskLine {
-  id            Int      @id @default(autoincrement())
-  category      String
-  letter        String
-  color         String   // category hex (denormalised for the formset)
-  description   String
-  price         Int      // incl. VAT (kr)
-  durationMin   Int
-  customerPresenceRequired Boolean @default(false)
-  isStandardTask     Boolean @default(false)
-  fromSubscription   Boolean @default(false)
-  intervalMultiplier String?  // subscriptions/orders only — "Hver 2. gang (hver 4. uge)"
-  startWeek     String?        // subscriptions only — "Uge 29"
-  pauseActive   Boolean  @default(false) // "Måneder på pause": opgaven genereres ikke i vinduet
-  pauseStart    String?        // ISO 'YYYY-MM-DD' (subscriptions only; window may wrap New Year)
-  pauseEnd      String?        // ISO 'YYYY-MM-DD'
-  pauseYearly   Boolean  @default(true)  // true = gentag hvert år (kun måned/dag); false = kun denne sæson (absolutte datoer)
-  subscription  Subscription? @relation(fields: [subscriptionId], references: [id])
-  subscriptionId Int?
-  fixedPrice    FixedPriceAgreement? @relation(fields: [fixedPriceId], references: [id])
-  fixedPriceId  Int?
-  order         Order?   @relation(fields: [orderId], references: [id])
-  orderId       Int?
-  sort          Int      @default(0)
+  id                       Int                  @id @default(autoincrement())
+  category                 String
+  letter                   String
+  color                    String // category hex (denormalised for the formset)
+  description              String
+  price                    Int // LEGACY: hele kroner INKL. moms. Bevares indtil backfill er verificeret.
+  // --- Penge i mindste enhed (audit F16) ---
+  // `price` mistede underkrone-præcision før enhver beregning, og momsen lå
+  // implicit i tallet. Disse to felter er sandheden fremover: øre EKSKL. moms
+  // + satsen i basispoint (2500 = 25 %). Additivt med vilje — backfill kører
+  // som et separat, kørbart script (prisma/backfill-money.mjs), og `price`
+  // droppes først når tallene er afstemt mod Dinero.
+  priceOere                Int? // øre, ekskl. moms
+  vatRateBp                Int? // basispoint, fx 2500 = 25 %
+  durationMin              Int
+  customerPresenceRequired Boolean              @default(false)
+  isStandardTask           Boolean              @default(false)
+  fromSubscription         Boolean              @default(false)
+  intervalMultiplier       String? // subscriptions/orders only — "Hver 2. gang (hver 4. uge)"
+  startWeek                String? // subscriptions only — "Uge 29"
+  pauseActive              Boolean              @default(false) // "Måneder på pause": opgaven genereres ikke i vinduet
+  pauseStart               String? // ISO 'YYYY-MM-DD' (subscriptions only; window may wrap New Year)
+  pauseEnd                 String? // ISO 'YYYY-MM-DD'
+  pauseYearly              Boolean              @default(true) // true = gentag hvert år (kun måned/dag); false = kun denne sæson (absolutte datoer)
+  subscription             Subscription?        @relation(fields: [subscriptionId], references: [id])
+  subscriptionId           Int?
+  fixedPrice               FixedPriceAgreement? @relation(fields: [fixedPriceId], references: [id])
+  fixedPriceId             Int?
+  order                    Order?               @relation(fields: [orderId], references: [id])
+  orderId                  Int?
+  sort                     Int                  @default(0)
 
   @@index([orderId])
   @@index([subscriptionId])
@@ -140,78 +175,78 @@ model TaskLine {
 }
 
 model Subscription {
-  id             Int       @id @default(autoincrement()) // internal URL pk
-  displayNo      Int       @unique // "Abo. nr." shown in lists (≠ id/pk)
-  contact        Contact   @relation(fields: [contactId], references: [id])
-  contactId      Int
+  id              Int                    @id @default(autoincrement()) // internal URL pk
+  displayNo       Int                    @unique // "Abo. nr." shown in lists (≠ id/pk)
+  contact         Contact                @relation(fields: [contactId], references: [id])
+  contactId       Int
   deliveryAddress String
-  baseInterval   String    // "Hver 2. uge"
-  startWeek      String?
-  nextWeek       String?   // "Fremtidige ordrer" label, e.g. "Uge 29"
-  fixedWeekdays  String?   // digit string e.g. "1234560"
-  fixedTimeOfDay String?
-  fixedEmployee  String    @default("Ingen")
-  notiOverride   Boolean   @default(false)
-  active         Boolean   @default(true)
-  pending        Boolean   @default(false) // afventende godkendelse (lead konverteret, pris ikke bekræftet endnu) — active er false imens
-  tasks          TaskLine[]
-  orders         Order[]
-  weekSkips      SubscriptionWeekSkip[]
-  createdAt      DateTime  @default(now())
+  baseInterval    String // "Hver 2. uge"
+  startWeek       String?
+  nextWeek        String? // "Fremtidige ordrer" label, e.g. "Uge 29"
+  fixedWeekdays   String? // digit string e.g. "1234560"
+  fixedTimeOfDay  String?
+  fixedEmployee   String                 @default("Ingen")
+  notiOverride    Boolean                @default(false)
+  active          Boolean                @default(true)
+  pending         Boolean                @default(false) // afventende godkendelse (lead konverteret, pris ikke bekræftet endnu) — active er false imens
+  tasks           TaskLine[]
+  orders          Order[]
+  weekSkips       SubscriptionWeekSkip[]
+  createdAt       DateTime               @default(now())
 
   @@index([contactId])
 }
 
 model FixedPriceAgreement {
-  id             Int       @id @default(autoincrement())
-  displayNo      Int       @unique
-  contact        Contact   @relation(fields: [contactId], references: [id])
-  contactId      Int
+  id              Int        @id @default(autoincrement())
+  displayNo       Int        @unique
+  contact         Contact    @relation(fields: [contactId], references: [id])
+  contactId       Int
   deliveryAddress String
-  tasks          TaskLine[]
-  orders         Order[]
+  tasks           TaskLine[]
+  orders          Order[]
 
   @@index([contactId])
 }
 
 model Order {
-  id            Int       @id @default(autoincrement())
-  contact       Contact   @relation(fields: [contactId], references: [id])
-  contactId     Int
-  deliveryAddress String
-  plannedAt     DateTime  // leverings-DATO (gemt UTC-middag) — bevaret for bagudkompatibilitet
-  startAt       DateTime? // præcist booket klokkeslæt inden for arbejdsdagen (07:00–15:00); null = ældre/dato-only ordre
-  status        String    @default("Afventer levering")
-  sourceType    String    // subscription | fixed | manual | online
-  subscription  Subscription? @relation(fields: [subscriptionId], references: [id])
-  subscriptionId Int?
-  fixedPrice    FixedPriceAgreement? @relation(fields: [fixedPriceId], references: [id])
-  fixedPriceId  Int?
-  employee      User?     @relation(fields: [employeeId], references: [id])
-  employeeId    Int?
-  lockedFully   Boolean   @default(false)
-  comment       String?
-  addressNote   String?
-  sourceWeek    DateTime? // rytme-ugens mandag ordren blev genereret FOR (dedup-nøgle — flytning ændrer den ikke; null for manuelle ordrer)
+  id                            Int                  @id @default(autoincrement())
+  contact                       Contact              @relation(fields: [contactId], references: [id])
+  contactId                     Int
+  deliveryAddress               String
+  plannedAt                     DateTime // leverings-DATO (gemt UTC-middag) — bevaret for bagudkompatibilitet
+  startAt                       DateTime? // præcist booket klokkeslæt inden for arbejdsdagen (07:00–15:00); null = ældre/dato-only ordre
+  status                        String               @default("Afventer levering")
+  sourceType                    String // subscription | fixed | manual | online
+  subscription                  Subscription?        @relation(fields: [subscriptionId], references: [id])
+  subscriptionId                Int?
+  fixedPrice                    FixedPriceAgreement? @relation(fields: [fixedPriceId], references: [id])
+  fixedPriceId                  Int?
+  employee                      User?                @relation(fields: [employeeId], references: [id])
+  employeeId                    Int?
+  lockedFully                   Boolean              @default(false)
+  comment                       String?
+  addressNote                   String?
+  sourceWeek                    DateTime? // rytme-ugens mandag ordren blev genereret FOR (dedup-nøgle — flytning ændrer den ikke; null for manuelle ordrer)
   // --- Fakturering via Dinero (sat i "Afslut ordre"-flowet) ---
   // invoiceDecision = det rå betalingsvalg fra CompleteOrderForm
   // ("Send faktura - ubetalt" | "Send faktura - betalt kontant" |
   //  "Send ikke faktura fra Fenster" | "Opret fakturakladde" |
   //  "Registrer på et senere tidspunkt"). Før i tiden blev valget kasseret.
-  invoiceDecision       String?
+  invoiceDecision               String?
   // dineroInvoiceGuid @unique er DB-værnet mod dobbeltfakturering: en ordre kan
   // kun bære ÉT Dinero-fakturaid. Sættes straks efter kladden er oprettet.
-  dineroInvoiceGuid     String?  @unique
-  dineroInvoiceTimeStamp String? // Dineros concurrency-token (roterer ved create/book/betaling) — kræves til book/email/payments og til genoptagelse efter fejl
-  dineroInvoiceNumber   Int?     // tildeles juridisk ved bogføring (ikke ved kladde)
-  dineroInvoiceStatus   String?  // simulated | Draft | Booked | Sent | Paid | Failed
-  dineroPaymentGuid     String?  // betalings-guid ved "betalt kontant"
-  dineroError           String?  // seneste fejldetalje (dansk), rydded ved succes
-  invoicedAt            DateTime?
-  reminderSentAt        DateTime? // "vi kommer i morgen"-påmindelse sendt — idempotens-værn, sendes højst én gang pr. ordre
-  completedAt           DateTime? // Faktisk afslutningstidspunkt (sat af completeOrder ved "Udført") — bruges til at
-                                   // rykke medarbejderens ØVRIGE opgaver samme dag frem, hvis hun/han blev hurtigere
-                                   // færdig end planlagt (Michael, mødereferat 2026-08-03). Se lib/queries.ts buildWeekPlan.
+  dineroInvoiceGuid             String?              @unique
+  dineroInvoiceTimeStamp        String? // Dineros concurrency-token (roterer ved create/book/betaling) — kræves til book/email/payments og til genoptagelse efter fejl
+  dineroInvoiceNumber           Int? // tildeles juridisk ved bogføring (ikke ved kladde)
+  dineroInvoiceStatus           String? // simulated | Draft | Booked | Sent | Paid | Failed
+  dineroPaymentGuid             String? // betalings-guid ved "betalt kontant"
+  dineroError                   String? // seneste fejldetalje (dansk), rydded ved succes
+  invoicedAt                    DateTime?
+  reminderSentAt                DateTime? // "vi kommer i morgen"-påmindelse sendt — idempotens-værn, sendes højst én gang pr. ordre
+  completedAt                   DateTime? // Faktisk afslutningstidspunkt (sat af completeOrder ved "Udført") — bruges til at
+  // rykke medarbejderens ØVRIGE opgaver samme dag frem, hvis hun/han blev hurtigere
+  // færdig end planlagt (Michael, mødereferat 2026-08-03). Se lib/queries.ts buildWeekPlan.
   // --- Erhvervs-samlefaktura (Michael, 2026-08-10) ---
   // Erhvervskunder faktureres IKKE pr. ordre: alle ordrer "Udført" i perioden
   // 20.-19. i næste måned samles i ÉN Dinero-faktura pr. erhvervskontakt, helt
@@ -221,11 +256,11 @@ model Order {
   businessBatchInvoiceGuid      String?
   businessBatchInvoiceTimeStamp String?
   businessBatchInvoiceNumber    Int?
-  businessBatchInvoiceStatus    String?  // simulated | Draft | Booked | Sent | Failed
+  businessBatchInvoiceStatus    String? // simulated | Draft | Booked | Sent | Failed
   businessBatchInvoicedAt       DateTime?
   businessBatchError            String?
-  tasks         TaskLine[]
-  createdAt     DateTime  @default(now())
+  tasks                         TaskLine[]
+  createdAt                     DateTime             @default(now())
 
   @@unique([subscriptionId, sourceWeek]) // concurrency-værn: cron + manuel generering kan ikke dobbelt-oprette en uge
   @@index([contactId])
@@ -246,7 +281,7 @@ model QuoteToken {
   createdAt DateTime  @default(now())
   expiresAt DateTime
   usedAt    DateTime?
-  choice    String?   // "accept" | "maybe" | "decline" — sat når token forbruges
+  choice    String? // "accept" | "maybe" | "decline" — sat når token forbruges
 
   @@index([leadId])
 }
@@ -258,7 +293,7 @@ model SubscriptionWeekSkip {
   id             Int          @id @default(autoincrement())
   subscription   Subscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
   subscriptionId Int
-  week           DateTime     // ugens mandag (UTC midnat)
+  week           DateTime // ugens mandag (UTC midnat)
   createdAt      DateTime     @default(now())
 
   @@unique([subscriptionId, week])
@@ -277,40 +312,112 @@ model OrderReconciliationRun {
   rolledBackAt    DateTime?
 }
 
-model DiscountCode {
+// Cachet rejsetidsmatrix (audit F3). Nøglen er en hash af det NORMALISEREDE
+// adressesæt, så samme sæt genbruger samme matrix på tværs af serverless-
+// instanser i stedet for at geokode forfra ved hver kold start. `stale` lader
+// planlæggeren falde tilbage til sidst kendte gode matrix, når udbyderen er
+// nede — aldrig til en tom kalender.
+model TravelMatrixCache {
+  id             Int      @id @default(autoincrement())
+  addressSetHash String   @unique
+  provider       String
+  addresses      String // JSON: string[]
+  durations      String // JSON: number[][] (minutter; null = uopnåelig)
+  capturedAt     DateTime @default(now())
+  lastUsedAt     DateTime @default(now())
+
+  @@index([capturedAt])
+}
+
+// Materialiseret ruteplan (audit F1). Planlægningen flyttes UD af request-
+// stien: et planlagt job skriver én række pr. (uge, medarbejder), og
+// /calendar-2 læser rækker i stedet for at genberegne en 26-ugers horisont
+// ved hver sidevisning.
+model Calendar2PlanDay {
   id         Int      @id @default(autoincrement())
-  code       String
-  percent    Int
-  expiresAt  DateTime?
+  weekMonday DateTime // mandag (UTC midnat)
+  employeeId Int
+  weekday    Int // 0=mandag
+  plan       String // JSON: Calendar2Day
+  inputHash  String // hash af planlægger-input — springer genberegning over når intet er ændret
+  computedAt DateTime @default(now())
+
+  @@unique([weekMonday, employeeId, weekday])
+  @@index([weekMonday])
+}
+
+// Kapacitetsunderskud pr. medarbejder pr. uge (audit F2). Dette er tallet
+// ejeren mangler for at kunne afgøre, om der skal ansættes. Skrives af samme
+// job som Calendar2PlanDay, så overbooking bliver en synlig tilstand i stedet
+// for arbejde der lydløst skubbes halvandet år ud i fremtiden.
+model Calendar2WeekCapacity {
+  id             Int      @id @default(autoincrement())
+  weekMonday     DateTime
+  employeeId     Int
+  demandMin      Int // efterspurgt service + kørsel
+  capacityMin    Int // tilgængelige minutter
+  deficitMin     Int // > 0 = overbooket
+  deferredVisits Int // besøg skubbet ud af den aftalte uge
+  computedAt     DateTime @default(now())
+
+  @@unique([weekMonday, employeeId])
+  @@index([weekMonday])
+}
+
+// Besøg der IKKE kunne planlægges inden for policy-horisonten (audit F2).
+// Erstatter den gamle kontrakt, hvor kapacitetsmangel aldrig kunne blive en
+// unplanned-årsag og derfor forsvandt i stilhed. Rækker her skal triageres af
+// et menneske.
+model Calendar2UnschedulableVisit {
+  id             Int       @id @default(autoincrement())
+  subscriptionId Int
+  sourceWeek     DateTime // den uge kunden var aftalt til
+  employeeId     Int?
+  customer       String
+  address        String
+  minutes        Int
+  reason         String // capacity_exceeded | unverified_address | unverified_route | unassigned | invalid_duration
+  detectedAt     DateTime  @default(now())
+  resolvedAt     DateTime?
+
+  @@unique([subscriptionId, sourceWeek])
+  @@index([resolvedAt])
+}
+
+model DiscountCode {
+  id        Int       @id @default(autoincrement())
+  code      String
+  percent   Int
+  expiresAt DateTime?
 }
 
 model HolidayWeek {
-  id         Int      @id @default(autoincrement())
-  startWeek  DateTime // Monday ISO date
-  endWeek    DateTime
+  id        Int      @id @default(autoincrement())
+  startWeek DateTime // Monday ISO date
+  endWeek   DateTime
 }
 
 // Inbound sales lead from the public website form / webhook (POST /api/leads).
 // Separate from Contact: a lead has few required fields and its own lifecycle
 // (new → contacted → converted → rejected); converting creates a real Contact.
 model Lead {
-  id        Int      @id @default(autoincrement())
-  company   Company  @relation(fields: [companyId], references: [id])
+  id        Int          @id @default(autoincrement())
+  company   Company      @relation(fields: [companyId], references: [id])
   companyId Int
-  status    String   @default("new")     // new | contacted | converted | rejected | accepted (kunden klikkede Ja i tilbudsmailen — afventer stadig bekræftelses-opkald før konvertering)
+  status    String       @default("new") // new | contacted | converted | rejected | accepted (kunden klikkede Ja i tilbudsmailen — afventer stadig bekræftelses-opkald før konvertering)
   name      String
-  email     String?                       // stored lowercased/trimmed
-  phone     String?                       // stored normalised (digits, +45 stripped)
-  address   String?                       // free text as submitted
+  email     String? // stored lowercased/trimmed
+  phone     String? // stored normalised (digits, +45 stripped)
+  address   String? // free text as submitted
   message   String?
-  source    String   @default("website")  // website | manual | partner | ...
-  utm       String?                       // JSON blob string (schema has no Json type)
-  payload   String?                       // JSON blob string fra tilbudsmotoren: {kundetype, services[], estimat}
-  ip        String?                       // submitter IP for abuse forensics
-  contact   Contact? @relation(fields: [contactId], references: [id])
-  contactId Int?                          // set when converted to a customer
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  source    String       @default("website") // website | manual | partner | ...
+  utm       String? // JSON blob string (schema has no Json type)
+  payload   String? // JSON blob string fra tilbudsmotoren: {kundetype, services[], estimat}
+  ip        String? // submitter IP for abuse forensics
+  contact   Contact?     @relation(fields: [contactId], references: [id])
+  contactId Int? // set when converted to a customer
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
   tokens    QuoteToken[]
 
   @@index([companyId, status])
@@ -341,15 +448,15 @@ model TimeEntry {
 // blot den verificerede organisation + de to kontonumre, fakturaer/betalinger
 // bogføres på, og opdateres af "Test forbindelse" på /accounting.
 model DineroConnection {
-  id             Int       @id @default(autoincrement())
-  company        Company   @relation(fields: [companyId], references: [id])
-  companyId      Int       @unique
-  organizationId String    // Dinero firma-/organisations-ID (numerisk, gemt som streng — indgår i alle resource-URL'er)
-  orgName        String?
-  isPro          Boolean   @default(false) // API'et kræver Dinero Pro
-  salesAccountNumber Int   @default(1000)  // kontonr. i Dinero kontoplan til bogføring af salg (afsendte fakturaer)
-  cashAccountNumber  Int   @default(55040) // indbetalingskonto (kasse) til "betalt kontant"
-  status         String    @default("connected") // connected | error
-  connectedAt    DateTime  @default(now())
-  updatedAt      DateTime  @updatedAt
+  id                 Int      @id @default(autoincrement())
+  company            Company  @relation(fields: [companyId], references: [id])
+  companyId          Int      @unique
+  organizationId     String // Dinero firma-/organisations-ID (numerisk, gemt som streng — indgår i alle resource-URL'er)
+  orgName            String?
+  isPro              Boolean  @default(false) // API'et kræver Dinero Pro
+  salesAccountNumber Int      @default(1000) // kontonr. i Dinero kontoplan til bogføring af salg (afsendte fakturaer)
+  cashAccountNumber  Int      @default(55040) // indbetalingskonto (kasse) til "betalt kontant"
+  status             String   @default("connected") // connected | error
+  connectedAt        DateTime @default(now())
+  updatedAt          DateTime @updatedAt
 }
