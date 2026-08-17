@@ -9,7 +9,6 @@ export const TOP_NAV: NavMenu[] = [
     label: "Kalender", en: "Calendar",
     items: [
       { label: "Kalender", en: "Calendar", href: "/calendar" },
-      { label: "Kalender 2", en: "Calendar preview", href: "/calendar-2" },
     ],
   },
   { label: "Dagsprogram", en: "Day program", items: [{ label: "Dagsprogram", en: "Day program", href: "/daycalendar" }] },

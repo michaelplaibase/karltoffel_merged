@@ -33,7 +33,7 @@ test("read-only markerer den effektive 60 minutters standardtid", async () => {
 
 test("read-only kort er klikbare som kalenderkort, men menuen indeholder kun sikre visningslinks", async () => {
   const component = await source("components/TeamCalendarClient.tsx");
-  const previewPage = await source("app/calendar-2/page.tsx");
+  const previewPage = await source("app/calendar/page.tsx");
   assert.match(component, /function openReadOnlyMenu/);
   assert.match(component, /role=\{readOnly \? "button" : undefined\}/);
   assert.match(component, /tabIndex=\{readOnly \? 0 : undefined\}/);
