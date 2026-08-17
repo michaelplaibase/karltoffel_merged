@@ -8,8 +8,8 @@ import { telHref, telDisplay } from "@/components/ui";
 import { setOrderLock, moveOrderWeeks, replanWeek, deleteOrder } from "@/app/actions/orders";
 
 type Props =
-  | { mode: "week"; week: CalendarWeek; nav: { prevWeek: string; nextWeek: string; monthParam: string }; readOnly?: boolean; basePath?: string; previewLabel?: string }
-  | { mode: "month"; month: CalendarMonth; nav: { prevWeek?: never }; readOnly?: boolean; basePath?: string; previewLabel?: string };
+  | { mode: "week"; week: CalendarWeek; nav: { prevWeek: string; nextWeek: string; monthParam: string }; readOnly?: boolean; basePath?: string }
+  | { mode: "month"; month: CalendarMonth; nav: { prevWeek?: never }; readOnly?: boolean; basePath?: string };
 
 /** What the context menu needs to act on an order — both board events and unplanned jobs qualify. */
 type MenuTarget = { id: number; contactId: number; subscriptionNo: number | null; phone: string | null };
@@ -413,7 +413,7 @@ export default function TeamCalendarClient(props: Props) {
         <div className="app">
           {readOnly && (
             <div role="status" style={{ padding: "12px 16px", borderBottom: "1px solid var(--tc-line-soft)", background: "var(--tc-soft)", display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
-              <span className="badge acc">{props.previewLabel ?? "Forhåndsvisning"}</span>
+              <span className="badge acc">Kalender</span>
               <span>Read-only projektion af aktive abonnementer. Der oprettes eller ændres ingen ordrer, opgaver eller abonnementer.</span>
             </div>
           )}
