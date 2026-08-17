@@ -318,6 +318,12 @@ const STEP_ORDER = ["step-adresse","step-kundetype","step-verify","step-losning"
 function visStep(id, skipScroll){
   ROOT.querySelectorAll(".step").forEach(s => s.classList.remove("active"));
   $(id).classList.add("active");
+  /* M1: det sticky bund-bånd vises kun, mens løsnings-trinnet er aktivt. CSS
+     (max-width:1023px) afgør selve visibility, så månedsprisen + CTA altid er
+     synlig, mens servicelisten scroller på mobil. */
+  const stick = $("tm-sticky");
+  if(stick) stick.classList.toggle("on", id === "step-losning");
+  syncStickyCta();
   if(!skipScroll) ROOT.scrollIntoView({ block:"start", behavior:"auto" });
   if(id === "step-verify") $("verify-adr").textContent = state.adresse;
   if(id === "step-losning") renderTop();
@@ -401,15 +407,30 @@ const btAbo = $("bt-abonnement"), btPrGang = $("bt-prgang"), btAboMd = $("bt-abo
 const HAVE_SAESON_MDR = 7;   /* 1. april – 31. oktober, inklusive begge måneder */
 const BT_ABO_RABAT = 0.10;   /* 10% rabat for at vælge fast abonnement (nudge væk fra pr. gang) */
 function vaelgBetaling(t){
+  if(!btAbo) return;   /* siden har ingen betalings-kort (forside uden split-test) */
   state.betaling = t;
   btAbo.classList.toggle("selected", t === "abonnement");
   btPrGang.classList.toggle("selected", t === "pr_gang");
   btAbo.setAttribute("aria-checked", t === "abonnement" ? "true" : "false");
   btPrGang.setAttribute("aria-checked", t === "pr_gang" ? "true" : "false");
   lsVidere.disabled = false;
+  syncStickyCta();
+  opdater();   /* totalblokken + betalings-kortene afspejler valget med det samme */
 }
-btAbo.addEventListener("click", ()=> vaelgBetaling("abonnement"));
-btPrGang.addEventListener("click", ()=> vaelgBetaling("pr_gang"));
+if(btAbo) btAbo.addEventListener("click", ()=> vaelgBetaling("abonnement"));
+if(btPrGang) btPrGang.addEventListener("click", ()=> vaelgBetaling("pr_gang"));
+
+/* M1: det sticky bund-bånds "Videre" delegerer til hoved-CTA'en og spejler
+   dens disabled-tilstand, så båndet aldrig er i modstrid med hovedflowet. */
+const stickyVidere = $("tm-sticky-videre");
+if(stickyVidere) stickyVidere.addEventListener("click", ()=>{
+  const lsv = $("ls-videre");
+  if(lsv && !lsv.disabled) lsv.click();
+});
+function syncStickyCta(){
+  const sv = $("tm-sticky-videre"), lsv = $("ls-videre");
+  if(sv && lsv) sv.disabled = lsv.disabled;
+}
 
 /* Sæson-månedsprisen for abonnementet: årssummen (efter mængderabat) med
    yderligere 10% abonnements-rabat, fordelt over KUN de 7 havesæson-måneder —
@@ -894,6 +915,45 @@ function opdaterRabat(){
   }
 }
 
+/* ============ LIVE TOTALBLOK (W1) — brutto → rabatter → netto ============ */
+/* Populerer totalblokken oven over servicelisten samt det sticky bund-bånd
+   (M1). Genbruger KUN tal, der allerede findes i beregn() og motoren: brutto
+   (r.aarBrutto), mængderabat (r.rabatPct / r.rabatKr), antal (r.count), besøg
+   (r.visits), abonnementsrabat-konstanten (BT_ABO_RABAT) og state.rabatkode.
+   Ingen ny beregningslogik: netto = brutto − mængderabat (− abonnementsrabat
+   når abonnement er valgt), pr. md = netto / 12 (= r.md når abo ikke er valgt). */
+function fmtMd(n){ return DKK0.format(Math.round(n)) + " kr/md"; }
+function fmtMinus(n){ return "−" + DKK0.format(Math.round(Math.abs(n))) + " kr"; }
+/* Animation med husket forrige værdi (samme mønster som rækkernes .pw). */
+function animateVal(el, to, fmt){
+  if(!el) return;
+  fmt = fmt || kr;
+  const prev = parseFloat(el.dataset.val);
+  if(isFinite(prev) && prev !== to){ animateNumber(el, prev, to, fmt); }
+  else { el.textContent = fmt(to); }
+  el.dataset.val = to;
+}
+function opdaterTotal(){
+  const r = beregn(PRODUCTS);
+  const erAbo = state.betaling === "abonnement";
+  const aboKr = erAbo ? r.aar * BT_ABO_RABAT : 0;
+  const aarNet = r.aar - aboKr;          /* netto efter mængderabat (+ abonnementsrabat) */
+  const mdNet = aarNet / 12;             /* = r.md når abonnementsrabat ikke er valgt */
+
+  const cEl = $("t-count"), vEl = $("t-visits");   /* regnestrimmel-data → live */
+  if(cEl) cEl.textContent = r.count;
+  if(vEl) vEl.textContent = r.visits;
+
+  animateVal($("t-brutto"), r.aarBrutto, kr);
+  const mRow = $("tm-row-maengde"); if(mRow) mRow.hidden = r.rabatKr <= 0;
+  animateVal($("t-maengde"), r.rabatKr, fmtMinus);
+  const aRow = $("tm-row-abo"); if(aRow) aRow.hidden = !erAbo;
+  animateVal($("t-abo"), aboKr, fmtMinus);
+  animateVal($("t-netto"), aarNet, kr);
+  animateVal($("t-pris"), mdNet, fmtMd);
+  animateVal($("t-sticky-pris"), mdNet, fmtMd);
+}
+
 function opdater(){
   PRODUCTS.forEach(p => {
     const el = ROOT.querySelector('.pw[data-id="' + p.id + '"]');
@@ -920,6 +980,7 @@ function opdater(){
   });
   opdaterRabat();
   opdaterBetaling();
+  opdaterTotal();   /* W1 totalblok + M1 sticky bund-bånd */
   gemState("step-losning");   /* hver frekvens-/til-fravalgs-ændring overlever refresh */
 }
 

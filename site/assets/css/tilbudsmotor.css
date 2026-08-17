@@ -269,3 +269,64 @@
 .tm-flow .tm-rabat b{font-weight:800}
 /* Rabatkode-linjen i banneret — egen linje under mængderabatten */
 .tm-flow .tm-rabat .tm-rabat-kode{display:block;margin-top:4px}
+
+/* ==========================================================================
+   W1 LIVE TOTALBLOK (oven over servicelisten) — brutto → rabatter → netto.
+   Ivory-kort i tråd med .topbar; rabat-linjer i rød, netto/md fed brun.
+   ========================================================================== */
+.tm-flow .tm-total{
+  max-width:760px;margin:18px auto 0;
+  background:var(--ivory);color:var(--brun);
+  border-radius:18px;padding:14px 18px 16px;
+  box-shadow:0 14px 34px rgba(0,0,0,.3);
+}
+/* Meta (regnestrimmel-data: antal + besøg) — skilt fra rabat-rækkerne */
+.tm-flow .tm-total-meta{
+  display:flex;gap:16px;flex-wrap:wrap;
+  padding-bottom:10px;margin-bottom:10px;
+  border-bottom:1px dashed var(--graa);
+  font-size:12px;font-weight:600;color:var(--bronze);
+}
+.tm-flow .tm-total-meta b{
+  color:var(--brun);font-size:15px;font-weight:800;font-variant-numeric:tabular-nums;
+}
+.tm-flow .tm-total-rows{display:flex;flex-direction:column}
+.tm-flow .tm-total-row{
+  display:flex;justify-content:space-between;align-items:baseline;gap:12px;
+  padding:5px 0;font-size:13.5px;
+}
+.tm-flow .tm-total-lbl{color:var(--bronze);font-weight:600}
+.tm-flow .tm-total-val{color:var(--brun);font-weight:700;font-variant-numeric:tabular-nums}
+.tm-flow .tm-total-row--rabat .tm-total-val{color:var(--roed)}
+.tm-flow .tm-total-sep{height:1px;background:var(--graa);margin:7px 0}
+.tm-flow .tm-total-row--netto .tm-total-lbl{color:var(--brun);font-weight:800}
+.tm-flow .tm-total-row--netto .tm-total-val{font-weight:800}
+.tm-flow .tm-total-row--md .tm-total-lbl{font-size:14px;color:var(--brun);font-weight:800}
+.tm-flow .tm-total-row--md .tm-total-val{font-size:22px;font-weight:800}
+
+/* ==========================================================================
+   M1 STICKY BUND-BÅND (mobil) — samme live-total, så månedsprisen + CTA'en
+   altid er synlig, mens listen scroller. Skjult på desktop og uden for
+   løsnings-trinnet (klassen .on styres af visStep).
+   ========================================================================== */
+.tm-flow .tm-sticky{display:none}
+@media (max-width:1023px){
+  .tm-flow .tm-sticky.on{
+    display:flex;align-items:center;gap:14px;
+    position:fixed;left:0;right:0;bottom:0;z-index:40;
+    background:var(--brun);color:var(--ivory);
+    border-top:2px solid var(--gul);
+    padding:12px 16px calc(12px + env(safe-area-inset-bottom));
+    box-shadow:0 -8px 24px rgba(0,0,0,.35);
+  }
+  .tm-flow .tm-sticky .tm-sticky-lbl{
+    display:block;font-size:10px;letter-spacing:.08em;text-transform:uppercase;
+    color:var(--gul);opacity:.85;line-height:1;
+  }
+  .tm-flow .tm-sticky .tm-sticky-pris{
+    font-size:20px;font-weight:800;color:var(--gul);font-variant-numeric:tabular-nums;line-height:1.1;
+  }
+  .tm-flow .tm-sticky .btn{margin-left:auto}
+  /* Plads til sidste række/knap, så indhold ikke gemmes bag det faste bånd */
+  .tm-flow #step-losning{padding-bottom:96px}
+}
