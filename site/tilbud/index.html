@@ -1,0 +1,144 @@
+<!doctype html>
+<html lang="da" dir="ltr">
+<head>
+<meta charset="utf-8">
+<title>Få din pris - Karltoffel</title>
+<meta name="description" content="Vælg opgaven, tast din adresse, få din pris. Så ringer vi og aftaler resten.">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+<meta name="robots" content="noindex">
+<!-- noindex: dette er den nye motor til sammenligning side om side med den
+     på forsiden. Fjernes når den bliver den rigtige. -->
+<link rel="icon" type="image/png" href="/assets/img/design/favicon.png">
+<link rel="apple-touch-icon" href="/assets/img/design/appicon.png">
+<link rel="stylesheet" href="/assets/css/typekit.css">
+<link rel="stylesheet" href="/assets/css/tilbudsmotor2.css?v=1">
+<!-- Google Tag Manager -->
+<script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start': new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0], j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src= 'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f); })(window,document,'script','dataLayer','GTM-P3RXDG98');</script>
+<!-- End Google Tag Manager -->
+</head>
+<body>
+
+<!-- id="tilbudsmotor" er bevidst: assets/js/skraafoto.js binder sin rod til
+     netop det id, så fotorendereren kan genbruges uændret. -->
+<main class="tm2" id="tilbudsmotor">
+<div class="tm2-main">
+
+  <div class="tm2-progress" id="tm2-progress">
+    <span class="tm2-dots" id="tm2-dots" aria-hidden="true"><i class="on"></i><i></i><i></i></span>
+    <span class="tm2-progress-txt" id="tm2-progress-txt">Trin 1 af 3</span>
+  </div>
+
+  <!-- ── TRIN 1 ─────────────────────────────────────────────────────────── -->
+  <section class="step active" id="step-ydelse" aria-labelledby="h-ydelse">
+    <h1 id="h-ydelse">Hvad skal vi hjælpe med?</h1>
+    <p class="sub">Vælg opgaven, så regner vi prisen. Det tager under et minut.</p>
+    <div class="ydelser" id="ydelser"></div>
+  </section>
+
+  <!-- ── TRIN 2 ─────────────────────────────────────────────────────────── -->
+  <section class="step" id="step-omfang" aria-labelledby="h-omfang">
+    <h1 id="h-omfang"><span id="omfang-titel">Hvor stort er det?</span></h1>
+    <p class="sub"><span id="omfang-ydelse">Opgaven</span> — tast din adresse, så finder vi ejendommen frem.</p>
+
+    <div class="felt adr-wrap">
+      <label for="adr">Din adresse</label>
+      <input id="adr" type="text" autocomplete="street-address" autocapitalize="words"
+             placeholder="F.eks. Sundvej 8, 8700 Horsens" enterkeyhint="search">
+      <div class="adr-liste" id="adr-liste" role="listbox" aria-label="Adresseforslag"></div>
+    </div>
+
+    <!-- Fotoet bekræfter, det spørger ikke. Kortet har reserveret plads, så
+         siden ikke hopper, når billedet lander. -->
+    <div class="foto-card">
+      <div class="foto-tom">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 10.5 12 4l9 6.5"/><path d="M6 10v10h12V10"/><path d="M10 20v-6h4v6"/></svg>
+        <span>Vi henter et luftfoto af ejendommen, når du har valgt din adresse</span>
+      </div>
+      <canvas class="sf-canvas" id="sf-canvas" aria-label="Luftfoto af ejendommen"></canvas>
+      <div class="foto-meta">
+        <span class="sf-badge" id="sf-badge"></span>
+        <button type="button" class="foto-skift" id="foto-skift">Ikke dit hus?</button>
+      </div>
+      <span class="sf-note" id="sf-note"></span>
+    </div>
+
+    <div class="omfang" id="omfang" role="radiogroup" aria-label="Omfang"></div>
+    <p class="omfang-note" id="omfang-note">Vælg det, der ligner mest. Vi måler op, når vi står der.</p>
+  </section>
+
+  <!-- ── TRIN 3 ─────────────────────────────────────────────────────────── -->
+  <section class="step" id="step-kontakt" aria-labelledby="h-kontakt">
+    <h1 id="h-kontakt">Din pris</h1>
+
+    <div class="pris-boks">
+      <div class="pris-label">Anslået pr. besøg</div>
+      <div class="pris-tal" id="pris-tal">—</div>
+      <div class="pris-hvad" id="pris-hvad"></div>
+      <p class="pris-forbehold" id="pris-forbehold"></p>
+    </div>
+
+    <div class="ring-loefte">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a1 1 0 0 1-1 1A16 16 0 0 1 4 5a1 1 0 0 1 1-1z"/></svg>
+      <span>Vi ringer dig op og bekræfter prisen — som regel samme dag.</span>
+    </div>
+
+    <div class="felt">
+      <label for="k-navn">Navn</label>
+      <input id="k-navn" type="text" autocomplete="name" maxlength="120" enterkeyhint="next">
+    </div>
+    <div class="felt">
+      <label for="k-tlf">Telefon</label>
+      <input id="k-tlf" type="tel" inputmode="tel" autocomplete="tel" maxlength="40" enterkeyhint="done">
+    </div>
+
+    <details class="mere">
+      <summary>Tilføj e-mail, besked eller CVR</summary>
+      <div class="felt">
+        <label for="k-mail">E-mail <span style="text-transform:none;letter-spacing:0">(valgfri)</span></label>
+        <input id="k-mail" type="email" inputmode="email" autocomplete="email" maxlength="200">
+      </div>
+      <div class="kt-valg" role="radiogroup" aria-label="Privat eller erhverv">
+        <button type="button" id="kt-privat" role="radio" aria-checked="true">Privat</button>
+        <button type="button" id="kt-erhverv" role="radio" aria-checked="false">Erhverv</button>
+      </div>
+      <div class="felt" id="cvr-felt" hidden>
+        <label for="k-cvr">CVR-nummer</label>
+        <input id="k-cvr" type="text" inputmode="numeric" maxlength="8" placeholder="8 cifre">
+      </div>
+      <div class="felt">
+        <label for="k-note">Besked <span style="text-transform:none;letter-spacing:0">(valgfri)</span></label>
+        <textarea id="k-note" maxlength="2000" placeholder="Er der noget, vi skal vide på forhånd?"></textarea>
+      </div>
+    </details>
+
+    <p class="fejl" id="k-fejl"></p>
+  </section>
+
+  <!-- ── TAK ────────────────────────────────────────────────────────────── -->
+  <section class="step" id="step-tak" aria-labelledby="h-tak">
+    <div class="tak-ikon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 13 4.5 4.5L19 7"/></svg></div>
+    <h1 id="h-tak">Tak — vi er på sagen</h1>
+    <p class="sub">Vi har fået din forespørgsel og vender tilbage med en fast pris.</p>
+    <div class="tak-opsum" id="tak-opsum"></div>
+    <p class="tak-ring" id="tak-ring" hidden></p>
+  </section>
+
+</div>
+
+<!-- Bunbjælken: prisen og eneste vej frem, i tommelfingerzonen. -->
+<div class="bar" id="tm2-bar">
+  <button type="button" class="bar-tilbage" id="bar-tilbage" aria-label="Tilbage" style="display:none">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 19l-7-7 7-7"/></svg>
+  </button>
+  <div class="bar-pris">
+    <div class="b-label" id="bar-label">Vælg en opgave</div>
+    <div class="b-tal" id="bar-tal">Så regner vi prisen</div>
+  </div>
+  <button type="button" class="bar-btn" id="bar-btn" disabled>Videre</button>
+</div>
+
+</main>
+
+<script src="/assets/js/tilbudsmotor2.js?v=1"></script>
+</body>
+</html>
