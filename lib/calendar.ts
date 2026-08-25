@@ -98,14 +98,20 @@ export type CalendarMonth = {
   grandTotal: MonthCell;
 };
 
-// Monday (UTC) of the CURRENT ISO week — calendar/day-program/new-order default
-// to "this week". A function (not a module constant) so long-lived lambda
-// instances never serve a stale week across a Sunday→Monday boundary.
+/** Dags dato (Europe/Copenhagen) som yyyy-mm-dd — én kilde til sandhed for "i dag". */
+export function todayCphISO(): string {
+  return new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Copenhagen", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date());
+}
+
+// Mandag (Europe/Copenhagen) for den AKTUELLE ISO-uge — calendar/day-program/
+// new-order default til "denne uge". A function (not a module constant) so
+// long-lived lambda instances never serve a stale week across a Sunday→Monday
+// boundary.
 export function weekMondayToday(): string {
-  const now = new Date();
-  const wd = (now.getUTCDay() + 6) % 7; // 0 = Monday
-  const mon = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()) - wd * 864e5);
-  return `${mon.getUTCFullYear()}-${String(mon.getUTCMonth() + 1).padStart(2, "0")}-${String(mon.getUTCDate()).padStart(2, "0")}`;
+  const [y, m, d] = todayCphISO().split("-").map(Number);
+  const wd = (new Date(Date.UTC(y, m - 1, d)).getUTCDay() + 6) % 7; // 0 = Monday
+  const mon = new Date(Date.UTC(y, m - 1, d - wd));
+  return mon.toISOString().slice(0, 10);
 }
 
 // working-hours window shown on the grid (business hours)

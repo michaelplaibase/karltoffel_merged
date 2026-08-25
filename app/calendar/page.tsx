@@ -4,11 +4,13 @@ import { calendar2WeekNavigation } from "@/lib/calendar2-navigation";
 
 export const metadata = { title: "Kalender · Karltoffel" };
 
-const iso = (date: Date) => date.toISOString().slice(0, 10);
-
 function mondayOf(date: Date): string {
-  const weekday = (date.getUTCDay() + 6) % 7;
-  return iso(new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()) - weekday * 864e5));
+  // Ugedag/dato beregnes i Europe/Copenhagen, ikke UTC (undgå forkert uge ved
+  // midnat-1 og søndag aften).
+  const cph = new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Copenhagen", year: "numeric", month: "2-digit", day: "2-digit" }).format(date);
+  const [y, m, d] = cph.split("-").map(Number);
+  const weekday = (new Date(Date.UTC(y, m - 1, d)).getUTCDay() + 6) % 7;
+  return new Date(Date.UTC(y, m - 1, d - weekday)).toISOString().slice(0, 10);
 }
 
 export default async function CalendarPage({ searchParams }: { searchParams: Promise<{ week?: string; view?: string; month?: string }> }) {
