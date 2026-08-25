@@ -96,11 +96,23 @@ function mapOrder(o: OrderRow): Order {
 
 // ---- free-text search (single `q` param, like the portal's list search) -----
 
-/** Contact-field OR clause reused by every list that joins a contact. */
+/** Contact-field OR clause reused by every list that joins a contact.
+ *  Telefonsøgning matcher også på RENE CIFRE ("12 34 56 78" og "+45 12345678"
+ *  finder "12345678") — lead-konverterede kunder gemmes normaliseret, mens
+ *  håndindtastede numre kan have mellemrum/+45 (scripts/normalize-phones.ts
+ *  normaliserer eksisterende rækker). */
 function contactOr(q: string): Prisma.ContactWhereInput {
+  const digits = q.replace(/\D/g, "");
+  const phoneVariants: Prisma.ContactWhereInput[] = digits.length >= 6
+    ? [
+        { phone: { contains: digits } },
+        ...(digits.startsWith("45") && digits.length === 10 ? [{ phone: { contains: digits.slice(2) } }] : []),
+      ]
+    : [];
   return { OR: [
     { name: { contains: q, mode: "insensitive" } }, { companyName: { contains: q, mode: "insensitive" } },
     { email: { contains: q, mode: "insensitive" } }, { phone: { contains: q, mode: "insensitive" } },
+    ...phoneVariants,
     { street: { contains: q, mode: "insensitive" } }, { city: { contains: q, mode: "insensitive" } }, { att: { contains: q, mode: "insensitive" } },
   ] };
 }
@@ -130,9 +142,9 @@ function mondayISOOf(d: Date): string {
 const CLOSED_STATUSES = new Set(["Afsluttet", "Udført", "Sprunget over"]);
 function isOverdue(plannedAt: Date, status: string): boolean {
   if (CLOSED_STATUSES.has(status)) return false;
-  const today = new Date();
-  const startOfToday = Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate());
-  return plannedAt.getTime() < startOfToday;
+  // "I dag" i DANSK tid (plannedAt er UTC-dagsforankret) — serverens UTC-dato
+  // er en dag bagud mellem midnat og kl. 01/02 og gav falske markeringer.
+  return plannedAt.getTime() < Date.parse(`${todayCphISO()}T00:00:00Z`);
 }
 function postalOf(address: string): string {
   const parts = address.split(",");
@@ -141,7 +153,10 @@ function postalOf(address: string): string {
 
 // ---- Contacts --------------------------------------------------------------
 
-/** Customers = contacts with ≥1 order or subscription (per the portal's rule). */
+/** Customers = contacts with ≥1 order or subscription (per the portal's rule).
+ *  SØGNING går dog på ALLE kontakter — en nyoprettet kontakt uden ordre/abo
+ *  var ellers umulig at genfinde i UI'et (listen OG søgningen filtrerede den
+ *  fra, og der findes ingen anden kontaktliste). */
 export async function getContacts(q?: string): Promise<Contact[]> {
   const has = { OR: [{ orders: { some: {} } }, { subscriptions: { some: {} } }] };
   const term = q?.trim();
@@ -150,7 +165,7 @@ export async function getContacts(q?: string): Promise<Contact[]> {
     ? { OR: [...contactOr(term).OR!, ...(num ? [{ id: num }] : [])] }
     : undefined;
   const rows = await prisma.contact.findMany({
-    where: search ? { AND: [has, search] } : has,
+    where: search ?? has,
     include: { _count: { select: { subscriptions: true } } },
     orderBy: { id: "desc" },
   });
@@ -345,20 +360,60 @@ export async function getFixedPriceEditData(displayNo: number) {
 
 const orderInclude = { tasks: true, subscription: true, employee: true } as const;
 
+/** Parse et søgeterm som dato: "2026-07-13", "13/7-2026", "13/7-26", "13-07-2026". */
+function parseSearchDate(term: string): Date | null {
+  let y: number, m: number, d: number;
+  const isoM = /^(\d{4})-(\d{2})-(\d{2})$/.exec(term);
+  const dkM = /^(\d{1,2})[\/.-](\d{1,2})[\/.-](\d{2}|\d{4})$/.exec(term);
+  if (isoM) [y, m, d] = [Number(isoM[1]), Number(isoM[2]), Number(isoM[3])];
+  else if (dkM) [d, m, y] = [Number(dkM[1]), Number(dkM[2]), Number(dkM[3]) < 100 ? 2000 + Number(dkM[3]) : Number(dkM[3])];
+  else return null;
+  const date = new Date(Date.UTC(y, m - 1, d));
+  return date.getUTCMonth() === m - 1 && date.getUTCDate() === d ? date : null;
+}
+
+/** Fælles where-bygger for ordre-søgning: ordrenr/#-lister, kundenr, dato
+ *  (leveringsdatoens UTC-døgn), adresse, status, kundefelter og opgavetekst —
+ *  søgefeltets placeholder lover dato og kundenr, så de skal reelt virke. */
+function orderSearchWhere(term: string | undefined): Prisma.OrderWhereInput | undefined {
+  if (!term) return undefined;
+  const idList = parseIdList(term);
+  if (idList) return { id: { in: idList } };
+  const num = /^\d+$/.test(term) ? Number(term) : null;
+  const day = parseSearchDate(term);
+  return { OR: [
+    ...(num ? [{ id: num }, { contactId: num }] : []),
+    ...(day ? [{ plannedAt: { gte: day, lt: new Date(day.getTime() + 864e5) } }] : []),
+    { deliveryAddress: { contains: term, mode: "insensitive" as const } }, { status: { contains: term, mode: "insensitive" as const } },
+    { contact: contactOr(term) },
+    { tasks: { some: { description: { contains: term, mode: "insensitive" as const } } } },
+  ] };
+}
+
 export async function getOrders(q?: string): Promise<Order[]> {
-  const term = q?.trim();
-  const idList = term ? parseIdList(term) : null;
-  const num = term && /^\d+$/.test(term) ? Number(term) : null;
-  const where: Prisma.OrderWhereInput | undefined = idList
-    ? { id: { in: idList } }
-    : term ? { OR: [
-        ...(num ? [{ id: num }] : []),
-        { deliveryAddress: { contains: term, mode: "insensitive" } }, { status: { contains: term, mode: "insensitive" } },
-        { contact: contactOr(term) },
-        { tasks: { some: { description: { contains: term, mode: "insensitive" } } } },
-      ] } : undefined;
+  const where = orderSearchWhere(q?.trim() || undefined);
   const rows = await prisma.order.findMany({ where, include: orderInclude, orderBy: { id: "desc" } });
   return rows.map(mapOrder);
+}
+
+/** Ordrelisten med RIGTIG server-side paginering: før hentede siden samtlige
+ *  ordrer (plus hele kundekartoteket) pr. visning, og pagineringen var kun
+ *  kosmetisk. Returnerer sidens ordrer + netop de kontakter siden viser. */
+export async function getOrdersPage(q: string | undefined, pageNum = 1, pageSize = 25): Promise<{ orders: Order[]; contacts: Contact[]; page: number; totalPages: number }> {
+  const where = orderSearchWhere(q?.trim() || undefined);
+  const total = await prisma.order.count({ where });
+  const totalPages = Math.max(1, Math.ceil(total / pageSize));
+  const page = Math.min(Math.max(1, pageNum), totalPages);
+  const rows = await prisma.order.findMany({
+    where, include: orderInclude, orderBy: { id: "desc" },
+    skip: (page - 1) * pageSize, take: pageSize,
+  });
+  const contactIds = [...new Set(rows.map((r) => r.contactId))];
+  const contactRows = await prisma.contact.findMany({
+    where: { id: { in: contactIds } },
+    include: { _count: { select: { subscriptions: true } } },
+  });
+  return { orders: rows.map(mapOrder), contacts: contactRows.map(mapContact), page, totalPages };
 }
 
 export async function getOrdersForContact(contactId: number): Promise<Order[]> {
