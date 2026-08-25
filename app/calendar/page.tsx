@@ -1,32 +1,27 @@
 import TeamCalendarClient from "@/components/TeamCalendarClient";
-import { getSubscriptionPreviewMonth, getSubscriptionPreviewWeek } from "@/lib/subscription-preview-calendar";
+import { getCalendarMonth, getCalendarWeek } from "@/lib/queries";
 import { calendar2WeekNavigation } from "@/lib/calendar2-navigation";
+import { todayCphISO, weekMondayToday } from "@/lib/calendar";
 
 export const metadata = { title: "Kalender · Karltoffel" };
 
-function mondayOf(date: Date): string {
-  // Ugedag/dato beregnes i Europe/Copenhagen, ikke UTC (undgå forkert uge ved
-  // midnat-1 og søndag aften).
-  const cph = new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Copenhagen", year: "numeric", month: "2-digit", day: "2-digit" }).format(date);
-  const [y, m, d] = cph.split("-").map(Number);
-  const weekday = (new Date(Date.UTC(y, m - 1, d)).getUTCDay() + 6) % 7;
-  return new Date(Date.UTC(y, m - 1, d - weekday)).toISOString().slice(0, 10);
-}
+// Samme ordre-baserede ugeplan (buildWeekPlan) som /daycalendar og ordre-listerne
+// bruger — ÉN kilde til sandhed for hvilke ordrer ligger på hvilken dag/hos hvem.
+// Tidligere projekterede denne side direkte fra abonnementer (preview) og kunne afvige fra dagsprogrammet.
 
 export default async function CalendarPage({ searchParams }: { searchParams: Promise<{ week?: string; view?: string; month?: string }> }) {
   const params = await searchParams;
   if (params.view === "month") {
-    const now = new Date();
     const monthParam = params.month && /^\d{4}-\d{2}$/.test(params.month)
       ? params.month
-      : `${now.getUTCFullYear()}-${String(now.getUTCMonth() + 1).padStart(2, "0")}`;
-    const month = await getSubscriptionPreviewMonth(monthParam);
+      : todayCphISO().slice(0, 7); // aktuell måned i Europe/Copenhagen, ikke UTC
+    const month = await getCalendarMonth(monthParam);
     return <TeamCalendarClient mode="month" month={month} nav={{}} readOnly basePath="/calendar" />;
   }
 
-  const navigation = calendar2WeekNavigation(params.week ?? mondayOf(new Date()));
+  const navigation = calendar2WeekNavigation(params.week ?? weekMondayToday());
   const monday = navigation.monday;
-  const week = await getSubscriptionPreviewWeek(monday);
+  const week = await getCalendarWeek(monday);
   return (
     <TeamCalendarClient
       mode="week"

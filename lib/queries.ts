@@ -4,7 +4,7 @@
 // Prisma client in lib/db.ts.
 import { prisma } from "./db";
 import type { Contact, Subscription, Order, TaskLine } from "./data";
-import { planWeek, isoWeek, fmtTime, type Job, type Employee as PlannerEmployee, type DayPlan } from "./planner";
+import { planWeek, isoWeek, fmtTime, stopInstant, type Job, type Employee as PlannerEmployee, type DayPlan } from "./planner";
 import { weekLabel } from "./weeks";
 import { todayCphISO } from "./calendar";
 import { coordFor } from "./geo";
@@ -565,6 +565,28 @@ async function buildWeekPlan(weekMonday: string) {
   return { start, plan, priceById, metaById, users, empName, holiday, unplanned };
 }
 
+/**
+ * Kør ugeplanlæggeren med PRÆCIS samme pipeline som kalenderen (buildWeekPlan)
+ * og persister det beregnede resultat på ordren (plannedAt = dag + starttid,
+ * employeeId = rutet medarbejder), så ordrelister/PDF/påmindelser viser det
+ * samme som kalenderen i stedet for genereringens "mandag 10:00"-placeholder.
+ * Deterministisk og idempotent: planlæggeren ignorerer gemte tidspunkter og
+ * genberegner altid fra bunden (se buildWeekPlan).
+ */
+export async function planAndPersistWeek(weekMonday: string) {
+  const wp = await buildWeekPlan(weekMonday);
+  const updates = wp.plan.days.flatMap((d) =>
+    d.stops.map((s) =>
+      prisma.order.update({
+        where: { id: s.job.id },
+        data: { plannedAt: stopInstant(weekMonday, d.weekday, s.startMin), employeeId: d.employeeId },
+      })
+    )
+  );
+  if (updates.length) await prisma.$transaction(updates);
+  return wp;
+}
+
 /** Map a stored order status to the calendar's status class. */
 function calStatusOf(status: string): CalStatus {
   if (status === "Afsluttet" || status === "Udført") return "afsluttet";
@@ -765,9 +787,11 @@ export async function getCalendarMonth(monthParam: string, viewer?: { id: number
     year = Number(m[1]);
     monthIdx = Number(m[2]) - 1;
   } else {
-    const now = new Date();
-    year = now.getUTCFullYear();
-    monthIdx = now.getUTCMonth();
+    // Fallback: aktuell måned i Europe/Copenhagen (ikke UTC — undgå forkert
+    // måned ved månedsskifte om natten dansk tid).
+    const [y, m] = todayCphISO().split("-").map(Number);
+    year = y;
+    monthIdx = m - 1;
   }
 
   const first = new Date(Date.UTC(year, monthIdx, 1));
