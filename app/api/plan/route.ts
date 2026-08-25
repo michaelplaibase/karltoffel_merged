@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
-import { planWeek, isoWeek } from "@/lib/planner";
-import { getPlannerJobs } from "@/lib/queries";
+import { isoWeek } from "@/lib/planner";
+import { planAndPersistWeek } from "@/lib/queries";
 import { generateAllSubscriptionOrders } from "@/lib/recurrence";
 import { requireSession, unauthorized } from "@/lib/api-auth";
 import { weekMondayToday } from "@/lib/calendar";
@@ -29,14 +29,16 @@ export async function GET(req: Request) {
   const url = new URL(req.url);
   const week = url.searchParams.get("week") || weekMondayToday();   /* i nat-cronen: DENNE uge, ikke en frossen demo-uge */
   const generated = await generateAllSubscriptionOrders();
-  const jobs = await getPlannerJobs(week);
-  const plan = planWeek(jobs, week);
+  // Samme pipeline som kalenderen (buildWeekPlan) — og persister det beregnede
+  // dag/tidspunkt/medarbejder på ordren, så lister/PDF/påmindelser matcher.
+  const wp = await planAndPersistWeek(week);
+  const plan = wp.plan;
 
   return NextResponse.json({
     week: `Uge ${isoWeek(week)} (${plan.weekMonday})`,
     generatedOrders: generated,
     plannedJobs: plan.days.reduce((n, d) => n + d.stops.length, 0),
-    unplanned: plan.unplanned.length,
+    unplanned: wp.unplanned.length,
     days: plan.days.map((d) => ({
       employeeId: d.employeeId,
       weekday: ["Man", "Tir", "Ons", "Tor", "Fre", "Lør", "Søn"][d.weekday],

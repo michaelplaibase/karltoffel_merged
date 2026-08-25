@@ -7,6 +7,7 @@ import type {
 } from "./calendar";
 import { mondayOf, projectSubscriptionVisits, ymd, type PreviewSubscription, type PreviewVisit } from "./subscription-preview";
 import { previewSuggestionText } from "./calendar2-presentation";
+import { todayCphISO } from "./calendar";
 
 const WEEK_MS = 7 * 864e5;
 const MON_SHORT = ["jan.", "feb.", "mar.", "apr.", "maj", "jun.", "jul.", "aug.", "sep.", "okt.", "nov.", "dec."];
@@ -331,13 +332,13 @@ export async function getSubscriptionPreviewWeek(weekMonday: string): Promise<Ca
 
 export async function getSubscriptionPreviewMonth(monthParam: string): Promise<CalendarMonth> {
   const match = /^(\d{4})-(\d{2})$/.exec(monthParam);
-  const now = new Date();
-  const year = match ? Number(match[1]) : now.getUTCFullYear();
-  const monthIdx = match ? Number(match[2]) - 1 : now.getUTCMonth();
+  const [nowY, nowM] = todayCphISO().split("-").map(Number); // Europe/Copenhagen
+  const year = match ? Number(match[1]) : nowY;
+  const monthIdx = match ? Number(match[2]) - 1 : nowM - 1;
   const first = new Date(Date.UTC(year, monthIdx, 1));
   const last = new Date(Date.UTC(year, monthIdx + 1, 0));
   const gridStart = new Date(first.getTime() - ((first.getUTCDay() + 6) % 7) * 864e5);
-  const today = ymd(now);
+  const today = todayCphISO(); // Europe/Copenhagen — ikke UTC (undgå forkert "i dag"-markering)
   const weeks: MonthWeek[] = [];
   const calendarWeeks: CalendarWeek[] = [];
   for (let monday = gridStart; monday <= last; monday = new Date(monday.getTime() + WEEK_MS)) {

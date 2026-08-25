@@ -142,3 +142,10 @@ export function planWeek(jobs: Job[], weekMonday: string, employees: Employee[] 
 }
 
 export const fmtTime = (min: number) => `${String(Math.floor(min / 60)).padStart(2, "0")}:${String(min % 60).padStart(2, "0")}`;
+
+/** UTC-tidsstempel for et stops starttid: `weekday` (0=man) dage efter ugens
+ *  mandag + `startMin` minutter efter midnat — den persisterede form af
+ *  planlæggerens beregnede tid (se planAndPersistWeek i lib/queries.ts). */
+export function stopInstant(weekMonday: string, weekday: number, startMin: number): Date {
+  return new Date(Date.parse(`${weekMonday}T00:00:00Z`) + weekday * 864e5 + startMin * 60000);
+}
