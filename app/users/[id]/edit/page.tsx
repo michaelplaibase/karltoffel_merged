@@ -1,5 +1,6 @@
 import { notFound, redirect } from "next/navigation";
 import { getSessionUser } from "@/lib/api-auth";
+import { routeId } from "@/lib/route-ids";
 import { getUser } from "@/lib/users";
 import { updateUser } from "@/app/actions/users";
 import UserForm from "@/components/UserForm";
@@ -25,7 +26,9 @@ export default async function EditUserPage({ params }: { params: Promise<{ id: s
   }
 
   const { id } = await params;
-  const userId = Number(id);
+  // routeId: ikke-numerisk id → 404 (Number("abc")=NaN ville ellers give en
+  // PrismaClientValidationError og en rå 500).
+  const userId = routeId(id);
   const initial = await getUser(userId);
   if (!initial) notFound();
 

@@ -26,8 +26,12 @@ export default function ContactForm({
 }) {
   const [isCompany, setIsCompany] = useState(initial.isCompany);
   const [state, formAction, pending] = useActionState(action, {});
+  // Ved en valideringsfejl nulstiller React 19 de ukontrollerede felter, så
+  // defaultValue prefilles fra de indsendte værdier (state.values, ekkoet af
+  // action'en) — brugerens indtastning må aldrig gå tabt ved en fejl.
+  const v = state.values;
   // "Navn" holds the contact person for a company, or the display name otherwise.
-  const navnDefault = initial.isCompany ? initial.att : initial.name;
+  const navnDefault = v ? v.navn : (initial.isCompany ? initial.att : initial.name);
 
   return (
     <form action={formAction} className="card form-card">
@@ -46,16 +50,16 @@ export default function ContactForm({
           <>
             <div className="f2">
               <label>Virksomhedsnavn</label>
-              <input name="companyName" defaultValue={initial.companyName} className="form-control form-control-sm" />
+              <input name="companyName" defaultValue={v?.companyName ?? initial.companyName} className="form-control form-control-sm" />
             </div>
             <div className="f2">
               <label>CVR-nummer</label>
-              <input name="cvr" defaultValue={initial.cvr} className="form-control form-control-sm" />
+              <input name="cvr" defaultValue={v?.cvr ?? initial.cvr} className="form-control form-control-sm" />
             </div>
             <div className="f2">
               <label>EAN-nummer</label>
               <div>
-                <input name="ean" defaultValue={initial.ean} className="form-control form-control-sm" />
+                <input name="ean" defaultValue={v?.ean ?? initial.ean} className="form-control form-control-sm" />
                 <small className="form-text field-help">Faktura sendes elektronisk via EAN, såfremt et EAN-nummer er angivet.</small>
               </div>
             </div>
@@ -68,11 +72,11 @@ export default function ContactForm({
         </div>
         <div className="f2">
           <label>E-mail</label>
-          <input name="email" defaultValue={initial.email} className="form-control form-control-sm" type="email" />
+          <input name="email" defaultValue={v?.email ?? initial.email} className="form-control form-control-sm" type="email" />
         </div>
         <div className="f2">
           <label>Telefon</label>
-          <input name="phone" defaultValue={initial.phone} className="form-control form-control-sm" />
+          <input name="phone" defaultValue={v?.phone ?? initial.phone} className="form-control form-control-sm" />
         </div>
         <div className="f2">
           <label>Adresse</label>
@@ -81,7 +85,7 @@ export default function ContactForm({
         <div className="f2">
           <label>Adressebemærkning</label>
           <div>
-            <textarea name="note" defaultValue={initial.note} className="form-control form-control-sm" />
+            <textarea name="note" defaultValue={v?.note ?? initial.note} className="form-control form-control-sm" />
             <small className="form-text field-help">Internt notat, der relaterer sig til adressen (kontakten).</small>
           </div>
         </div>

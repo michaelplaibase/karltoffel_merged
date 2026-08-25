@@ -41,6 +41,19 @@ export async function guardAction(): Promise<void> {
   if ((await getSessionUser()) == null) redirect("/login");
 }
 
+/**
+ * Som guardAction, men kræver desuden administrator-rolle. Bruges af actions,
+ * der ændrer virksomhedsbrede data (indstillinger, skabeloner, minutpris,
+ * brugere) — middleware og side-gates beskytter kun SIDER, aldrig actions.
+ * Anonyme sendes til /login; en logget ind ikke-admin afvises med redirect
+ * til forsiden (redirect kaster, så mutationen aldrig når at køre).
+ */
+export async function guardAdminAction(): Promise<void> {
+  const me = await getSessionUser();
+  if (me == null) redirect("/login");
+  if (!me.isAdmin) redirect("/");
+}
+
 export function unauthorized(): Response {
   return new Response(JSON.stringify({ error: "Unauthorized" }), {
     status: 401,

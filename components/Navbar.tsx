@@ -3,8 +3,8 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { TOP_NAV, ACCOUNT_MENU, COMPANY_NAME } from "@/lib/nav";
-import { logout } from "@/app/actions/auth";
+import { navForRole, ACCOUNT_MENU, COMPANY_NAME } from "@/lib/nav";
+import { logout, getSessionIsAdmin } from "@/app/actions/auth";
 
 // "Log ud" som POST-knap (server-action) i stedet for et GET-link — så Next.js'
 // viewport-prefetch ikke sletter sessionen uden et klik. Stylet som menupunktet.
@@ -16,6 +16,18 @@ export default function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false);        // mobil-drawer
   const [expanded, setExpanded] = useState<string | null>(null); // åben accordion-gruppe i draweren
   const ref = useRef<HTMLElement>(null);
+
+  /* Admin-punkter (Brugere, Lønrapport, Regnskab, …) skjules for ikke-admins —
+     siderne bag dem viser ellers kun en afvisning. Navbar er en client-komponent
+     uden rolleviden, så rollen hentes server-side én gang pr. sideindlæsning.
+     Indtil svaret er der, vises menuen uden admin-punkter (aldrig omvendt). */
+  const [isAdmin, setIsAdmin] = useState(false);
+  useEffect(() => {
+    let alive = true;
+    getSessionIsAdmin().then((v) => { if (alive) setIsAdmin(v); }).catch(() => {});
+    return () => { alive = false; };
+  }, []);
+  const nav = navForRole(isAdmin);
 
   useEffect(() => {
     function onDocClick(e: MouseEvent) {
@@ -59,7 +71,7 @@ export default function Navbar() {
 
       {/* ---------- desktop: vandrette menuer ---------- */}
       <div className="nav-menus">
-        {TOP_NAV.map((menu) => {
+        {nav.map((menu) => {
           const single = menu.items.length === 1 && menu.items[0].label === menu.label;
           if (single) {
             const it = menu.items[0];
@@ -136,7 +148,7 @@ export default function Navbar() {
 
       {mobileOpen && (
         <div className="mobilenav" role="dialog" aria-label="Hovedmenu">
-          {TOP_NAV.map((menu) => {
+          {nav.map((menu) => {
             const single = menu.items.length === 1 && menu.items[0].label === menu.label;
             if (single) {
               const it = menu.items[0];

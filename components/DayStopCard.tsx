@@ -6,12 +6,19 @@
 // flows, and "Mere ▾" opens a dropdown (vis i kalender / kundedetaljer / send
 // notifikation / slet ordre).
 import Link from "next/link";
+import { usePathname, useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState, useTransition } from "react";
 import { CatChip, money, telHref, telDisplay } from "@/components/ui";
 import { deleteOrder } from "@/app/actions/orders";
 import type { DayStop, DayUnplannedStop } from "@/lib/calendar";
 
 export default function DayStopCard({ stop, weekMonday }: { stop: DayStop | DayUnplannedStop; weekMonday: string }) {
+  // Afslut ordre-flowet skal vende TILBAGE til dagsprogrammet (inkl. valgt
+  // dato), ikke til kontorets /orders — send den aktuelle relative sti med
+  // som ?back, som complete-siden whitelister og bruger som backUrl.
+  const pathname = usePathname();
+  const qs = useSearchParams().toString();
+  const backParam = encodeURIComponent(qs ? `${pathname}?${qs}` : pathname);
   const [panel, setPanel] = useState<string | null>(null);
   const [more, setMore] = useState(false);
   const [confirm, setConfirm] = useState(false);
@@ -90,7 +97,7 @@ export default function DayStopCard({ stop, weekMonday }: { stop: DayStop | DayU
       </div>
 
       <div className="row-actions" style={{ position: "relative" }} ref={moreRef}>
-        <Link href={`/orders/${stop.orderId}/complete`} className="btn btn-outline-primary btn-sm">Afslut ordre</Link>
+        <Link href={`/orders/${stop.orderId}/complete?back=${backParam}`} className="btn btn-outline-primary btn-sm">Afslut ordre</Link>
         <Link href={`/orders/${stop.orderId}`} className="btn btn-outline-primary btn-sm">Rediger ordre</Link>
         {stop.subscriptionNo != null
           ? <Link href={`/subscriptions/${stop.subscriptionNo}`} className="btn btn-outline-primary btn-sm">Rediger abo.</Link>

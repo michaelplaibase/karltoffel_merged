@@ -3,7 +3,7 @@
 import { useActionState } from "react";
 import { login } from "@/app/actions/auth";
 
-export default function LoginForm() {
+export default function LoginForm({ next }: { next?: string }) {
   const [state, formAction, pending] = useActionState(login, {});
 
   return (
@@ -13,9 +13,13 @@ export default function LoginForm() {
       </div>
       <div className="card-body">
         <form action={formAction}>
+          {/* Dybt link afbrudt af udløbet session — login sender videre dertil. */}
+          {next ? <input type="hidden" name="next" value={next} /> : null}
           <div className="f2">
             <label>Brugernavn</label>
-            <input name="username" className="form-control form-control-sm" autoComplete="username" autoFocus />
+            {/* React 19 resetter ukontrollerede felter efter en form-action —
+                state.values ekkoer brugernavnet, så det overlever en fejl. */}
+            <input name="username" defaultValue={state.values?.username ?? ""} className="form-control form-control-sm" autoComplete="username" autoFocus />
           </div>
           <div className="f2">
             <label>Adgangskode</label>
@@ -24,7 +28,7 @@ export default function LoginForm() {
           <div className="f2">
             <label>Husk mig</label>
             <label className="form-check-inline" style={{ marginTop: 6 }}>
-              <input type="checkbox" name="remember" defaultChecked /> Hold mig logget ind i 30 dage
+              <input type="checkbox" name="remember" defaultChecked={state.values?.remember ?? true} /> Hold mig logget ind i 30 dage
             </label>
           </div>
 

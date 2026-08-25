@@ -3,9 +3,10 @@
 // "Planlagte ferier" table + reveal-able "Opret ferie" form. Create persists a
 // real HolidayWeek (which closes the planner for those weeks); each row can be
 // deleted with a confirm.
-import { useActionState, useState, useTransition } from "react";
+import { useActionState, useState } from "react";
 import { createHoliday, deleteHoliday, type ActionState } from "@/app/actions/funktioner";
 import type { WeekOption } from "@/lib/weeks";
+import ConfirmButton from "@/components/ConfirmButton";
 
 type Holiday = { id: number; period: string; editableUntil: string };
 
@@ -16,7 +17,6 @@ export default function HolidayManager({ holidays, weekOpts, saveLabel }: { holi
     if (r.ok) setOpen(false);
     return r;
   }, {});
-  const [delPending, startDel] = useTransition();
 
   return (
     <>
@@ -27,18 +27,23 @@ export default function HolidayManager({ holidays, weekOpts, saveLabel }: { holi
           {state.message ? <div className="help-note" style={{ color: "var(--success)" }}>{state.message}</div> : null}
           <div className="table-wrap">
             <table className="data-table">
-              <thead><tr><th>Ferienr.</th><th>Ferieperiode (inklusiv)</th><th>Kan redigeres til og med</th><th style={{ width: 90 }} /></tr></thead>
+              <thead><tr><th>Ferienr.</th><th>Ferieperiode (inklusiv)</th><th style={{ width: 120 }} /></tr></thead>
               <tbody>
                 {holidays.length === 0 ? (
-                  <tr><td colSpan={4}><div className="table-empty">Ingen planlagte ferier</div></td></tr>
+                  <tr><td colSpan={3}><div className="table-empty">Ingen planlagte ferier</div></td></tr>
                 ) : holidays.map((h) => (
                   <tr key={h.id}>
                     <td className="num">{h.id}</td>
                     <td>{h.period}</td>
-                    <td>{h.editableUntil}</td>
-                    <td><button className="btn btn-sm btn-light" disabled={delPending}
-                      onClick={() => startDel(async () => { await deleteHoliday(h.id); })}
-                      style={{ color: "var(--danger, #C4183C)" }}>Slet</button></td>
+                    <td>
+                      {/* To-trins bekræftelse som ved alle andre destruktive handlinger */}
+                      <ConfirmButton
+                        action={deleteHoliday.bind(null, h.id)}
+                        label="Slet" title="Slet ferie"
+                        body={`Slet ferien (${h.period})? Ugerne åbnes igen for planlægning, og kommende abonnementsbesøg lægges i dem.`}
+                        confirmLabel="Slet ferie"
+                      />
+                    </td>
                   </tr>
                 ))}
               </tbody>

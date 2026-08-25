@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname, useSearchParams } from "next/navigation";
 import { Fragment, useEffect, useRef, useState, useSyncExternalStore, useTransition } from "react";
 import type { CalendarMonth, CalendarTaskDetail, CalendarWeek, CalStatus } from "@/lib/calendar";
 import { categoryColor } from "@/lib/categories";
@@ -92,6 +93,11 @@ function PreviewTaskDetails({ tasks }: { tasks: CalendarTaskDetail[] }) {
 export default function TeamCalendarClient(props: Props) {
   const readOnly = props.readOnly ?? false;
   const basePath = props.basePath ?? "/calendar";
+  // "Afslut ordre …" skal vende tilbage HERTIL (den viste uge), ikke til
+  // /orders — complete-siden whitelister ?back og bruger den som backUrl.
+  const pathname = usePathname();
+  const search = useSearchParams().toString();
+  const backParam = encodeURIComponent(search ? `${pathname}?${search}` : pathname);
   const employees = props.mode === "week" ? props.week.employees : props.month.employees;
   const empById = new Map(employees.map((e) => [e.id, e]));
 
@@ -489,7 +495,7 @@ export default function TeamCalendarClient(props: Props) {
               )}
               <div className="ctxmenu-item" style={{ paddingLeft: 34 }}
                 onClick={() => { setNotice(`Notifikation sendt til kunden for ordre #${menu.ev.id} (simuleret).`); setMenu(null); }}>Send notifikation nu</div>
-              <Link href={`/orders/${menu.ev.id}/complete`} className="ctxmenu-item" style={{ paddingLeft: 34 }}>Afslut ordre …</Link>
+              <Link href={`/orders/${menu.ev.id}/complete?back=${backParam}`} className="ctxmenu-item" style={{ paddingLeft: 34 }}>Afslut ordre …</Link>
               <div className="ctxmenu-item" style={{ paddingLeft: 34, color: "var(--danger, #C4183C)" }}
                 onClick={() => { setConfirmDel(menu.ev); setMenu(null); }}>Slet ordre …</div>
             </>

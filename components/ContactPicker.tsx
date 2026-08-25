@@ -20,7 +20,7 @@ export default function ContactPicker({
   return (
     <div>
       <select name={name} value={id} onChange={(e) => setId(e.target.value)} className="form-control form-control-sm">
-        <option value="">Klik for at fremsøge eller oprette ny kontakt</option>
+        <option value="">Vælg kontakt…</option>
         {contacts.map((c) => (
           <option key={c.id} value={c.id}>{c.name} — {c.address}</option>
         ))}
@@ -31,7 +31,10 @@ export default function ContactPicker({
         </div>
       )}
       <div style={{ marginTop: 6 }}>
-        <a href="/customers/new" className="btn btn-light btn-sm">Opret ny kontakt</a>
+        {/* Ny fane: pickeren står midt i en større formular (ordre/abonnement/
+            fastpris), og en navigation i samme fane ville kassere alt det
+            indtastede uden varsel. */}
+        <a href="/customers/new" target="_blank" rel="noopener" className="btn btn-light btn-sm">Opret ny kontakt (ny fane)</a>
       </div>
     </div>
   );

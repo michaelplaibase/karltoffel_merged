@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/db";
+import { routeId } from "@/lib/route-ids";
 import { buildQuoteDraft } from "@/lib/quote";
 import { sendQuoteEmail } from "@/app/actions/quotes";
 import QuoteComposer from "@/components/QuoteComposer";
@@ -10,10 +11,8 @@ export const metadata = { title: "Send tilbud · Karltoffel" };
 // lines become the quote's task list and total.
 export default async function OrderQuotePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const oid = Number(id);
-  const order = Number.isFinite(oid)
-    ? await prisma.order.findUnique({ where: { id: oid }, include: { contact: true, tasks: true } })
-    : null;
+  const oid = routeId(id); // ikke-numerisk id → 404 (aldrig rå Prisma-fejl)
+  const order = await prisma.order.findUnique({ where: { id: oid }, include: { contact: true, tasks: true } });
   if (!order) notFound();
 
   const company = await prisma.company.findFirst();

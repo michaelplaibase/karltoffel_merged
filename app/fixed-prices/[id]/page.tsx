@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { getFixedPriceEditData, getContactOptions, getMinuteRate } from "@/lib/queries";
 import { updateFixedPrice, deleteFixedPrice } from "@/app/actions/fixed-prices";
+import { routeId } from "@/lib/route-ids";
 import FixedPriceForm from "@/components/FixedPriceForm";
 import ConfirmButton from "@/components/ConfirmButton";
 
@@ -8,7 +9,7 @@ export const metadata = { title: "Rediger fastprisaftale · Karltoffel" };
 
 export default async function EditFixedPrice({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const displayNo = Number(id);
+  const displayNo = routeId(id); // ikke-numerisk id ⇒ 404, ikke Prisma-500
   const [fp, contacts, minuteRate] = await Promise.all([
     getFixedPriceEditData(displayNo),
     getContactOptions(),

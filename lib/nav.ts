@@ -1,8 +1,19 @@
 // Top-navigation structure of the portal: seven menus, each a dropdown of routes.
 // Mirrors the portal's information architecture (labels in Danish, English hints).
-// This is an internal-use clone: no Karltoffel plan tiers, so nothing is gated.
-export type NavItem = { label: string; en: string; href: string };
+// This is an internal-use clone: no Karltoffel plan tiers, so nothing is gated
+// bag betaling — men adminOnly-punkter skjules for ikke-admins (siderne bag dem
+// afviser alligevel ikke-admins server-side; flaget fjerner kun blindgyden).
+export type NavItem = { label: string; en: string; href: string; adminOnly?: boolean };
 export type NavMenu = { label: string; en: string; items: NavItem[] };
+
+/** Menuer som en given rolle må se: adminOnly-punkter filtreres fra for
+ *  ikke-admins, og menuer uden punkter tilbage forsvinder helt. */
+export function navForRole(isAdmin: boolean): NavMenu[] {
+  if (isAdmin) return TOP_NAV;
+  return TOP_NAV
+    .map((m) => ({ ...m, items: m.items.filter((it) => !it.adminOnly) }))
+    .filter((m) => m.items.length > 0);
+}
 
 export const TOP_NAV: NavMenu[] = [
   {
@@ -15,15 +26,15 @@ export const TOP_NAV: NavMenu[] = [
   {
     label: "Indstillinger", en: "Settings",
     items: [
-      { label: "Generelt", en: "General", href: "/settings" },
-      { label: "Udseende", en: "Appearance", href: "/funnel-settings" },
-      { label: "Brugere", en: "Users", href: "/users" },
-      { label: "Arbejdstider", en: "Working hours", href: "/working-hours" },
-      { label: "Planlægning", en: "Planning", href: "/planning-settings" },
+      { label: "Generelt", en: "General", href: "/settings", adminOnly: true },
+      { label: "Udseende", en: "Appearance", href: "/funnel-settings", adminOnly: true },
+      { label: "Brugere", en: "Users", href: "/users", adminOnly: true },
+      { label: "Arbejdstider", en: "Working hours", href: "/working-hours", adminOnly: true },
+      { label: "Planlægning", en: "Planning", href: "/planning-settings", adminOnly: true },
       { label: "Rabatkoder", en: "Discount codes", href: "/discount-codes" },
       { label: "Standardopgaver", en: "Standard tasks", href: "/standard-tasks" },
-      { label: "Regnskab", en: "Accounting", href: "/accounting" },
-      { label: "E-mail og SMS skabeloner", en: "Templates", href: "/templates" },
+      { label: "Regnskab", en: "Accounting", href: "/accounting", adminOnly: true },
+      { label: "E-mail og SMS skabeloner", en: "Templates", href: "/templates", adminOnly: true },
     ],
   },
   {
@@ -49,9 +60,9 @@ export const TOP_NAV: NavMenu[] = [
   {
     label: "Rapportering", en: "Reporting",
     items: [
-      { label: "Grafer og nøgletal", en: "Charts & KPIs", href: "/reports/graphs" },
-      { label: "Lønrapport", en: "Payroll", href: "/payroll" },
-      { label: "Rapporter", en: "Reports", href: "/reports/download" },
+      { label: "Grafer og nøgletal", en: "Charts & KPIs", href: "/reports/graphs", adminOnly: true },
+      { label: "Lønrapport", en: "Payroll", href: "/payroll", adminOnly: true },
+      { label: "Rapporter", en: "Reports", href: "/reports/download", adminOnly: true },
       { label: "Dagsprogram i PDF", en: "Day program PDF", href: "/reports/day-pdf" },
     ],
   },

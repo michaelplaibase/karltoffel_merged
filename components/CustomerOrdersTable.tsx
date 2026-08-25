@@ -68,11 +68,14 @@ function OrdersTable({ rows, sort, onSort, emptyText }: { rows: Order[]; sort: S
             const items: RowMenuItem[] = [
               { label: "Vis ordre i kalender", href: `/calendar?week=${o.weekMonday}` },
               { label: "Rediger ordre", href: `/orders/${o.id}` },
-              { label: "Afslut ordre…", href: `/orders/${o.id}/complete` },
+              // ?back → Afslut ordre-flowet vender tilbage til kundesiden, ikke /orders.
+              { label: "Afslut ordre…", href: `/orders/${o.id}/complete?back=${encodeURIComponent(`/customers/${o.contactId}`)}` },
               { label: "Send tilbud på ordren…", href: `/orders/${o.id}/send-tilbud` },
               { label: "Opret ny ordre", href: `/orders/new?for_contact=${o.contactId}` },
               ...(o.subscriptionNo ? [{ label: "Rediger abonnement", href: `/subscriptions/${o.subscriptionNo}` }] : []),
-              { label: "Slet ordre…", danger: true, action: () => deleteOrder(o.id),
+              // redirectTo=null: bliv PÅ kundesiden (deleteOrder revaliderer
+              // /customers/[id], så tabellen opdateres) i stedet for /orders.
+              { label: "Slet ordre…", danger: true, action: () => deleteOrder(o.id, null),
                 confirm: { title: "Slet ordre", body: `Er du sikker på, at du vil slette ordre #${o.id}?`, confirmLabel: "Slet ordre", note: "Denne handling kan ikke fortrydes." } },
             ];
             return (

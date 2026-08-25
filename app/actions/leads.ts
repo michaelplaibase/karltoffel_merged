@@ -9,6 +9,7 @@ import { guardAction } from "@/lib/api-auth";
 import { categoryColor } from "@/lib/categories";
 import { isoWeek } from "@/lib/planner";
 import { weekMondayToday } from "@/lib/calendar";
+import { parseLeadPayload, beregn, medRabatkode, type LeadPayload, type PricedService } from "@/lib/tilbudsmotor-pricing";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
@@ -25,21 +26,34 @@ const TM_KATEGORI: Record<string, string> = {
   haveaffald: "Grøn service", sedum: "Grøn service", sne: "Andet", robot: "Andet", service: "Andet",
 };
 
-type TmService = { id?: string; navn?: string; qty?: number; enhed?: string; freq?: number; pris?: number | null };
+/** Rabat-faktor for hele payloadet: aarNet/aarBrutto efter SAMME rabatkæde som
+ *  tilbudsmailen (beregn() → mængderabat, medRabatkode() → rabatkode oven på,
+ *  se app/api/slack/interactions/route.ts). Linjepriserne i det afventende
+ *  abonnement/ordren skaleres med faktoren, så årssummen matcher det tilbud
+ *  kunden accepterede — ellers faktureres brutto (op til ~31 % for meget). */
+function rabatFaktor(payload: LeadPayload): number {
+  const r = beregn(payload.services);
+  if (r.aarBrutto <= 0) return 1;
+  const kodePct = payload.rabatOk && payload.rabatPct ? payload.rabatPct : 0;
+  const { aarNet } = medRabatkode(r, kodePct);
+  return aarNet / r.aarBrutto;
+}
+
+/** Pris pr. besøg for én linje, efter rabat-faktoren. */
+function linjePris(s: PricedService, faktor: number): number {
+  return s.pris != null && Number.isFinite(s.pris) ? Math.max(0, Math.round(s.pris * Math.max(0, Math.round(s.qty)) * faktor)) : 0;
+}
 
 /** Byg abonnements-spec fra tilbudsmotorens payload. Frekvens-mapping:
  *  basis-interval = den hyppigste service (52/maxFreq uger, jævnt fordelt);
  *  øvrige services bundtes på samme besøg via per-task multiplier
  *  ("Hver M. gang", M = maxFreq/freq) — samme model som tilbudsmotorens
  *  beregner ("ydelser bundtes på samme besøg"). freq 0 → "På anmodning". */
-function subscriptionSpecFromPayload(raw: string | null) {
-  if (!raw) return null;
-  let payload: { services?: TmService[] };
-  try { payload = JSON.parse(raw) as { services?: TmService[] }; } catch { return null; }
-  const services = (payload.services ?? []).filter((s) => s && typeof s.navn === "string" && s.navn.trim());
+function subscriptionSpecFromPayload(payload: LeadPayload) {
+  const services = payload.services;
   if (!services.length) return null;
 
-  const freqs = services.map((s) => Math.max(0, Math.round(s.freq ?? 0)));
+  const freqs = services.map((s) => Math.max(0, Math.round(s.freq)));
   const maxFreq = Math.max(1, ...freqs);
   const baseN = Math.min(52, Math.max(1, Math.round(52 / maxFreq)));
   const baseInterval = baseN === 1 ? "Hver uge" : `Hver ${baseN}. uge`;
@@ -49,15 +63,16 @@ function subscriptionSpecFromPayload(raw: string | null) {
     .toISOString().slice(0, 10);
   const startWeek = `Uge ${isoWeek(nextMondayISO)}`;
 
+  const faktor = rabatFaktor(payload);
   const lines = services.map((s, i) => {
     const f = freqs[i];
     const m = f > 0 ? Math.max(1, Math.round(maxFreq / f)) : null;
-    const category = TM_KATEGORI[s.id ?? ""] ?? "Andet";
-    const qty = Math.max(0, Math.round(s.qty ?? 0));
+    const category = TM_KATEGORI[s.id] ?? "Andet";
+    const qty = Math.max(0, Math.round(s.qty));
     return {
       category, letter: (category[0] ?? "A").toUpperCase(), color: categoryColor(category),
-      description: `${s.navn!.trim()}${qty > 0 && s.enhed ? ` — ${qty} ${s.enhed}` : ""}`,
-      price: s.pris != null && Number.isFinite(s.pris) ? Math.max(0, Math.round(s.pris * qty)) : 0,
+      description: `${s.navn.trim()}${qty > 0 && s.enhed ? ` — ${qty} ${s.enhed}` : ""}`,
+      price: linjePris(s, faktor),
       durationMin: 0,
       intervalMultiplier: m == null ? "På anmodning" : m === 1 ? "Hver gang" : `Hver ${m}. gang`,
       startWeek: null as string | null, isStandardTask: false, sort: i,
@@ -67,25 +82,23 @@ function subscriptionSpecFromPayload(raw: string | null) {
 }
 
 /** Byg en engangs-ordre-spec fra tilbudsmotorens payload (betaling: "pr_gang").
- *  Én linje pr. valgt service, prissat pr. besøg (pris × qty — IKKE ganget med
- *  freq, da det her kun er ÉT besøg, ikke et helt års rytme). */
-function orderSpecFromPayload(raw: string | null) {
-  if (!raw) return null;
-  let payload: { services?: TmService[] };
-  try { payload = JSON.parse(raw) as { services?: TmService[] }; } catch { return null; }
-  const services = (payload.services ?? []).filter((s) => s && typeof s.navn === "string" && s.navn.trim());
+ *  Én linje pr. valgt service, prissat pr. besøg (pris × qty × rabat-faktor —
+ *  IKKE ganget med freq, da det her kun er ÉT besøg, ikke et helt års rytme). */
+function orderSpecFromPayload(payload: LeadPayload) {
+  const services = payload.services;
   if (!services.length) return null;
 
   const nextMondayISO = new Date(new Date(`${weekMondayToday()}T00:00:00Z`).getTime() + 7 * 864e5)
     .toISOString().slice(0, 10);
 
+  const faktor = rabatFaktor(payload);
   const lines = services.map((s, i) => {
-    const category = TM_KATEGORI[s.id ?? ""] ?? "Andet";
-    const qty = Math.max(0, Math.round(s.qty ?? 0));
+    const category = TM_KATEGORI[s.id] ?? "Andet";
+    const qty = Math.max(0, Math.round(s.qty));
     return {
       category, letter: (category[0] ?? "A").toUpperCase(), color: categoryColor(category),
-      description: `${s.navn!.trim()}${qty > 0 && s.enhed ? ` — ${qty} ${s.enhed}` : ""}`,
-      price: s.pris != null && Number.isFinite(s.pris) ? Math.max(0, Math.round(s.pris * qty)) : 0,
+      description: `${s.navn.trim()}${qty > 0 && s.enhed ? ` — ${qty} ${s.enhed}` : ""}`,
+      price: linjePris(s, faktor),
       durationMin: 0, sort: i,
     };
   });
@@ -95,26 +108,24 @@ function orderSpecFromPayload(raw: string | null) {
 /** Opret en AFVENTENDE engangs-ordre (status "Afventer levering", sourceType
  *  "manual" — samme kategori som andre håndoprettede ordrer i /orders) fra
  *  leadets payload, når kunden har valgt "betal pr. gang" i splittesten frem
- *  for abonnement. */
-async function createPendingOrder(lead: { payload: string | null }, contactId: number, deliveryAddress: string): Promise<boolean> {
-  const spec = orderSpecFromPayload(lead.payload);
-  if (!spec) return false;
+ *  for abonnement. Ordre-modellen har intet pending-felt, så "afventer
+ *  godkendelse" markeres i kommentaren (vises i /orders, på ordresiden og i
+ *  dagsprogrammet), så den ikke leveres før bekræftelses-opkaldet. */
+async function createPendingOrder(spec: NonNullable<ReturnType<typeof orderSpecFromPayload>>, contactId: number, deliveryAddress: string): Promise<void> {
   await prisma.order.create({
     data: {
       contactId, deliveryAddress, plannedAt: spec.plannedAt,
       sourceType: "manual", status: "Afventer levering",
+      comment: "AFVENTER GODKENDELSE: Oprettet fra lead-konvertering (betal pr. gang) — ring og bekræft tid og pris med kunden, før ordren leveres.",
       tasks: { create: spec.lines },
     },
   });
-  return true;
 }
 
 /** Opret et AFVENTENDE abonnement (active=false, pending=true) fra leadets
  *  payload — samme displayNo-retry-mønster som createSubscription. Returnerer
- *  displayNo eller null (intet payload / ingen services). */
-async function createPendingSubscription(lead: { payload: string | null; address: string | null }, contactId: number, deliveryAddress: string): Promise<number | null> {
-  const spec = subscriptionSpecFromPayload(lead.payload);
-  if (!spec) return null;
+ *  displayNo. */
+async function createPendingSubscription(spec: NonNullable<ReturnType<typeof subscriptionSpecFromPayload>>, contactId: number, deliveryAddress: string): Promise<number> {
   for (let attempt = 0; ; attempt++) {
     const max = await prisma.subscription.aggregate({ _max: { displayNo: true } });
     const displayNo = (max._max.displayNo ?? 235800) + 1;
@@ -156,66 +167,112 @@ export async function rejectLead(id: number): Promise<void> {
   revalidatePath("/leads");
 }
 
+export type ConvertLeadResult =
+  | { ok: true; contactId: number; alreadyConverted: boolean }
+  | { ok: false; error: string };
+
 /** Kernen i lead→kunde-konverteringen, uden auth-guard og uden redirect — så
  *  den kan genbruges både fra CRM-knappen (convertLead nedenfor) og fra
- *  quote-response-routen (kunden klikkede Ja i tilbudsmailen). Returnerer
- *  contactId, eller null hvis leadet ikke findes / ingen firmaopsætning. */
-export async function convertLeadCore(id: number): Promise<number | null> {
+ *  quote-response-routen (kunden klikkede Ja i tilbudsmailen).
+ *
+ *  IDEMPOTENT: status-skiftet til "converted" claimes ATOMISK (updateMany med
+ *  status-betingelse i where — samme mønster som consumeQuoteToken), så
+ *  kombinationen "manuel konvertering i CRM'et + senere Ja tak-klik i mailen"
+ *  (eller to samtidige klik) aldrig opretter dublet-abonnement/-ordre: kun den
+ *  request der vinder claimet materialiserer payloadet; taberen returnerer blot
+ *  den eksisterende contactId. */
+export async function convertLeadCore(id: number): Promise<ConvertLeadResult> {
   const lead = await prisma.lead.findUnique({ where: { id } });
-  if (!lead) return null;
+  if (!lead) return { ok: false, error: "Emnet findes ikke længere." };
+
+  // Tilbudsmotorens payload: betalingsvalg (splittest), kundetype og services.
+  const payload = parseLeadPayload(lead.payload);
+  const spec = payload.betaling === "pr_gang"
+    ? { kind: "order" as const, order: orderSpecFromPayload(payload) }
+    : { kind: "subscription" as const, subscription: subscriptionSpecFromPayload(payload) };
+  const harPakkevalg = spec.kind === "order" ? spec.order != null : spec.subscription != null;
 
   const { street, city } = splitAddress(lead.address ?? "");
+  let deliveryAddress = city ? `${street}, ${city}` : street || (lead.address ?? "").trim();
+  if (!deliveryAddress && lead.contactId) {
+    // Forhåndslinkede leads mangler ofte adresse på selve leadet — fald tilbage
+    // til den eksisterende kundes adresse.
+    const c = await prisma.contact.findUnique({ where: { id: lead.contactId }, select: { street: true, city: true } });
+    if (c) deliveryAddress = c.city ? `${c.street}, ${c.city}` : c.street;
+  }
 
-  // Tilbudsmotorens betalingsvalg (splittest): "pr_gang" → engangs-ordre i
-  // stedet for et abonnement. Læses uanset om leadet allerede har en Contact.
-  let betaling: string | null = null;
-  try { betaling = lead.payload ? (JSON.parse(lead.payload) as { betaling?: string | null }).betaling ?? null : null; } catch { /* korrupt payload ignoreres */ }
+  // Uden adresse kan pakkevalget ikke materialiseres — FEJL med tydelig besked
+  // i stedet for et stille datatab (kunden ville tro bestillingen var oprettet).
+  if (harPakkevalg && !deliveryAddress) {
+    return { ok: false, error: `Emnet fra ${lead.name} mangler en adresse — tilføj den, før emnet konverteres (ellers mistes pakkevalget).` };
+  }
 
   let contactId: number;
   if (lead.contactId) {
     contactId = lead.contactId;
-    await prisma.lead.update({ where: { id }, data: { status: "converted" } });
+    // Atomisk claim: kun den request der flipper status væk fra "converted"
+    // må materialisere payloadet.
+    const claim = await prisma.lead.updateMany({
+      where: { id, status: { not: "converted" } },
+      data: { status: "converted" },
+    });
+    if (claim.count === 0) return { ok: true, contactId, alreadyConverted: true };
   } else {
     const company = await prisma.company.findFirst();
-    if (!company) return null;
+    if (!company) return { ok: false, error: "Ingen firmaopsætning i CRM'et — emnet kan ikke konverteres." };
 
-    // Tilbudsmotorens kundetype følger med over: erhverv → firmakunde.
-    let isCompany = false;
-    try { isCompany = lead.payload ? (JSON.parse(lead.payload) as { kundetype?: string }).kundetype === "erhverv" : false; } catch { /* korrupt payload ignoreres */ }
+    // Tilbudsmotorens kundetype følger med over: erhverv → firmakunde med
+    // companyName sat (ellers står redigeringsformularens navnefelter tomme).
+    const isCompany = payload.kundetype === "erhverv";
 
-    const contact = await prisma.$transaction(async (tx) => {
-      const c = await tx.contact.create({
-        data: { companyId: company.id, name: lead.name, email: lead.email, phone: lead.phone, street, city, isCompany },
+    const claimedContactId = await prisma.$transaction(async (tx) => {
+      const claim = await tx.lead.updateMany({
+        where: { id, status: { not: "converted" }, contactId: null },
+        data: { status: "converted" },
       });
-      await tx.lead.update({ where: { id }, data: { status: "converted", contactId: c.id } });
-      return c;
+      if (claim.count === 0) return null;
+      const c = await tx.contact.create({
+        data: {
+          companyId: company.id, name: lead.name,
+          companyName: isCompany ? lead.name : null,
+          email: lead.email, phone: lead.phone, street, city, isCompany,
+        },
+      });
+      await tx.lead.update({ where: { id }, data: { contactId: c.id } });
+      return c.id;
     });
-    contactId = contact.id;
+    if (claimedContactId == null) {
+      // Tabte kapløbet mod en samtidig konvertering — genbrug vinderens kunde.
+      const fresh = await prisma.lead.findUnique({ where: { id }, select: { contactId: true } });
+      if (fresh?.contactId) return { ok: true, contactId: fresh.contactId, alreadyConverted: true };
+      return { ok: false, error: "Emnet er allerede konverteret." };
+    }
+    contactId = claimedContactId;
   }
 
   // Payload → afventende abonnement, MEDMINDRE kunden har valgt "betal pr.
   // gang" i splittesten — så bliver det i stedet en engangs-ordre. Ukendt/
   // manglende betalingsvalg (ældre leads) bevarer den gamle opførsel: abonnement.
-  const deliveryAddress = city ? `${street}, ${city}` : street || lead.address || "";
-  if (deliveryAddress) {
-    if (betaling === "pr_gang") await createPendingOrder(lead, contactId, deliveryAddress);
-    else await createPendingSubscription(lead, contactId, deliveryAddress);
-  }
+  // Nås kun af claim-vinderen, så der aldrig opstår dubletter.
+  if (spec.kind === "order" && spec.order) await createPendingOrder(spec.order, contactId, deliveryAddress);
+  else if (spec.kind === "subscription" && spec.subscription) await createPendingSubscription(spec.subscription, contactId, deliveryAddress);
 
   revalidatePath("/leads");
   revalidatePath("/customers");
   revalidatePath("/subscriptions");
   revalidatePath("/orders");
-  return contactId;
+  return { ok: true, contactId, alreadyConverted: false };
 }
 
 /** Convert a lead into a customer + et AFVENTENDE abonnement fra payloaden.
  *  If it is already linked to a Contact, reuse that customer; otherwise create
  *  the Contact and link it. Abonnementet godkendes (aktiveres + ordrer
  *  materialiseres) særskilt efter bekræftelses-opkaldet. CRM-knap-versionen:
- *  guardet + redirecter til kundekortet. */
+ *  guardet + redirecter til kundekortet — eller tilbage til /leads med en
+ *  fejlbesked (fx manglende adresse), så intet fejler stille. */
 export async function convertLead(id: number): Promise<void> {
   await guardAction();
-  const contactId = await convertLeadCore(id);
-  if (contactId != null) redirect(`/customers/${contactId}`);
+  const result = await convertLeadCore(id);
+  if (!result.ok) redirect(`/leads?fejl=${encodeURIComponent(result.error)}`);
+  redirect(`/customers/${result.contactId}`);
 }

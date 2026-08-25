@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import { routeId } from "@/lib/route-ids";
 import { prisma } from "@/lib/db";
 import { buildQuoteDraft } from "@/lib/quote";
 import { sendQuoteEmail } from "@/app/actions/quotes";
@@ -11,8 +12,8 @@ export const metadata = { title: "Send tilbud · Karltoffel" };
 // text-only and staff fill in the details.
 export default async function CustomerQuotePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const cid = Number(id);
-  const contact = Number.isFinite(cid) ? await prisma.contact.findUnique({ where: { id: cid } }) : null;
+  const cid = routeId(id);
+  const contact = await prisma.contact.findUnique({ where: { id: cid } });
   if (!contact) notFound();
 
   const [order, company] = await Promise.all([

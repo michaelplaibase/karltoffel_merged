@@ -2,8 +2,9 @@
 
 // Rabatkoder CRUD: reveal-able create form + a table of real DiscountCode rows,
 // each deletable. Backed by the DiscountCode model.
-import { useActionState, useState, useTransition } from "react";
+import { useActionState, useState } from "react";
 import { createDiscountCode, deleteDiscountCode, type CatalogState } from "@/app/actions/catalog";
+import ConfirmButton from "@/components/ConfirmButton";
 
 type Code = { id: number; code: string; percent: number; expiresAt: string };
 
@@ -14,7 +15,6 @@ export default function DiscountCodeManager({ codes }: { codes: Code[] }) {
     if (r.ok) setOpen(false);
     return r;
   }, {});
-  const [delPending, startDel] = useTransition();
 
   return (
     <div className="container-1140" style={{ maxWidth: 900 }}>
@@ -33,8 +33,15 @@ export default function DiscountCodeManager({ codes }: { codes: Code[] }) {
                 ) : codes.map((c) => (
                   <tr key={c.id}>
                     <td>{c.code}</td><td className="num">{c.percent}%</td><td>{c.expiresAt || "—"}</td>
-                    <td><button className="btn btn-sm btn-light" disabled={delPending} style={{ color: "var(--danger, #C4183C)" }}
-                      onClick={() => startDel(async () => { await deleteDiscountCode(c.id); })}>Slet</button></td>
+                    <td>
+                      {/* To-trins bekræftelse som ved andre destruktive handlinger */}
+                      <ConfirmButton
+                        action={deleteDiscountCode.bind(null, c.id)}
+                        label="Slet" title="Slet rabatkode"
+                        body={`Slet rabatkoden '${c.code}'? Kunder kan derefter ikke længere anvende den ved online bestilling.`}
+                        confirmLabel="Slet rabatkode"
+                      />
+                    </td>
                   </tr>
                 ))}
               </tbody>

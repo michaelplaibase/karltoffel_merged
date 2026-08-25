@@ -10,7 +10,10 @@ export async function middleware(req: NextRequest) {
 
   const url = req.nextUrl.clone();
   url.pathname = "/login";
-  url.search = "";
+  // Gem den ønskede side (sti + query) som ?next=, så login-action'en kan sende
+  // brugeren videre til det dybe link i stedet for altid at lande på /calendar.
+  const next = req.nextUrl.pathname + req.nextUrl.search;
+  url.search = next && next !== "/" ? "?next=" + encodeURIComponent(next) : "";
   return NextResponse.redirect(url);
 }
 

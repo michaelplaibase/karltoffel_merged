@@ -9,7 +9,10 @@ import { generateForSubscriptionId, generateAllSubscriptionOrders, regenerateFut
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
-export type SubscriptionState = { error?: string };
+// values ekkoer de indsendte topfelter tilbage ved valideringsfejl, så
+// formularen kan prefille dem igen (React 19 resetter ukontrollerede felter
+// når en form-action afvikles — indtastning må aldrig gå tabt ved fejl).
+export type SubscriptionState = { error?: string; values?: { startWeek: string; baseInterval: string; fixedEmployee: string } };
 
 /** Materialise upcoming orders for every active subscription (manual button). */
 export async function regenerateOrders(): Promise<void> {
@@ -49,8 +52,7 @@ const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
 
 function taskCreate(lines: ReturnType<typeof readTaskLines>) {
   return lines.map((l, i) => {
-    // Lempelig pause-validering: mangler/ugyldig dato ⇒ gem som ikke-pauset
-    // frem for at fejle hele abonnements-gemningen.
+    // Pausedatoerne er valideret i parse() — her er "1" altid en gyldig pause.
     const paused = l.pauseActive === "1" && ISO_DATE.test(l.pauseStart) && ISO_DATE.test(l.pauseEnd);
     return {
       category: l.category, letter: (l.category[0] ?? "A").toUpperCase(), color: categoryColor(l.category),
@@ -62,20 +64,51 @@ function taskCreate(lines: ReturnType<typeof readTaskLines>) {
   });
 }
 
+/** Normalisér en uge-angivelse til det format genereringen forstår
+ *  (parseWeekLabel i lib/recurrence.ts kræver /Uge\s+\d+/): "29"/"uge29"/
+ *  "Uge 29" → "Uge 29". Ugyldigt/ude af interval → null. */
+function normalizeWeekLabel(raw: string): string | null {
+  const bare = raw.match(/^uge\s*(\d{1,2})$/i) ?? raw.match(/^(\d{1,2})$/);
+  const label = bare ? `Uge ${Number(bare[1])}` : raw;
+  const m = label.match(/Uge\s+(\d{1,2})\b/i); // samme format som parseWeekLabel
+  if (!m) return null;
+  const week = Number(m[1]);
+  return week >= 1 && week <= 53 ? label : null;
+}
+
 type Fields = { contactId: number; baseInterval: string; startWeek: string; fixedEmployee: string; lines: ReturnType<typeof readTaskLines> };
-function parse(formData: FormData): Fields | { error: string } {
-  const contactId = Number(formData.get("contactId"));
-  if (!contactId) return { error: "Vælg en kunde." };
+function parse(formData: FormData): Fields | ({ error: string } & Pick<SubscriptionState, "values">) {
+  // Felterne læses FØR valideringen, så alle fejl-returer kan ekko dem tilbage
+  // (React 19 form-reset: uden values mister brugeren sin indtastning).
   const baseInterval = String(formData.get("baseInterval") ?? "").trim();
-  if (!baseInterval) return { error: "Vælg et basis-interval." };
+  const startWeekRaw = String(formData.get("startWeek") ?? "").trim();
+  const fixedEmployee = String(formData.get("fixedEmployee") ?? "Ingen") || "Ingen";
+  const values = { startWeek: startWeekRaw, baseInterval, fixedEmployee };
+
+  const contactId = Number(formData.get("contactId"));
+  if (!contactId) return { error: "Vælg en kunde.", values };
+  if (!baseInterval) return { error: "Vælg et basis-interval.", values };
+  // Startuge SKAL kunne forstås af genereringen — ellers oprettes et abonnement,
+  // der aldrig genererer én eneste ordre, helt stille.
+  const startWeek = normalizeWeekLabel(startWeekRaw);
+  if (!startWeek) return { error: "Angiv startuge som fx 'Uge 29'.", values };
   const lines = readTaskLines(formData);
-  if (!lines.length) return { error: "Tilføj mindst én opgave." };
-  return {
-    contactId, baseInterval,
-    startWeek: String(formData.get("startWeek") ?? "").trim(),
-    fixedEmployee: String(formData.get("fixedEmployee") ?? "Ingen") || "Ingen",
-    lines,
-  };
+  if (!lines.length) return { error: "Tilføj mindst én opgave.", values };
+  for (const l of lines) {
+    // "Næste gang" er valgfri, men en udfyldt værdi skal være i et format
+    // genereringen forstår — ellers ignoreres den stille.
+    if (l.nextWeek) {
+      const nw = normalizeWeekLabel(l.nextWeek);
+      if (!nw) return { error: `Angiv 'Næste gang' som fx 'Uge 29' på opgaven '${l.description}'.`, values };
+      l.nextWeek = nw;
+    }
+    // Pause: et sat flueben med ryddet/ugyldig dato må aldrig stille gemmes som
+    // ikke-pauset — kunden ville få besøg i den periode, kontoret troede var pauset.
+    if (l.pauseActive === "1" && (!ISO_DATE.test(l.pauseStart) || !ISO_DATE.test(l.pauseEnd))) {
+      return { error: `Angiv start- og slutdato for pausen på opgaven '${l.description}'.`, values };
+    }
+  }
+  return { contactId, baseInterval, startWeek, fixedEmployee, lines };
 }
 
 /** Stop a subscription: mark inactive AND rydder de allerede-materialiserede
@@ -103,6 +136,7 @@ export async function stopSubscription(pk: number): Promise<void> {
   revalidatePath("/subscriptions");
   revalidatePath("/orders");
   revalidatePath("/calendar");
+  revalidatePath("/daycalendar");
   revalidatePath(`/customers/${sub.contactId}`);
   redirect("/subscriptions");
 }
@@ -120,6 +154,7 @@ export async function approveSubscription(pk: number): Promise<void> {
   revalidatePath("/subscriptions");
   revalidatePath("/orders");
   revalidatePath("/calendar");
+  revalidatePath("/daycalendar");
   revalidatePath(`/customers/${sub.contactId}`);
   redirect(`/subscriptions/${sub.displayNo}`);
 }
@@ -135,8 +170,9 @@ export async function createSubscription(_prev: SubscriptionState, formData: For
   await guardAction();
   const p = parse(formData);
   if ("error" in p) return p;
+  const values = { startWeek: p.startWeek, baseInterval: p.baseInterval, fixedEmployee: p.fixedEmployee };
   const contact = await prisma.contact.findUnique({ where: { id: p.contactId } });
-  if (!contact) return { error: "Kunden blev ikke fundet." };
+  if (!contact) return { error: "Kunden blev ikke fundet.", values };
 
   const nextWeek = p.lines.map((l) => l.nextWeek).find(Boolean) || p.startWeek || null;
   const deliveryAddress = contact.city ? `${contact.street}, ${contact.city}` : contact.street;
@@ -151,7 +187,7 @@ export async function createSubscription(_prev: SubscriptionState, formData: For
       const created = await prisma.subscription.create({
         data: {
           displayNo, contactId: p.contactId, deliveryAddress,
-          baseInterval: p.baseInterval, startWeek: p.startWeek || null, nextWeek,
+          baseInterval: p.baseInterval, startWeek: p.startWeek, nextWeek,
           fixedEmployee: p.fixedEmployee, tasks: { create: taskCreate(p.lines) },
         },
       });
@@ -166,6 +202,7 @@ export async function createSubscription(_prev: SubscriptionState, formData: For
   revalidatePath("/subscriptions");
   revalidatePath("/orders");
   revalidatePath("/calendar");
+  revalidatePath("/daycalendar");
   revalidatePath(`/customers/${p.contactId}`);
   redirect(`/subscriptions/${subDisplayNo}`);
 }
@@ -174,8 +211,9 @@ export async function updateSubscription(pk: number, _prev: SubscriptionState, f
   await guardAction();
   const p = parse(formData);
   if ("error" in p) return p;
+  const values = { startWeek: p.startWeek, baseInterval: p.baseInterval, fixedEmployee: p.fixedEmployee };
   const contact = await prisma.contact.findUnique({ where: { id: p.contactId } });
-  if (!contact) return { error: "Kunden blev ikke fundet." };
+  if (!contact) return { error: "Kunden blev ikke fundet.", values };
   const nextWeek = p.lines.map((l) => l.nextWeek).find(Boolean) || p.startWeek || null;
 
   await prisma.$transaction([
@@ -185,7 +223,7 @@ export async function updateSubscription(pk: number, _prev: SubscriptionState, f
       data: {
         contactId: p.contactId,
         deliveryAddress: contact.city ? `${contact.street}, ${contact.city}` : contact.street,
-        baseInterval: p.baseInterval, startWeek: p.startWeek || null, nextWeek,
+        baseInterval: p.baseInterval, startWeek: p.startWeek, nextWeek,
         fixedEmployee: p.fixedEmployee, tasks: { create: taskCreate(p.lines) },
       },
     }),
@@ -198,6 +236,7 @@ export async function updateSubscription(pk: number, _prev: SubscriptionState, f
   revalidatePath("/subscriptions");
   revalidatePath("/orders");
   revalidatePath("/calendar");
+  revalidatePath("/daycalendar");
   if (sub) revalidatePath(`/customers/${sub.contactId}`);
   redirect(`/subscriptions/${sub?.displayNo ?? ""}`);
 }

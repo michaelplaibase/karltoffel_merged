@@ -2,7 +2,9 @@
 
 // A KPI section with a working period toggle (Sidste 12 mdr / År til dato) that
 // swaps between the two precomputed KPI datasets from lib/reports-data.
+// Togglen er rigtige <button>s (SegButton), så den kan betjenes med tastatur.
 import { useState } from "react";
+import { SegButton } from "@/components/BarChart";
 import type { Kpi } from "@/lib/reports-data";
 
 export default function KpiSection({ title, twelve, ytd }: { title: string; twelve: Kpi[]; ytd: Kpi[] }) {
@@ -13,8 +15,8 @@ export default function KpiSection({ title, twelve, ytd }: { title: string; twel
       <div className="report-head">
         <h4 className="section-title">{title}</h4>
         <span className="seg">
-          <span className={period === "12" ? "on" : ""} onClick={() => setPeriod("12")}>Sidste 12 mdr</span>
-          <span className={period === "ytd" ? "on" : ""} onClick={() => setPeriod("ytd")}>År til dato</span>
+          <SegButton on={period === "12"} onClick={() => setPeriod("12")}>Sidste 12 mdr</SegButton>
+          <SegButton on={period === "ytd"} onClick={() => setPeriod("ytd")}>År til dato</SegButton>
         </span>
       </div>
       <div className="kpigrid">

@@ -8,26 +8,42 @@ import { guardAction, getSessionUser } from "@/lib/api-auth";
 import { issueInvoiceForOrder, testDineroConnection, resolveOrgId, type TestResult } from "@/lib/dinero";
 import { revalidatePath } from "next/cache";
 
-export type AccountsState = { error?: string; ok?: boolean };
+// React 19: ukontrollerede formularer nulstilles når en action returnerer —
+// values ekkoer derfor de indsendte felter, så indtastningen overlever en fejl.
+export type AccountsState = {
+  error?: string;
+  ok?: boolean;
+  values?: { salesAccountNumber: string; cashAccountNumber: string };
+};
 
 /** Update the sales/cash Dinero chart-of-accounts numbers (admin only). Upserts the
- *  connection row so numbers can be set before the first "Test forbindelse". */
+ *  connection row so numbers can be set before the first "Test forbindelse".
+ *  Ugyldigt/tomt input er en VALIDERINGSFEJL — aldrig et stille fallback til
+ *  standardkontiene (1000/55040) med "Gemt."-kvittering, som ville lade
+ *  bogføringen ramme en anden konto end den, admin troede var valgt. */
 export async function saveDineroAccounts(_prev: AccountsState, formData: FormData): Promise<AccountsState> {
   await guardAction();
   const user = await getSessionUser();
   if (!user?.isAdmin) return { error: "Kun administratorer kan ændre regnskabsindstillinger." };
 
-  const sales = Number(formData.get("salesAccountNumber"));
-  const cash = Number(formData.get("cashAccountNumber"));
-  const salesN = Number.isFinite(sales) && sales > 0 ? Math.trunc(sales) : 1000;
-  const cashN = Number.isFinite(cash) && cash > 0 ? Math.trunc(cash) : 55040;
+  const salesRaw = String(formData.get("salesAccountNumber") ?? "").trim();
+  const cashRaw = String(formData.get("cashAccountNumber") ?? "").trim();
+  const values = { salesAccountNumber: salesRaw, cashAccountNumber: cashRaw };
+  const salesN = Number(salesRaw);
+  const cashN = Number(cashRaw);
+  if (!salesRaw || !Number.isInteger(salesN) || salesN <= 0) {
+    return { error: "Angiv et gyldigt kontonummer (positivt heltal) til salgskontoen.", values };
+  }
+  if (!cashRaw || !Number.isInteger(cashN) || cashN <= 0) {
+    return { error: "Angiv et gyldigt kontonummer (positivt heltal) til indbetalingskontoen.", values };
+  }
 
   const company = await prisma.company.findFirst({ select: { id: true } });
-  if (!company) return { error: "Ingen virksomhed fundet." };
+  if (!company) return { error: "Ingen virksomhed fundet.", values };
 
   const existing = await prisma.dineroConnection.findFirst({ where: { companyId: company.id }, select: { id: true } });
   const orgId = resolveOrgId();
-  if (!existing && !orgId) return { error: "Test forbindelsen til Dinero først." };
+  if (!existing && !orgId) return { error: "Test forbindelsen til Dinero først.", values };
 
   await prisma.dineroConnection.upsert({
     where: { companyId: company.id },
@@ -41,6 +57,7 @@ export async function saveDineroAccounts(_prev: AccountsState, formData: FormDat
 /** "Test forbindelse" — fetch a client-credentials token, confirm the org is
  *  reachable, and cache org name/isPro/status. Returns the result for inline display. */
 export async function runDineroTest(_prev: TestResult, _formData: FormData): Promise<TestResult> {
+  void _prev; void _formData; // useActionState-signatur — argumenterne bruges ikke her
   await guardAction();
   const user = await getSessionUser();
   if (!user?.isAdmin) return { ok: false, error: "Kun administratorer." };

@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import { routeId } from "@/lib/route-ids";
 import { getContactEditData } from "@/lib/queries";
 import { updateContact } from "@/app/actions/contacts";
 import ContactForm from "@/components/ContactForm";
@@ -7,7 +8,7 @@ export const metadata = { title: "Rediger kontakt · Karltoffel" };
 
 export default async function EditContact({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const contactId = Number(id);
+  const contactId = routeId(id);
   const initial = await getContactEditData(contactId);
   if (!initial) notFound();
 

@@ -33,8 +33,10 @@ export default function AddressFinder({ name, initialValue = "" }: { name: strin
       value={query} className="form-control form-control-sm" placeholder="Vejnavn husnr., postnr. by"
       onChange={(event) => { setQuery(event.target.value); setSelected(""); setItems([]); setStatus(event.target.value.trim().length >= 3 ? "loading" : "idle"); }}
       onKeyDown={(event) => { if (event.key === "ArrowDown" && items.length) { event.preventDefault(); setActive((active + 1) % items.length); } else if (event.key === "ArrowUp" && items.length) { event.preventDefault(); setActive((active - 1 + items.length) % items.length); } else if (event.key === "Enter" && active >= 0) { event.preventDefault(); choose(items[active]); } else if (event.key === "Escape") setItems([]); }} />
-    <input type="hidden" name={name} value={selected} />
-    <div role="status" aria-live="polite" className="form-text field-help">{status === "loading" ? "Søger adresser…" : status === "empty" ? "Ingen adresser fundet." : status === "error" ? "Adresseopslag kunne ikke gennemføres." : query && !selected ? "Vælg et forslag for at bruge adressen." : ""}</div>
+    {/* Fri indtastning må ALDRIG blive til tom adresse: vælges intet forslag,
+        submittes den rå tekst som den står — også når adresse-API'et er nede. */}
+    <input type="hidden" name={name} value={selected || query} />
+    <div role="status" aria-live="polite" className="form-text field-help">{status === "loading" ? "Søger adresser…" : status === "empty" ? "Ingen adresser fundet." : status === "error" ? "Adresseopslag kunne ikke gennemføres — teksten gemmes som den står." : query && !selected ? "Vælg et forslag, eller lad teksten stå for at gemme den som den er." : ""}</div>
     {items.length > 0 && <div id={listId} role="listbox" style={{ position:"absolute", zIndex:20, width:"100%", background:"white", border:"1px solid #ccd", borderRadius:4 }}>
       {items.map((item,index)=><button key={`${item.providerId ?? item.label}-${index}`} id={`${listId}-${index}`} role="option" aria-selected={active===index} type="button" onMouseDown={(event)=>event.preventDefault()} onClick={()=>choose(item)} style={{display:"block",width:"100%",textAlign:"left",padding:8,background:active===index?"#eef5ff":"white",border:0}}>{item.label}</button>)}
     </div>}

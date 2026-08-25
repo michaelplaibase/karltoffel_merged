@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { routeId } from "@/lib/route-ids";
 import { getContactById, getSubscriptionsForContact, getFixedPricesForContact, getOrdersForContact } from "@/lib/queries";
 import { CatChip, MapLink, money } from "@/components/ui";
 import RowMenu from "@/components/RowMenu";
@@ -20,13 +21,17 @@ export default async function CustomerDetail({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const c = await getContactById(Number(id));
+  const c = await getContactById(routeId(id));
   if (!c) notFound();
   const [subs, fixedPrices, orders] = await Promise.all([
     getSubscriptionsForContact(c.id),
     getFixedPricesForContact(c.id),
     getOrdersForContact(c.id),
   ]);
+  // Separatorer kun mellem udfyldte felter — ingen løse " · "/kommaer når
+  // telefon/e-mail/by mangler (fx lead-konverterede kunder med kun telefon).
+  const address = [c.street, c.city].filter(Boolean).join(", ");
+  const reach = [c.phone, c.email].filter(Boolean).join(" · ");
 
   return (
     <div className="container-1140">
@@ -45,11 +50,11 @@ export default async function CustomerDetail({
           <div className="card-header"><h4 className="section-title">Kundens kontaktinfo</h4></div>
           <div className="card-body tight">
             <div className="form-static">
-              <b>{c.name}</b>{"\n"}
-              {c.street}, {c.city}{"\n"}
-              {c.phone} · {c.email}{c.cvr ? `\nCVR: ${c.cvr}` : ""}
+              <b>{c.name}</b>
+              {address ? `\n${address}` : ""}
+              {reach ? `\n${reach}` : ""}{c.cvr ? `\nCVR: ${c.cvr}` : ""}
             </div>
-            <div style={{ marginTop: 10 }}><MapLink address={`${c.street}, ${c.city}`} /></div>
+            {address ? <div style={{ marginTop: 10 }}><MapLink address={address} /></div> : null}
             <div className="row-actions" style={{ marginTop: 16 }}>
               <Link href={`/customers/${c.id}/edit`} className="btn btn-outline-primary btn-sm">Rediger kontaktinfo</Link>
               <Link href={`/customers/${c.id}/send-tilbud`} className="btn btn-outline-primary btn-sm">Send tilbud</Link>
@@ -67,7 +72,7 @@ export default async function CustomerDetail({
         </div>
       </div>
 
-      <SkraafotoCard address={`${c.street}, ${c.city}`} configured={SKRAAFOTO_CONFIGURED} />
+      <SkraafotoCard address={address} configured={SKRAAFOTO_CONFIGURED} />
 
       <div className="card">
         <div className="card-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>

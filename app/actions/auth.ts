@@ -3,11 +3,14 @@
 import { prisma } from "@/lib/db";
 import { verifyPassword, hashPassword } from "@/lib/auth";
 import { signSession, verifySession, SESSION_COOKIE, SESSION_TTL_SECONDS } from "@/lib/session";
+import { getSessionUser } from "@/lib/api-auth";
 import { underLimit, recordHit } from "@/lib/rate-limit";
 import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
 
-export type LoginState = { error?: string };
+// values ekkoes ved fejl, så React 19's automatiske form-reset ikke smider
+// brugernavn/'Husk mig' væk (adgangskoden ekkoes bevidst ALDRIG).
+export type LoginState = { error?: string; values?: { username: string; remember: boolean } };
 export type ChangePasswordState = { error?: string; ok?: boolean };
 
 export async function changePassword(_prev: ChangePasswordState, formData: FormData): Promise<ChangePasswordState> {
@@ -28,19 +31,20 @@ export async function changePassword(_prev: ChangePasswordState, formData: FormD
 export async function login(_prev: LoginState, formData: FormData): Promise<LoginState> {
   const username = String(formData.get("username") ?? "").trim();
   const password = String(formData.get("password") ?? "");
-  if (!username || !password) return { error: "Udfyld brugernavn og adgangskode." };
+  const values = { username, remember: formData.get("remember") != null };
+  if (!username || !password) return { error: "Udfyld brugernavn og adgangskode.", values };
 
   // Rate-limit by username+IP; only FAILED attempts count, so a valid login is
   // never penalised and one user can't be locked out by another's junk requests.
   const ip = (await headers()).get("x-forwarded-for")?.split(",")[0]?.trim() || "local";
   const rlKey = `login:${username}:${ip}`;
-  if (!underLimit(rlKey, 5)) return { error: "For mange forsøg. Prøv igen om lidt." };
+  if (!underLimit(rlKey, 5)) return { error: "For mange forsøg. Prøv igen om lidt.", values };
 
   const user = await prisma.user.findUnique({ where: { username } });
   // Deaktiverede brugere (soft-delete) afvises på linje med forkert kodeord.
   if (!user || !user.active || !user.passwordHash || !verifyPassword(password, user.passwordHash)) {
     recordHit(rlKey, 60_000);
-    return { error: "Forkert brugernavn eller adgangskode." };
+    return { error: "Forkert brugernavn eller adgangskode.", values };
   }
 
   // "Husk mig" (default til): 30 dages login, ellers 7 dage. Cookie-maxAge og
@@ -51,7 +55,19 @@ export async function login(_prev: LoginState, formData: FormData): Promise<Logi
     httpOnly: true, sameSite: "lax", path: "/", maxAge: ttl,
     secure: process.env.NODE_ENV === "production",
   });
-  redirect("/calendar");
+  // Send brugeren videre til den side, middleware afbrød (?next=). Kun interne
+  // stier accepteres: skal starte med præcis ét "/" (aldrig "//host" eller
+  // baglæns skråstreger, som browsere kan læse som eksternt redirect).
+  const next = String(formData.get("next") ?? "");
+  redirect(/^\/(?!\/)/.test(next) && !next.includes("\\") ? next : "/calendar");
+}
+
+/** Brugerens rolle til navigationen (Navbar er en client-komponent og kan ikke
+ *  selv slå sessionen op). Kun til at SKJULE admin-menupunkter — selve
+ *  adgangen håndhæves fortsat server-side på siderne og i deres actions. */
+export async function getSessionIsAdmin(): Promise<boolean> {
+  const me = await getSessionUser();
+  return me?.isAdmin === true;
 }
 
 // Log ud via POST (server-action). BEVIDST ikke et GET-link: Next.js prefetcher

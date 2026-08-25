@@ -22,7 +22,10 @@ export default function StandardTaskManager({ tasks, q, includeInactive }: { tas
 
   return (
     <div className="container-1140" style={{ maxWidth: 900 }}>
-      <p className="page-desc" style={{ marginTop: 4 }}>Oversigten viser alle dine standardopgaver. Når du redigerer en standardopgave, så slår ændringen igennem alle steder, hvor standardopgaven er i brug.</p>
+      {/* Ærlig beskrivelse: standardopgaver kan oprettes og (de)aktiveres — der
+          findes ingen redigering, og opgavelinjer på aftaler/ordrer er kopier,
+          så ændringer slår ikke igennem bagudrettet. */}
+      <p className="page-desc" style={{ marginTop: 4 }}>Oversigten viser alle dine standardopgaver. Standardopgaver kan oprettes og deaktiveres; eksisterende aftaler og ordrer påvirkes ikke.</p>
       <div className="card">
         <div className="card-body">
           <h1 className="page-title">Oversigt over standardopgaver</h1>

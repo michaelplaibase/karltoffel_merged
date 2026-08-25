@@ -3,17 +3,15 @@
 // aggregation. All amounts are DKK incl. VAT. Provides both a trailing-12-months
 // and a year-to-date view (period toggle) and both monthly and weekly chart
 // series (Måned/Uge toggle).
+// "Omsætning" = KUN udførte ordrer (status "Udført"), samme definition som
+// lønrapporten (lib/payroll.ts), så de to admin-flader kan afstemmes. Antal-/
+// gns.-serierne dækker fortsat alle planlagte ordrer og siger det i titlen.
 import { prisma } from "./db";
 import { isoWeek } from "./planner";
+import { todayCphISO } from "./calendar";
 
 export type Kpi = { k: string; t: string; s?: string };
 export type Series = { name: string; color: string; values: number[] };
-
-export const MAP_LEGEND = {
-  title: "Kort over kunder med omsætning de sidste 12 mdr.",
-  property: ["Lejlighed", "Hus", "Rækkehus", "Ukendt"],
-  revenue: ["$ 0-500 DKK", "$$ 500-1000 DKK", "$$$ 1000+ DKK"],
-};
 
 export type ChartData = {
   title: string; yLabel: string;
@@ -54,23 +52,26 @@ function kpisForOrders(orders: OrderRow[]): { customers: Kpi[]; revenue: Kpi[]; 
     monthsSeen.add(`${o.plannedAt.getUTCFullYear()}-${o.plannedAt.getUTCMonth()}`);
   }
   const customers: Kpi[] = [
-    { k: String(all.size), t: "Antal unikke kunder totalt", s: "Unikke kunder med omsætning i perioden" },
+    { k: String(all.size), t: "Antal unikke kunder totalt", s: "Unikke kunder med omsætning (udførte ordrer) i perioden" },
     { k: String(custByType.abo.size), t: "Abonnementskunder", s: "Abonnementskunder med omsætning i perioden, inkl. stoppede abonnementer" },
     { k: String(custByType.online.size), t: "Online kunder", s: "Kunder, der har bestilt online og har omsætning i perioden" },
     { k: String(custByType.manuel.size), t: "Manuelt oprettede kunder", s: "Kunder med manuelle ordrer og omsætning i perioden" },
   ];
   const revenue: Kpi[] = [
-    { k: dkk(total), t: "Omsætning totalt", s: "Omsætning fra alle kundetyper i perioden" },
-    { k: dkk(revByType.abo), t: "Omsætning fra abonnementskunder", s: "Inkl. stoppede abonnementer" },
-    { k: dkk(revByType.online), t: "Omsætning fra online kunder", s: "Fra online ordrer i perioden" },
-    { k: dkk(revByType.manuel), t: "Omsætning fra manuelt oprettede kunder", s: "Fra manuelle ordrer i perioden" },
+    { k: dkk(total), t: "Omsætning totalt", s: "Udførte ordrer i perioden — afstemmelig med lønrapporten" },
+    { k: dkk(revByType.abo), t: "Omsætning fra abonnementskunder", s: "Udførte ordrer, inkl. stoppede abonnementer" },
+    { k: dkk(revByType.online), t: "Omsætning fra online kunder", s: "Fra udførte online ordrer i perioden" },
+    { k: dkk(revByType.manuel), t: "Omsætning fra manuelt oprettede kunder", s: "Fra udførte manuelle ordrer i perioden" },
   ];
   return { customers, revenue, aboRevenue: revByType.abo, aboCustomers: custByType.abo.size, activeMonths: monthsSeen.size || 1 };
 }
 
 /** Report data for the trailing 12 months ending at the month of `refISO`
- *  (defaults to today, so the window keeps moving forward). */
-export async function getReportData(refISO = new Date().toISOString().slice(0, 10)): Promise<ReportData> {
+ *  (defaults to today in DANSK tid, so the window keeps moving forward — and
+ *  kl. 00-02 dansk tid peger "i dag" ikke på gårsdagens UTC-dato). NB: siderne
+ *  der kalder os SKAL være dynamiske (`export const dynamic = "force-dynamic"`),
+ *  ellers evalueres denne default ved build og fryser vinduet på deploy-dagen. */
+export async function getReportData(refISO = todayCphISO()): Promise<ReportData> {
   const ref = new Date(`${refISO}T00:00:00Z`);
   const months = Array.from({ length: 12 }, (_, i) => {
     const d = new Date(Date.UTC(ref.getUTCFullYear(), ref.getUTCMonth() - (11 - i), 1));
@@ -83,9 +84,14 @@ export async function getReportData(refISO = new Date().toISOString().slice(0, 1
   const orders = await prisma.order.findMany({ where: { plannedAt: { gte: start, lt: end } }, include: { tasks: true } });
   const activeSubs = await prisma.subscription.count({ where: { active: true } });
 
+  // Omsætning tæller KUN udførte ordrer — "Sprunget over", "Skal genplanlægges"
+  // og fremtidige "Afventer levering" må ikke puste tallene op (lønrapporten
+  // regner også kun "Udført", så de to flader stemmer overens).
+  const completed = orders.filter((o) => o.status === "Udført");
+
   const monthIndex = (d: Date) => months.findIndex((m) => m.year === d.getUTCFullYear() && m.month === d.getUTCMonth());
 
-  // Monthly series
+  // Monthly series — omsætning fra udførte; antal/gns. fra alle planlagte.
   const rev = { abo: Array(12).fill(0), online: Array(12).fill(0), manuel: Array(12).fill(0) } as Record<string, number[]>;
   const cnt = { abo: Array(12).fill(0), online: Array(12).fill(0), manuel: Array(12).fill(0) } as Record<string, number[]>;
   const monthlyTotal = Array(12).fill(0) as number[];
@@ -93,7 +99,11 @@ export async function getReportData(refISO = new Date().toISOString().slice(0, 1
   for (const o of orders) {
     const mi = monthIndex(o.plannedAt); if (mi < 0) continue;
     const b = bucket(o.sourceType); const p = priceOf(o);
-    rev[b][mi] += p; cnt[b][mi] += 1; monthlyTotal[mi] += p; monthlyOrders[mi] += 1;
+    cnt[b][mi] += 1; monthlyTotal[mi] += p; monthlyOrders[mi] += 1;
+  }
+  for (const o of completed) {
+    const mi = monthIndex(o.plannedAt); if (mi < 0) continue;
+    rev[bucket(o.sourceType)][mi] += priceOf(o);
   }
   const avgOrderSize = months.map((_, i) => (monthlyOrders[i] ? Math.round(monthlyTotal[i] / monthlyOrders[i]) : 0));
 
@@ -111,14 +121,21 @@ export async function getReportData(refISO = new Date().toISOString().slice(0, 1
   for (const o of orders) {
     const wi = wIndex(o.plannedAt); if (wi < 0 || wi >= WK) continue;
     const b = bucket(o.sourceType); const p = priceOf(o);
-    wrev[b][wi] += p; wcnt[b][wi] += 1; wTotal[wi] += p; wOrders[wi] += 1;
+    wcnt[b][wi] += 1; wTotal[wi] += p; wOrders[wi] += 1;
+  }
+  for (const o of completed) {
+    const wi = wIndex(o.plannedAt); if (wi < 0 || wi >= WK) continue;
+    wrev[bucket(o.sourceType)][wi] += priceOf(o);
   }
   const wAvg = Array.from({ length: WK }, (_, i) => (wOrders[i] ? Math.round(wTotal[i] / wOrders[i]) : 0));
 
-  // KPIs — 12-month vs year-to-date windows.
-  const twelve = kpisForOrders(orders);
+  // KPIs — 12-month vs year-to-date windows (kun udførte ordrer, jf. ovenfor).
+  const twelve = kpisForOrders(completed);
   const jan1 = new Date(Date.UTC(ref.getUTCFullYear(), 0, 1));
-  const ytdOrders = orders.filter((o) => o.plannedAt >= jan1 && o.plannedAt <= ref);
+  // HELE ref-dagen med: ref er dagens 00:00Z, mens plannedAt bærer et klokkeslæt
+  // (10:00 UTC) — `<= ref` ville udelade dagens egne ordrer af "År til dato".
+  const refEnd = new Date(ref.getTime() + 864e5);
+  const ytdOrders = completed.filter((o) => o.plannedAt >= jan1 && o.plannedAt < refEnd);
   const ytd = kpisForOrders(ytdOrders);
 
   const kpiSubs: Kpi[] = [
@@ -130,7 +147,7 @@ export async function getReportData(refISO = new Date().toISOString().slice(0, 1
 
   const charts: ChartData[] = [
     {
-      title: "Omsætning per kundetype", yLabel: "DKK (inkl. moms)", labels, weekLabels,
+      title: "Omsætning per kundetype (udførte ordrer)", yLabel: "DKK (inkl. moms)", labels, weekLabels,
       series: [
         { name: "Abonnementskunder", color: COLORS.abo, values: rev.abo },
         { name: "Online kunder", color: COLORS.online, values: rev.online },
@@ -143,7 +160,7 @@ export async function getReportData(refISO = new Date().toISOString().slice(0, 1
       ],
     },
     {
-      title: "Antal ordrer per kundetype", yLabel: "Antal ordrer", labels, weekLabels,
+      title: "Antal ordrer per kundetype (alle planlagte)", yLabel: "Antal ordrer", labels, weekLabels,
       series: [
         { name: "Abonnementskunder", color: COLORS.abo, values: cnt.abo },
         { name: "Online kunder", color: COLORS.online, values: cnt.online },

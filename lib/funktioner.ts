@@ -86,25 +86,28 @@ export const HOLIDAYS: {
   title: "Ferieplanlægning",
   warning:
     "Det er vigtigt, at du forstår, hvordan ferieplanlægningen virker, inden du tager den i brug, da ferieplanlægningen direkte påvirker din kalender, alle dine abonnementer samt relaterede ordrer.",
+  // Teksten beskriver den FAKTISKE adfærd i lib/recurrence.ts: besøg, der
+  // ville falde i en ferielukket uge, skubbes til den første åbne uge efter
+  // ferien — rytmen fortsætter derefter uændret (ingen varig forskydning).
   body:
-    "Når du indtaster en ferie vil kalenderen blive lukket i de pågældende uger, og alle abonnementsordrer fra dit kartotek blive skubbet frem i tid startende fra ferietidspunktet. Dvs. det er ikke kun ordrer i ferieperioden, der vil blive skubbet, men også ordrer fra alle efterfølgende uger vil blive skubbet frem i tid.",
+    "Når du indtaster en ferie vil kalenderen blive lukket i de pågældende uger. Abonnementsbesøg, der ville falde i en ferielukket uge, bliver skubbet til den første åbne uge efter ferien — de mistes ikke. De efterfølgende besøg fortsætter i deres normale rytme og uger.",
   bullets: [
-    "Du skal oprette en ferie minimum 1 uge før ferien påbegyndes",
-    "Du kan ikke redigere eller slette en ferie, når der er mindre end 1 uge til ferien påbegyndes",
     "Ferieplanlægning gælder for alle medarbejdere i virksomheden",
-    "Det er kun abonnementsordrer, der bliver skubbet frem i tid (manuelle ordrer og online ordrer skal du selv håndtere)",
+    "Det er kun abonnementsordrer, der bliver skubbet (manuelle ordrer og online ordrer skal du selv håndtere)",
+    "Ordrer, der allerede er lagt i kalenderen i ferieugerne, flyttes ikke automatisk — flyt eller slet dem manuelt (de kan ikke planlægges, så længe ugen er ferielukket)",
+    "Falder det skubbede besøg i samme uge som abonnementets næste normale besøg, slås de sammen til ét besøg",
     "Kunderne bliver ikke automatisk orienteret om, at du holder ferie (det skal du selv gøre)",
-    "Hvis du tidligere har flyttet en abonnementsordre til en anden uge, end den oprindeligt var planlagt til, så vil ordren falde tilbage til sin normale placering/interval, når ferien bliver oprettet (såfremt den ligger efter ferietidspunktet)",
     "Du kan oprette ekstra arbejdstid oven i ferien, hvis du har nogle enkelte ordrer, der skal planlægges/leveres. Dette gøres ved at trække-slippe og så oprette ekstra arbejdstid",
   ],
   example: [
     "Du opretter ferie i uge 23-24",
-    "Et 8-ugers abonnement, der normalt ville ligge i uge 12, 20, 28, 36, vil nu blive skubbet 2 uger frem fra ferietidspunktet, og vil derfor ligge med ordrer i uge 12, 20, 30, 38",
-    "Et 8-ugers abonnement, der normalt ville ligge i uge 12, 20, 29*, 36 (*fordi du tidligere har flyttet ordren fra uge 28 til uge 29), vil ligge med ordrer i uge 12, 20, 30, 38",
+    "Et 8-ugers abonnement, der normalt ville ligge i uge 16, 24, 32, 40, får besøget i uge 24 skubbet til uge 25 — de efterfølgende besøg ligger fortsat i uge 32 og 40",
+    "Et 2-ugers abonnement med besøg i uge 22, 24, 26 får besøget i uge 24 slået sammen med besøget i uge 26 (første åbne uge er samtidig et normalt besøg)",
     "En online ordre, der ligger i uge 23 vil ligge uændret i uge 23",
     "En manuel, ikke-fastlåst ordre, der ligger i uge 23, vil blive liggende i ugen, men planlægningen vil fejle, fordi der er ferielukket. (Opret ekstra arbejdstid eller flyt ordren til en anden uge).",
   ],
-  historyCols: ["Ferienr.", "Ferieperiode (inklusiv)", "Kan redigeres til og med"],
+  // "Kan redigeres til og med" er fjernet: 1-uges-reglen håndhæves ikke.
+  historyCols: ["Ferienr.", "Ferieperiode (inklusiv)"],
   historyEmpty: "Ingen planlagte ferier",
   createTitle: "Opret ferie",
   fields: [
@@ -179,14 +182,14 @@ export const PRICE_ADJUSTMENT: {
         {
           t: "select",
           l: "Vælg, om den nye pris skal afrundes",
+          // Kun heltalsvalg — priser gemmes i hele kroner, så ørevalg
+          // ("50 øre"/"Slut på 9,95 kr.") kan ikke leveres.
           opts: [
             "Ingen afrunding",
-            "50 øre",
             "1 kr.",
             "2 kr.",
             "5 kr.",
             "Slut på 9,00 kr.",
-            "Slut på 9,95 kr.",
             "10 kr.",
           ],
           val: "Ingen afrunding",

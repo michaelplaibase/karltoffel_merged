@@ -64,7 +64,7 @@ export const GUIDES: Guide[] = [
     "steps": [
       {
         "title": "Gå til kundeoversigten",
-        "body": "1. Log ind i portalen (brugernavn: kristianklercke).\n2. Klik på Kartotek i topmenuen, og vælg Kunder.\n3. Du lander nu på siden \"Oversigt over kunder\"."
+        "body": "1. Log ind i portalen (dit login udleveres af administratoren).\n2. Klik på Kartotek i topmenuen, og vælg Kunder.\n3. Du lander nu på siden \"Oversigt over kunder\"."
       },
       {
         "title": "Åbn oprettelsesformularen",
@@ -194,7 +194,7 @@ export const GUIDES: Guide[] = [
     "steps": [
       {
         "title": "Del 1 – Åbn oversigten over fastprisaftaler",
-        "body": "1. Log ind (kristianklercke / karltoffel).\n2. Gå til topmenuen og klik på Kartotek.\n3. Vælg Fastprisaftaler. Du lander på siden \"Oversigt over fastprisaftaler\", som viser Aftale nr., Leveringsadresse, Opgaver og Pris for hver aftale. Du kan søge i feltet med teksten \"kundenavn, kundenr, email, tlf, vejnavn, husnr, postnr\"."
+        "body": "1. Log ind (dit login udleveres af administratoren).\n2. Gå til topmenuen og klik på Kartotek.\n3. Vælg Fastprisaftaler. Du lander på siden \"Oversigt over fastprisaftaler\", som viser Aftale nr., Leveringsadresse, Opgaver og Pris for hver aftale. Du kan søge i feltet med teksten \"kundenavn, kundenr, email, tlf, vejnavn, husnr, postnr\"."
       },
       {
         "title": "Opret en ny fastprisaftale",
@@ -319,7 +319,7 @@ export const GUIDES: Guide[] = [
     "title": "Funktioner og rapporter",
     "slug": "funktioner-og-rapporter",
     "audience": "Kontor- og driftspersonale, der bruger Karltoffel CRM i det daglige — ingen teknisk viden kræves.",
-    "intro": "Under menuen \"Funktioner\" finder du fire værktøjer til den daglige drift: Gruppebeskeder, Ferieplanlægning, Abonnementsoptimering og Prisjustering. Under \"Rapportering\" finder du grafer, nøgletal og rapporter til download. Rabatkoder og Standardopgaver ligger under \"Indstillinger\". Log ind med brugernavn \"kristianklercke\" og adgangskode \"karltoffel\", før du går i gang.",
+    "intro": "Under menuen \"Funktioner\" finder du fire værktøjer til den daglige drift: Gruppebeskeder, Ferieplanlægning, Abonnementsoptimering og Prisjustering. Under \"Rapportering\" finder du grafer, nøgletal og rapporter til download. Rabatkoder og Standardopgaver ligger under \"Indstillinger\". Log ind, før du går i gang — dit login udleveres af administratoren.",
     "steps": [
       {
         "title": "Gruppebeskeder — send besked til en kundegruppe",
@@ -366,7 +366,7 @@ export const GUIDES: Guide[] = [
     "steps": [
       {
         "title": "Åbn Lønrapporten",
-        "body": "1. Log ind som administrator (f.eks. kristianklercke).\n2. Klik på \"Rapportering\" i topmenuen.\n3. Vælg \"Lønrapport\".\nEr du ikke administrator, får du beskeden \"Kun administratorer har adgang til lønrapporten.\""
+        "body": "1. Log ind som administrator.\n2. Klik på \"Rapportering\" i topmenuen.\n3. Vælg \"Lønrapport\".\nEr du ikke administrator, får du beskeden \"Kun administratorer har adgang til lønrapporten.\""
       },
       {
         "title": "Vælg perioden",

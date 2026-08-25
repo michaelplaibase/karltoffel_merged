@@ -22,14 +22,17 @@ export default function DineroAccountsForm({
       <div className="f2">
         <label className="col-label">Salgskonto (afsendte fakturaer)</label>
         <div>
-          <input name="salesAccountNumber" type="number" min="1" defaultValue={salesAccountNumber} className="form-control form-control-sm" />
+          {/* React 19: state.values ekkoer indtastningen, så den overlever en valideringsfejl. */}
+          <input name="salesAccountNumber" type="number" min="1" required
+            defaultValue={state.values?.salesAccountNumber ?? salesAccountNumber} className="form-control form-control-sm" />
           <small className="form-text field-help">Kontonr. i din Dinero kontoplan til bogføring af salg. Standard: 1000 (Salg af varer/ydelser m/moms).</small>
         </div>
       </div>
       <div className="f2">
         <label className="col-label">Indbetalingskonto (kontant betaling)</label>
         <div>
-          <input name="cashAccountNumber" type="number" min="1" defaultValue={cashAccountNumber} className="form-control form-control-sm" />
+          <input name="cashAccountNumber" type="number" min="1" required
+            defaultValue={state.values?.cashAccountNumber ?? cashAccountNumber} className="form-control form-control-sm" />
           <small className="form-text field-help">Kontonr. til bogføring af kontante betalinger. Standard: 55040 (Kontanter/kasse). Bekræft, at nummeret findes i netop din organisations kontoplan.</small>
         </div>
       </div>

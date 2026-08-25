@@ -569,7 +569,10 @@ async function buildWeekPlan(weekMonday: string) {
       include: { tasks: true, subscription: true, contact: true },
       orderBy: { id: "asc" },
     }),
-    prisma.user.findMany({ where: { activeCalendar: true }, orderBy: { id: "asc" } }),
+    // active:true OGSÅ: en deaktiveret bruger med gammelt activeCalendar-flag
+    // må aldrig optræde som kalender-lane (users-actions holder flagene i sync
+    // fremadrettet; dette er det defensive filter for eksisterende data).
+    prisma.user.findMany({ where: { activeCalendar: true, active: true }, orderBy: { id: "asc" } }),
   ]);
   const holiday = await isHolidayWeek(weekMonday);
   const priceById = new Map<number, number>();

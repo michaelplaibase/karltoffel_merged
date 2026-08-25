@@ -1,24 +1,49 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getOrderDetail } from "@/lib/queries";
+import { prisma } from "@/lib/db";
+import { routeId } from "@/lib/route-ids";
 import { completeOrder } from "@/app/actions/orders";
+import { isInvoiceDecision } from "@/lib/dinero";
 import { MapLink } from "@/components/ui";
 import CompleteOrderForm from "@/components/CompleteOrderForm";
 
 export const metadata = { title: "Afslut ordre · Karltoffel" };
 
-export default async function CompleteOrderPage({ params }: { params: Promise<{ id: string }> }) {
+export default async function CompleteOrderPage({
+  params, searchParams,
+}: {
+  params: Promise<{ id: string }>;
+  searchParams: Promise<{ back?: string }>;
+}) {
   const { id } = await params;
-  const orderId = Number(id);
+  const sp = await searchParams;
+  const orderId = routeId(id);
   const o = await getOrderDetail(orderId);
   if (!o) notFound();
   const c = o.contact;
+
+  // Returmål fra afsenderen (?back=...) — dagsprogrammet/kundesiden/ordrelisten
+  // sender deres egen sti med, så medarbejderen lander tilbage hvor hun kom
+  // fra. Accepter KUN interne, relative stier ("/..." men ikke "//host").
+  const backUrl = sp.back && sp.back.startsWith("/") && !sp.back.startsWith("//") ? sp.back : "/orders";
+
+  // Kundens "Forudindstilling for Betaling og fakturering" (Contact.
+  // invoiceChoicePreselect) — bruges kun når ordren endnu ingen gemt
+  // beslutning har, og kun hvis værdien er et af de fem reelle valg
+  // ("Anvend standardindstilling"/"Blank …"/"default" forudvælger intet).
+  const row = await prisma.order.findUnique({
+    where: { id: orderId },
+    select: { contact: { select: { invoiceChoicePreselect: true } } },
+  });
+  const preselect = row?.contact.invoiceChoicePreselect ?? "";
+  const paymentPreselect = !o.invoiceDecision && isInvoiceDecision(preselect) ? preselect : undefined;
 
   return (
     <div className="container-1140">
       <div className="toolbar" style={{ justifyContent: "space-between" }}>
         <h1 className="page-title">Afslut ordre</h1>
-        <Link href="/orders" className="btn btn-light">Gå tilbage</Link>
+        <Link href={backUrl} className="btn btn-light">Gå tilbage</Link>
       </div>
 
       <div className="grid-2">
@@ -51,7 +76,8 @@ export default async function CompleteOrderPage({ params }: { params: Promise<{ 
         action={completeOrder.bind(null, orderId)}
         initialComment={o.comment}
         initialAddressNote={o.addressNote}
-        backUrl="/orders"
+        backUrl={backUrl}
+        paymentPreselect={paymentPreselect}
       />
     </div>
   );

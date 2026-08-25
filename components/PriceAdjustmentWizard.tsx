@@ -9,7 +9,9 @@ import { money } from "@/components/ui";
 import { computePriceAdjustment, applyPriceAdjustment, type PriceAdj } from "@/app/actions/funktioner";
 
 const STEPS = ["Indstillinger", "Tilpas opgaver", "Bekræft og sæt i gang"];
-const ROUNDING = ["Ingen afrunding", "50 øre", "1 kr.", "2 kr.", "5 kr.", "Slut på 9,00 kr.", "Slut på 9,95 kr.", "10 kr."];
+// Kun heltalsvalg: priser gemmes i hele kroner (TaskLine.price er Int), så
+// ørevalg ("50 øre"/"Slut på 9,95 kr.") kan ikke leveres og tilbydes ikke.
+const ROUNDING = ["Ingen afrunding", "1 kr.", "2 kr.", "5 kr.", "Slut på 9,00 kr.", "10 kr."];
 const SCOPE = ["Juster både abonnementer og fastprisaftaler", "Juster kun abonnementer", "Juster kun fastprisaftaler"];
 
 export default function PriceAdjustmentWizard() {

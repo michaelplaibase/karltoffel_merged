@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 import Link from "next/link";
 import type { QuoteState } from "@/app/actions/quotes";
 
@@ -18,6 +18,13 @@ export default function QuoteComposer({
   action: (state: QuoteState, formData: FormData) => Promise<QuoteState>;
 }) {
   const [state, formAction, pending] = useActionState(action, {});
+  // Kontrollerede felter: React 19 nulstiller ukontrollerede inputs til deres
+  // defaultValue når en form-action returnerer — også ved { error } — og så
+  // ville manuelt tilrettet emne/brødtekst rulle tilbage til skabelonen netop
+  // når afsendelsen fejler. Med state overlever indtastningen fejlen.
+  const [toValue, setToValue] = useState(to);
+  const [subjectValue, setSubjectValue] = useState(subject);
+  const [bodyValue, setBodyValue] = useState(body);
 
   return (
     <div className="container-1140" style={{ maxWidth: 900 }}>
@@ -35,20 +42,20 @@ export default function QuoteComposer({
             <div className="f2">
               <label className="col-label">Modtager (e-mail)</label>
               <div>
-                <input name="to" type="email" className="form-control" defaultValue={to} placeholder="kunde@eksempel.dk" autoComplete="off" />
+                <input name="to" type="email" required className="form-control" value={toValue} onChange={(e) => setToValue(e.target.value)} placeholder="kunde@eksempel.dk" autoComplete="off" />
                 {!to ? <small className="form-text" style={{ color: "#8a5a10" }}>Kunden har ingen e-mailadresse — indtast en modtager.</small> : null}
               </div>
             </div>
 
             <div className="f2">
               <label className="col-label">Emne</label>
-              <div><input name="subject" className="form-control" defaultValue={subject} /></div>
+              <div><input name="subject" className="form-control" value={subjectValue} onChange={(e) => setSubjectValue(e.target.value)} /></div>
             </div>
 
             <div className="f2">
               <label className="col-label">Besked</label>
               <div>
-                <textarea name="body" className="form-control" rows={16} defaultValue={body} />
+                <textarea name="body" className="form-control" rows={16} value={bodyValue} onChange={(e) => setBodyValue(e.target.value)} />
                 <small className="form-text">Du kan tilrette teksten før du sender.</small>
               </div>
             </div>
