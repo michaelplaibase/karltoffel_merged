@@ -6,6 +6,7 @@ import { prisma } from "./db";
 import type { Contact, Subscription, Order, TaskLine } from "./data";
 import { planWeek, isoWeek, fmtTime, type Job, type Employee as PlannerEmployee, type DayPlan } from "./planner";
 import { weekLabel } from "./weeks";
+import { todayCphISO } from "./calendar";
 import { coordFor } from "./geo";
 import {
   sourceType, type CalEvent, type CalStatus, type LockState,
@@ -581,10 +582,6 @@ function minutesOfDayCph(d: Date): number {
   return h * 60 + m;
 }
 
-/** dd i dag (Europe/Copenhagen) som yyyy-mm-dd. */
-function todayCphISO(): string {
-  return new Intl.DateTimeFormat("en-CA", { timeZone: CPH_TZ, year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date());
-}
 /** Er "i dag" (Europe/Copenhagen) i den viste uge? Returnerer dagens
  *  ugedag-indeks (0=man) hvis ja, ellers null — bruges til at afgrænse
  *  reflowEarlyCompletions til KUN dagens kolonne. */
@@ -776,7 +773,7 @@ export async function getCalendarMonth(monthParam: string, viewer?: { id: number
   const first = new Date(Date.UTC(year, monthIdx, 1));
   const last = new Date(Date.UTC(year, monthIdx + 1, 0)); // last day of month (UTC midnight)
   const gridStart = new Date(first.getTime() - ((first.getUTCDay() + 6) % 7) * 864e5); // Monday of week containing the 1st
-  const todayISO = ymd(new Date());
+  const todayISO = todayCphISO();
 
   const weeks: MonthWeek[] = [];
   const weekPlans: Awaited<ReturnType<typeof buildWeekPlan>>[] = [];
