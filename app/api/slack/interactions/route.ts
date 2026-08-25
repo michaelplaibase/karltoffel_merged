@@ -173,10 +173,18 @@ async function handleSubmission(p: Payload): Promise<Response> {
   const { services, ændringer } = applyEditedQuantities(payload.services, p.view.state?.values ?? {});
   const opdateret = { ...payload, services };
 
-  await prisma.lead.update({
-    where: { id: lead.id },
+  // CAS på payload-strengen: et blindt update kunne viske et samtidigt sat
+  // tilbudSendtAt-claim (dublet-tilbudsmail) eller en kollegas rettelser ud.
+  const cas = await prisma.lead.updateMany({
+    where: { id: lead.id, payload: lead.payload },
     data: { payload: serializeLeadPayload(opdateret) },
   });
+  if (cas.count === 0) {
+    return json({
+      response_action: "errors",
+      errors: { [`qty_ukendt`]: "Leadet blev lige ændret af en anden — luk og åbn dialogen igen." },
+    });
+  }
 
   const r = beregn(services);
   const { aarNet } = medRabatkode(r, opdateret.rabatOk && opdateret.rabatPct ? opdateret.rabatPct : 0);

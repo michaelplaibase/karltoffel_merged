@@ -52,7 +52,11 @@ test("deleteContact revaliderer alle berørte flader", async () => {
 test("telefonnumre normaliseres ved gem (rene cifre uden +45)", async () => {
   const contacts = await src("app/actions/contacts.ts");
   assert.match(contacts, /function normalizePhone\(raw: string\): string/);
-  assert.match(contacts, /digits\.length === 10 && digits\.startsWith\("45"\) \? digits\.slice\(2\) : digits/);
+  // Kun DANSKE numre normaliseres (8 cifre, evt. 45/0045-præfiks) — udenlandske
+  // og maskerede numre bevares som indtastet (verifikationsfund: '+49…' blev
+  // ellers uopringbar og '+45 •• …' blev til '45').
+  assert.match(contacts, /\^\(\?:45\|0045\)\?\\d\{8\}\$/);
+  assert.match(contacts, /digits\.slice\(-8\) : raw\.trim\(\)/);
   assert.match(contacts, /phone: normalizePhone\(f\.phone\) \|\| null/);
 });
 

@@ -27,13 +27,15 @@ function splitAddress(addr: string): { street: string; city: string } {
   return { street: addr.slice(0, i).trim(), city: addr.slice(i + 1).trim() };
 }
 
-/** Normaliser telefonnummer til rene cifre uden +45-præfiks ("12 34 56 78" og
- *  "+45 12345678" → "12345678") — samme regel som lead-indtaget, så
- *  telefonsøgning matcher på tværs. Dubleret fra scripts/normalize-phones.ts
- *  (scripts/ må ikke importeres fra app-kode). */
+/** Normaliser KUN danske telefonnumre til 8 rene cifre ("12 34 56 78",
+ *  "+45 12345678" og "0045 12345678" → "12345678") — samme regel som
+ *  lead-indtaget, så telefonsøgning matcher på tværs. Alt andet (udenlandske
+ *  "+49 …", maskerede "•• …") bevares SOM INDTASTET, så nummeret forbliver
+ *  opringbart. Dubleret fra scripts/normalize-phones.ts (scripts/ må ikke
+ *  importeres fra app-kode). */
 function normalizePhone(raw: string): string {
   const digits = raw.replace(/\D/g, "");
-  return digits.length === 10 && digits.startsWith("45") ? digits.slice(2) : digits;
+  return /^(?:45|0045)?\d{8}$/.test(digits) ? digits.slice(-8) : raw.trim();
 }
 
 function parse(formData: FormData): ContactFormValues {
@@ -130,7 +132,6 @@ export async function updateContact(id: number, _prev: ContactFormState, formDat
 
   const before = await prisma.contact.findUnique({ where: { id }, select: { street: true, city: true } });
   if (!before) return { error: "Kontakten findes ikke længere.", values: f };
-  await prisma.contact.update({ where: { id }, data });
 
   // Adresse-propagering — KUN når adressen faktisk er ændret, og KUN til de
   // abonnementer/fastprisaftaler/åbne fremtidige ordrer hvis leveringsadresse
@@ -138,11 +139,16 @@ export async function updateContact(id: number, _prev: ContactFormState, formDat
   // et bevidst valg og røres ikke). Eksisterende ordrer OPDATERES i stedet for
   // at blive slettet/genskabt, så manuelle flytninger, låse, medarbejder-
   // tildeling og bemærkninger i kalenderen bevares.
+  // Kontakt-opdatering og propagering kører i SAMME transaktion: fejler
+  // propageringen, ruller adresseændringen også tilbage — ellers ville
+  // addressChanged være false ved næste gem, og propageringen kunne aldrig
+  // indhentes.
   const oldAddress = before.city ? `${before.street}, ${before.city}` : before.street;
   const newAddress = data.city ? `${data.street}, ${data.city}` : data.street;
   const addressChanged = newAddress !== oldAddress;
-  if (addressChanged) {
-    await prisma.$transaction([
+  await prisma.$transaction([
+    prisma.contact.update({ where: { id }, data }),
+    ...(addressChanged ? [
       prisma.subscription.updateMany({
         where: { contactId: id, deliveryAddress: oldAddress },
         data: { deliveryAddress: newAddress },
@@ -155,8 +161,8 @@ export async function updateContact(id: number, _prev: ContactFormState, formDat
         where: { contactId: id, deliveryAddress: oldAddress, status: "Afventer levering" },
         data: { deliveryAddress: newAddress },
       }),
-    ]);
-  }
+    ] : []),
+  ]);
 
   revalidatePath("/customers");
   revalidatePath(`/customers/${id}`);

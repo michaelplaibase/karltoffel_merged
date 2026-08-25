@@ -4,9 +4,11 @@
 // kunder. Kør: npx tsx scripts/normalize-phones.ts [--dry]
 import { prisma } from "../lib/db";
 
+// Normalisér KUN danske numre (8 cifre, evt. 45/0045-præfiks) — udenlandske
+// og maskerede numre bevares som de står, så de forbliver opringbare.
 export function normalizePhone(raw: string): string {
   const digits = raw.replace(/\D/g, "");
-  return digits.length === 10 && digits.startsWith("45") ? digits.slice(2) : digits;
+  return /^(?:45|0045)?\d{8}$/.test(digits) ? digits.slice(-8) : raw.trim();
 }
 
 async function main() {

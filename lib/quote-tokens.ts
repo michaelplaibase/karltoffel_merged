@@ -18,7 +18,7 @@ export async function issueQuoteToken(leadId: number): Promise<string> {
 export type Choice = "accept" | "maybe" | "decline";
 
 export type ConsumeResult =
-  | { ok: true; leadId: number }
+  | { ok: true; leadId: number; firstMaybe?: boolean }
   | { ok: false; reason: "not_found" | "expired" | "already_used" };
 
 /** Forbrug et token. Atomisk mod dobbelt-klik (to samtidige requests med samme
@@ -37,11 +37,13 @@ export async function consumeQuoteToken(token: string, choice: Choice): Promise<
 
   if (choice === "maybe") {
     // Notér valget uden at forbruge — kun hvis intet endeligt svar nåede først.
-    await prisma.quoteToken.updateMany({
-      where: { token, usedAt: null },
+    // Count-baseret: kun det FØRSTE "Måske" melder firstMaybe (gentagne klik/
+    // link-prefetch må ikke udløse en staff-mail pr. GET).
+    const noted = await prisma.quoteToken.updateMany({
+      where: { token, usedAt: null, NOT: { choice: "maybe" } },
       data: { choice },
     });
-    return { ok: true, leadId: row.leadId };
+    return { ok: true, leadId: row.leadId, firstMaybe: noted.count === 1 };
   }
 
   const claimed = await prisma.quoteToken.updateMany({

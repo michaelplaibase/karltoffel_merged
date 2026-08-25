@@ -25,8 +25,10 @@ export default async function CompleteOrderPage({
 
   // Returmål fra afsenderen (?back=...) — dagsprogrammet/kundesiden/ordrelisten
   // sender deres egen sti med, så medarbejderen lander tilbage hvor hun kom
-  // fra. Accepter KUN interne, relative stier ("/..." men ikke "//host").
-  const backUrl = sp.back && sp.back.startsWith("/") && !sp.back.startsWith("//") ? sp.back : "/orders";
+  // fra. Accepter KUN interne, relative stier: "/..." men hverken "//host"
+  // (protocol-relative) eller "/\host" — browsere normaliserer backslash til
+  // "/" i authority, så "/\evil.com" ER "//evil.com".
+  const backUrl = sp.back && /^\/(?![/\\])/.test(sp.back) ? sp.back : "/orders";
 
   // Kundens "Forudindstilling for Betaling og fakturering" (Contact.
   // invoiceChoicePreselect) — bruges kun når ordren endnu ingen gemt

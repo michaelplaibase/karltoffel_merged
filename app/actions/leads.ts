@@ -54,9 +54,21 @@ function subscriptionSpecFromPayload(payload: LeadPayload) {
   if (!services.length) return null;
 
   const freqs = services.map((s) => Math.max(0, Math.round(s.freq)));
-  const maxFreq = Math.max(1, ...freqs);
+  // Kun PRISSATTE linjer driver basis-intervallet — en gratis tillægslinje med
+  // høj frekvens (fx sne "efter behov") må ikke forvride alle betalte linjers
+  // besøgstal (og dermed faktureringen) for hele abonnementet.
+  const pricedFreqs = services
+    .filter((s) => s.pris != null && Number.isFinite(s.pris) && s.pris > 0 && Math.round(s.freq) > 0)
+    .map((s) => Math.max(0, Math.round(s.freq)));
+  const maxFreq = Math.max(1, ...(pricedFreqs.length ? pricedFreqs : freqs));
   const baseN = Math.min(52, Math.max(1, Math.round(52 / maxFreq)));
   const baseInterval = baseN === 1 ? "Hver uge" : `Hver ${baseN}. uge`;
+  // Faktisk antal besøg pr. år ved dette interval (52/baseN er sjældent præcis
+  // maxFreq pga. afrunding: 12×/år → "Hver 4. uge" → 13 besøg). Linjeprisen
+  // skaleres med lovet/faktisk besøgstal, så ÅRSSUMMEN rammer det accepterede
+  // tilbud uanset afrundingen — ellers over-/underfaktureres kunden med op til
+  // ±8-28 % i forhold til tilbudsmailens aarNet.
+  const visitsPerYear = 52 / baseN;
 
   // Start i næste uge (label-formatet "Uge N" som recurrence-parseren forstår).
   const nextMondayISO = new Date(new Date(`${weekMondayToday()}T00:00:00Z`).getTime() + 7 * 864e5)
@@ -67,12 +79,16 @@ function subscriptionSpecFromPayload(payload: LeadPayload) {
   const lines = services.map((s, i) => {
     const f = freqs[i];
     const m = f > 0 ? Math.max(1, Math.round(maxFreq / f)) : null;
+    // Skalér pr. besøg: lovet f besøg/år, faktisk (52/baseN)/m — så
+    // pris_pr_besøg × faktiske besøg = pris × qty × f × faktor = tilbuddets årssum.
+    const actualVisits = m != null ? visitsPerYear / m : 0;
+    const skala = actualVisits > 0 ? f / actualVisits : 1;
     const category = TM_KATEGORI[s.id] ?? "Andet";
     const qty = Math.max(0, Math.round(s.qty));
     return {
       category, letter: (category[0] ?? "A").toUpperCase(), color: categoryColor(category),
       description: `${s.navn.trim()}${qty > 0 && s.enhed ? ` — ${qty} ${s.enhed}` : ""}`,
-      price: linjePris(s, faktor),
+      price: linjePris(s, faktor * skala),
       durationMin: 0,
       intervalMultiplier: m == null ? "På anmodning" : m === 1 ? "Hver gang" : `Hver ${m}. gang`,
       startWeek: null as string | null, isStandardTask: false, sort: i,
@@ -253,9 +269,18 @@ export async function convertLeadCore(id: number): Promise<ConvertLeadResult> {
   // Payload → afventende abonnement, MEDMINDRE kunden har valgt "betal pr.
   // gang" i splittesten — så bliver det i stedet en engangs-ordre. Ukendt/
   // manglende betalingsvalg (ældre leads) bevarer den gamle opførsel: abonnement.
-  // Nås kun af claim-vinderen, så der aldrig opstår dubletter.
-  if (spec.kind === "order" && spec.order) await createPendingOrder(spec.order, contactId, deliveryAddress);
-  else if (spec.kind === "subscription" && spec.subscription) await createPendingSubscription(spec.subscription, contactId, deliveryAddress);
+  // Nås kun af claim-vinderen, så der aldrig opstår dubletter. Fejler
+  // materialiseringen, RULLES claimet tilbage — ellers står leadet som
+  // "converted" uden abonnement/ordre for altid (retry ville melde
+  // "allerede konverteret" og aldrig oprette noget).
+  try {
+    if (spec.kind === "order" && spec.order) await createPendingOrder(spec.order, contactId, deliveryAddress);
+    else if (spec.kind === "subscription" && spec.subscription) await createPendingSubscription(spec.subscription, contactId, deliveryAddress);
+  } catch {
+    const restoreStatus = lead.status !== "converted" ? lead.status : "new";
+    await prisma.lead.updateMany({ where: { id, status: "converted" }, data: { status: restoreStatus } });
+    return { ok: false, error: `Kunden er oprettet, men pakkevalget kunne ikke materialiseres (midlertidig fejl) — prøv at konvertere emnet igen. Kunde: /customers/${contactId}` };
+  }
 
   revalidatePath("/leads");
   revalidatePath("/customers");

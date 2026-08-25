@@ -40,7 +40,7 @@ test("Opret ordre: uge- og medarbejdervalg overlever en valideringsfejl", async 
 
 test("completeOrder slår ordren op før update (ingen P2025-crash)", async () => {
   const actions = await source("app/actions/orders.ts");
-  assert.match(actions, /findUnique\(\{ where: \{ id: orderId \}, select: \{ completedAt: true \} \}\)/);
+  assert.match(actions, /findUnique\(\{ where: \{ id: orderId \}, select: \{ completedAt: true, contactId: true \} \}\)/);
   // Opslag + venlig fejl SKAL ligge før selve update-kaldet i completeOrder.
   const body = actions.slice(actions.indexOf("export async function completeOrder"));
   assert.ok(body.indexOf("findes ikke længere") < body.indexOf("await prisma.order.update"));
@@ -74,9 +74,11 @@ test("ordresiden viser businessBatch-status, fakturanr. og seneste fejl", async 
 
 test("complete-siden accepterer kun interne stier som back (aldrig //host)", async () => {
   const page = await source("app/orders/[id]/complete/page.tsx");
-  assert.match(page, /sp\.back && sp\.back\.startsWith\("\/"\) && !sp\.back\.startsWith\("\/\/"\) \? sp\.back : "\/orders"/);
+  // Verifikationsfund: "/\\evil.com" normaliseres af browsere til "//evil.com",
+  // så whitelisten afviser nu OGSÅ backslash efter den ledende skråstreg.
+  assert.match(page, /\/\^\\\/\(\?!\[\/\\\\\]\)\/\.test\(sp\.back\) \? sp\.back : "\/orders"/);
   const actions = await source("app/actions/orders.ts");
-  assert.match(actions, /rawBack\.startsWith\("\/"\) && !rawBack\.startsWith\("\/\/"\) \? rawBack : "\/orders"/);
+  assert.match(actions, /\/\^\\\/\(\?!\[\/\\\\\]\)\/\.test\(rawBack\) \? rawBack : "\/orders"/);
 });
 
 test("dagsprogram, ordreliste og kundeside sender ?back med til Afslut ordre", async () => {

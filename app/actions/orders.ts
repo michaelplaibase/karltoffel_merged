@@ -201,10 +201,11 @@ export async function completeOrder(orderId: number, _prev: CompleteOrderState, 
   const values = { leveringsstatus, betaling, comment, addressNote }; // ekkoes ved fejl — indtastningen må ikke gå tabt
   if (!leveringsstatus || !(leveringsstatus in STATUS)) return { error: "Vælg en leveringsstatus.", values };
 
-  // backUrl kommer fra formularen — accepter KUN interne, relative stier
-  // ("/..." men ikke "//host" som er en ekstern protocol-relative URL).
+  // backUrl kommer fra formularen — accepter KUN interne, relative stier:
+  // "/..." men hverken "//host" (protocol-relative) eller "/\host" — browsere
+  // normaliserer backslash til "/" i authority, så "/\evil.com" ER "//evil.com".
   const rawBack = String(formData.get("backUrl") ?? "");
-  const backUrl = rawBack.startsWith("/") && !rawBack.startsWith("//") ? rawBack : "/orders";
+  const backUrl = /^\/(?![/\\])/.test(rawBack) ? rawBack : "/orders";
 
   // "Betaling og fakturering" — persist the chosen invoicing action. Only the five
   // known values are stored; anything else (or blank) means "no invoicing decision".
@@ -213,7 +214,7 @@ export async function completeOrder(orderId: number, _prev: CompleteOrderState, 
   // Guard: ordren kan være slettet (fx af kontoret) mens formularen stod åben
   // på en telefon — prisma.order.update ville da kaste P2025 og give brugeren
   // Next' generiske fejlside. Returnér i stedet en venlig fejl i formularen.
-  const order = await prisma.order.findUnique({ where: { id: orderId }, select: { completedAt: true } });
+  const order = await prisma.order.findUnique({ where: { id: orderId }, select: { completedAt: true, contactId: true } });
   if (!order) return { error: "Ordren findes ikke længere — den kan være slettet.", values };
 
   await prisma.order.update({
@@ -249,6 +250,9 @@ export async function completeOrder(orderId: number, _prev: CompleteOrderState, 
   revalidatePath(`/orders/${orderId}`);
   revalidatePath("/daycalendar");
   revalidatePath("/calendar");
+  // ?back kan pege på kundesiden — dens ordretabel skal også opdateres
+  // (symmetrisk med deleteOrder), ellers viser den gammel status fra cachen.
+  revalidatePath(`/customers/${order.contactId}`);
   // On invoicing failure, land on the order so the error + retry are front and centre.
   redirect(invoiceFailed ? `/orders/${orderId}` : backUrl);
 }
