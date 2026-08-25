@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { getSubscriptions, getContacts } from "@/lib/queries";
-import { regenerateOrders, stopSubscription, approveSubscription } from "@/app/actions/subscriptions";
+import { stopSubscription, approveSubscription } from "@/app/actions/subscriptions";
+import GenerateOrdersButton from "@/components/GenerateOrdersButton";
 import { CatChip, CustomerCell, MapLink, money } from "@/components/ui";
 import RowMenu from "@/components/RowMenu";
 import { SearchBar, Pagination, paginate } from "@/components/ListControls";
@@ -22,9 +23,7 @@ export default async function SubscriptionsPage({ searchParams }: { searchParams
         <div className="card-body">
           <div className="toolbar">
             <Link href="/subscriptions/new" className="btn btn-outline-primary">Opret nyt abonnement</Link>
-            <form action={regenerateOrders} style={{ display: "inline" }}>
-              <button type="submit" className="btn btn-light" title="Opret kommende ordrer for alle abonnementer">Generér kommende ordrer</button>
-            </form>
+            <GenerateOrdersButton />
             <SearchBar placeholder="Abo. nr, dato, kundenavn, kundenr, email, tlf, vejnavn, husnr, postnr, opgave" q={q} />
           </div>
 
