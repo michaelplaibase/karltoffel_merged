@@ -78,6 +78,8 @@ export type MonthChip = {
   id: number; weekday: number;            // 0=Mon..6=Sun within its week
   employeeId: number; label: string;      // customer (fallback postal)
   postal: string; category: string; status: CalStatus; contactId: number;
+  unplanned?: boolean;                    // ordren kunne ikke placeres — vis markeret
+  reason?: string;                        // unplanned-årsagsnøgle (se UNPLANNED_REASON_LABEL)
 };
 export type MonthDay = {
   dateISO: string; dateNum: number; weekday: number; // 0..6

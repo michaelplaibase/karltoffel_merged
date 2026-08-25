@@ -668,12 +668,14 @@ function reflowEarlyCompletions(days: DayPlan[], completedAtById: Map<number, Da
 }
 
 
-/** Planned revenue (incl. VAT) for every order in a calendar month. */
-async function monthRevenue(year: number, monthIdx0: number): Promise<number> {
+/** Planned revenue (incl. VAT) for every order in a calendar month. With
+ *  `employeeId` sat afgrænses til den medarbejders ordrer — samme viewer-regel
+ *  som resten af kalenderen, så dag/uge/måned-tallene taler samme sprog. */
+async function monthRevenue(year: number, monthIdx0: number, employeeId?: number): Promise<number> {
   const from = new Date(Date.UTC(year, monthIdx0, 1));
   const to = new Date(Date.UTC(year, monthIdx0 + 1, 1));
   const orders = await prisma.order.findMany({
-    where: { plannedAt: { gte: from, lt: to } },
+    where: { plannedAt: { gte: from, lt: to }, ...(employeeId != null ? { employeeId } : {}) },
     include: { tasks: true },
   });
   return orders.reduce((sum, o) => sum + o.tasks.reduce((a, t) => a + t.price, 0), 0);
@@ -722,7 +724,7 @@ export async function getCalendarWeek(weekMonday: string, viewer?: { id: number;
   const weekLabel = cap(MON_SHORT[monMonth]) + (monMonth !== sunMonth ? ` – ${cap(MON_SHORT[sunMonth])}` : "") + ` ${year}`;
   const weekNo = isoWeek(weekMonday);
   const week = dayRevenue.reduce((a, b) => a + b, 0);
-  const month = await monthRevenue(year, monMonth);
+  const month = await monthRevenue(year, monMonth, viewer && !viewer.isAdmin ? viewer.id : undefined);
   const employees: Employee[] = visibleUsers.map((u) => ({
     id: u.id, name: `${u.firstName} ${u.lastName}`, color: u.calendarColor ?? "#a4d5ee", active: u.activeCalendar,
   }));
@@ -807,8 +809,12 @@ export async function getDayProgram(dateISO: string, viewer?: { id: number; isAd
       };
     });
 
+  // Uge-/månedstal følger samme viewer-regel som dagens stops — før talte
+  // ugetallet HELE teamet, selv når dagen kun viste medarbejderens egne
+  // ordrer (dag og uge stemte ikke overens med ugekalenderen).
+  const visibleWeekDays = plan.days.filter((d) => !viewer || viewer.isAdmin || d.employeeId === viewer.id);
   let revenueWeek = 0;
-  for (const d of plan.days) for (const s of d.stops) revenueWeek += priceById.get(s.job.id) ?? 0;
+  for (const d of visibleWeekDays) for (const s of d.stops) revenueWeek += priceById.get(s.job.id) ?? 0;
 
   return {
     heading: `${date.getUTCDate()}. ${MON_SHORT[date.getUTCMonth()]} ${date.getUTCFullYear()}`,
@@ -818,7 +824,7 @@ export async function getDayProgram(dateISO: string, viewer?: { id: number; isAd
     nextISO: ymd(new Date(date.getTime() + 864e5)),
     revenueDay: stops.reduce((a, s) => a + s.price, 0),
     revenueWeek,
-    revenueMonth: await monthRevenue(date.getUTCFullYear(), date.getUTCMonth()),
+    revenueMonth: await monthRevenue(date.getUTCFullYear(), date.getUTCMonth(), viewer && !viewer.isAdmin ? viewer.id : undefined),
     driving: fmtDrive(dayPlans.reduce((a, d) => a + d.driveMin, 0)),
     stops,
     unplanned,
@@ -871,6 +877,19 @@ export async function getCalendarMonth(monthParam: string, viewer?: { id: number
             contactId: s.job.contactId,
           };
         }));
+      // Ikke-planlagte ordrer vises på deres persisterede ugedag — måneds-
+      // visningen må ikke skjule ordrer, som uge- og dagsvisningen viser.
+      // Samme viewer-regel som getDayProgram: admin ser alle, medarbejder egne.
+      chips.push(...wp.unplanned
+        .filter(({ job }) => wp.weekdayById.get(job.id) === i && (!viewer || viewer.isAdmin || job.fixedEmployeeId === viewer.id))
+        .map(({ job, reason }) => ({
+          id: job.id, weekday: i, employeeId: job.fixedEmployeeId ?? 0,
+          label: job.customer || job.postal,
+          postal: job.postal, category: job.category,
+          status: calStatusOf(wp.metaById.get(job.id)?.status ?? "Afventer levering"),
+          contactId: job.contactId,
+          unplanned: true, reason,
+        })));
       return {
         dateISO, dateNum: dt.getUTCDate(), weekday: i,
         inMonth: dt.getUTCMonth() === monthIdx, isToday: dateISO === todayISO, chips,

@@ -12,6 +12,7 @@
     "test": "node --import tsx --test tests/*.test.ts",
     "db:seed": "tsx prisma/seed.ts",
     "db:reset": "prisma migrate reset --force",
+    "check:calendar": "tsx scripts/calendar-daycal-consistency-check.ts",
     "smoke:booking": "tsx scripts/booking-smoke.ts",
     "smoke:weekend": "tsx scripts/weekend-window-smoke.ts",
     "smoke:slack": "tsx scripts/slack-lead-smoke.ts",

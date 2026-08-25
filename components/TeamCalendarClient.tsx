@@ -344,14 +344,21 @@ export default function TeamCalendarClient(props: Props) {
               <div className="ferie">Ferielukket · uge {w.weekNo}</div>
             ) : (
               w.days.map((d) => {
-                const chips = d.chips.filter((c) => selectedEmp.has(c.employeeId));
+                // Ikke-planlagte chips skal altid med — de har ingen (synlig)
+                // medarbejder og må ikke forsvinde med kollega-filteret.
+                const chips = d.chips.filter((c) => c.unplanned || selectedEmp.has(c.employeeId));
                 return (
                   <div key={d.dateISO}
                     className={`md${d.inMonth ? "" : " out"}${d.isToday ? " today" : ""}${d.weekday >= 5 ? " wknd" : ""}`}>
                     <Link href={`/daycalendar?date=${d.dateISO}`} className="dn num" style={{ color: "inherit" }}
                       title="Åbn dagsprogrammet for dagen">{d.dateNum}</Link>
                     {chips.slice(0, 3).map((c) => (
-                      <span key={c.id} className="chip" style={empVar(empById.get(c.employeeId)?.color ?? "var(--muted)")}>{c.label}</span>
+                      <span key={c.id} className="chip"
+                        title={c.unplanned ? `Ikke planlagt: ${UNPLANNED_REASON_LABEL[c.reason ?? ""] ?? "Ukendt årsag"}` : undefined}
+                        style={{
+                          ...empVar(empById.get(c.employeeId)?.color ?? "var(--muted)"),
+                          ...(c.unplanned ? { outline: "1.5px dashed var(--danger, #C4183C)", outlineOffset: -1 } : {}),
+                        }}>{c.label}</span>
                     ))}
                     {chips.length > 3 && <span className="more">+{chips.length - 3} mere</span>}
                   </div>
