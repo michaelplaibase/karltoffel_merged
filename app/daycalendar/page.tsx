@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { getDayProgram } from "@/lib/queries";
-import { weekMondayToday, todayCphISO } from "@/lib/calendar";
+import { todayCphISO } from "@/lib/calendar";
 import DayStopCard from "@/components/DayStopCard";
 import { getSessionUser } from "@/lib/api-auth";
 import { getOpenTimeEntry, cphTime } from "@/lib/timesheet";
@@ -35,8 +35,20 @@ export default async function DayCalendarPage({ searchParams }: { searchParams: 
           </div>
 
           {day.stops.length === 0 ? (
-            <div className="table-empty">Ingen planlagte ordrer denne dag</div>
+            <div className="table-empty">{day.unplanned.length === 0 ? "Ingen planlagte ordrer denne dag" : "Ingen ruteplanlagte ordrer denne dag"}</div>
           ) : day.stops.map((s) => <DayStopCard key={s.orderId} stop={s} weekMonday={day.weekMonday} />)}
+
+          {day.unplanned.length > 0 && (
+            <>
+              <div className="daycal-summary" style={{ marginTop: 16 }}>
+                <span style={{ fontWeight: 600, color: "var(--danger, #C4183C)" }}>
+                  Ikke planlagt denne dag ({day.unplanned.length}) · <span className="num">Kr. {day.unplanned.reduce((a, s) => a + s.price, 0).toLocaleString("da-DK")}</span>
+                </span>
+                <span style={{ color: "var(--muted)" }}>Ordrerne hører til dagen, men kunne ikke placeres på ruten — se årsagen på hvert kort.</span>
+              </div>
+              {day.unplanned.map((s) => <DayStopCard key={s.orderId} stop={s} weekMonday={day.weekMonday} />)}
+            </>
+          )}
         </div>
       </div>
     </div>

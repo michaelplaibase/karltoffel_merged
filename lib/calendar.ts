@@ -45,7 +45,7 @@ export type UnplannedJob = {
   status: CalStatus; contactId: number; subscriptionNo: number | null;
   phone: string | null;
   tasks?: CalendarTaskDetail[];  // only populated by the read-only subscription preview
-  reason: "unassigned" | "overflow" | "holiday" | "unverified_address" | "unverified_route" | "fixed_weekday_unavailable" | "invalid_duration" | "exceeds_daily_capacity" | "no_capacity_in_horizon";
+  reason: "unassigned" | "inactive_employee" | "overflow" | "holiday" | "unverified_address" | "unverified_route" | "fixed_weekday_unavailable" | "invalid_duration" | "exceeds_daily_capacity" | "no_capacity_in_horizon";
 };
 
 /** Read-only Kalender 2 route evidence. Contains no customer or employee address. */
@@ -152,6 +152,11 @@ export type DayStop = {
   addressNote: string;
 };
 
+/** En ordre der HØRER til dagen (plannedAt), men som planlæggeren ikke kunne
+ *  placere — den må aldrig være usynlig i dagsprogrammet. `reason` er en
+ *  færdig dansk visningstekst. */
+export type DayUnplannedStop = Omit<DayStop, "from" | "to"> & { reason: string };
+
 export type DayProgram = {
   heading: string;
   relative: string;
@@ -162,6 +167,7 @@ export type DayProgram = {
   revenueDay: number; revenueWeek: number; revenueMonth: number;
   driving: string;
   stops: DayStop[];
+  unplanned: DayUnplannedStop[];
 };
 
 /** Map an order source label ("Abo. #…", "Online ordre", …) to the calendar type. */

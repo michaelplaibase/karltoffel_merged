@@ -53,7 +53,10 @@ test("read-only viser unplanned reasons sandfærdigt", async () => {
   assert.match(component, /unassigned[\s\S]*Ikke tildelt kollega/);
   assert.match(component, /invalid_duration[\s\S]*Besøget mangler gyldig varighed/);
   assert.doesNotMatch(component, /no_capacity_in_horizon[\s\S]*Ingen plads i de næste 26 uger/);
-  assert.match(component, /Arbejdsdag 08:00–18:00/);
+  // Ordre-pipelinen (buildWeekPlan/planWeek) arbejder 08–16 + 1 times fleks —
+  // badgen må ikke længere påstå Kalender 2-previewets 08–18-arbejdsdag.
+  assert.match(component, /Arbejdsdag 08:00–16:00/);
+  assert.doesNotMatch(component, /Arbejdsdag 08:00–18:00/);
   assert.match(component, /Ukendt årsag/);
   assert.doesNotMatch(component, /reason[^\n]*\?[^\n]*Ingen plads i ugen/);
 });

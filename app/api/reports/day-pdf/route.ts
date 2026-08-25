@@ -59,6 +59,18 @@ export async function GET(req: NextRequest) {
           `        ${s.tasks.map((t) => t.description).join(", ")}`,
         ])
       : ["Ingen planlagte ordrer denne dag."]),
+    // Ordrer der hører til dagen, men ikke kunne ruteplanlægges — skal med i
+    // det printede program, så papirudgaven viser det samme som skærmen.
+    ...(day.unplanned.length
+      ? [
+          "",
+          `Ikke planlagt denne dag (${day.unplanned.length}):`,
+          ...day.unplanned.flatMap((s) => [
+            `${s.customer}  (kr. ${s.price.toLocaleString("da-DK")})  -  ${s.reason}`,
+            `        ${s.address}`,
+          ]),
+        ]
+      : []),
   ];
 
   return new Response(buildPdf(lines), {

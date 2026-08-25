@@ -33,6 +33,9 @@ const UNPLANNED_REASON_LABEL: Record<string, string> = {
   unverified_address: "Adresse ikke verificeret",
   unverified_route: "Køretidsmatrix ikke verificeret",
   unassigned: "Ikke tildelt kollega",
+  inactive_employee: "Kollega ikke aktiv i kalenderen",
+  overflow: "Ingen ledig arbejdstid i ugen",
+  holiday: "Ferielukket uge",
   invalid_duration: "Besøget mangler gyldig varighed",
 };
 
@@ -190,7 +193,7 @@ export default function TeamCalendarClient(props: Props) {
           : `UGE ${props.month.weekNos[0]}–${props.month.weekNos[props.month.weekNos.length - 1]}`}
       </span>
       <span className="sp" />
-      {readOnly && <span className="badge">Arbejdsdag 08:00–18:00 · kapacitet rulles til første ledige hverdag</span>}
+      {readOnly && <span className="badge">Arbejdsdag 08:00–16:00 (+1 time fleks) · man–fre</span>}
       {props.mode === "week" && !readOnly && (
         <button className="cbtn" type="button" disabled={pending} onClick={() => run(() => replanWeek(props.week.monday))}>
           {pending ? "Planlægger…" : "Genplanlæg uge"}
@@ -280,7 +283,7 @@ export default function TeamCalendarClient(props: Props) {
                             </div>
                           ))}
                         </div>
-                      ) : empEvents.length === 0 && day < 5 ? (
+                      ) : day < 5 ? (
                         <span className="idle">Ledig</span>
                       ) : null}
                     </div>
@@ -345,7 +348,8 @@ export default function TeamCalendarClient(props: Props) {
                 return (
                   <div key={d.dateISO}
                     className={`md${d.inMonth ? "" : " out"}${d.isToday ? " today" : ""}${d.weekday >= 5 ? " wknd" : ""}`}>
-                    <span className="dn num">{d.dateNum}</span>
+                    <Link href={`/daycalendar?date=${d.dateISO}`} className="dn num" style={{ color: "inherit" }}
+                      title="Åbn dagsprogrammet for dagen">{d.dateNum}</Link>
                     {chips.slice(0, 3).map((c) => (
                       <span key={c.id} className="chip" style={empVar(empById.get(c.employeeId)?.color ?? "var(--muted)")}>{c.label}</span>
                     ))}
@@ -414,7 +418,7 @@ export default function TeamCalendarClient(props: Props) {
           {readOnly && (
             <div role="status" style={{ padding: "12px 16px", borderBottom: "1px solid var(--tc-line-soft)", background: "var(--tc-soft)", display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
               <span className="badge acc">Kalender</span>
-              <span>Read-only projektion af aktive abonnementer. Der oprettes eller ændres ingen ordrer, opgaver eller abonnementer.</span>
+              <span>Ugens planlagte ordrer — samme plan som dagsprogrammet. Redigering sker fra dagsprogrammet eller ordrelisten.</span>
             </div>
           )}
           {toolbar}
@@ -495,6 +499,7 @@ export default function TeamCalendarClient(props: Props) {
             <div className="ctxmenu-item" style={{ color: "var(--muted)", opacity: 0.55, cursor: "default" }}>Intet telefonnummer</div>
           )}
           <div className="ctxmenu-sep" />
+          <Link href={`/orders/${menu.ev.id}`} className="ctxmenu-item" role="menuitem">Gå til ordre …</Link>
           <Link href={`/customers/${menu.ev.contactId}`} className="ctxmenu-item" role="menuitem">Gå til kundedetaljer …</Link>
           {menu.ev.subscriptionNo != null && (
             <Link href={`/subscriptions/${menu.ev.subscriptionNo}`} className="ctxmenu-item" role="menuitem">Gå til abonnement …</Link>

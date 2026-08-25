@@ -9,9 +9,9 @@ import Link from "next/link";
 import { useState, useTransition } from "react";
 import { CatChip, money, telHref, telDisplay } from "@/components/ui";
 import { deleteOrder } from "@/app/actions/orders";
-import type { DayStop } from "@/lib/calendar";
+import type { DayStop, DayUnplannedStop } from "@/lib/calendar";
 
-export default function DayStopCard({ stop, weekMonday }: { stop: DayStop; weekMonday: string }) {
+export default function DayStopCard({ stop, weekMonday }: { stop: DayStop | DayUnplannedStop; weekMonday: string }) {
   const [panel, setPanel] = useState<string | null>(null);
   const [more, setMore] = useState(false);
   const [confirm, setConfirm] = useState(false);
@@ -31,7 +31,11 @@ export default function DayStopCard({ stop, weekMonday }: { stop: DayStop; weekM
   return (
     <div className="daycal-stop">
       <div style={{ minWidth: 0 }}>
-        <div className="when">{stop.from} - {stop.to}</div>
+        {"reason" in stop ? (
+          <div className="when" style={{ color: "var(--danger, #C4183C)" }}>Ikke planlagt · {stop.reason}</div>
+        ) : (
+          <div className="when">{stop.from} - {stop.to}</div>
+        )}
         <a className="maplink" href={`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(stop.address)}`} target="_blank" rel="noopener noreferrer">
           <i className="bi bi-geo-alt-fill" /> {stop.address}
         </a>
