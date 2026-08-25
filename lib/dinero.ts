@@ -463,7 +463,16 @@ export async function issueInvoiceForOrder(orderId: number): Promise<IssueResult
   // får lov at færdiggøre sit flow (send/betaling) — batchen udelukker den via
   // dineroInvoiceGuid != null, så der dobbeltfaktureres stadig ikke.
   const perOrderBooked = BOOKED_STATES.has(order.dineroInvoiceStatus ?? "") || order.dineroInvoiceNumber != null;
-  if (order.contact.isCompany && !perOrderBooked) {
+  // To undtagelser fra samlefaktura-værnet:
+  // 1) En PÅBEGYNDT pr.-ordre-faktura (guid sat, endnu ikke bogført — fx book-
+  //    fejl, eller kunden blev markeret erhverv efter kladden): flowet skal
+  //    kunne GENOPTAGES via "Fakturér igen" — ellers falder ordren mellem
+  //    begge spor (batchen udelukker guid'en, og værnet blokerede retry).
+  // 2) "Betalt kontant": kunden HAR betalt på stedet — beløbet skal bogføres
+  //    og kvitteres pr. ordre nu; guid'en udelukker den derefter fra batchen,
+  //    så samlefakturaen aldrig opkræver beløbet igen.
+  const hasPerOrderDraft = order.dineroInvoiceGuid != null;
+  if (order.contact.isCompany && !perOrderBooked && !hasPerOrderDraft && decision !== D_SEND_CASH) {
     await prisma.order.updateMany({
       where: { id: orderId, dineroInvoiceGuid: null, dineroInvoiceNumber: null },
       data: { dineroInvoiceStatus: "Samlefaktura", dineroError: null },

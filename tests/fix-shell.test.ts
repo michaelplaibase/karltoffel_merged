@@ -139,7 +139,11 @@ test("login ekkoer brugernavn/'Husk mig' ved fejl og redirecter kun til interne 
   const auth = await source("app/actions/auth.ts");
   assert.match(auth, /const values = \{ username, remember: formData\.get\("remember"\) != null \}/);
   assert.match(auth, /Forkert brugernavn eller adgangskode\.", values/);
-  assert.match(auth, /\/\^\\\/\(\?!\\\/\)\/\.test\(next\) && !next\.includes\("\\\\"\) \? next : "\/calendar"/);
+  // Verifikationsfund: browsere striber tab/CR/LF ud af URL'er, så "/\t/evil.com"
+  // ville blive "//evil.com" — valideringen afviser derfor også kontroltegn.
+  assert.match(auth, /next\.startsWith\("\/"\) && !next\.startsWith\("\/\/"\)/);
+  assert.match(auth, /x00-\\x20/);
+  assert.match(auth, /redirect\(safeNext \? next : "\/calendar"\)/);
   const form = await source("components/LoginForm.tsx");
   assert.match(form, /defaultValue=\{state\.values\?\.username \?\? ""\}/);
   assert.match(form, /defaultChecked=\{state\.values\?\.remember \?\? true\}/);

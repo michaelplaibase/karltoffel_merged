@@ -247,9 +247,15 @@ export async function applyPriceAdjustment(adjustments: { taskId: number; newPri
       ? { subscriptionId: line.subscriptionId }
       : { fixedPriceId: line.fixedPriceId };
     return [
-      prisma.taskLine.update({ where: { id: line.id }, data: { price: newPrice } }),
+      // updateMany også på skabelonlinjen: sletter en samtidig redigering
+      // linjen mellem genopslag og transaktion, bliver det et no-op i stedet
+      // for en P2025 der vælter hele transaktionen.
+      prisma.taskLine.updateMany({ where: { id: line.id }, data: { price: newPrice } }),
       prisma.taskLine.updateMany({
-        where: { order: { is: { ...orderScope, status: "Afventer levering" } }, description: line.description, price: line.price },
+        // Alle IKKE-LUKKEDE ordrer — også "Skal genplanlægges"/"Anden status"
+        // leveres og faktureres senere og skal have den nye pris, som
+        // succes-beskeden lover. Kun Afsluttet/Udført/Sprunget over er lukkede.
+        where: { order: { is: { ...orderScope, status: { notIn: ["Afsluttet", "Udført", "Sprunget over"] } } }, description: line.description, price: line.price },
         data: { price: newPrice },
       }),
     ];

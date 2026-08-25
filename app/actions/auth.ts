@@ -56,10 +56,12 @@ export async function login(_prev: LoginState, formData: FormData): Promise<Logi
     secure: process.env.NODE_ENV === "production",
   });
   // Send brugeren videre til den side, middleware afbrød (?next=). Kun interne
-  // stier accepteres: skal starte med præcis ét "/" (aldrig "//host" eller
-  // baglæns skråstreger, som browsere kan læse som eksternt redirect).
+  // stier accepteres: "/" men aldrig "//host", backslash ELLER kontroltegn/
+  // whitespace — browsere striber tab/CR/LF ud af URL'er, så "/\t/evil.com"
+  // ville ellers blive læst som den eksterne "//evil.com".
   const next = String(formData.get("next") ?? "");
-  redirect(/^\/(?!\/)/.test(next) && !next.includes("\\") ? next : "/calendar");
+  const safeNext = next.startsWith("/") && !next.startsWith("//") && !/[\x00-\x20\\]/.test(next);
+  redirect(safeNext ? next : "/calendar");
 }
 
 /** Brugerens rolle til navigationen (Navbar er en client-komponent og kan ikke

@@ -71,7 +71,10 @@ test("CheckInOut viser dato for gamle check-ind og har 'Glemte du at tjekke ud?'
 
 test("checkOutAt validerer sluttiden mod check-ind-dagen og fremtiden", async () => {
   const actions = await source("app/actions/timesheet.ts");
-  assert.match(actions, /utcFromCphWall\(cphDayISO\(open\.checkIn\), hh, mm\)/);
+  assert.match(actions, /utcFromCphWall\(dayISO, hh, mm\)/);
+  // Natvagt (verifikationsfund): klokkeslæt FØR check-ind = dagen efter.
+  assert.match(actions, /nextDayISO/);
+  assert.match(actions, /slut = utcFromCphWall\(nextDayISO, hh, mm\)/);
   assert.match(actions, /Sluttiden skal være efter check ind/);
   assert.match(actions, /Sluttiden ligger i fremtiden/);
   // Kun rækker sluttiden reelt dækker lukkes (checkIn <= slut).

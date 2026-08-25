@@ -18,6 +18,7 @@ const INVOICE_STATUS: Record<string, { label: string; color: string }> = {
   Sent: { label: "Faktura sendt af Dinero", color: "#2e7d32" },
   Paid: { label: "Bogført + betalt (kontant)", color: "#2e7d32" },
   Failed: { label: "Fakturering fejlede", color: "#C4183C" },
+  Samlefaktura: { label: "Faktureres på månedlig samlefaktura (erhverv)", color: "#8a6d3b" },
 };
 
 // businessBatchInvoiceStatus → dansk label for samlefaktura-sektionen (samme

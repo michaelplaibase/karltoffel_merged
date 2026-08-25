@@ -44,7 +44,7 @@ function parseMultiplier(label: string | null): number | null {
 }
 
 /** "Uge 29" → 29 (year-less; resolved against a reference year). */
-function parseWeekLabel(label: string | null): number | null {
+export function parseWeekLabel(label: string | null): number | null {
   if (!label) return null;
   const m = label.match(/Uge\s+(\d+)/i);
   return m ? Number(m[1]) : null;
@@ -149,33 +149,53 @@ export async function generateForSubscription(sub: SubWithTasks, ref: Date = new
   let v = anchor;
   if (v < thisMonday) v += Math.ceil((thisMonday - v) / step) * step;
 
+  // Tasks due at a visit index (i base-steps from the anchor): a task recurs
+  // every m visits from its own offset j0. "På anmodning" (m == null) is skipped,
+  // og sæsonpausede opgaver udelades i deres pausevindue (rytmen — besøgsindeks
+  // i — tæller videre gennem pausen, så opgaven genoptages på sin fase).
+  const dueAt = (i: number, weekMs: number) =>
+    tasks.filter((x) => x.m != null && i >= x.j0 && (i - x.j0) % x.m === 0 && !isPausedOn(x.t, weekMs)).map((x) => x.t);
+  // Opgaver fra et ferie-skubbet besøg, der flettes ind i rytmens eget næste
+  // besøg (nøgle: målugens rytme-uge). UNION frem for skip: opgaver, der kun
+  // var due på det skubbede besøg (fx "Hver 13. gang"), må ikke mistes.
+  const carriedByWeek = new Map<number, SubWithTasks["tasks"]>();
+
   let created = 0;
   for (; v <= horizonEnd; v += step) {
     if (existingWeeks.has(v)) continue;
 
-    // Ferielukket uge: besøget mistes IKKE — det skubbes til den første åbne
-    // uge efter ferien (som /holidays-forklaringen lover). sourceWeek forbliver
-    // rytme-ugen, så dedup/tombstones stadig virker, og rytmen fortsætter
-    // uændret fra næste besøg.
+    // Ferielukket uge: besøget mistes IKKE — det skubbes til den første LEDIGE
+    // åbne uge efter ferien (som /holidays-forklaringen lover). sourceWeek
+    // forbliver rytme-ugen, så dedup/tombstones stadig virker, og rytmen
+    // fortsætter uændret fra næste besøg. Rammer skubbet rytmens eget næste
+    // besøg, flettes opgaverne ind i det (carriedByWeek) i stedet for at
+    // besøget slettes; er ugen optaget/tombstonet, prøves den næste uge.
     let deliveryWeek = v;
-    for (let guard = 0; isHoliday(deliveryWeek) && guard < 52; guard++) deliveryWeek += WEEK_MS;
-    if (isHoliday(deliveryWeek)) continue; // 52+ ugers sammenhængende ferie — opgiv ugen
-    if (deliveryWeek !== v) {
-      // Rammer den første åbne uge alligevel af rytmen selv, eller er den
-      // allerede optaget af en anden ordre/et andet skubbet besøg, slås
-      // besøgene sammen — kunden skal ikke have to ordrer i samme uge.
+    let mergedInto: number | null = null;
+    let placeable = false;
+    for (let guard = 0; guard < 53; guard++) {
+      if (isHoliday(deliveryWeek)) { deliveryWeek += WEEK_MS; continue; }
+      if (deliveryWeek === v) { placeable = true; break; }
       const stepsFromAnchor = Math.round((deliveryWeek - anchor) / WEEK_MS);
-      if (stepsFromAnchor % base === 0 || usedDeliveryWeeks.has(deliveryWeek)) continue;
+      const isRhythmWeek = stepsFromAnchor % base === 0;
+      if (isRhythmWeek && !existingWeeks.has(deliveryWeek)) { mergedInto = deliveryWeek; break; }
+      if (isRhythmWeek || usedDeliveryWeeks.has(deliveryWeek)) { deliveryWeek += WEEK_MS; continue; }
+      placeable = true; break;
     }
 
-    // Tasks due at this visit index (i base-steps from the anchor): a task recurs
-    // every m visits from its own offset j0. "På anmodning" (m == null) is skipped,
-    // og sæsonpausede opgaver udelades i deres pausevindue (rytmen — besøgsindeks
-    // i — tæller videre gennem pausen, så opgaven genoptages på sin fase). Er ALLE
-    // ugens opgaver på pause, giver `!due.length` ingen ordre den uge.
     const i = Math.round((v - anchor) / step);
-    const due = tasks.filter((x) => x.m != null && i >= x.j0 && (i - x.j0) % x.m === 0 && !isPausedOn(x.t, v)).map((x) => x.t);
-    if (!due.length) continue;
+    if (mergedInto != null) {
+      const dueHere = dueAt(i, v);
+      if (dueHere.length) carriedByWeek.set(mergedInto, [...(carriedByWeek.get(mergedInto) ?? []), ...dueHere]);
+      continue;
+    }
+    if (!placeable) continue; // 52+ ugers sammenhængende blokering — opgiv besøget
+
+    const due = dueAt(i, v);
+    // Flet opgaver båret med fra et ferie-skubbet besøg ind (dedup på id) —
+    // kunden skal have ÉN samlet ordre i ugen, uden at noget udgår.
+    for (const t of carriedByWeek.get(v) ?? []) if (!due.some((d) => d.id === t.id)) due.push(t);
+    if (!due.length) continue; // alle ugens opgaver på pause/"På anmodning"
 
     try {
       await prisma.order.create({

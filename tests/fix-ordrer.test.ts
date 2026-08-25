@@ -74,11 +74,14 @@ test("ordresiden viser businessBatch-status, fakturanr. og seneste fejl", async 
 
 test("complete-siden accepterer kun interne stier som back (aldrig //host)", async () => {
   const page = await source("app/orders/[id]/complete/page.tsx");
-  // Verifikationsfund: "/\\evil.com" normaliseres af browsere til "//evil.com",
-  // så whitelisten afviser nu OGSÅ backslash efter den ledende skråstreg.
-  assert.match(page, /\/\^\\\/\(\?!\[\/\\\\\]\)\/\.test\(sp\.back\) \? sp\.back : "\/orders"/);
+  // Verifikationsfund: "/\\evil.com" OG "/\t/evil.com" normaliseres af
+  // browsere til "//evil.com" — whitelisten afviser derfor backslash og
+  // ALLE kontroltegn/whitespace, ikke kun det ledende "//".
+  assert.match(page, /sp\.back\.startsWith\("\/"\) && !sp\.back\.startsWith\("\/\/"\)/);
+  assert.match(page, /x00-\\x20/);
   const actions = await source("app/actions/orders.ts");
-  assert.match(actions, /\/\^\\\/\(\?!\[\/\\\\\]\)\/\.test\(rawBack\) \? rawBack : "\/orders"/);
+  assert.match(actions, /rawBack\.startsWith\("\/"\) && !rawBack\.startsWith\("\/\/"\)/);
+  assert.match(actions, /x00-\\x20/);
 });
 
 test("dagsprogram, ordreliste og kundeside sender ?back med til Afslut ordre", async () => {

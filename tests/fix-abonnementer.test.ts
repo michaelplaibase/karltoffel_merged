@@ -22,8 +22,13 @@ test("applyPriceAdjustment slår skabelonlinjerne op på ny (ingen P2025 på sta
 
 test("applyPriceAdjustment opdaterer ordrelinjer på ikke-afsluttede ordrer i samme transaktion", async () => {
   const actions = await src("app/actions/funktioner.ts");
-  // Ordrelinjer (kopier uden subscriptionId) rammes via ordrens relation …
-  assert.match(actions, /taskLine\.updateMany\(\{\s*where: \{ order: \{ is: \{ \.\.\.orderScope, status: "Afventer levering" \} \}, description: line\.description, price: line\.price \}/);
+  // Ordrelinjer (kopier uden subscriptionId) rammes via ordrens relation —
+  // på ALLE ikke-lukkede statusser (verifikationsfund: "Skal genplanlægges"/
+  // "Anden status" leveres og faktureres også senere) …
+  assert.match(actions, /taskLine\.updateMany\(\{\s*[\s\S]{0,400}status: \{ notIn: \["Afsluttet", "Udført", "Sprunget over"\] \} \} \}, description: line\.description, price: line\.price \}/);
+  // … og skabelonlinjen selv opdateres med updateMany (no-op i stedet for
+  // P2025-crash hvis en samtidig redigering har slettet linjen).
+  assert.match(actions, /prisma\.taskLine\.updateMany\(\{ where: \{ id: line\.id \}, data: \{ price: newPrice \} \}\)/);
   // … og både skabelon- og ordre-opdateringer kører i ÉN transaktion.
   assert.match(actions, /await prisma\.\$transaction\(ops\)/);
   // Step 3-beskeden fortæller at planlagte ordrer også er opdateret.
@@ -47,13 +52,16 @@ test("generateForSubscription skubber ferieramte besøg i stedet for at droppe d
   const rec = await src("lib/recurrence.ts");
   // Det gamle 'if (isHoliday(v) ...) continue' er væk …
   assert.doesNotMatch(rec, /isHoliday\(v\) \|\| existingWeeks\.has\(v\)/);
-  // … i stedet søges første åbne uge, med værn mod uendelig ferie.
-  assert.match(rec, /for \(let guard = 0; isHoliday\(deliveryWeek\) && guard < 52; guard\+\+\) deliveryWeek \+= WEEK_MS/);
+  // … i stedet søges første LEDIGE åbne uge, med værn mod uendelig blokering.
+  assert.match(rec, /if \(isHoliday\(deliveryWeek\)\) \{ deliveryWeek \+= WEEK_MS; continue; \}/);
   // Ordren leveres i den skubbede uge, men sourceWeek forbliver rytme-ugen (dedup).
   assert.match(rec, /plannedAt: new Date\(deliveryWeek \+ 10 \* 3600 \* 1000\)/);
   assert.match(rec, /sourceWeek: new Date\(v\)/);
-  // Skubbede besøg slås sammen med rytmens eget besøg/optagne uger.
-  assert.match(rec, /stepsFromAnchor % base === 0 \|\| usedDeliveryWeeks\.has\(deliveryWeek\)/);
+  // Rammer skubbet rytmens eget næste besøg, FLETTES opgaverne ind i det
+  // (verifikationsfund: multiplikator-opgaver må ikke mistes ved sammenfald).
+  assert.match(rec, /carriedByWeek/);
+  assert.match(rec, /mergedInto = deliveryWeek/);
+  assert.match(rec, /for \(const t of carriedByWeek\.get\(v\) \?\? \[\]\) if \(!due\.some\(\(d\) => d\.id === t\.id\)\) due\.push\(t\)/);
 });
 
 test("ferie-forklaringen matcher den faktiske adfærd (skub til første åbne uge)", () => {

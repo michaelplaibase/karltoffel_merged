@@ -202,10 +202,11 @@ export async function completeOrder(orderId: number, _prev: CompleteOrderState, 
   if (!leveringsstatus || !(leveringsstatus in STATUS)) return { error: "Vælg en leveringsstatus.", values };
 
   // backUrl kommer fra formularen — accepter KUN interne, relative stier:
-  // "/..." men hverken "//host" (protocol-relative) eller "/\host" — browsere
-  // normaliserer backslash til "/" i authority, så "/\evil.com" ER "//evil.com".
+  // "/..." men aldrig "//host", backslash eller kontroltegn/whitespace
+  // (browsere normaliserer "/\evil.com" og striber tab/CR/LF, så begge dele
+  // ville ellers kunne blive til den eksterne "//evil.com").
   const rawBack = String(formData.get("backUrl") ?? "");
-  const backUrl = /^\/(?![/\\])/.test(rawBack) ? rawBack : "/orders";
+  const backUrl = rawBack.startsWith("/") && !rawBack.startsWith("//") && !/[\x00-\x20\\]/.test(rawBack) ? rawBack : "/orders";
 
   // "Betaling og fakturering" — persist the chosen invoicing action. Only the five
   // known values are stored; anything else (or blank) means "no invoicing decision".

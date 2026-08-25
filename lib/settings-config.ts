@@ -1,5 +1,6 @@
 export type SField = {
   t: "text" | "number" | "date" | "textarea" | "color" | "select" | "checks" | "radio" | "toggle" | "static" | "note" | "buttons" | "subtable";
+  key?: string;          // stabil lagringsnøgle — positionsnøglen s{N}f{M} forskydes når felter indsættes/genereres
   l?: string;            // Danish label
   val?: string;          // current/default value
   opts?: string[];       // options for select/checks/radio
@@ -205,8 +206,8 @@ export const SETTINGS_PAGES: Record<string, SPage> = {
         fields: [
           // Ærlig status — lov aldrig effekt, planlæggeren ikke leverer endnu.
           { t: "note", val: PLANNER_STATUS_NOTE },
-          { t: "toggle", l: "Luk automatisk kalenderen på helligdage", val: "Ja", on: 1, help: "Hvis valgt, vil officielle danske helligdage automatisk være lukket i kalenderen, f.eks. 2. påskedag. (Tages først i brug af planlæggeren senere.)" },
-          { t: "toggle", l: "Benyt fleksibel arbejdstid", val: "Ja", on: 1, help: "Fleksibel arbejdstid giver Karltoffel mulighed for at tage ekstra arbejdstid i brug sidst på dagen, såfremt det medfører en forholdsmæssig besparelse på kørslen, eller hvis ugen er fyldt op med ordrer. Fleksibel arbejdstid anbefales for de fleste..." },
+          { t: "toggle", key: "s0f0", l: "Luk automatisk kalenderen på helligdage", val: "Ja", on: 1, help: "Hvis valgt, vil officielle danske helligdage automatisk være lukket i kalenderen, f.eks. 2. påskedag. (Tages først i brug af planlæggeren senere.)" },
+          { t: "toggle", key: "s0f1", l: "Benyt fleksibel arbejdstid", val: "Ja", on: 1, help: "Fleksibel arbejdstid giver Karltoffel mulighed for at tage ekstra arbejdstid i brug sidst på dagen, såfremt det medfører en forholdsmæssig besparelse på kørslen, eller hvis ugen er fyldt op med ordrer. Fleksibel arbejdstid anbefales for de fleste..." },
         ],
       },
       // Sektionen "Indstillinger per medarbejder" genereres fra databasens
@@ -353,8 +354,8 @@ function planningEmployeeSection(navn: string): SSection {
   return {
     h: navn,
     fields: [
-      { t: "checks", opts: ["Udelad kørsel før første ordre på dagen", "Udelad kørsel efter sidste ordre på dagen", "Tilstræb at starte dagen længst væk fra hjemmeadressen"], on: [0, 1, 2], help: "Vælg dette, hvis du vil undgå, at Karltoffel planlægger kørsel til første ordre / kørsel hjem fra sidste ordre inden for arbejdstiden, eller hvis du ønsker at bruge de tidlige morgentimer på transport." },
-      { t: "select", l: "Tilladte opgavekategorier", val: "Alle", opts: ["Alle", "Vinduespudsning", "Rentvandsvask", "Tagrenderens", "Overfladerens", "Algebehandling", "Overfladebeskyttelse", "Privatrengøring", "Ejendomsrengøring", "Viceværtservice", "Grøn service", "Ukrudtsbekæmpelse", "Skadedyrsbekæmpelse", "Bilpleje", "Administrativt", "Andet"], help: "Vælg hvilke opgavekategorier, som medarbejderen kan håndtere. For at en ordre kan planlægges i en medarbejders kalender, skal medarbejderen kunne håndtere alle kategorier på ordren. Hvis du fastgør en ordre eller et abonnement til en bestemt medarbejder, så vil ordren blive planlagt til denne medarbejder uagtet de tilladte opgavekategorier." },
+      { t: "checks", key: `emp:${navn}:koersel`, opts: ["Udelad kørsel før første ordre på dagen", "Udelad kørsel efter sidste ordre på dagen", "Tilstræb at starte dagen længst væk fra hjemmeadressen"], on: [0, 1, 2], help: "Vælg dette, hvis du vil undgå, at Karltoffel planlægger kørsel til første ordre / kørsel hjem fra sidste ordre inden for arbejdstiden, eller hvis du ønsker at bruge de tidlige morgentimer på transport." },
+      { t: "select", key: `emp:${navn}:kategorier`, l: "Tilladte opgavekategorier", val: "Alle", opts: ["Alle", "Vinduespudsning", "Rentvandsvask", "Tagrenderens", "Overfladerens", "Algebehandling", "Overfladebeskyttelse", "Privatrengøring", "Ejendomsrengøring", "Viceværtservice", "Grøn service", "Ukrudtsbekæmpelse", "Skadedyrsbekæmpelse", "Bilpleje", "Administrativt", "Andet"], help: "Vælg hvilke opgavekategorier, som medarbejderen kan håndtere. For at en ordre kan planlægges i en medarbejders kalender, skal medarbejderen kunne håndtere alle kategorier på ordren. Hvis du fastgør en ordre eller et abonnement til en bestemt medarbejder, så vil ordren blive planlagt til denne medarbejder uagtet de tilladte opgavekategorier." },
     ],
   };
 }

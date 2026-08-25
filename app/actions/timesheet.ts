@@ -9,7 +9,7 @@
 // begge se "ingen åben" og oprette hver sin række. Skemaet har (bevidst) intet
 // partial unique index, så låsen er værnet.
 import { prisma } from "@/lib/db";
-import { requireSession } from "@/lib/api-auth";
+import { getSessionUser } from "@/lib/api-auth";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { cphDate, cphTime, cphDayISO, utcFromCphWall } from "@/lib/timesheet";
@@ -20,8 +20,11 @@ const TIME_LOCK_NS = 421001;
 
 // Åbn en registrering, hvis brugeren ikke allerede er checket ind.
 export async function checkIn(): Promise<void> {
-  const userId = await requireSession();
-  if (userId == null) redirect("/login");
+  // getSessionUser (ikke requireSession): en DEAKTIVERET brugers token er
+  // ellers gyldigt i op til 30 dage — active-tjekket gælder også tid.
+  const me = await getSessionUser();
+  if (me == null) redirect("/login");
+  const userId = me.id;
   await prisma.$transaction(async (tx) => {
     // Serialisér pr. bruger — låsen frigives automatisk ved commit/rollback.
     // ::int-casts er PÅKRÆVEDE: Prisma binder JS-tal som bigint, og
@@ -38,8 +41,9 @@ export async function checkIn(): Promise<void> {
 // statement og lukker også evt. dubletter fra før race-værnet, så ingen række
 // bliver hængende som "Åben" og tæller timer i det uendelige.
 export async function checkOut(): Promise<void> {
-  const userId = await requireSession();
-  if (userId == null) redirect("/login");
+  const me = await getSessionUser();
+  if (me == null) redirect("/login");
+  const userId = me.id;
   await prisma.timeEntry.updateMany({ where: { userId, checkOut: null }, data: { checkOut: new Date() } });
   revalidatePath("/daycalendar");
   revalidatePath("/timesheet");
@@ -51,8 +55,9 @@ export type OpenEntryInfo = { dato: string; tid: string; sammeDag: boolean } | n
 // og om check-ind er fra I DAG. Ældste åbne først — er der dubletter, er det
 // den glemte gamle registrering brugeren skal se og lukke.
 export async function getOpenEntryInfo(): Promise<OpenEntryInfo> {
-  const userId = await requireSession();
-  if (userId == null) return null;
+  const me = await getSessionUser();
+  if (me == null) return null;
+  const userId = me.id;
   const open = await prisma.timeEntry.findFirst({ where: { userId, checkOut: null }, orderBy: { checkIn: "asc" } });
   if (!open) return null;
   return {
@@ -71,8 +76,9 @@ export type CheckOutAtState = { error?: string; ok?: boolean; values?: { tid: st
 // er eneste udvej. Sluttiden valideres: samme danske dag som check-ind (pr.
 // konstruktion), efter check-ind og ikke i fremtiden.
 export async function checkOutAt(_prev: CheckOutAtState, formData: FormData): Promise<CheckOutAtState> {
-  const userId = await requireSession();
-  if (userId == null) redirect("/login");
+  const me = await getSessionUser();
+  if (me == null) redirect("/login");
+  const userId = me.id;
   const tid = String(formData.get("tid") ?? "").trim();
   const values = { tid };
   const m = tid.match(/^(\d{1,2}):(\d{2})$/);
@@ -87,7 +93,12 @@ export async function checkOutAt(_prev: CheckOutAtState, formData: FormData): Pr
     revalidatePath("/timesheet");
     return { ok: true };
   }
-  const slut = utcFromCphWall(cphDayISO(open.checkIn), hh, mm); // check-ind-DAGEN, dansk tid
+  // Sluttiden lægges på check-ind-dagen (dansk tid). En NATVAGT (ind 22:00,
+  // ud 02:30) giver et klokkeslæt FØR check-ind — så gælder tiden dagen efter.
+  const dayISO = cphDayISO(open.checkIn);
+  const nextDayISO = new Date(Date.parse(`${dayISO}T00:00:00Z`) + 864e5).toISOString().slice(0, 10);
+  let slut = utcFromCphWall(dayISO, hh, mm);
+  if (slut.getTime() <= open.checkIn.getTime()) slut = utcFromCphWall(nextDayISO, hh, mm);
   if (slut.getTime() <= open.checkIn.getTime()) {
     return { error: `Sluttiden skal være efter check ind kl. ${cphTime(open.checkIn)} (${cphDate(open.checkIn)}).`, values };
   }

@@ -77,14 +77,18 @@ export async function GET(req: Request) {
 
   // Foretræk et præcist startAt; fald tilbage til plannedAt (dato-only, ingen
   // klokkeslæt i teksten) for ældre/manuelle ordrer uden et sat tidspunkt.
-  // startAt-ordrer med et klokkeslæt der allerede er passeret i dag springes
-  // over (gte: now) — en "vi kommer i dag"-mail efter besøget er støj.
+  // Vinduet starter ved DAGENS begyndelse (ikke "nu"): en fejlet afsendelse i
+  // går rulles tilbage og skal kunne fanges af næste kørsel, selv når ordrens
+  // klokkeslæt ligger FØR cron-tidspunktet — en lidt sen påmindelse er bedre
+  // end ingen. Besøg der er mere end 6 timer passeret springes dog over
+  // (en "vi kommer i dag"-mail længe efter besøget er støj).
+  const startFloor = new Date(Math.max(todayStart.getTime(), now.getTime() - 6 * 3600 * 1000));
   const due = await prisma.order.findMany({
     where: {
       reminderSentAt: null,
       status: "Afventer levering",
       OR: [
-        { startAt: { gte: now, lt: end } },
+        { startAt: { gte: startFloor, lt: end } },
         { startAt: null, plannedAt: { gte: todayStart, lt: end } },
       ],
     },

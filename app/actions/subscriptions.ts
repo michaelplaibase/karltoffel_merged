@@ -5,7 +5,9 @@
 import { prisma, isUniqueViolation } from "@/lib/db";
 import { guardAction } from "@/lib/api-auth";
 import { categoryColor } from "@/lib/categories";
-import { generateForSubscriptionId, generateAllSubscriptionOrders, regenerateFutureOrders } from "@/lib/recurrence";
+import { generateForSubscriptionId, generateAllSubscriptionOrders, regenerateFutureOrders, parseWeekLabel } from "@/lib/recurrence";
+import { isoWeek } from "@/lib/planner";
+import { weekMondayToday } from "@/lib/calendar";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
@@ -148,8 +150,24 @@ export async function approveSubscription(pk: number): Promise<void> {
   const sub = await prisma.subscription.update({
     where: { id: pk },
     data: { active: true, pending: false },
-    select: { contactId: true, displayNo: true },
+    select: { contactId: true, displayNo: true, startWeek: true },
   });
+  // Startugen er årløs ("Uge N") og blev typisk sat til "næste uge" ved
+  // lead-konverteringen. Godkendes abonnementet FØRST uger senere, er ugen
+  // passeret — og generatoren (nyt abonnement uden ordrer) ville fortolke den
+  // som NÆSTE års forekomst: nul ordrer i op til et år, helt stille. Er ugen
+  // mere end et halvt år ude i "fremtiden", er den reelt lige passeret →
+  // ryk starten til næste uge. En bevidst sæsonstart (< 26 uger ude) bevares.
+  const stored = parseWeekLabel(sub.startWeek);
+  if (stored != null) {
+    const currentWeek = isoWeek(weekMondayToday());
+    const weeksUntil = ((stored - currentWeek) + 52) % 52;
+    if (weeksUntil > 26) {
+      const nextMondayISO = new Date(Date.parse(`${weekMondayToday()}T00:00:00Z`) + 7 * 864e5).toISOString().slice(0, 10);
+      const label = `Uge ${isoWeek(nextMondayISO)}`;
+      await prisma.subscription.update({ where: { id: pk }, data: { startWeek: label, nextWeek: label } });
+    }
+  }
   await generateForSubscriptionId(pk);
   revalidatePath("/subscriptions");
   revalidatePath("/orders");
