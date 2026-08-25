@@ -35,7 +35,10 @@ export async function getSessionUser() {
  * a valid session is a no-op. Never call from the public `login` action.
  */
 export async function guardAction(): Promise<void> {
-  if ((await requireSession()) == null) redirect("/login");
+  // getSessionUser (ikke requireSession): en DEAKTIVERET brugers statsløse
+  // token er ellers gyldigt i op til 30 dage — active-tjekket skal også
+  // gælde alle mutations, ikke kun de få sider der selv slår brugeren op.
+  if ((await getSessionUser()) == null) redirect("/login");
 }
 
 export function unauthorized(): Response {

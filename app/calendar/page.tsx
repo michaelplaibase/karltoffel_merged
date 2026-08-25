@@ -3,6 +3,7 @@ import { getCalendarMonth, getCalendarWeek } from "@/lib/queries";
 import { calendar2WeekNavigation } from "@/lib/calendar2-navigation";
 import { todayCphISO, weekMondayToday } from "@/lib/calendar";
 import { getSessionUser } from "@/lib/api-auth";
+import { redirect } from "next/navigation";
 
 export const metadata = { title: "Kalender · Karltoffel" };
 
@@ -14,14 +15,21 @@ export default async function CalendarPage({ searchParams }: { searchParams: Pro
   const params = await searchParams;
   // Samme viewer-regel som /daycalendar: admin ser hele teamet, en almindelig
   // medarbejder kun sig selv. Uden viewer håndhævede kalenderen aldrig reglen.
+  // getSessionUser er null for udløbne OG deaktiverede brugere — uden redirect
+  // ville viewer=undefined betyde "vis alt" (eskaleret team-visning).
   const me = await getSessionUser();
-  const viewer = me ? { id: me.id, isAdmin: me.isAdmin } : undefined;
+  if (!me) redirect("/login");
+  const viewer = { id: me.id, isAdmin: me.isAdmin };
+  // Admin får den redigerbare kalender (kontekstmenu: lås/flyt/slet + "Genplanlæg
+  // uge") — funktionerne var ellers utilgængeligt dead code, og kontoret havde
+  // ingen flade til at rette ikke-planlagte ordrer. Medarbejdere ser read-only.
+  const readOnly = !me.isAdmin;
   if (params.view === "month") {
     const monthParam = params.month && /^\d{4}-\d{2}$/.test(params.month)
       ? params.month
       : todayCphISO().slice(0, 7); // aktuell måned i Europe/Copenhagen, ikke UTC
     const month = await getCalendarMonth(monthParam, viewer);
-    return <TeamCalendarClient mode="month" month={month} nav={{}} readOnly basePath="/calendar" />;
+    return <TeamCalendarClient mode="month" month={month} nav={{}} readOnly={readOnly} basePath="/calendar" />;
   }
 
   const navigation = calendar2WeekNavigation(params.week ?? weekMondayToday());
@@ -32,7 +40,7 @@ export default async function CalendarPage({ searchParams }: { searchParams: Pro
       mode="week"
       week={week}
       nav={{ prevWeek: navigation.prevWeek, nextWeek: navigation.nextWeek, monthParam: navigation.monthParam }}
-      readOnly
+      readOnly={readOnly}
       basePath="/calendar"
     />
   );

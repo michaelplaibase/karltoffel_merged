@@ -25,7 +25,7 @@ const STATUS_CLASS: Record<CalStatus, string> = {
 // to these same values via --tc-*), so legend swatches match the cards exactly.
 const STATUS_LEGEND: [string, string][] = [
   ["var(--success)", "Afsluttet"], ["var(--primary)", "Afventer"],
-  ["var(--warning)", "Ikke afsluttet"], ["var(--danger)", "Mislykket"],
+  ["var(--warning)", "Sprunget over / anden status"], ["var(--danger)", "Skal genplanlægges"],
 ];
 
 const DAY_HEADS = ["Man", "Tir", "Ons", "Tor", "Fre", "Lør", "Søn"];

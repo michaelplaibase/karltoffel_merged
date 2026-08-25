@@ -1,9 +1,10 @@
 import { getDayProgram } from "@/lib/queries";
-import { weekMondayToday } from "@/lib/calendar";
-import { requireSession, unauthorized } from "@/lib/api-auth";
+import { todayCphISO } from "@/lib/calendar";
+import { getSessionUser, unauthorized } from "@/lib/api-auth";
+import { prisma } from "@/lib/db";
 import type { NextRequest } from "next/server";
 
-// "Hent dagsprogram" (PDF) on /reports/day-pdf. Builds a minimal, valid single-
+// "Hent dagsprogram" (PDF) on /reports/day-pdf. Builds a minimal, valid multi-
 // page PDF by hand (no external dependency) listing the day's routed stops.
 
 function esc(s: string): string {
@@ -19,15 +20,27 @@ function fold(s: string): string {
 
 // Returns the PDF as an all-ASCII string (fold() strips non-ASCII), so it is
 // byte-identical whether encoded as latin1 or utf-8 and the xref offsets computed
-// from string length stay correct.
-function buildPdf(lines: string[]): string {
-  const body = lines.map((l, i) => (i === 0 ? "" : "T* ") + `(${esc(fold(l))}) Tj`).join("\n");
-  const content = `BT\n/F1 11 Tf\n15 TL\n40 800 Td\n${body}\nET`;
-  const objects = [
+// from string length stay correct. Paginerer ved LINES_PER_PAGE — én side kan
+// kun rumme ~53 linjer (y=800, 15 pt leading), og lange dage blev før klippet tavst.
+const LINES_PER_PAGE = 48;
+function buildPdf(allLines: string[]): string {
+  const chunks: string[][] = [];
+  for (let i = 0; i < allLines.length; i += LINES_PER_PAGE) chunks.push(allLines.slice(i, i + LINES_PER_PAGE));
+  if (!chunks.length) chunks.push([]);
+  const n = chunks.length;
+  // Objektnumre: 1 Catalog, 2 Pages, 3..2+n Page, 3+n..2+2n Contents, 3+2n Font.
+  const fontId = 3 + 2 * n;
+  const objects: string[] = [
     "<</Type/Catalog/Pages 2 0 R>>",
-    "<</Type/Pages/Kids[3 0 R]/Count 1>>",
-    "<</Type/Page/Parent 2 0 R/MediaBox[0 0 595 842]/Resources<</Font<</F1 5 0 R>>>>/Contents 4 0 R>>",
-    `<</Length ${content.length}>>\nstream\n${content}\nendstream`,
+    `<</Type/Pages/Kids[${Array.from({ length: n }, (_, k) => `${3 + k} 0 R`).join(" ")}]/Count ${n}>>`,
+    ...Array.from({ length: n }, (_, k) =>
+      `<</Type/Page/Parent 2 0 R/MediaBox[0 0 595 842]/Resources<</Font<</F1 ${fontId} 0 R>>>>/Contents ${3 + n + k} 0 R>>`),
+    ...chunks.map((chunk, k) => {
+      const lines = k === 0 ? chunk : [`(fortsat - side ${k + 1}/${n})`, "", ...chunk];
+      const body = lines.map((l, i) => (i === 0 ? "" : "T* ") + `(${esc(fold(l))}) Tj`).join("\n");
+      const content = `BT\n/F1 11 Tf\n15 TL\n40 800 Td\n${body}\nET`;
+      return `<</Length ${content.length}>>\nstream\n${content}\nendstream`;
+    }),
     "<</Type/Font/Subtype/Type1/BaseFont/Helvetica>>",
   ];
   let pdf = "%PDF-1.4\n";
@@ -41,19 +54,38 @@ function buildPdf(lines: string[]): string {
 }
 
 export async function GET(req: NextRequest) {
-  if ((await requireSession()) == null) return unauthorized();
+  // getSessionUser (ikke kun requireSession): deaktiverede brugere skal afvises,
+  // og viewer-reglen ("en medarbejder ser kun sine egne opgaver") skal håndhæves
+  // her som på /daycalendar — før kunne enhver hente HELE teamets dagsprogram.
+  const me = await getSessionUser();
+  if (me == null) return unauthorized();
   const sp = req.nextUrl.searchParams;
-  const date = /^\d{4}-\d{2}-\d{2}$/.test(sp.get("date") ?? "") ? sp.get("date")! : weekMondayToday();
-  const employee = sp.get("employee") || "Alle medarbejdere";
-  const day = await getDayProgram(date);
+  const rawDate = sp.get("date") ?? "";
+  const date = /^\d{4}-\d{2}-\d{2}$/.test(rawDate) && !Number.isNaN(Date.parse(`${rawDate}T00:00:00Z`))
+    ? rawDate
+    : todayCphISO();
+  const day = await getDayProgram(date, { id: me.id, isAdmin: me.isAdmin });
+
+  // Medarbejder-filter: kun admin kan vælge (id, ikke fritekst); en almindelig
+  // medarbejder får altid sit eget program. Uden valg: hele dagen ("Alle").
+  const employeeIdRaw = sp.get("employeeId") ?? "";
+  const employeeId = me.isAdmin && /^\d+$/.test(employeeIdRaw) ? Number(employeeIdRaw) : null;
+  const chosen = employeeId != null
+    ? await prisma.user.findUnique({ where: { id: employeeId }, select: { firstName: true, lastName: true } })
+    : null;
+  const chosenName = chosen ? `${chosen.firstName} ${chosen.lastName}` : null;
+  const heading = me.isAdmin ? (chosenName ?? "Alle medarbejdere") : `${me.firstName} ${me.lastName}`;
+  const stops = chosenName ? day.stops.filter((s) => s.employee === chosenName) : day.stops;
+  const unplanned = chosenName ? day.unplanned.filter((s) => s.employee === chosenName) : day.unplanned;
 
   const lines = [
     `Dagsprogram - ${day.heading} (${day.relative})`,
-    `Medarbejder: ${employee}`,
-    `Planlagt omsaetning: kr. ${day.revenueDay.toLocaleString("da-DK")}   Koersel: ${day.driving}`,
+    `Medarbejder: ${heading}`,
+    // Kørsel er kun retvisende uden medarbejder-filter (aggregatet dækker alle viste).
+    `Planlagt omsaetning: kr. ${stops.reduce((a, s) => a + s.price, 0).toLocaleString("da-DK")}${chosenName ? "" : `   Koersel: ${day.driving}`}`,
     "",
-    ...(day.stops.length
-      ? day.stops.flatMap((s) => [
+    ...(stops.length
+      ? stops.flatMap((s) => [
           `${s.from}-${s.to}  ${s.customer}  (kr. ${s.price.toLocaleString("da-DK")})`,
           `        ${s.address}`,
           `        ${s.tasks.map((t) => t.description).join(", ")}`,
@@ -61,11 +93,11 @@ export async function GET(req: NextRequest) {
       : ["Ingen planlagte ordrer denne dag."]),
     // Ordrer der hører til dagen, men ikke kunne ruteplanlægges — skal med i
     // det printede program, så papirudgaven viser det samme som skærmen.
-    ...(day.unplanned.length
+    ...(unplanned.length
       ? [
           "",
-          `Ikke planlagt denne dag (${day.unplanned.length}):`,
-          ...day.unplanned.flatMap((s) => [
+          `Ikke planlagt denne dag (${unplanned.length}):`,
+          ...unplanned.flatMap((s) => [
             `${s.customer}  (kr. ${s.price.toLocaleString("da-DK")})  -  ${s.reason}`,
             `        ${s.address}`,
           ]),

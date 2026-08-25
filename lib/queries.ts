@@ -595,10 +595,13 @@ export async function planAndPersistWeek(weekMonday: string) {
   return wp;
 }
 
-/** Map a stored order status to the calendar's status class. */
+/** Map a stored order status to the calendar's status class. Afslut-flowet
+ *  skriver "Udført"/"Sprunget over"/"Skal genplanlægges"/"Anden status"
+ *  (app/actions/orders.ts) — de handlingskrævende må IKKE ligne "Afventer". */
 function calStatusOf(status: string): CalStatus {
   if (status === "Afsluttet" || status === "Udført") return "afsluttet";
-  if (status.startsWith("Mislykk")) return "mislykket";
+  if (status === "Skal genplanlægges" || status.startsWith("Mislykk")) return "mislykket";
+  if (status === "Sprunget over" || status === "Anden status") return "ikke_afsluttet";
   return "afventer";
 }
 
@@ -720,8 +723,13 @@ export async function getCalendarWeek(weekMonday: string, viewer?: { id: number;
   });
 
   const monMonth = start.getUTCMonth();
-  const sunMonth = new Date(start.getTime() + 6 * 864e5).getUTCMonth();
-  const weekLabel = cap(MON_SHORT[monMonth]) + (monMonth !== sunMonth ? ` – ${cap(MON_SHORT[sunMonth])}` : "") + ` ${year}`;
+  const sunday = new Date(start.getTime() + 6 * 864e5);
+  const sunMonth = sunday.getUTCMonth();
+  // Årsskifte-uge (fx 28/12–3/1): begge år skal med — "Dec. 2026 – Jan. 2027",
+  // ikke "Dec. – Jan. 2026".
+  const weekLabel = year !== sunday.getUTCFullYear()
+    ? `${cap(MON_SHORT[monMonth])} ${year} – ${cap(MON_SHORT[sunMonth])} ${sunday.getUTCFullYear()}`
+    : cap(MON_SHORT[monMonth]) + (monMonth !== sunMonth ? ` – ${cap(MON_SHORT[sunMonth])}` : "") + ` ${year}`;
   const weekNo = isoWeek(weekMonday);
   const week = dayRevenue.reduce((a, b) => a + b, 0);
   const month = await monthRevenue(year, monMonth, viewer && !viewer.isAdmin ? viewer.id : undefined);
@@ -729,10 +737,12 @@ export async function getCalendarWeek(weekMonday: string, viewer?: { id: number;
     id: u.id, name: `${u.firstName} ${u.lastName}`, color: u.calendarColor ?? "#a4d5ee", active: u.activeCalendar,
   }));
 
-  // Uassignerede/overflow-ordrer er ikke tilknyttet en bestemt medarbejder —
-  // kun admin har brug for teamets restance-overblik; en almindelig
-  // medarbejder skal ikke se andres kunde-/adressedata via denne liste.
-  const unplannedVisible = !viewer || viewer.isAdmin ? rawUnplanned : [];
+  // Admin ser teamets fulde restance-overblik; en almindelig medarbejder skal
+  // ikke se ANDRES kunde-/adressedata — men skal se sine EGNE ikke-planlagte
+  // ordrer (ellers modsiger ugevisningen dagsprogrammet, som viser dem).
+  const unplannedVisible = !viewer || viewer.isAdmin
+    ? rawUnplanned
+    : rawUnplanned.filter(({ job }) => job.fixedEmployeeId === viewer.id);
   const unplanned: UnplannedJob[] = unplannedVisible.map(({ job, reason }) => {
     const meta = metaById.get(job.id);
     return {

@@ -4,6 +4,7 @@
 // (complete order) flow.
 import { prisma } from "@/lib/db";
 import { guardAction } from "@/lib/api-auth";
+import { planAndPersistWeek } from "@/lib/queries";
 import { categoryColor } from "@/lib/categories";
 import { isInvoiceDecision, issueInvoiceForOrder } from "@/lib/dinero";
 import { revalidatePath } from "next/cache";
@@ -143,10 +144,13 @@ export async function moveOrderWeeks(orderId: number, weeks: number, unlock = fa
   revalidateSchedule();
 }
 
-/** Sidebar "Genplanlæg uge" — re-run the (deterministic, on-read) week planner
- *  and refresh the calendar for the shown week. */
+/** Sidebar "Genplanlæg uge" — kør ugeplanlæggeren og PERSISTER resultatet
+ *  (plannedAt + employeeId), så ordrelister/PDF/påmindelser følger med.
+ *  Uden persisteringen var knappen en no-op: planen genberegnes alligevel
+ *  deterministisk on-read, så revalidate alene ændrede aldrig noget. */
 export async function replanWeek(weekMonday: string): Promise<void> {
   await guardAction();
+  await planAndPersistWeek(weekMonday);
   revalidatePath("/calendar");
   revalidatePath("/daycalendar");
   redirect(`/calendar?week=${weekMonday}`);

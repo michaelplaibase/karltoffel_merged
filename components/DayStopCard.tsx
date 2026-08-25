@@ -6,7 +6,7 @@
 // flows, and "Mere ▾" opens a dropdown (vis i kalender / kundedetaljer / send
 // notifikation / slet ordre).
 import Link from "next/link";
-import { useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 import { CatChip, money, telHref, telDisplay } from "@/components/ui";
 import { deleteOrder } from "@/app/actions/orders";
 import type { DayStop, DayUnplannedStop } from "@/lib/calendar";
@@ -17,7 +17,20 @@ export default function DayStopCard({ stop, weekMonday }: { stop: DayStop | DayU
   const [confirm, setConfirm] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
+  const moreRef = useRef<HTMLDivElement>(null);
   const toggle = (k: string) => setPanel((p) => (p === k ? null : k));
+
+  // Luk "Mere ▾" ved klik/tap UDENFOR — onMouseLeave alene virker ikke på
+  // touch-skærme, hvor menuen ellers blev hængende åben.
+  useEffect(() => {
+    if (!more) return;
+    const close = (e: MouseEvent) => {
+      if (moreRef.current?.contains(e.target as Node)) return;
+      setMore(false);
+    };
+    document.addEventListener("click", close);
+    return () => document.removeEventListener("click", close);
+  }, [more]);
 
   const tel = telHref(stop.phone);
 
@@ -76,7 +89,7 @@ export default function DayStopCard({ stop, weekMonday }: { stop: DayStop | DayU
         )}
       </div>
 
-      <div className="row-actions" style={{ position: "relative" }}>
+      <div className="row-actions" style={{ position: "relative" }} ref={moreRef}>
         <Link href={`/orders/${stop.orderId}/complete`} className="btn btn-outline-primary btn-sm">Afslut ordre</Link>
         <Link href={`/orders/${stop.orderId}`} className="btn btn-outline-primary btn-sm">Rediger ordre</Link>
         {stop.subscriptionNo != null

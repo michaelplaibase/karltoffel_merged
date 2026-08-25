@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { getDayProgram } from "@/lib/queries";
 import { todayCphISO } from "@/lib/calendar";
 import DayStopCard from "@/components/DayStopCard";
@@ -10,9 +11,16 @@ export const metadata = { title: "Dagsprogram · Karltoffel" };
 
 export default async function DayCalendarPage({ searchParams }: { searchParams: Promise<{ date?: string }> }) {
   const sp = await searchParams;
-  const date = /^\d{4}-\d{2}-\d{2}$/.test(sp.date ?? "") ? sp.date! : todayCphISO();
+  // Formen ALENE er ikke nok — "2026-13-01" parser til Invalid Date og ender som
+  // PrismaClientValidationError. Kræv også en reelt gyldig dato.
+  const date = /^\d{4}-\d{2}-\d{2}$/.test(sp.date ?? "") && !Number.isNaN(Date.parse(`${sp.date}T00:00:00Z`))
+    ? sp.date!
+    : todayCphISO();
   const me = await getSessionUser();
-  const day = await getDayProgram(date, me ? { id: me.id, isAdmin: me.isAdmin } : undefined);
+  // getSessionUser er null for udløbne OG deaktiverede brugere — uden redirect
+  // ville viewer=undefined betyde "vis alt" (eskaleret team-visning).
+  if (!me) redirect("/login");
+  const day = await getDayProgram(date, { id: me.id, isAdmin: me.isAdmin });
   const open = me != null ? await getOpenTimeEntry(me.id) : null;
 
   return (
