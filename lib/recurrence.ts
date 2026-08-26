@@ -290,3 +290,44 @@ export async function regenerateFutureOrders(
   const generated = await generateForSubscriptionId(id, ref, horizonWeeks);
   return { generated };
 }
+
+/** STILLE-NUL-VAGT: et aktivt abonnement med nul kommende ordrer er som
+ *  udgangspunkt et problem — det var præcis sådan, uge 35-hændelsen kunne
+ *  gemme sig i ugevis (genereringen returnerede 0 uden fejl, og ingen så det).
+ *  Returnerer en dansk problem-tekst, eller null når nul ordrer er LEGITIMT:
+ *  afventende/stoppede abonnementer, kun "På anmodning"-opgaver, sæsonstart
+ *  uden for genererings-horisonten, eller så langt et interval at næste besøg
+ *  reelt kan ligge efter horisonten. Ren funktion — deler parserne med selve
+ *  genereringen, så vagten aldrig kan drive fra motoren. */
+export function subscriptionOutlookProblem(
+  sub: { active: boolean; pending: boolean; startWeek: string | null; nextWeek: string | null; baseInterval: string; tasks: { intervalMultiplier: string | null }[] },
+  futureOrderCount: number,
+  totalOrderCount: number,
+  ref: Date = new Date(),
+  horizonWeeks = DEFAULT_HORIZON_WEEKS
+): string | null {
+  if (!sub.active || sub.pending || futureOrderCount > 0) return null;
+  const subWeek = parseWeekLabel(sub.startWeek) ?? parseWeekLabel(sub.nextWeek);
+  if (subWeek == null) return "startugen kan ikke læses — angiv den som fx 'Uge 35'";
+  // Kun "På anmodning"-opgaver planlægges aldrig automatisk — nul er korrekt.
+  if (!sub.tasks.some((t) => parseMultiplier(t.intervalMultiplier) != null)) return null;
+
+  const base = parseBaseInterval(sub.baseInterval);
+  const thisMonday = mondayOf(ref).getTime();
+  const horizonEnd = thisMonday + horizonWeeks * WEEK_MS;
+
+  // IGANGVÆRENDE abonnement (har haft ordrer): rytmen tiler hver `base` uge,
+  // så med et interval inden for horisonten SKAL der ligge et besøg forude —
+  // nul er et sikkert tegn på at genereringen er gået i stå.
+  if (totalOrderCount > 0 && base <= horizonWeeks) {
+    return "ingen kommende ordrer på et igangværende abonnement — kør 'Generér kommende ordrer' og tjek abonnementet";
+  }
+
+  // NYT abonnement (aldrig ordrer) eller meget langt interval: nul er kun et
+  // problem, hvis næste forekomst af startugen faktisk ligger inden for
+  // genererings-horisonten — en bevidst sæsonstart længere ude er legitim.
+  let anchor = mondayOfIsoWeek(ref.getUTCFullYear(), subWeek).getTime();
+  if (anchor < thisMonday) anchor = mondayOfIsoWeek(ref.getUTCFullYear() + 1, subWeek).getTime();
+  if (anchor > horizonEnd) return null;
+  return "ingen kommende ordrer trods startuge inden for horisonten — kør 'Generér kommende ordrer' og tjek abonnementet";
+}

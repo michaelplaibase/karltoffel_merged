@@ -82,7 +82,12 @@ export default async function SubscriptionsPage({ searchParams }: { searchParams
                       <td>{s.tasks.map((t, i) => <div key={i}>{t.interval}</div>)}</td>
                       <td className="num">{s.tasks.map((t, i) => <div key={i}>{money(t.price)}</div>)}</td>
                       <td>{s.fixedEmployee}</td>
-                      <td>{nextOrderLabel(s.pk)}</td>
+                      <td>
+                        {nextOrderLabel(s.pk)}
+                        {s.generationWarning ? (
+                          <div><span className="badge badge-soft-danger" title={s.generationWarning}>⚠ Ingen kommende ordrer</span></div>
+                        ) : null}
+                      </td>
                     </tr>
                   );
                 })}

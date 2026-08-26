@@ -39,6 +39,9 @@ export type Subscription = {
   fixedEmployee: string;
   nextWeek: string;
   pending: boolean; // afventer godkendelse efter bekræftelses-opkaldet
+  // STILLE-NUL-VAGT (uge 35-hændelsen): sat når et aktivt abonnement står uden
+  // kommende ordrer, selvom det burde have nogen — vises som advarsel i listerne.
+  generationWarning: string | null;
 };
 
 export type OrderStatus = "Afventer levering" | "Afsluttet" | "Mislykket planlægning";

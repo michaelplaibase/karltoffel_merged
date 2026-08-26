@@ -3,6 +3,8 @@ import { checkWeekConsistency } from "@/lib/calendar-consistency";
 import { requireSession, unauthorized } from "@/lib/api-auth";
 import { weekMondayToday } from "@/lib/calendar";
 import { sendEmail } from "@/lib/email";
+import { prisma } from "@/lib/db";
+import { subscriptionOutlookProblem } from "@/lib/recurrence";
 
 // GET /api/calendar-consistency
 // Natligt VAGTVÆRN (se vercel.json — kører efter /api/plan): verificerer mod
@@ -35,6 +37,42 @@ export async function GET(req: Request) {
   const weeks = await Promise.all([checkWeekConsistency(monday), checkWeekConsistency(nextMonday)]);
   const broken = weeks.filter((w) => !w.ok);
 
+  // STILLE-NUL-VAGT (uge 35-hændelsen): et aktivt abonnement uden kommende
+  // ordrer, når rytmen siger det burde have nogen, er et alarm-fund — det var
+  // præcis sådan ~30 abonnementer forsvandt fra kalenderen uden én fejl i loggen.
+  const subs = await prisma.subscription.findMany({
+    where: { active: true, pending: false },
+    select: { id: true, displayNo: true, active: true, pending: true, startWeek: true, nextWeek: true, baseInterval: true, tasks: { select: { intervalMultiplier: true } } },
+  });
+  const from = new Date(`${monday}T00:00:00Z`);
+  const [futureCounts, totalCounts] = await Promise.all([
+    prisma.order.groupBy({ by: ["subscriptionId"], where: { subscriptionId: { in: subs.map((s) => s.id) }, plannedAt: { gte: from } }, _count: { _all: true } }),
+    prisma.order.groupBy({ by: ["subscriptionId"], where: { subscriptionId: { in: subs.map((s) => s.id) } }, _count: { _all: true } }),
+  ]);
+  const futureBySub = new Map(futureCounts.map((g) => [g.subscriptionId, g._count._all]));
+  const totalBySub = new Map(totalCounts.map((g) => [g.subscriptionId, g._count._all]));
+  const starvedSubs = subs
+    .map((s) => ({ aboNr: s.displayNo, problem: subscriptionOutlookProblem(s, futureBySub.get(s.id) ?? 0, totalBySub.get(s.id) ?? 0) }))
+    .filter((s): s is { aboNr: number; problem: string } => s.problem != null);
+
+  if (starvedSubs.length) {
+    const detail = starvedSubs.map((s) => `  - Abo. nr. ${s.aboNr}: ${s.problem}`).join("\n");
+    console.error(`[kalender-konsistens] STILLE NUL-GENERERING — aktive abonnementer uden kommende ordrer:\n${detail}`);
+    try {
+      const res = await sendEmail({
+        to: STAFF_EMAIL,
+        subject: `⚠️ Karltoffel: ${starvedSubs.length} abonnement(er) står uden kommende ordrer`,
+        text:
+          "Det natlige tjek fandt aktive abonnementer, der burde have kommende ordrer i kalenderen, men ingen har.\n\n" +
+          detail +
+          "\n\nÅbn Abonnementer i CRM'et (advarslen vises på rækken), tryk 'Generér kommende ordrer' og tjek abonnementets startuge.",
+      });
+      if (!res.ok) console.error(`[kalender-konsistens] alarm-mail (abonnementer) fejlede: ${res.error}`);
+    } catch (e) {
+      console.error("[kalender-konsistens] alarm-mail (abonnementer) exception:", e);
+    }
+  }
+
   if (broken.length) {
     const detail = broken
       .map((w) => `Uge ${w.week} (${w.orders} ordrer i DB, ${w.planned} planlagt, ${w.unplanned} ikke planlagt):\n` +
@@ -56,5 +94,9 @@ export async function GET(req: Request) {
     }
   }
 
-  return NextResponse.json({ ok: broken.length === 0, weeks });
+  return NextResponse.json({
+    ok: broken.length === 0 && starvedSubs.length === 0,
+    weeks,
+    abonnementerUdenOrdrer: starvedSubs,
+  });
 }
