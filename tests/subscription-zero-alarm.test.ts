@@ -60,6 +60,18 @@ test("legitime nul-tilfælde er TAVSE", () => {
   assert.equal(subscriptionOutlookProblem(sub({ startWeek: "Uge 20, 2027", baseInterval: "Hver 40. uge" }), 0, 4, REF), null);
 });
 
+test("årligt abonnement MED historik og netop passeret uge er TAVST — næste besøg er om et år", () => {
+  // Hermes-fund (abo 235812/235852/235855): kunden HAR fået årets besøg;
+  // nul kommende ordrer er legitimt frem til næste års forekomst.
+  assert.equal(subscriptionOutlookProblem(sub({ startWeek: "Uge 27", baseInterval: "Hver 52. uge" }), 0, 4, REF), null);
+});
+
+test("årligt NYT abonnement med passeret startuge alarmerer — det har aldrig fået sit besøg", () => {
+  // Hermes-fund (abo 235870/235871): aldrig ét besøg; 'skulle allerede køre'.
+  const p = subscriptionOutlookProblem(sub({ startWeek: "33", baseInterval: "Hver 52. uge" }), 0, 0, REF);
+  assert.match(p ?? "", /inden for horisonten/);
+});
+
 // --- Ledningsføringen: vagten skal være aktiv i både UI og natligt tjek ---
 
 test("abonnements-listerne beregner advarslen og oversigten viser den", async () => {
