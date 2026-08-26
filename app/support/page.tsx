@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 export const metadata = { title: "Kontakt support · Karltoffel" };
 
 export default function SupportPage() {
@@ -20,10 +22,12 @@ export default function SupportPage() {
       <div className="card">
         <div className="card-body">
           <h4 className="section-title">Hjælpecenter</h4>
+          {/* Rigtige guides på /guides — aldrig mailto-attrapper, der bare
+              åbner et tomt mailudkast (eller ingenting på en felttelefon). */}
           <ul className="muted" style={{ margin: 0, paddingLeft: 18, lineHeight: 1.9 }}>
-            <li><a href="mailto:hej@karltoffel.dk?subject=Kom%20godt%20i%20gang">Kom godt i gang-guide</a></li>
-            <li><a href="mailto:hej@karltoffel.dk?subject=Kalender%20og%20planlægning">Kalender og planlægning</a></li>
-            <li><a href="mailto:hej@karltoffel.dk?subject=Fakturering">Fakturering og Dinero</a></li>
+            <li><Link href="/guides">Kom godt i gang-guide</Link></li>
+            <li><Link href="/guides#planlaegning">Kalender og planlægning</Link></li>
+            <li><Link href="/guides#fastpris-og-afslut">Fakturering og afslutning af ordrer</Link></li>
           </ul>
         </div>
       </div>

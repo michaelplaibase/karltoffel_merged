@@ -56,13 +56,17 @@ export function StatusPill({ status }: { status: string }) {
 }
 
 export function CustomerCell({ contact, withMap = true }: { contact: Contact; withMap?: boolean }) {
+  // Separatorer kun mellem udfyldte felter — en kunde uden e-mail/by må ikke
+  // rendere "12345678 · " eller "Gadenavn, " (samme mønster som leads-tabellen).
+  const address = [contact.street, contact.city].filter(Boolean).join(", ");
+  const reach = [contact.phone, contact.email].filter(Boolean).join(" · ");
   return (
     <div className="cust">
       <b className="l"><Link href={`/customers/${contact.id}`} style={{ color: "inherit" }}>{contact.name}</Link></b>
-      <span className="l muted">{contact.street}, {contact.city}</span>
+      {address ? <span className="l muted">{address}</span> : null}
       {contact.att && contact.att !== "—" ? <span className="l muted">Att: {contact.att}</span> : null}
-      <span className="l muted">{contact.phone} · {contact.email}</span>
-      {withMap ? <MapLink address={`${contact.street}, ${contact.city}`} /> : null}
+      {reach ? <span className="l muted">{reach}</span> : null}
+      {withMap && address ? <MapLink address={address} /> : null}
     </div>
   );
 }

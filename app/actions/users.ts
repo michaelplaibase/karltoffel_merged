@@ -8,10 +8,14 @@
 import { prisma, isUniqueViolation } from "@/lib/db";
 import { getSessionUser } from "@/lib/api-auth";
 import { hashPassword } from "@/lib/auth";
+import { getSettingsValues, setSettingsValues } from "@/lib/settings-store";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
-export type UserState = { error?: string; ok?: boolean };
+// values ekkoes ved fejl: React 19 auto-resetter ukontrollerede formularfelter
+// efter en form-action, så formularen prefiller med de indsendte værdier igen
+// (adgangskoden ekkoes bevidst aldrig). Checkbokse ekkoes som "on"/"".
+export type UserState = { error?: string; ok?: boolean; values?: Record<string, string> };
 
 // Fast løn = manuelt beløb (kr/md). Akkord = provisionssats i % (default 43,
 // beregnes af omsætning ekskl. moms — se lib/payroll.ts).
@@ -39,16 +43,18 @@ export async function createUser(_prev: UserState, formData: FormData): Promise<
   const payModel = String(formData.get("payModel") ?? "fast");
   const belobRaw = String(formData.get("belob") ?? "").trim();
   const belob = belobRaw === "" ? null : Number(belobRaw);
+  const values = { username, firstName, lastName, email, rolle, payModel, belob: belobRaw };
 
-  if (!/^[a-z0-9._-]{3,40}$/.test(username)) return { error: "Brugernavn skal være 3–40 tegn: små bogstaver, tal, . _ -" };
-  if (!firstName || !lastName) return { error: "Angiv både for- og efternavn." };
-  if (password.length < 8) return { error: "Adgangskoden skal være mindst 8 tegn." };
-  if (email && email.indexOf("@") < 1) return { error: "Tjek e-mailen — den ser ikke rigtig ud." };
-  if (rolle !== "admin" && rolle !== "medarbejder") return { error: "Ugyldig rolle." };
-  if (belob != null && (!Number.isFinite(belob) || belob < 0)) return { error: "Beløb/sats skal være et positivt tal." };
+  if (!/^[a-z0-9._-]{3,40}$/.test(username)) return { error: "Brugernavn skal være 3–40 tegn: små bogstaver, tal, . _ -", values };
+  if (!firstName || !lastName) return { error: "Angiv både for- og efternavn.", values };
+  if (password.length < 8) return { error: "Adgangskoden skal være mindst 8 tegn.", values };
+  if (email && email.indexOf("@") < 1) return { error: "Tjek e-mailen — den ser ikke rigtig ud.", values };
+  if (rolle !== "admin" && rolle !== "medarbejder") return { error: "Ugyldig rolle.", values };
+  if (belob != null && (!Number.isFinite(belob) || belob < 0)) return { error: "Beløb/sats skal være et positivt tal.", values };
+  if (payModel === "akkord" && belob != null && belob > 100) return { error: "Provisionssatsen skal være mellem 0 og 100 %.", values };
 
   const company = await prisma.company.findFirst();
-  if (!company) return { error: "Ingen virksomhed fundet." };
+  if (!company) return { error: "Ingen virksomhed fundet.", values };
 
   try {
     await prisma.user.create({
@@ -64,7 +70,7 @@ export async function createUser(_prev: UserState, formData: FormData): Promise<
       },
     });
   } catch (e) {
-    if (isUniqueViolation(e)) return { error: "Brugernavnet er allerede taget." };
+    if (isUniqueViolation(e)) return { error: "Brugernavnet er allerede taget.", values };
     throw e;
   }
   revalidatePath("/users");
@@ -76,6 +82,9 @@ export async function createUser(_prev: UserState, formData: FormData): Promise<
 export async function updateUserPay(userId: number, payModel: string, belob: number | null): Promise<void> {
   const me = await getSessionUser();
   if (!me?.isAdmin) return;
+  // Nægt stille (som de øvrige værn her): en provisionssats over 100 % er
+  // altid en fejltastning — PayEditor afviser den også client-side.
+  if (payModel === "akkord" && belob != null && belob > 100) return;
   await prisma.user.update({ where: { id: userId }, data: payFields(payModel, belob) });
   revalidatePath("/users");
   revalidatePath("/payroll");
@@ -110,21 +119,32 @@ export async function updateUser(userId: number, _prev: UserState, formData: For
   const payModel = String(formData.get("payModel") ?? "fast");
   const belobRaw = String(formData.get("belob") ?? "").trim();
   const belob = belobRaw === "" ? null : Number(belobRaw);
+  const checkbox = (name: string) => (formData.get(name) === "on" ? "on" : "");
+  const values: Record<string, string> = {
+    username, firstName, lastName, email, rolle, calendarColor, homeAddress, payModel, belob: belobRaw,
+    activeCalendar: checkbox("activeCalendar"),
+    canReceiveOnline: checkbox("canReceiveOnline"),
+    canSeePrices: checkbox("canSeePrices"),
+    canEditOrders: checkbox("canEditOrders"),
+    canHandlePayment: checkbox("canHandlePayment"),
+    canChangePaymentOption: checkbox("canChangePaymentOption"),
+  };
 
-  if (!/^[a-z0-9._-]{3,40}$/.test(username)) return { error: "Brugernavn skal være 3–40 tegn: små bogstaver, tal, . _ -" };
-  if (!firstName || !lastName) return { error: "Angiv både for- og efternavn." };
-  if (password && password.length < 8) return { error: "Adgangskoden skal være mindst 8 tegn." };
-  if (email && email.indexOf("@") < 1) return { error: "Tjek e-mailen — den ser ikke rigtig ud." };
-  if (rolle !== "admin" && rolle !== "medarbejder") return { error: "Ugyldig rolle." };
-  if (belob != null && (!Number.isFinite(belob) || belob < 0)) return { error: "Beløb/sats skal være et positivt tal." };
+  if (!/^[a-z0-9._-]{3,40}$/.test(username)) return { error: "Brugernavn skal være 3–40 tegn: små bogstaver, tal, . _ -", values };
+  if (!firstName || !lastName) return { error: "Angiv både for- og efternavn.", values };
+  if (password && password.length < 8) return { error: "Adgangskoden skal være mindst 8 tegn.", values };
+  if (email && email.indexOf("@") < 1) return { error: "Tjek e-mailen — den ser ikke rigtig ud.", values };
+  if (rolle !== "admin" && rolle !== "medarbejder") return { error: "Ugyldig rolle.", values };
+  if (belob != null && (!Number.isFinite(belob) || belob < 0)) return { error: "Beløb/sats skal være et positivt tal.", values };
+  if (payModel === "akkord" && belob != null && belob > 100) return { error: "Provisionssatsen skal være mellem 0 og 100 %.", values };
 
   const target = await prisma.user.findUnique({ where: { id: userId } });
-  if (!target) return { error: "Brugeren blev ikke fundet." };
+  if (!target) return { error: "Brugeren blev ikke fundet.", values };
 
   // Værn: fjern aldrig din egen admin-rolle, og aldrig den sidste aktive admins.
   if (target.isAdmin && rolle !== "admin") {
-    if (userId === me.id) return { error: "Du kan ikke fjerne din egen admin/adgang." };
-    if (await isLastActiveAdmin(userId)) return { error: "Der skal altid være mindst én aktiv administrator." };
+    if (userId === me.id) return { error: "Du kan ikke fjerne din egen admin/adgang.", values };
+    if (await isLastActiveAdmin(userId)) return { error: "Der skal altid være mindst én aktiv administrator.", values };
   }
 
   const oldFullName = `${target.firstName} ${target.lastName}`;
@@ -141,7 +161,10 @@ export async function updateUser(userId: number, _prev: UserState, formData: For
           email: email || null,
           calendarColor: calendarColor || null,
           homeAddress: homeAddress || null,
-          activeCalendar: formData.get("activeCalendar") === "on",
+          // En deaktiveret bruger må ALDRIG få aktiv kalender — kalenderen og
+          // planlæggeren filtrerer kun på activeCalendar, så flaget ville ellers
+          // give en deaktiveret bruger en kolonne og planlagte ordrer.
+          activeCalendar: target.active ? formData.get("activeCalendar") === "on" : false,
           canReceiveOnline: formData.get("canReceiveOnline") === "on",
           canSeePrices: formData.get("canSeePrices") === "on",
           canEditOrders: formData.get("canEditOrders") === "on",
@@ -160,12 +183,17 @@ export async function updateUser(userId: number, _prev: UserState, formData: For
         : []),
     ]);
   } catch (e) {
-    if (isUniqueViolation(e)) return { error: "Brugernavnet er allerede taget." };
+    if (isUniqueViolation(e)) return { error: "Brugernavnet er allerede taget.", values };
     throw e;
   }
   revalidateUsers();
   redirect("/users");
 }
+
+// Ved deaktivering huskes brugerens activeCalendar-flag her (i settings-JSON'en
+// på Company — ingen schema-ændring), så "Genaktivér" kan genoprette det, som
+// det var. Nøglen er bruger-id som streng, værdien ["1"]/["0"].
+const CALENDAR_STASH_KEY = "internal:deactivated-active-calendar";
 
 /** Deaktivér en bruger (soft-delete — ALDRIG hård sletning: historik/tidsposter
  *  skal bevares). Låser login og fjerner brugeren fra kalender og vælgere.
@@ -175,17 +203,30 @@ export async function deactivateUser(userId: number): Promise<void> {
   const me = await getSessionUser();
   if (!me?.isAdmin) return;
   if (userId === me.id) return;
-  const target = await prisma.user.findUnique({ where: { id: userId }, select: { isAdmin: true, active: true } });
+  const target = await prisma.user.findUnique({ where: { id: userId }, select: { isAdmin: true, active: true, activeCalendar: true } });
   if (!target || !target.active) return;
   if (target.isAdmin && (await isLastActiveAdmin(userId))) return;
+  // Husk kalender-flaget FØR det nulstilles, så genaktivering kan genoprette det.
+  const stash = await getSettingsValues(CALENDAR_STASH_KEY);
+  stash[String(userId)] = [target.activeCalendar ? "1" : "0"];
+  await setSettingsValues(CALENDAR_STASH_KEY, stash);
   await prisma.user.update({ where: { id: userId }, data: { active: false, activeCalendar: false } });
   revalidateUsers();
 }
 
-/** Genaktivér en deaktiveret bruger (kalenderen skal slås til igen manuelt). */
+/** Genaktivér en deaktiveret bruger. activeCalendar genoprettes, som det var
+ *  før deaktiveringen — brugere deaktiveret før dette blev husket (eksisterende
+ *  data) får kalenderen slået til, da deaktiveringen selv slog den fra. */
 export async function reactivateUser(userId: number): Promise<void> {
   const me = await getSessionUser();
   if (!me?.isAdmin) return;
-  await prisma.user.update({ where: { id: userId }, data: { active: true } });
+  const stash = await getSettingsValues(CALENDAR_STASH_KEY);
+  const husket = stash[String(userId)]?.[0];
+  const activeCalendar = husket == null ? true : husket === "1";
+  await prisma.user.update({ where: { id: userId }, data: { active: true, activeCalendar } });
+  if (husket != null) {
+    delete stash[String(userId)];
+    await setSettingsValues(CALENDAR_STASH_KEY, stash);
+  }
   revalidateUsers();
 }

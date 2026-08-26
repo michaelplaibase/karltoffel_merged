@@ -84,7 +84,7 @@ export default function TaskLineEditor({
                   <input
                     name="taskDescription" value={r.description}
                     onChange={(e) => update(i, { description: e.target.value })}
-                    className="form-control form-control-sm" placeholder="Fremsøg eller opret ny opgave"
+                    className="form-control form-control-sm" placeholder="Opgavebeskrivelse"
                   />
                   {sub && (
                     // "Måneder på pause": skjulte felter (IKKE checkbokse) der ALTID

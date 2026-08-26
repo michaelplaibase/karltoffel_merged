@@ -451,6 +451,35 @@ export async function issueInvoiceForOrder(orderId: number): Promise<IssueResult
     return { ok: true, status: decision === D_LATER ? "later" : "none" };
   }
 
+  // ─── AUTORITATIVT VÆRN MOD DOBBELTFAKTURERING (erhverv) ─────────────────────
+  // Erhvervskunder faktureres på den månedlige SAMLEFAKTURA (lib/business-
+  // invoicing.ts; Michael, 2026-08-10: "Erhvervskunder faktureres IKKE pr.
+  // ordre") — pr.-ordre-flowet må derfor ALDRIG bogføre for en erhvervskontakt,
+  // uanset hvilket betalingsvalg medarbejderen traf i "Afslut ordre". Uden dette
+  // værn ville "Send faktura - ubetalt" + samlefaktura-cronen d. 20. sende TO
+  // fakturaer med de samme ordrelinjer. Status sættes til "Samlefaktura", så
+  // ordresiden kan vise retvisende "faktureres på samlefaktura". Eneste
+  // undtagelse: en legacy-ordre der ALLEREDE bærer en bogført pr.-ordre-faktura
+  // får lov at færdiggøre sit flow (send/betaling) — batchen udelukker den via
+  // dineroInvoiceGuid != null, så der dobbeltfaktureres stadig ikke.
+  const perOrderBooked = BOOKED_STATES.has(order.dineroInvoiceStatus ?? "") || order.dineroInvoiceNumber != null;
+  // To undtagelser fra samlefaktura-værnet:
+  // 1) En PÅBEGYNDT pr.-ordre-faktura (guid sat, endnu ikke bogført — fx book-
+  //    fejl, eller kunden blev markeret erhverv efter kladden): flowet skal
+  //    kunne GENOPTAGES via "Fakturér igen" — ellers falder ordren mellem
+  //    begge spor (batchen udelukker guid'en, og værnet blokerede retry).
+  // 2) "Betalt kontant": kunden HAR betalt på stedet — beløbet skal bogføres
+  //    og kvitteres pr. ordre nu; guid'en udelukker den derefter fra batchen,
+  //    så samlefakturaen aldrig opkræver beløbet igen.
+  const hasPerOrderDraft = order.dineroInvoiceGuid != null;
+  if (order.contact.isCompany && !perOrderBooked && !hasPerOrderDraft && decision !== D_SEND_CASH) {
+    await prisma.order.updateMany({
+      where: { id: orderId, dineroInvoiceGuid: null, dineroInvoiceNumber: null },
+      data: { dineroInvoiceStatus: "Samlefaktura", dineroError: null },
+    });
+    return { ok: true, status: "Samlefaktura" };
+  }
+
   const sumInclVat = order.tasks.reduce((a, t) => a + t.price, 0);
 
   const cfg = await loadActiveConfig();

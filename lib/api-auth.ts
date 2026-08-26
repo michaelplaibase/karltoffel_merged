@@ -35,7 +35,23 @@ export async function getSessionUser() {
  * a valid session is a no-op. Never call from the public `login` action.
  */
 export async function guardAction(): Promise<void> {
-  if ((await requireSession()) == null) redirect("/login");
+  // getSessionUser (ikke requireSession): en DEAKTIVERET brugers statsløse
+  // token er ellers gyldigt i op til 30 dage — active-tjekket skal også
+  // gælde alle mutations, ikke kun de få sider der selv slår brugeren op.
+  if ((await getSessionUser()) == null) redirect("/login");
+}
+
+/**
+ * Som guardAction, men kræver desuden administrator-rolle. Bruges af actions,
+ * der ændrer virksomhedsbrede data (indstillinger, skabeloner, minutpris,
+ * brugere) — middleware og side-gates beskytter kun SIDER, aldrig actions.
+ * Anonyme sendes til /login; en logget ind ikke-admin afvises med redirect
+ * til forsiden (redirect kaster, så mutationen aldrig når at køre).
+ */
+export async function guardAdminAction(): Promise<void> {
+  const me = await getSessionUser();
+  if (me == null) redirect("/login");
+  if (!me.isAdmin) redirect("/");
 }
 
 export function unauthorized(): Response {

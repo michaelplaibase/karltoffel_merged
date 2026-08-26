@@ -27,13 +27,16 @@ export async function GET(req: Request): Promise<Response> {
 
   const code = (new URL(req.url).searchParams.get("code") ?? "").trim().slice(0, 40);
 
-  // `code` har ikke @unique i skemaet → findFirst, case-ufølsomt.
+  // `code` har ikke @unique i skemaet → findFirst, case-ufølsomt. Dubletter
+  // afvises nu ved oprettelse (createDiscountCode), men for eksisterende
+  // dubletter vælges DETERMINISTISK den nyeste gyldige — ikke en vilkårlig.
   const hit = code
     ? await prisma.discountCode.findFirst({
         where: {
           code: { equals: code, mode: "insensitive" },
           OR: [{ expiresAt: null }, { expiresAt: { gte: startOfTodayUTC() } }],
         },
+        orderBy: { id: "desc" },
       })
     : null;
 

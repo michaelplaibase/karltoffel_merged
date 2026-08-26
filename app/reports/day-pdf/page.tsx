@@ -1,7 +1,18 @@
+import { getEmployeeOptions } from "@/lib/queries";
+import { getSessionUser } from "@/lib/api-auth";
+import { todayCphISO } from "@/lib/calendar";
+import { redirect } from "next/navigation";
+
 export const metadata = { title: "Dagsprogram i PDF · Karltoffel" };
 
-export default function DayPdfPage() {
-  const today = new Date().toISOString().slice(0, 10);
+export default async function DayPdfPage() {
+  const me = await getSessionUser();
+  if (!me) redirect("/login");
+  // Dagens dato i DANSK tid — serverens UTC-dato er en dag bagud efter midnat.
+  const today = todayCphISO();
+  // Rigtige medarbejdere fra databasen (før: én hardkodet attrap-option).
+  // Kun admin kan vælge — en medarbejder får altid sit eget program.
+  const options = me.isAdmin ? await getEmployeeOptions() : [];
   return (
     <div className="container-1140" style={{ maxWidth: 760 }}>
       <h1 className="page-title">Dagsprogram</h1>
@@ -12,9 +23,14 @@ export default function DayPdfPage() {
           <form action="/api/reports/day-pdf" method="get">
             <div className="f2">
               <label className="col-label">Medarbejder</label>
-              <select className="form-control form-control-sm" name="employee" defaultValue="Kristian Klercke">
-                <option>Kristian Klercke</option>
-              </select>
+              {me.isAdmin ? (
+                <select className="form-control form-control-sm" name="employeeId" defaultValue="">
+                  <option value="">Alle medarbejdere</option>
+                  {options.map((o) => <option key={o.id} value={o.id}>{o.name}</option>)}
+                </select>
+              ) : (
+                <input className="form-control form-control-sm" value={`${me.firstName} ${me.lastName}`} disabled />
+              )}
             </div>
             <div className="f2">
               <label className="col-label">Dato</label>

@@ -17,11 +17,17 @@ export default function OrderCreateForm({
   initialContactId?: number;
   /** Minutpris (kr/min ekskl. moms) — auto-beregner varighed ud fra prisen. */
   minuteRate: number;
-  /** Medarbejdere ordren kan tildeles. Tomt/udeladt felt = "Vælges automatisk"
-   *  (nat-planneren tildeler nærmeste medarbejder). */
+  /** Medarbejdere ordren kan tildeles (aktive, laveste bruger-id først). Tomt
+   *  valg = ordren tildeles FØRSTE aktive medarbejder (createOrder-fallback,
+   *  app/actions/orders.ts) — planneren omfordeler ALDRIG mellem medarbejdere,
+   *  så dropdown-teksten skal love præcis det og ikke "nærmeste ledige". */
   employees: { id: number; name: string }[];
 }) {
   const [state, formAction, pending] = useActionState(action, {});
+  // React 19 nulstiller ukontrollerede felter når server-action'en returnerer
+  // (også ved valideringsfejl). Uge/medarbejder-selects prefiller derfor fra
+  // state.values, så valgene ikke stille ruller tilbage til defaults.
+  const v = state.values;
 
   return (
     <form action={formAction}>
@@ -44,14 +50,16 @@ export default function OrderCreateForm({
         <div className="card-header"><h4 className="section-title">Planlægning i kalender</h4></div>
         <div className="card-body tight">
           <label className="field-label">Uge</label>
-          <select name="week" defaultValue={weekOptions[0]?.value} className="form-control form-control-sm">
+          <select name="week" defaultValue={v?.week ?? weekOptions[0]?.value} className="form-control form-control-sm">
             {weekOptions.map((w) => <option key={w.value} value={w.value}>{w.label}</option>)}
           </select>
           <small className="form-text field-help">Ordren planlægges automatisk i den valgte uge.</small>
 
           <label className="field-label" style={{ marginTop: 12 }}>Medarbejder</label>
-          <select name="employeeId" defaultValue="" className="form-control form-control-sm">
-            <option value="">Vælges automatisk (nærmeste ledige)</option>
+          <select name="employeeId" defaultValue={v?.employeeId ?? ""} className="form-control form-control-sm">
+            {/* Ærlig tekst: tomt valg tildeler altid FØRSTE aktive medarbejder —
+                der findes ingen "nærmeste ledige"-fordeling i planneren. */}
+            <option value="">{employees.length ? `Tildeles ${employees[0].name} (automatisk)` : "Vælges automatisk"}</option>
             {employees.map((e) => <option key={e.id} value={e.id}>{e.name}</option>)}
           </select>
           <small className="form-text field-help">Kun den valgte medarbejder ser ordren i sit dagsprogram.</small>

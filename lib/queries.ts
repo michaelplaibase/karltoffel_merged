@@ -11,7 +11,7 @@ import { coordFor } from "./geo";
 import {
   sourceType, type CalEvent, type CalStatus, type LockState,
   type WeekDay, type Employee, type CalendarWeek, type DayProgram, type DayStop,
-  type UnplannedJob, type MonthChip, type MonthDay, type MonthWeek,
+  type DayUnplannedStop, type UnplannedJob, type MonthChip, type MonthDay, type MonthWeek,
   type MonthCell, type MonthMatrixRow, type CalendarMonth,
 } from "./calendar";
 import type { Prisma } from "@prisma/client";
@@ -96,11 +96,23 @@ function mapOrder(o: OrderRow): Order {
 
 // ---- free-text search (single `q` param, like the portal's list search) -----
 
-/** Contact-field OR clause reused by every list that joins a contact. */
+/** Contact-field OR clause reused by every list that joins a contact.
+ *  Telefonsøgning matcher også på RENE CIFRE ("12 34 56 78" og "+45 12345678"
+ *  finder "12345678") — lead-konverterede kunder gemmes normaliseret, mens
+ *  håndindtastede numre kan have mellemrum/+45 (scripts/normalize-phones.ts
+ *  normaliserer eksisterende rækker). */
 function contactOr(q: string): Prisma.ContactWhereInput {
+  const digits = q.replace(/\D/g, "");
+  const phoneVariants: Prisma.ContactWhereInput[] = digits.length >= 6
+    ? [
+        { phone: { contains: digits } },
+        ...(digits.startsWith("45") && digits.length === 10 ? [{ phone: { contains: digits.slice(2) } }] : []),
+      ]
+    : [];
   return { OR: [
     { name: { contains: q, mode: "insensitive" } }, { companyName: { contains: q, mode: "insensitive" } },
     { email: { contains: q, mode: "insensitive" } }, { phone: { contains: q, mode: "insensitive" } },
+    ...phoneVariants,
     { street: { contains: q, mode: "insensitive" } }, { city: { contains: q, mode: "insensitive" } }, { att: { contains: q, mode: "insensitive" } },
   ] };
 }
@@ -130,9 +142,9 @@ function mondayISOOf(d: Date): string {
 const CLOSED_STATUSES = new Set(["Afsluttet", "Udført", "Sprunget over"]);
 function isOverdue(plannedAt: Date, status: string): boolean {
   if (CLOSED_STATUSES.has(status)) return false;
-  const today = new Date();
-  const startOfToday = Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate());
-  return plannedAt.getTime() < startOfToday;
+  // "I dag" i DANSK tid (plannedAt er UTC-dagsforankret) — serverens UTC-dato
+  // er en dag bagud mellem midnat og kl. 01/02 og gav falske markeringer.
+  return plannedAt.getTime() < Date.parse(`${todayCphISO()}T00:00:00Z`);
 }
 function postalOf(address: string): string {
   const parts = address.split(",");
@@ -141,7 +153,10 @@ function postalOf(address: string): string {
 
 // ---- Contacts --------------------------------------------------------------
 
-/** Customers = contacts with ≥1 order or subscription (per the portal's rule). */
+/** Customers = contacts with ≥1 order or subscription (per the portal's rule).
+ *  SØGNING går dog på ALLE kontakter — en nyoprettet kontakt uden ordre/abo
+ *  var ellers umulig at genfinde i UI'et (listen OG søgningen filtrerede den
+ *  fra, og der findes ingen anden kontaktliste). */
 export async function getContacts(q?: string): Promise<Contact[]> {
   const has = { OR: [{ orders: { some: {} } }, { subscriptions: { some: {} } }] };
   const term = q?.trim();
@@ -150,7 +165,7 @@ export async function getContacts(q?: string): Promise<Contact[]> {
     ? { OR: [...contactOr(term).OR!, ...(num ? [{ id: num }] : [])] }
     : undefined;
   const rows = await prisma.contact.findMany({
-    where: search ? { AND: [has, search] } : has,
+    where: search ?? has,
     include: { _count: { select: { subscriptions: true } } },
     orderBy: { id: "desc" },
   });
@@ -345,20 +360,60 @@ export async function getFixedPriceEditData(displayNo: number) {
 
 const orderInclude = { tasks: true, subscription: true, employee: true } as const;
 
+/** Parse et søgeterm som dato: "2026-07-13", "13/7-2026", "13/7-26", "13-07-2026". */
+function parseSearchDate(term: string): Date | null {
+  let y: number, m: number, d: number;
+  const isoM = /^(\d{4})-(\d{2})-(\d{2})$/.exec(term);
+  const dkM = /^(\d{1,2})[\/.-](\d{1,2})[\/.-](\d{2}|\d{4})$/.exec(term);
+  if (isoM) [y, m, d] = [Number(isoM[1]), Number(isoM[2]), Number(isoM[3])];
+  else if (dkM) [d, m, y] = [Number(dkM[1]), Number(dkM[2]), Number(dkM[3]) < 100 ? 2000 + Number(dkM[3]) : Number(dkM[3])];
+  else return null;
+  const date = new Date(Date.UTC(y, m - 1, d));
+  return date.getUTCMonth() === m - 1 && date.getUTCDate() === d ? date : null;
+}
+
+/** Fælles where-bygger for ordre-søgning: ordrenr/#-lister, kundenr, dato
+ *  (leveringsdatoens UTC-døgn), adresse, status, kundefelter og opgavetekst —
+ *  søgefeltets placeholder lover dato og kundenr, så de skal reelt virke. */
+function orderSearchWhere(term: string | undefined): Prisma.OrderWhereInput | undefined {
+  if (!term) return undefined;
+  const idList = parseIdList(term);
+  if (idList) return { id: { in: idList } };
+  const num = /^\d+$/.test(term) ? Number(term) : null;
+  const day = parseSearchDate(term);
+  return { OR: [
+    ...(num ? [{ id: num }, { contactId: num }] : []),
+    ...(day ? [{ plannedAt: { gte: day, lt: new Date(day.getTime() + 864e5) } }] : []),
+    { deliveryAddress: { contains: term, mode: "insensitive" as const } }, { status: { contains: term, mode: "insensitive" as const } },
+    { contact: contactOr(term) },
+    { tasks: { some: { description: { contains: term, mode: "insensitive" as const } } } },
+  ] };
+}
+
 export async function getOrders(q?: string): Promise<Order[]> {
-  const term = q?.trim();
-  const idList = term ? parseIdList(term) : null;
-  const num = term && /^\d+$/.test(term) ? Number(term) : null;
-  const where: Prisma.OrderWhereInput | undefined = idList
-    ? { id: { in: idList } }
-    : term ? { OR: [
-        ...(num ? [{ id: num }] : []),
-        { deliveryAddress: { contains: term, mode: "insensitive" } }, { status: { contains: term, mode: "insensitive" } },
-        { contact: contactOr(term) },
-        { tasks: { some: { description: { contains: term, mode: "insensitive" } } } },
-      ] } : undefined;
+  const where = orderSearchWhere(q?.trim() || undefined);
   const rows = await prisma.order.findMany({ where, include: orderInclude, orderBy: { id: "desc" } });
   return rows.map(mapOrder);
+}
+
+/** Ordrelisten med RIGTIG server-side paginering: før hentede siden samtlige
+ *  ordrer (plus hele kundekartoteket) pr. visning, og pagineringen var kun
+ *  kosmetisk. Returnerer sidens ordrer + netop de kontakter siden viser. */
+export async function getOrdersPage(q: string | undefined, pageNum = 1, pageSize = 25): Promise<{ orders: Order[]; contacts: Contact[]; page: number; totalPages: number }> {
+  const where = orderSearchWhere(q?.trim() || undefined);
+  const total = await prisma.order.count({ where });
+  const totalPages = Math.max(1, Math.ceil(total / pageSize));
+  const page = Math.min(Math.max(1, pageNum), totalPages);
+  const rows = await prisma.order.findMany({
+    where, include: orderInclude, orderBy: { id: "desc" },
+    skip: (page - 1) * pageSize, take: pageSize,
+  });
+  const contactIds = [...new Set(rows.map((r) => r.contactId))];
+  const contactRows = await prisma.contact.findMany({
+    where: { id: { in: contactIds } },
+    include: { _count: { select: { subscriptions: true } } },
+  });
+  return { orders: rows.map(mapOrder), contacts: contactRows.map(mapContact), page, totalPages };
 }
 
 export async function getOrdersForContact(contactId: number): Promise<Order[]> {
@@ -514,17 +569,24 @@ async function buildWeekPlan(weekMonday: string) {
       include: { tasks: true, subscription: true, contact: true },
       orderBy: { id: "asc" },
     }),
-    prisma.user.findMany({ where: { activeCalendar: true }, orderBy: { id: "asc" } }),
+    // active:true OGSÅ: en deaktiveret bruger med gammelt activeCalendar-flag
+    // må aldrig optræde som kalender-lane (users-actions holder flagene i sync
+    // fremadrettet; dette er det defensive filter for eksisterende data).
+    prisma.user.findMany({ where: { activeCalendar: true, active: true }, orderBy: { id: "asc" } }),
   ]);
   const holiday = await isHolidayWeek(weekMonday);
   const priceById = new Map<number, number>();
   const completedAtById = new Map<number, Date | null>();
+  // Ordrens PERSISTEREDE ugedag (plannedAt) — bruges til at placere ikke-
+  // planlagte ordrer på deres dag i dagsprogrammet (de har intet klokkeslæt).
+  const weekdayById = new Map<number, number>();
   const metaById = new Map<number, { subNo: number | null; status: string; phone: string | null; tasks: TaskLine[]; comment: string; addressNote: string }>();
   // Ferielukket uge: der PLANLÆGGES intet, men allerede-materialiserede ordrer
   // må aldrig blive usynlige — de vises som "Ikke planlagt (ferielukket)".
   const jobs: Job[] = orders.map((o) => {
     priceById.set(o.id, o.tasks.reduce((a, t) => a + t.price, 0));
     completedAtById.set(o.id, o.completedAt ?? null);
+    weekdayById.set(o.id, (o.plannedAt.getUTCDay() + 6) % 7);
     metaById.set(o.id, {
       subNo: o.subscription?.displayNo ?? null, status: o.status,
       phone: o.contact.phone ?? null,
@@ -548,21 +610,36 @@ async function buildWeekPlan(weekMonday: string) {
   const plannerEmps = plannerEmployeesFrom(users);
   const activeIds = new Set(users.map((u) => u.id));
   const placeable = holiday ? [] : jobs.filter((j) => j.fixedEmployeeId != null && activeIds.has(j.fixedEmployeeId));
-  const unassigned = holiday ? [] : jobs.filter((j) => j.fixedEmployeeId == null || !activeIds.has(j.fixedEmployeeId));
+  // "Ikke tildelt" og "tildelt en kollega uden for kalenderen" er to forskellige
+  // problemer for kontoret — vis dem med hver sin årsag i stedet for én pulje.
+  const unassigned = holiday ? [] : jobs.filter((j) => j.fixedEmployeeId == null);
+  const inactiveEmp = holiday ? [] : jobs.filter((j) => j.fixedEmployeeId != null && !activeIds.has(j.fixedEmployeeId));
   const plan = planWeek(placeable, weekMonday, plannerEmps);
   // Fremryk resten af dagens stops for hver medarbejder, der afsluttede en
   // opgave hurtigere end planlagt — men KUN for dagens ugedag (i går/i morgen
   // giver "hurtigere end planlagt" ingen mening at fremrykke visuelt for).
   const todayIdx = weekdayIdxIfThisWeek(weekMonday);
   if (todayIdx != null) reflowEarlyCompletions(plan.days.filter((d) => d.weekday === todayIdx), completedAtById);
-  const unplanned: { job: Job; reason: "unassigned" | "overflow" | "holiday" }[] = holiday
+  const unplanned: { job: Job; reason: "unassigned" | "inactive_employee" | "overflow" | "holiday" }[] = holiday
     ? jobs.map((job) => ({ job, reason: "holiday" as const }))
     : [
         ...plan.unplanned.map((job) => ({ job, reason: "overflow" as const })),
         ...unassigned.map((job) => ({ job, reason: "unassigned" as const })),
+        ...inactiveEmp.map((job) => ({ job, reason: "inactive_employee" as const })),
       ];
   const empName = new Map(users.map((u) => [u.id, `${u.firstName} ${u.lastName}`]));
-  return { start, plan, priceById, metaById, users, empName, holiday, unplanned };
+  // TRIPWIRE — kalender-invarianten håndhæves ved HVER beregning: hver ordre i
+  // ugen skal ende i præcis én af {planlagte stops, ikke planlagt}. Skrider det
+  // (en fremtidig regression), logges en fejl, der er synlig i produktions-
+  // overvågningen — visningen fortsætter uændret, men bruddet er ALDRIG tavst.
+  const placedIds = new Set(plan.days.flatMap((d) => d.stops.map((s) => s.job.id)));
+  const unplannedIds = new Set(unplanned.map((u) => u.job.id));
+  const invisible = jobs.filter((j) => !placedIds.has(j.id) && !unplannedIds.has(j.id));
+  const doubled = jobs.filter((j) => placedIds.has(j.id) && unplannedIds.has(j.id));
+  if (invisible.length || doubled.length) {
+    console.error(`[kalender-invariant] uge ${weekMonday}: ${invisible.length} ordre(r) USYNLIGE [${invisible.map((j) => j.id).join(", ")}], ${doubled.length} vist dobbelt [${doubled.map((j) => j.id).join(", ")}]`);
+  }
+  return { start, plan, priceById, metaById, weekdayById, users, empName, holiday, unplanned };
 }
 
 /**
@@ -587,14 +664,21 @@ export async function planAndPersistWeek(weekMonday: string) {
   return wp;
 }
 
-/** Map a stored order status to the calendar's status class. */
+/** Map a stored order status to the calendar's status class. Afslut-flowet
+ *  skriver "Udført"/"Sprunget over"/"Skal genplanlægges"/"Anden status"
+ *  (app/actions/orders.ts) — de handlingskrævende må IKKE ligne "Afventer". */
 function calStatusOf(status: string): CalStatus {
   if (status === "Afsluttet" || status === "Udført") return "afsluttet";
-  if (status.startsWith("Mislykk")) return "mislykket";
+  if (status === "Skal genplanlægges" || status.startsWith("Mislykk")) return "mislykket";
+  if (status === "Sprunget over" || status === "Anden status") return "ikke_afsluttet";
   return "afventer";
 }
 
 const CPH_TZ = "Europe/Copenhagen";
+/** Kalenderdato (Europe/Copenhagen) for et tidsstempel som yyyy-mm-dd. */
+function cphDateISO(d: Date): string {
+  return new Intl.DateTimeFormat("en-CA", { timeZone: CPH_TZ, year: "numeric", month: "2-digit", day: "2-digit" }).format(d);
+}
 /** Minutter siden midnat (Europe/Copenhagen vægur-tid) for et tidsstempel. */
 function minutesOfDayCph(d: Date): number {
   const fmt = new Intl.DateTimeFormat("en-GB", { timeZone: CPH_TZ, hour: "2-digit", minute: "2-digit", hour12: false });
@@ -630,6 +714,7 @@ function weekdayIdxIfThisWeek(weekMonday: string): number | null {
  * IKKE — kun tidligere afslutning fremrykker (som eksplicit efterspurgt).
  */
 function reflowEarlyCompletions(days: DayPlan[], completedAtById: Map<number, Date | null>): void {
+  const todayISO = todayCphISO();
   for (const day of days) {
     const stops = [...day.stops].sort((a, b) => a.startMin - b.startMin);
     let drift = 0;
@@ -640,6 +725,10 @@ function reflowEarlyCompletions(days: DayPlan[], completedAtById: Map<number, Da
       }
       const completedAt = completedAtById.get(s.job.id);
       if (!completedAt) continue;
+      // Kun afslutninger fra I DAG må fremrykke — et completedAt fra en anden
+      // dag (fx en ordre afsluttet i går og siden genplanlagt til i dag) ville
+      // ellers give meningsløse klokkeslæt for resten af dagen.
+      if (cphDateISO(completedAt) !== todayISO) continue;
       const actualEndMin = minutesOfDayCph(completedAt);
       const savedMin = s.endMin - actualEndMin;
       if (savedMin > 0) {
@@ -651,12 +740,14 @@ function reflowEarlyCompletions(days: DayPlan[], completedAtById: Map<number, Da
 }
 
 
-/** Planned revenue (incl. VAT) for every order in a calendar month. */
-async function monthRevenue(year: number, monthIdx0: number): Promise<number> {
+/** Planned revenue (incl. VAT) for every order in a calendar month. With
+ *  `employeeId` sat afgrænses til den medarbejders ordrer — samme viewer-regel
+ *  som resten af kalenderen, så dag/uge/måned-tallene taler samme sprog. */
+async function monthRevenue(year: number, monthIdx0: number, employeeId?: number): Promise<number> {
   const from = new Date(Date.UTC(year, monthIdx0, 1));
   const to = new Date(Date.UTC(year, monthIdx0 + 1, 1));
   const orders = await prisma.order.findMany({
-    where: { plannedAt: { gte: from, lt: to } },
+    where: { plannedAt: { gte: from, lt: to }, ...(employeeId != null ? { employeeId } : {}) },
     include: { tasks: true },
   });
   return orders.reduce((sum, o) => sum + o.tasks.reduce((a, t) => a + t.price, 0), 0);
@@ -675,7 +766,9 @@ export async function getCalendarWeek(weekMonday: string, viewer?: { id: number;
   const dayRevenue = Array<number>(7).fill(0);
   const dayDrive = Array<number>(7).fill(0);
   for (const d of visibleDays) {
-    dayDrive[d.weekday] = d.driveMin;
+    // SUM over medarbejdere — én DayPlan pr. (medarbejder, ugedag), så en ren
+    // tildeling ville kun vise den sidste medarbejders kørsel for dagen.
+    dayDrive[d.weekday] += d.driveMin;
     for (const s of d.stops) dayRevenue[d.weekday] += priceById.get(s.job.id) ?? 0;
   }
 
@@ -699,19 +792,26 @@ export async function getCalendarWeek(weekMonday: string, viewer?: { id: number;
   });
 
   const monMonth = start.getUTCMonth();
-  const sunMonth = new Date(start.getTime() + 6 * 864e5).getUTCMonth();
-  const weekLabel = cap(MON_SHORT[monMonth]) + (monMonth !== sunMonth ? ` – ${cap(MON_SHORT[sunMonth])}` : "") + ` ${year}`;
+  const sunday = new Date(start.getTime() + 6 * 864e5);
+  const sunMonth = sunday.getUTCMonth();
+  // Årsskifte-uge (fx 28/12–3/1): begge år skal med — "Dec. 2026 – Jan. 2027",
+  // ikke "Dec. – Jan. 2026".
+  const weekLabel = year !== sunday.getUTCFullYear()
+    ? `${cap(MON_SHORT[monMonth])} ${year} – ${cap(MON_SHORT[sunMonth])} ${sunday.getUTCFullYear()}`
+    : cap(MON_SHORT[monMonth]) + (monMonth !== sunMonth ? ` – ${cap(MON_SHORT[sunMonth])}` : "") + ` ${year}`;
   const weekNo = isoWeek(weekMonday);
   const week = dayRevenue.reduce((a, b) => a + b, 0);
-  const month = await monthRevenue(year, monMonth);
+  const month = await monthRevenue(year, monMonth, viewer && !viewer.isAdmin ? viewer.id : undefined);
   const employees: Employee[] = visibleUsers.map((u) => ({
     id: u.id, name: `${u.firstName} ${u.lastName}`, color: u.calendarColor ?? "#a4d5ee", active: u.activeCalendar,
   }));
 
-  // Uassignerede/overflow-ordrer er ikke tilknyttet en bestemt medarbejder —
-  // kun admin har brug for teamets restance-overblik; en almindelig
-  // medarbejder skal ikke se andres kunde-/adressedata via denne liste.
-  const unplannedVisible = !viewer || viewer.isAdmin ? rawUnplanned : [];
+  // Admin ser teamets fulde restance-overblik; en almindelig medarbejder skal
+  // ikke se ANDRES kunde-/adressedata — men skal se sine EGNE ikke-planlagte
+  // ordrer (ellers modsiger ugevisningen dagsprogrammet, som viser dem).
+  const unplannedVisible = !viewer || viewer.isAdmin
+    ? rawUnplanned
+    : rawUnplanned.filter(({ job }) => job.fixedEmployeeId === viewer.id);
   const unplanned: UnplannedJob[] = unplannedVisible.map(({ job, reason }) => {
     const meta = metaById.get(job.id);
     return {
@@ -727,11 +827,19 @@ export async function getCalendarWeek(weekMonday: string, viewer?: { id: number;
   };
 }
 
+/** Dansk visningstekst for hvorfor en ordre ikke kunne planlægges på sin dag. */
+const DAY_UNPLANNED_REASON: Record<string, string> = {
+  unassigned: "Ikke tildelt en kollega",
+  inactive_employee: "Tildelt kollega er ikke aktiv i kalenderen",
+  overflow: "Kunne ikke placeres inden for arbejdstiden",
+  holiday: "Ferielukket uge",
+};
+
 export async function getDayProgram(dateISO: string, viewer?: { id: number; isAdmin: boolean }): Promise<DayProgram> {
   const date = new Date(`${dateISO}T00:00:00Z`);
   const weekdayIdx = (date.getUTCDay() + 6) % 7; // 0 = Monday
   const mondayISO = ymd(new Date(date.getTime() - weekdayIdx * 864e5));
-  const { plan, priceById, metaById, empName } = await buildWeekPlan(mondayISO);
+  const { plan, priceById, metaById, empName, unplanned: weekUnplanned, weekdayById } = await buildWeekPlan(mondayISO);
   // Aggregate across employees working this weekday — ALLE for admin (teamoverblik),
   // men kun viewer selv for en almindelig medarbejder (Michael, 2026-08-10: en
   // medarbejder skal kun se sine EGNE opgaver, ikke kollegers). Admin/udeladt
@@ -757,8 +865,35 @@ export async function getDayProgram(dateISO: string, viewer?: { id: number; isAd
       };
     });
 
+  // Dagens ordrer som planlæggeren IKKE kunne placere (ingen kollega, kollega
+  // uden for kalenderen, overløb eller ferielukket). De hører til dagen via
+  // deres persisterede plannedAt og må aldrig være usynlige i dagsprogrammet.
+  // Admin (og viewer-løse kald som PDF-rapporten) ser alle; en almindelig
+  // medarbejder ser kun dem, der er tildelt hende/ham selv.
+  const unplanned: DayUnplannedStop[] = weekUnplanned
+    .filter(({ job }) => weekdayById.get(job.id) === weekdayIdx)
+    .filter(({ job }) => !viewer || viewer.isAdmin || job.fixedEmployeeId === viewer.id)
+    .map(({ job, reason }) => {
+      const meta = metaById.get(job.id);
+      return {
+        address: job.address, customer: job.customer,
+        price: priceById.get(job.id) ?? 0,
+        employee: (job.fixedEmployeeId != null ? empName.get(job.fixedEmployeeId) : undefined) ?? "Ingen",
+        source: job.source,
+        orderId: job.id, contactId: job.contactId,
+        subscriptionNo: meta?.subNo ?? null, phone: meta?.phone ?? null, status: meta?.status ?? "Afventer levering",
+        tasks: (meta?.tasks ?? []).map((t) => ({ category: t.category, letter: t.letter, description: t.description, price: t.price, durationMin: t.durationMin })),
+        comment: meta?.comment ?? "", addressNote: meta?.addressNote ?? "",
+        reason: DAY_UNPLANNED_REASON[reason] ?? "Ukendt årsag",
+      };
+    });
+
+  // Uge-/månedstal følger samme viewer-regel som dagens stops — før talte
+  // ugetallet HELE teamet, selv når dagen kun viste medarbejderens egne
+  // ordrer (dag og uge stemte ikke overens med ugekalenderen).
+  const visibleWeekDays = plan.days.filter((d) => !viewer || viewer.isAdmin || d.employeeId === viewer.id);
   let revenueWeek = 0;
-  for (const d of plan.days) for (const s of d.stops) revenueWeek += priceById.get(s.job.id) ?? 0;
+  for (const d of visibleWeekDays) for (const s of d.stops) revenueWeek += priceById.get(s.job.id) ?? 0;
 
   return {
     heading: `${date.getUTCDate()}. ${MON_SHORT[date.getUTCMonth()]} ${date.getUTCFullYear()}`,
@@ -768,9 +903,10 @@ export async function getDayProgram(dateISO: string, viewer?: { id: number; isAd
     nextISO: ymd(new Date(date.getTime() + 864e5)),
     revenueDay: stops.reduce((a, s) => a + s.price, 0),
     revenueWeek,
-    revenueMonth: await monthRevenue(date.getUTCFullYear(), date.getUTCMonth()),
+    revenueMonth: await monthRevenue(date.getUTCFullYear(), date.getUTCMonth(), viewer && !viewer.isAdmin ? viewer.id : undefined),
     driving: fmtDrive(dayPlans.reduce((a, d) => a + d.driveMin, 0)),
     stops,
+    unplanned,
   };
 }
 
@@ -820,6 +956,19 @@ export async function getCalendarMonth(monthParam: string, viewer?: { id: number
             contactId: s.job.contactId,
           };
         }));
+      // Ikke-planlagte ordrer vises på deres persisterede ugedag — måneds-
+      // visningen må ikke skjule ordrer, som uge- og dagsvisningen viser.
+      // Samme viewer-regel som getDayProgram: admin ser alle, medarbejder egne.
+      chips.push(...wp.unplanned
+        .filter(({ job }) => wp.weekdayById.get(job.id) === i && (!viewer || viewer.isAdmin || job.fixedEmployeeId === viewer.id))
+        .map(({ job, reason }) => ({
+          id: job.id, weekday: i, employeeId: job.fixedEmployeeId ?? 0,
+          label: job.customer || job.postal,
+          postal: job.postal, category: job.category,
+          status: calStatusOf(wp.metaById.get(job.id)?.status ?? "Afventer levering"),
+          contactId: job.contactId,
+          unplanned: true, reason,
+        })));
       return {
         dateISO, dateNum: dt.getUTCDate(), weekday: i,
         inMonth: dt.getUTCMonth() === monthIdx, isToday: dateISO === todayISO, chips,

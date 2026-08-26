@@ -22,14 +22,22 @@ const PAYMENT = [
 const radioRow: React.CSSProperties = { display: "flex", alignItems: "center", gap: 9, fontWeight: 300, padding: "3px 0" };
 
 export default function CompleteOrderForm({
-  action, initialComment, initialAddressNote, backUrl,
+  action, initialComment, initialAddressNote, backUrl, paymentPreselect,
 }: {
   action: (state: CompleteOrderState, formData: FormData) => Promise<CompleteOrderState>;
   initialComment: string;
   initialAddressNote: string;
   backUrl: string;
+  /** Kundens "Forudindstilling for Betaling og fakturering" (Contact.
+   *  invoiceChoicePreselect) — forudvælger den matchende betaling-radio, når
+   *  ordren ikke allerede har en gemt beslutning. Udeladt/ukendt = intet valg. */
+  paymentPreselect?: string;
 }) {
   const [state, formAction, pending] = useActionState(action, {});
+  // React 19 nulstiller ukontrollerede felter når server-action'en returnerer —
+  // også ved valideringsfejl. Action'en ekkoer derfor de indsendte felter i
+  // state.values, og alle defaults prefiller derfra, så intet indtastet mistes.
+  const v = state.values;
 
   return (
     <form action={formAction}>
@@ -40,7 +48,7 @@ export default function CompleteOrderForm({
         <div className="card-body tight">
           {DELIVERY.map(([value, label]) => (
             <label key={value} style={radioRow}>
-              <input type="radio" name="leveringsstatus" value={value} /> {label}
+              <input type="radio" name="leveringsstatus" value={value} required defaultChecked={v?.leveringsstatus === value} /> {label}
             </label>
           ))}
         </div>
@@ -52,7 +60,7 @@ export default function CompleteOrderForm({
           <p className="muted" style={{ margin: "0 0 8px" }}>Vælg om der skal faktureres via Dinero</p>
           {PAYMENT.map((label, i) => (
             <label key={i} style={radioRow}>
-              <input type="radio" name="betaling" value={label} /> {label}
+              <input type="radio" name="betaling" value={label} defaultChecked={(v ? v.betaling : paymentPreselect) === label} /> {label}
             </label>
           ))}
         </div>
@@ -61,7 +69,7 @@ export default function CompleteOrderForm({
       <div className="card">
         <div className="card-header"><h4 className="section-title">Ordrekommentar</h4></div>
         <div className="card-body tight">
-          <textarea name="comment" defaultValue={initialComment} className="form-control form-control-sm" rows={3} />
+          <textarea name="comment" defaultValue={v?.comment ?? initialComment} className="form-control form-control-sm" rows={3} />
           <small className="form-text field-help">Tilføj valgfri, intern kommentar vedr. denne ordre, f.eks. en kommentar om leveringen.</small>
         </div>
       </div>
@@ -69,7 +77,7 @@ export default function CompleteOrderForm({
       <div className="card">
         <div className="card-header"><h4 className="section-title">Adressebemærkning</h4></div>
         <div className="card-body tight">
-          <textarea name="addressNote" defaultValue={initialAddressNote} className="form-control form-control-sm" rows={3} />
+          <textarea name="addressNote" defaultValue={v?.addressNote ?? initialAddressNote} className="form-control form-control-sm" rows={3} />
           <small className="form-text field-help">Opdater valgfrit, internt notat, der relaterer sig til leveringsadressen og som er godt at huske til næste besøg hos kunden.</small>
         </div>
       </div>

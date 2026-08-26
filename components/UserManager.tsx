@@ -16,21 +16,37 @@ function PayEditor({ u }: { u: UserRow }) {
   );
   const [pending, start] = useTransition();
   const [saved, setSaved] = useState(false);
+  const [fejl, setFejl] = useState<string | null>(null);
+  const gem = () => {
+    // En fast løn (fx 32000) må aldrig stiltiende blive til 32000 % provision.
+    if (model === "akkord" && belob !== "" && Number(belob) > 100) {
+      setFejl("Provisionssats skal være 0–100 %.");
+      return;
+    }
+    setFejl(null);
+    start(async () => { await updateUserPay(u.id, model, belob === "" ? null : Number(belob)); setSaved(true); });
+  };
   return (
     <div style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap" }}>
       <select value={model} className="form-control form-control-sm" style={{ width: "auto" }}
-        onChange={(e) => { setModel(e.target.value as "fast" | "akkord"); setSaved(false); }}>
+        onChange={(e) => {
+          // Modelskift nulstiller beløbet — kr/md og % er ikke samme enhed.
+          setModel(e.target.value as "fast" | "akkord");
+          setBelob("");
+          setSaved(false);
+          setFejl(null);
+        }}>
         <option value="fast">Fast løn</option>
         <option value="akkord">Akkord</option>
       </select>
       <input type="number" min="0" value={belob} placeholder={model === "akkord" ? "%" : "kr/md"}
         className="form-control form-control-sm" style={{ width: 92 }}
-        onChange={(e) => { setBelob(e.target.value); setSaved(false); }} />
+        onChange={(e) => { setBelob(e.target.value); setSaved(false); setFejl(null); }} />
       <span className="help-note" style={{ margin: 0 }}>{model === "akkord" ? "%" : "kr/md"}</span>
-      <button type="button" className="btn btn-sm btn-light" disabled={pending}
-        onClick={() => start(async () => { await updateUserPay(u.id, model, belob === "" ? null : Number(belob)); setSaved(true); })}>
+      <button type="button" className="btn btn-sm btn-light" disabled={pending} onClick={gem}>
         {pending ? "…" : saved ? "Gemt ✓" : "Gem"}
       </button>
+      {fejl ? <span style={{ color: "var(--danger, #C4183C)", fontSize: 12 }}>{fejl}</span> : null}
     </div>
   );
 }
@@ -38,9 +54,12 @@ function PayEditor({ u }: { u: UserRow }) {
 export default function UserManager({ users, meId, includeInactive }: { users: UserRow[]; meId: number; includeInactive: boolean }) {
   const [open, setOpen] = useState(false);
   const [createPay, setCreatePay] = useState<"fast" | "akkord">("fast");
+  // Kontrolleret, så beløbet overlever React 19's form-reset ved fejl — og
+  // nulstilles ved lønmodel-skift (kr/md og % er ikke samme enhed).
+  const [createBelob, setCreateBelob] = useState("");
   const [state, formAction, pending] = useActionState<UserState, FormData>(async (p, fd) => {
     const r = await createUser(p, fd);
-    if (r.ok) setOpen(false);
+    if (r.ok) { setOpen(false); setCreateBelob(""); }
     return r;
   }, {});
   // getUsers returnerer altid ALLE aktive brugere, så tælleren er korrekt uanset toggle.
@@ -118,26 +137,29 @@ export default function UserManager({ users, meId, includeInactive }: { users: U
         <div className="card">
           <div className="card-body">
             <h4 className="section-title">Opret bruger</h4>
+            {/* React 19 resetter ukontrollerede felter efter en form-action —
+                defaultValue={state.values?...} prefiller de indsendte værdier
+                igen ved valideringsfejl (adgangskoden skal tastes igen). */}
             <form action={formAction}>
-              <div className="f2"><label className="col-label">Fornavn</label><div><input name="firstName" className="form-control form-control-sm" autoComplete="off" /></div></div>
-              <div className="f2"><label className="col-label">Efternavn</label><div><input name="lastName" className="form-control form-control-sm" autoComplete="off" /></div></div>
-              <div className="f2"><label className="col-label">Brugernavn</label><div><input name="username" className="form-control form-control-sm" autoComplete="off" placeholder="fx annebruun" /></div></div>
-              <div className="f2"><label className="col-label">E-mail (valgfri)</label><div><input name="email" type="email" className="form-control form-control-sm" autoComplete="off" /></div></div>
+              <div className="f2"><label className="col-label">Fornavn</label><div><input name="firstName" defaultValue={state.values?.firstName ?? ""} className="form-control form-control-sm" autoComplete="off" /></div></div>
+              <div className="f2"><label className="col-label">Efternavn</label><div><input name="lastName" defaultValue={state.values?.lastName ?? ""} className="form-control form-control-sm" autoComplete="off" /></div></div>
+              <div className="f2"><label className="col-label">Brugernavn</label><div><input name="username" defaultValue={state.values?.username ?? ""} className="form-control form-control-sm" autoComplete="off" placeholder="fx annebruun" /></div></div>
+              <div className="f2"><label className="col-label">E-mail (valgfri)</label><div><input name="email" type="email" defaultValue={state.values?.email ?? ""} className="form-control form-control-sm" autoComplete="off" /></div></div>
               <div className="f2"><label className="col-label">Adgangskode</label><div><input name="password" type="password" className="form-control form-control-sm" autoComplete="new-password" placeholder="Mindst 8 tegn" /></div></div>
               <div className="f2"><label className="col-label">Rolle</label><div>
-                <select name="rolle" className="form-control form-control-sm" defaultValue="medarbejder">
+                <select name="rolle" className="form-control form-control-sm" defaultValue={state.values?.rolle ?? "medarbejder"}>
                   <option value="medarbejder">Medarbejder</option>
                   <option value="admin">Administrator (kan oprette brugere)</option>
                 </select>
               </div></div>
               <div className="f2"><label className="col-label">Lønmodel</label><div>
-                <select name="payModel" className="form-control form-control-sm" value={createPay} onChange={(e) => setCreatePay(e.target.value as "fast" | "akkord")}>
+                <select name="payModel" className="form-control form-control-sm" value={createPay} onChange={(e) => { setCreatePay(e.target.value as "fast" | "akkord"); setCreateBelob(""); }}>
                   <option value="fast">Fast løn</option>
                   <option value="akkord">Akkord (provision)</option>
                 </select>
               </div></div>
               <div className="f2"><label className="col-label">{createPay === "akkord" ? "Provisionssats (%)" : "Fast løn (kr/md)"}</label><div>
-                <input name="belob" type="number" min="0" className="form-control form-control-sm" placeholder={createPay === "akkord" ? "fx 43" : "fx 32000"} />
+                <input name="belob" type="number" min="0" value={createBelob} onChange={(e) => setCreateBelob(e.target.value)} className="form-control form-control-sm" placeholder={createPay === "akkord" ? "fx 43" : "fx 32000"} />
               </div></div>
               {state.error ? <div className="help-note" style={{ color: "var(--danger, #C4183C)" }}>{state.error}</div> : null}
               <hr className="section-hr" />

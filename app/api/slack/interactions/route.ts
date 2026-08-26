@@ -173,10 +173,18 @@ async function handleSubmission(p: Payload): Promise<Response> {
   const { services, ændringer } = applyEditedQuantities(payload.services, p.view.state?.values ?? {});
   const opdateret = { ...payload, services };
 
-  await prisma.lead.update({
-    where: { id: lead.id },
+  // CAS på payload-strengen: et blindt update kunne viske et samtidigt sat
+  // tilbudSendtAt-claim (dublet-tilbudsmail) eller en kollegas rettelser ud.
+  const cas = await prisma.lead.updateMany({
+    where: { id: lead.id, payload: lead.payload },
     data: { payload: serializeLeadPayload(opdateret) },
   });
+  if (cas.count === 0) {
+    return json({
+      response_action: "errors",
+      errors: { [`qty_ukendt`]: "Leadet blev lige ændret af en anden — luk og åbn dialogen igen." },
+    });
+  }
 
   const r = beregn(services);
   const { aarNet } = medRabatkode(r, opdateret.rabatOk && opdateret.rabatPct ? opdateret.rabatPct : 0);
@@ -222,14 +230,22 @@ async function sendQuote(
   const company = await prisma.company.findFirst();
   if (!company) return ephemeral(ctx.responseUrl, "Ingen firmaoplysninger i CRM'et — kan ikke sende tilbud.");
 
-  // Markér som sendt FØR afsendelsen. Det er værnet mod dobbeltklik: det andet
-  // klik læser markeringen og stopper. Fejler mailen bagefter, ryddes
-  // markeringen igen nedenfor, så Kristian kan prøve om.
+  // Markér som sendt FØR afsendelsen — ATOMISK: updateMany med den præcise
+  // gamle payload-streng i where er et compare-and-swap (samme princip som
+  // consumeQuoteToken), så to næsten samtidige klik ikke begge kan passere et
+  // læs-så-skriv-vindue og sende hver sin mail. Kun requesten med count===1
+  // vandt claimet og må sende. Fejler mailen bagefter, ryddes markeringen igen
+  // nedenfor, så Kristian kan prøve om.
   const sendtAt = new Date().toISOString();
-  await prisma.lead.update({
-    where: { id: lead.id },
+  const claimed = await prisma.lead.updateMany({
+    where: { id: lead.id, payload: lead.payload },
     data: { payload: serializeLeadPayload({ ...payload, tilbudSendtAt: sendtAt }) },
   });
+  if (claimed.count === 0) {
+    // Payloadet er ændret siden vores læsning: et samtidigt klik claimede
+    // afsendelsen (eller mængderne blev lige rettet) — send ikke en dublet.
+    return ephemeral(ctx.responseUrl, "Tilbuddet er allerede ved at blive sendt (eller leadet blev lige rettet) — sender ikke igen.");
+  }
 
   const r = beregn(payload.services);
   const { aarNet } = medRabatkode(r, payload.rabatOk && payload.rabatPct ? payload.rabatPct : 0);

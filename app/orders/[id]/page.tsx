@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getOrderDetail } from "@/lib/queries";
+import { prisma } from "@/lib/db";
+import { routeId } from "@/lib/route-ids";
 import { deleteOrder } from "@/app/actions/orders";
 import { retryInvoice } from "@/app/actions/dinero";
 import { CatChip, MapLink, StatusPill, money } from "@/components/ui";
@@ -16,13 +18,37 @@ const INVOICE_STATUS: Record<string, { label: string; color: string }> = {
   Sent: { label: "Faktura sendt af Dinero", color: "#2e7d32" },
   Paid: { label: "Bogført + betalt (kontant)", color: "#2e7d32" },
   Failed: { label: "Fakturering fejlede", color: "#C4183C" },
+  Samlefaktura: { label: "Faktureres på månedlig samlefaktura (erhverv)", color: "#8a6d3b" },
+};
+
+// businessBatchInvoiceStatus → dansk label for samlefaktura-sektionen (samme
+// statusværdier som pr.-ordre-flowet, se lib/business-invoicing.ts).
+const BATCH_STATUS: Record<string, { label: string; color: string }> = {
+  simulated: { label: "Simuleret (dry-run — intet sendt til Dinero)", color: "#6b7280" },
+  Draft: { label: "Samlefaktura-kladde oprettet i Dinero", color: "#8a6d3b" },
+  Booked: { label: "Samlefaktura bogført i Dinero", color: "#2e7d32" },
+  Sent: { label: "Samlefaktura sendt af Dinero", color: "#2e7d32" },
+  Failed: { label: "Samlefakturering fejlede", color: "#C4183C" },
 };
 
 export default async function OrderDetail({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const o = await getOrderDetail(Number(id));
+  const orderId = routeId(id);
+  const o = await getOrderDetail(orderId);
   if (!o) notFound();
   const c = o.contact;
+  // Erhvervs-samlefakturaens felter mappes ikke af getOrderDetail — hent dem
+  // direkte, så status/fejl fra den månedlige batchkørsel (d. 20.) er synlige
+  // her og ikke kun i cron-responsens JSON. Vises kun for erhvervskunder.
+  const batch = await prisma.order.findUnique({
+    where: { id: orderId },
+    select: {
+      businessBatchInvoiceStatus: true, businessBatchInvoiceNumber: true, businessBatchError: true,
+      contact: { select: { isCompany: true } },
+    },
+  });
+  const showBatch = !!batch?.contact.isCompany
+    && !!(batch.businessBatchInvoiceStatus || batch.businessBatchInvoiceNumber || batch.businessBatchError);
 
   return (
     <div className="container-1140">
@@ -131,14 +157,39 @@ export default async function OrderDetail({ params }: { params: Promise<{ id: st
               // "Registrer senere" has no concrete action to resume — send the user to
               // the complete flow to pick a real invoicing choice.
               <div style={{ marginTop: 12 }}>
-                <Link href={`/orders/${o.id}/complete`} className="btn btn-outline-primary">Vælg fakturering</Link>
+                <Link href={`/orders/${o.id}/complete?back=${encodeURIComponent(`/orders/${o.id}`)}`} className="btn btn-outline-primary">Vælg fakturering</Link>
               </div>
             ) : o.dineroInvoiceStatus === "Failed" ||
+              // Afsendelse kan fejle EFTER bogføring: status forbliver Booked/Sent
+              // (nedgraderes aldrig, jf. lib/dinero.ts), men dineroError er sat —
+              // retryInvoice er idempotent og genoptager fra det nåede trin, så
+              // knappen skal vises i ALLE fejlscenarier.
+              !!o.dineroError ||
               (o.invoiceDecision && o.invoiceDecision !== "Send ikke faktura fra Karltoffel" && !o.dineroInvoiceStatus) ? (
               <form action={retryInvoice.bind(null, o.id)} style={{ marginTop: 12 }}>
                 <button type="submit" className="btn btn-outline-primary">Fakturér igen</button>
               </form>
             ) : null}
+          </div>
+        </div>
+      ) : null}
+
+      {showBatch && batch ? (
+        <div className="card">
+          <div className="card-header"><h4 className="section-title">Månedlig samlefakturering (erhverv)</h4></div>
+          <div className="card-body tight">
+            <div className="form-static">
+              {/* Ærlig status fra den automatiske batchkørsel d. 20. (lib/
+                  business-invoicing.ts) — især "Failed" + fejlen skal være
+                  synlig her, ellers står erhvervsordren ufaktureret for evigt
+                  uden noget signal i UI'et. */}
+              <b>Status</b>{"\n"}
+              <span style={{ color: BATCH_STATUS[batch.businessBatchInvoiceStatus ?? ""]?.color ?? "#6b7280" }}>
+                {BATCH_STATUS[batch.businessBatchInvoiceStatus ?? ""]?.label ?? (batch.businessBatchInvoiceStatus || "Afventer næste kørsel (d. 20.)")}
+              </span>
+              {batch.businessBatchInvoiceNumber ? `\n\nFakturanr.\n${batch.businessBatchInvoiceNumber}` : ""}
+              {batch.businessBatchError ? `\n\nSeneste fejl\n${batch.businessBatchError}` : ""}
+            </div>
           </div>
         </div>
       ) : null}
@@ -151,7 +202,7 @@ export default async function OrderDetail({ params }: { params: Promise<{ id: st
           body="Er du sikker på, at du vil slette ordren?" confirmLabel="Slet ordre"
         />
         <Link href={`/orders/${o.id}/send-tilbud`} className="btn btn-outline-primary">Send tilbud</Link>
-        <Link href={`/orders/${o.id}/complete`} className="btn btn-primary">Afslut ordre</Link>
+        <Link href={`/orders/${o.id}/complete?back=${encodeURIComponent(`/orders/${o.id}`)}`} className="btn btn-primary">Afslut ordre</Link>
       </div>
     </div>
   );

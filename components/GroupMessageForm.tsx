@@ -15,6 +15,10 @@ export default function GroupMessageForm({ weekOpts, employees }: { weekOpts: We
   const [group, setGroup] = useState(G.fields[0].opts?.[0] ?? "");
   const [date, setDate] = useState("");
   const [week, setWeek] = useState(weekOpts[0]?.value ?? "");
+  // Medarbejder- og kanalvalget indgår i modtagerfiltreringen — de holdes som
+  // state, så "Vis liste over modtagere" og Send bruger præcis samme filter.
+  const [employee, setEmployee] = useState("Alle medarbejdere");
+  const [channel, setChannel] = useState("Både SMS og e-mail");
   const [pending, start] = useTransition();
   const [recipients, setRecipients] = useState<Recipient[] | null>(null);
   const [confirm, setConfirm] = useState(false);
@@ -23,7 +27,7 @@ export default function GroupMessageForm({ weekOpts, employees }: { weekOpts: We
   const [testEmail, setTestEmail] = useState("");
   const [testSms, setTestSms] = useState("");
 
-  const showRecipients = () => start(async () => setRecipients(await resolveRecipients(group, date, week)));
+  const showRecipients = () => start(async () => setRecipients(await resolveRecipients(group, date, week, employee, channel)));
   const doSend = () => start(async () => {
     const fd = new FormData(formRef.current!);
     const r = await sendGroupMessage({}, fd);
@@ -52,12 +56,12 @@ export default function GroupMessageForm({ weekOpts, employees }: { weekOpts: We
             </select><small className="form-text">Anvendes for uge-baserede kundegrupper</small></div></div>
 
           <div className="f2"><label className="col-label">Medarbejder</label><div>
-            <select name="employee" className="form-control form-control-sm" defaultValue="Alle medarbejdere">
+            <select name="employee" className="form-control form-control-sm" value={employee} onChange={(e) => setEmployee(e.target.value)}>
               {["Alle medarbejdere", ...employees].map((o) => <option key={o}>{o}</option>)}
-            </select></div></div>
+            </select><small className="form-text">Beskeden sendes til de kunder, der har en ordre i den valgte medarbejders kalender</small></div></div>
 
           <div className="f2"><label className="col-label">Send besked som</label><div>
-            <select name="channel" className="form-control form-control-sm">
+            <select name="channel" className="form-control form-control-sm" value={channel} onChange={(e) => setChannel(e.target.value)}>
               {["Både SMS og e-mail", "Kun som SMS", "Kun som e-mail", "Som e-mail, hvis kunden har en email-adr., ellers som SMS"].map((o) => <option key={o}>{o}</option>)}
             </select></div></div>
 

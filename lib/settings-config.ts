@@ -1,5 +1,6 @@
 export type SField = {
   t: "text" | "number" | "date" | "textarea" | "color" | "select" | "checks" | "radio" | "toggle" | "static" | "note" | "buttons" | "subtable";
+  key?: string;          // stabil lagringsnøgle — positionsnøglen s{N}f{M} forskydes når felter indsættes/genereres
   l?: string;            // Danish label
   val?: string;          // current/default value
   opts?: string[];       // options for select/checks/radio
@@ -13,6 +14,12 @@ export type SField = {
 };
 export type SSection = { h?: string; fields: SField[] };
 export type SPage = { title: string; route: string; purpose?: string; saveLabel?: string; noSave?: boolean; sections: SSection[] };
+
+// Ærlig status for arbejdstids-/planlægningssiderne: valgene her GEMMES, men
+// planlæggeren læser dem ikke endnu (lib/queries.ts bruger hardcodet 08–16
+// man–fre + 1 time fleks). Siden må aldrig foregive effekt, den ikke har.
+export const PLANNER_STATUS_NOTE =
+  "Bemærk: Planlæggeren bruger i øjeblikket fast arbejdstid man–fre 08:00–16:00 + 1 time fleks for alle medarbejdere. Indstillingerne på denne side gemmes, men individuelle arbejdstider og valg tages først i brug af planlæggeren i en senere version.";
 export const SETTINGS_PAGES: Record<string, SPage> = {
   "/settings": {
     title: "Indstillinger",
@@ -197,31 +204,14 @@ export const SETTINGS_PAGES: Record<string, SPage> = {
       {
         h: "Generelle indstillinger",
         fields: [
-          { t: "toggle", l: "Luk automatisk kalenderen på helligdage", val: "Ja", on: 1, help: "Hvis valgt, vil officielle danske helligdage automatisk være lukket i kalenderen, f.eks. 2. påskedag." },
-          { t: "toggle", l: "Benyt fleksibel arbejdstid", val: "Ja", on: 1, help: "Fleksibel arbejdstid giver Karltoffel mulighed for at tage ekstra arbejdstid i brug sidst på dagen, såfremt det medfører en forholdsmæssig besparelse på kørslen, eller hvis ugen er fyldt op med ordrer. Fleksibel arbejdstid anbefales for de fleste..." },
+          // Ærlig status — lov aldrig effekt, planlæggeren ikke leverer endnu.
+          { t: "note", val: PLANNER_STATUS_NOTE },
+          { t: "toggle", key: "s0f0", l: "Luk automatisk kalenderen på helligdage", val: "Ja", on: 1, help: "Hvis valgt, vil officielle danske helligdage automatisk være lukket i kalenderen, f.eks. 2. påskedag. (Tages først i brug af planlæggeren senere.)" },
+          { t: "toggle", key: "s0f1", l: "Benyt fleksibel arbejdstid", val: "Ja", on: 1, help: "Fleksibel arbejdstid giver Karltoffel mulighed for at tage ekstra arbejdstid i brug sidst på dagen, såfremt det medfører en forholdsmæssig besparelse på kørslen, eller hvis ugen er fyldt op med ordrer. Fleksibel arbejdstid anbefales for de fleste..." },
         ],
       },
-      {
-        h: "Indstillinger per medarbejder",
-        fields: [
-          { t: "note", val: "Arbejdstiderne indstilles individuelt for hver medarbejder i virksomheden." },
-          {
-            t: "subtable",
-            l: "Kristian Klercke",
-            cols: ["Ugedag", "Aktiv", "Fra", "Til", "Flekstid"],
-            rows: [
-              ["Mandag", "Ja", "08:00", "16:00", ""],
-              ["Tirsdag", "Ja", "08:00", "16:00", ""],
-              ["Onsdag", "Ja", "08:00", "16:00", ""],
-              ["Torsdag", "Ja", "08:00", "16:00", ""],
-              ["Fredag", "Ja", "08:00", "16:00", ""],
-              ["Lørdag", "", "", "", ""],
-              ["Søndag", "", "", "", ""],
-            ],
-          },
-          { t: "note", val: "Flekstid-valgmuligheder per dag: (blank), +30 min, +1 time, +1½ time, +2 timer, +3 timer, +4 timer, +5 timer, +6 timer." },
-        ],
-      },
+      // Sektionen "Indstillinger per medarbejder" genereres fra databasens
+      // rigtige brugere — se buildSettingsPage() nedenfor.
     ],
   },
 
@@ -234,16 +224,13 @@ export const SETTINGS_PAGES: Record<string, SPage> = {
       {
         h: "Generelle indstillinger",
         fields: [
+          // Ærlig status — lov aldrig effekt, planlæggeren ikke leverer endnu.
+          { t: "note", val: PLANNER_STATUS_NOTE },
           { t: "buttons", l: "Benyt fleksibel arbejdstid", btns: [["Gå til indstilling", "light"]], help: "Fleksibel arbejdstid giver Karltoffel mulighed for at tage ekstra arbejdstid i brug sidst på dagen, såfremt det medfører en forholdsmæssig besparelse på kørslen, eller hvis ugen er fyldt op med ordrer. Fleksibel arbejdstid anbefales for de fleste..." },
         ],
       },
-      {
-        h: "Kristian Klercke",
-        fields: [
-          { t: "checks", opts: ["Udelad kørsel før første ordre på dagen", "Udelad kørsel efter sidste ordre på dagen", "Tilstræb at starte dagen længst væk fra hjemmeadressen"], on: [0, 1, 2], help: "Vælg dette, hvis du vil undgå, at Karltoffel planlægger kørsel til første ordre / kørsel hjem fra sidste ordre inden for arbejdstiden, eller hvis du ønsker at bruge de tidlige morgentimer på transport." },
-          { t: "select", l: "Tilladte opgavekategorier", val: "Alle", opts: ["Alle", "Vinduespudsning", "Rentvandsvask", "Tagrenderens", "Overfladerens", "Algebehandling", "Overfladebeskyttelse", "Privatrengøring", "Ejendomsrengøring", "Viceværtservice", "Grøn service", "Ukrudtsbekæmpelse", "Skadedyrsbekæmpelse", "Bilpleje", "Administrativt", "Andet"], help: "Vælg hvilke opgavekategorier, som medarbejderen kan håndtere. For at en ordre kan planlægges i en medarbejders kalender, skal medarbejderen kunne håndtere alle kategorier på ordren. Hvis du fastgør en ordre eller et abonnement til en bestemt medarbejder, så vil ordren blive planlagt til denne medarbejder uagtet de tilladte opgavekategorier." },
-        ],
-      },
+      // Per-medarbejder-sektionerne genereres fra databasens rigtige brugere —
+      // se buildSettingsPage() nedenfor.
     ],
   },
 
@@ -343,3 +330,72 @@ export const SETTINGS_PAGES: Record<string, SPage> = {
     ],
   },
 };
+
+// De arbejdstider, planlæggeren FAKTISK bruger i dag (hardcodet i lib/queries.ts)
+// — vises pr. medarbejder, så tabellen aldrig lyver om den gældende plan.
+function workingHoursTable(navn: string): SField {
+  return {
+    t: "subtable",
+    l: navn,
+    cols: ["Ugedag", "Aktiv", "Fra", "Til", "Flekstid"],
+    rows: [
+      ["Mandag", "Ja", "08:00", "16:00", "+1 time"],
+      ["Tirsdag", "Ja", "08:00", "16:00", "+1 time"],
+      ["Onsdag", "Ja", "08:00", "16:00", "+1 time"],
+      ["Torsdag", "Ja", "08:00", "16:00", "+1 time"],
+      ["Fredag", "Ja", "08:00", "16:00", "+1 time"],
+      ["Lørdag", "", "", "", ""],
+      ["Søndag", "", "", "", ""],
+    ],
+  };
+}
+
+function planningEmployeeSection(navn: string): SSection {
+  return {
+    h: navn,
+    fields: [
+      { t: "checks", key: `emp:${navn}:koersel`, opts: ["Udelad kørsel før første ordre på dagen", "Udelad kørsel efter sidste ordre på dagen", "Tilstræb at starte dagen længst væk fra hjemmeadressen"], on: [0, 1, 2], help: "Vælg dette, hvis du vil undgå, at Karltoffel planlægger kørsel til første ordre / kørsel hjem fra sidste ordre inden for arbejdstiden, eller hvis du ønsker at bruge de tidlige morgentimer på transport." },
+      { t: "select", key: `emp:${navn}:kategorier`, l: "Tilladte opgavekategorier", val: "Alle", opts: ["Alle", "Vinduespudsning", "Rentvandsvask", "Tagrenderens", "Overfladerens", "Algebehandling", "Overfladebeskyttelse", "Privatrengøring", "Ejendomsrengøring", "Viceværtservice", "Grøn service", "Ukrudtsbekæmpelse", "Skadedyrsbekæmpelse", "Bilpleje", "Administrativt", "Andet"], help: "Vælg hvilke opgavekategorier, som medarbejderen kan håndtere. For at en ordre kan planlægges i en medarbejders kalender, skal medarbejderen kunne håndtere alle kategorier på ordren. Hvis du fastgør en ordre eller et abonnement til en bestemt medarbejder, så vil ordren blive planlagt til denne medarbejder uagtet de tilladte opgavekategorier." },
+    ],
+  };
+}
+
+/** Byg den færdige indstillingsside for en rute. /working-hours og
+ *  /planning-settings får deres medarbejdersektioner genereret ud fra de
+ *  RIGTIGE aktive brugere (navne gives af kalderen — dette modul er bevidst
+ *  frit for databaseadgang, så client-komponenter kan importere typerne).
+ *  Andre ruter returneres uændret. */
+export function buildSettingsPage(path: string, employeeNames: string[]): SPage | undefined {
+  const base = SETTINGS_PAGES[path];
+  if (!base) return undefined;
+  if (path === "/working-hours") {
+    return {
+      ...base,
+      sections: [
+        ...base.sections,
+        {
+          h: "Indstillinger per medarbejder",
+          fields: [
+            { t: "note", val: "Arbejdstiderne vises for hver aktiv medarbejder i virksomheden. Tabellen viser den plan, planlæggeren bruger i dag." },
+            ...(employeeNames.length === 0
+              ? [{ t: "note", val: "Ingen aktive medarbejdere fundet." } as SField]
+              : employeeNames.map(workingHoursTable)),
+            { t: "note", val: "Flekstid-valgmuligheder per dag: (blank), +30 min, +1 time, +1½ time, +2 timer, +3 timer, +4 timer, +5 timer, +6 timer." },
+          ],
+        },
+      ],
+    };
+  }
+  if (path === "/planning-settings") {
+    return {
+      ...base,
+      sections: [
+        ...base.sections,
+        ...(employeeNames.length === 0
+          ? [{ fields: [{ t: "note", val: "Ingen aktive medarbejdere fundet." } as SField] }]
+          : employeeNames.map(planningEmployeeSection)),
+      ],
+    };
+  }
+  return base;
+}

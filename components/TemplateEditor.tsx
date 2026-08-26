@@ -61,7 +61,15 @@ export default function TemplateEditor({
             <div className="f2">
               <label className="col-label">
                 Besked{" "}
-                <a onClick={() => setShowVars(true)} style={{ cursor: "pointer" }}>(Se liste over variable felter, du kan anvende)</a>
+                {/* Rigtig <button> (stylet som link): et <a> uden href kan
+                    hverken fokuseres eller aktiveres med tastatur. */}
+                <button
+                  type="button"
+                  onClick={() => setShowVars(true)}
+                  style={{ background: "none", border: 0, padding: 0, font: "inherit", color: "var(--primary)", textDecoration: "underline", cursor: "pointer" }}
+                >
+                  (Se liste over variable felter, du kan anvende)
+                </button>
               </label>
               <div>
                 <textarea name="body" className="form-control" rows={13} defaultValue={values.body ?? t.body} />

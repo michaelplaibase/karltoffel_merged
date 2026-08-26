@@ -21,15 +21,19 @@ function parsePayload(raw: string | null): TmPayload | null {
   try { return JSON.parse(raw) as TmPayload; } catch { return null; }
 }
 const DKK = new Intl.NumberFormat("da-DK", { maximumFractionDigits: 0 });
+// Dansk kalenderdato (ÅÅÅÅ-MM-DD) — toISOString() er ren UTC, så et lead fra
+// kl. 00:30 dansk tid ville ellers vises med gårsdagens dato.
+const CPH_DATE = new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Copenhagen", year: "numeric", month: "2-digit", day: "2-digit" });
 const STATUS_CLASS: Record<string, string> = { new: "badge-soft-warning", contacted: "badge-soft-muted", converted: "badge-soft-success", rejected: "badge-soft-danger" };
 const FILTERS: { key: string; label: string }[] = [
   { key: "", label: "Alle" }, { key: "new", label: "Ny" }, { key: "contacted", label: "Kontaktet" },
   { key: "converted", label: "Konverteret" }, { key: "rejected", label: "Afvist" },
 ];
 
-export default async function LeadsPage({ searchParams }: { searchParams: Promise<{ status?: string }> }) {
+export default async function LeadsPage({ searchParams }: { searchParams: Promise<{ status?: string; fejl?: string }> }) {
   const sp = await searchParams;
   const active = sp.status && sp.status in STATUS_LABEL ? sp.status : "";
+  const fejl = sp.fejl?.trim() || "";
   const leads = await prisma.lead.findMany({
     where: active ? { status: active } : {},
     orderBy: { createdAt: "desc" },
@@ -40,6 +44,12 @@ export default async function LeadsPage({ searchParams }: { searchParams: Promis
     <div className="container-1140">
       <h1 className="page-title">Emner</h1>
       <p className="page-desc">Indkomne emner fra hjemmesiden. Konvertér et emne til en kunde, når I går videre med det.</p>
+
+      {fejl ? (
+        <div className="card" style={{ borderLeft: "4px solid #c0392b", marginBottom: 12 }}>
+          <div className="card-body" style={{ color: "#c0392b" }}>{fejl}</div>
+        </div>
+      ) : null}
 
       <div className="card">
         <div className="card-body">
@@ -63,11 +73,21 @@ export default async function LeadsPage({ searchParams }: { searchParams: Promis
                     ...(l.status !== "converted"
                       ? [{ label: "Markér som kontaktet", action: markLeadContacted.bind(null, l.id) }]
                       : []),
+                    // Retvisende tekst: konverteringen opretter et afventende
+                    // abonnement/en ordre ud fra pakkevalget — det må hverken
+                    // label eller bekræftelse skjule. For allerede konverterede
+                    // leads findes kun "Vis kunde" (ren navigation) ovenfor.
                     ...(l.status !== "converted"
                       ? [{
-                          label: l.contactId ? "Åbn som kunde" : "Konvertér til kunde…",
+                          label: l.contactId ? "Konvertér emne (eksisterende kunde)…" : "Konvertér til kunde…",
                           action: convertLead.bind(null, l.id),
-                          confirm: { title: "Konvertér emne", body: `Opret ${l.name} som kunde ud fra dette emne?`, confirmLabel: "Konvertér" },
+                          confirm: {
+                            title: "Konvertér emne",
+                            body: l.contactId
+                              ? `Knyt emnet til den eksisterende kunde ${l.name}? Har emnet et pakkevalg, oprettes samtidig et afventende abonnement eller en afventende ordre på kunden.`
+                              : `Opret ${l.name} som kunde ud fra dette emne? Har emnet et pakkevalg, oprettes samtidig et afventende abonnement eller en afventende ordre.`,
+                            confirmLabel: "Konvertér",
+                          },
                         }]
                       : []),
                     ...(l.status !== "converted" && l.status !== "rejected"
@@ -80,7 +100,7 @@ export default async function LeadsPage({ searchParams }: { searchParams: Promis
                   return (
                     <tr key={l.id}>
                       <td>{items.length ? <RowMenu items={items} /> : null}</td>
-                      <td className="num">{l.createdAt.toISOString().slice(0, 10)}</td>
+                      <td className="num">{CPH_DATE.format(l.createdAt)}</td>
                       <td>
                         {l.name}
                         {l.contactId ? <span className="badge badge-soft-muted" style={{ marginLeft: 6 }}>eksisterende kunde</span> : null}

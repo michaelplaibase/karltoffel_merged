@@ -1,7 +1,8 @@
 // Engangs-tokens til Ja/Måske/Nej-links i tilbudsmailen. Se prisma-modellen
-// QuoteToken: ét token pr. udsendt tilbud, forbruges (usedAt+choice sat) første
-// gang ét af de tre links klikkes — et gammelt eller videresendt link virker
-// derefter ikke igen, uanset hvilket af de tre valg der klikkes på anden gang.
+// QuoteToken: ét token pr. udsendt tilbud. Ja/Nej forbruger tokenet (usedAt+
+// choice sat) — et gammelt eller videresendt link virker derefter ikke igen.
+// "Måske" er IKKE et endeligt svar og forbruger derfor ikke tokenet: kunden
+// skal stadig kunne klikke Ja/Nej inden for de lovede 30 dages gyldighed.
 import { randomBytes } from "node:crypto";
 import { prisma } from "./db";
 
@@ -17,17 +18,33 @@ export async function issueQuoteToken(leadId: number): Promise<string> {
 export type Choice = "accept" | "maybe" | "decline";
 
 export type ConsumeResult =
-  | { ok: true; leadId: number }
+  | { ok: true; leadId: number; firstMaybe?: boolean }
   | { ok: false; reason: "not_found" | "expired" | "already_used" };
 
 /** Forbrug et token. Atomisk mod dobbelt-klik (to samtidige requests med samme
  *  token): updateMany med usedAt:null i where-clausen er selve låsen — kun den
- *  request der rammer count:1 vinder retten til at handle på valget. */
+ *  request der rammer count:1 vinder retten til at handle på valget.
+ *
+ *  Undtagelsen er "maybe": valget noteres (choice), men usedAt forbliver null,
+ *  så et efterfølgende "Ja tak"/"Nej tak" stadig kan forbruge tokenet — ellers
+ *  ville en tøvende kunde lande på "already_used", selvom mailen lover 30 dages
+ *  gyldighed. */
 export async function consumeQuoteToken(token: string, choice: Choice): Promise<ConsumeResult> {
   const row = await prisma.quoteToken.findUnique({ where: { token } });
   if (!row) return { ok: false, reason: "not_found" };
   if (row.expiresAt.getTime() < Date.now()) return { ok: false, reason: "expired" };
   if (row.usedAt) return { ok: false, reason: "already_used" };
+
+  if (choice === "maybe") {
+    // Notér valget uden at forbruge — kun hvis intet endeligt svar nåede først.
+    // Count-baseret: kun det FØRSTE "Måske" melder firstMaybe (gentagne klik/
+    // link-prefetch må ikke udløse en staff-mail pr. GET).
+    const noted = await prisma.quoteToken.updateMany({
+      where: { token, usedAt: null, NOT: { choice: "maybe" } },
+      data: { choice },
+    });
+    return { ok: true, leadId: row.leadId, firstMaybe: noted.count === 1 };
+  }
 
   const claimed = await prisma.quoteToken.updateMany({
     where: { token, usedAt: null },

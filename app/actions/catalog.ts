@@ -17,6 +17,11 @@ export async function createDiscountCode(_prev: CatalogState, formData: FormData
   const expires = String(formData.get("expiresAt") ?? "").trim();
   if (!code) return { error: "Angiv en rabatkode." };
   if (!Number.isFinite(percent) || percent <= 0 || percent > 100) return { error: "Angiv en procentsats mellem 1 og 100." };
+  // Dubletværn (case-ufølsomt): koden er ikke @unique i skemaet, og validate-
+  // opslaget ved online bestilling ville ellers kunne ramme en vilkårlig af
+  // flere rækker med samme kode — og give kunden den forkerte procent.
+  const existing = await prisma.discountCode.findFirst({ where: { code: { equals: code, mode: "insensitive" } } });
+  if (existing) return { error: `Rabatkoden '${existing.code}' findes allerede. Slet den gamle først, hvis satsen skal ændres.` };
   await prisma.discountCode.create({
     data: { code, percent, expiresAt: /^\d{4}-\d{2}-\d{2}$/.test(expires) ? new Date(`${expires}T00:00:00Z`) : null },
   });

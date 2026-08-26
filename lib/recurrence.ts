@@ -1,8 +1,9 @@
 // Subscription → order recurrence. Materialises the upcoming orders for active
 // subscriptions from the base interval + per-task interval multiplier + start
 // week, so the calendar reflects recurring work automatically. Idempotent:
-// re-running skips weeks that already have an order for the subscription, and
-// skips holiday weeks. Server-only (Node) — used by the subscription actions,
+// re-running skips weeks that already have an order for the subscription; visits
+// falling in holiday weeks are pushed to the first open week after the holiday.
+// Server-only (Node) — used by the subscription actions,
 // the manual "Generér" button and the nightly /api/plan cron.
 import { prisma } from "./db";
 import { Prisma } from "@prisma/client";
@@ -43,7 +44,7 @@ function parseMultiplier(label: string | null): number | null {
 }
 
 /** "Uge 29" → 29 (year-less; resolved against a reference year). */
-function parseWeekLabel(label: string | null): number | null {
+export function parseWeekLabel(label: string | null): number | null {
   if (!label) return null;
   const m = label.match(/Uge\s+(\d+)/i);
   return m ? Number(m[1]) : null;
@@ -80,7 +81,10 @@ async function defaultEmployeeId(fixedEmployee: string): Promise<number | null> 
   const users = await prisma.user.findMany({ where: { active: true }, orderBy: { id: "asc" } });
   if (fixedEmployee && fixedEmployee !== "Ingen") {
     const match = users.find((u) => `${u.firstName} ${u.lastName}` === fixedEmployee);
-    if (match) return match.id;
+    // Fast medarbejder uden aktivt match (deaktiveret/ukendt navn): ordren
+    // efterlades UDEN medarbejder (synligt "Ikke planlagt" i kalender/
+    // dagsprogram) — aldrig stille tildelt en vilkårlig første aktiv bruger.
+    return match ? match.id : null;
   }
   return users[0]?.id ?? null;
 }
@@ -96,31 +100,45 @@ export async function generateForSubscription(sub: SubWithTasks, ref: Date = new
   const horizonEnd = thisMonday + horizonWeeks * WEEK_MS;
   const refYear = ref.getUTCFullYear();
 
-  // Anchor at week N. The label is year-less, so if this year's occurrence is
-  // beyond the planning horizon the subscription is an ongoing one carried over
-  // from a previous year — anchor there so the rhythm continues without a
-  // year-boundary gap. (The rhythm phase is week-N, independent of which year.)
-  let anchor = mondayOfIsoWeek(refYear, subWeek).getTime();
-  if (anchor > horizonEnd) anchor = mondayOfIsoWeek(refYear - 1, subWeek).getTime();
-
-  // Per task: its multiplier m and the visit offset j0 from the subscription
-  // start, derived purely from the week-number difference (year-independent).
-  const tasks = sub.tasks.map((t) => ({
-    t,
-    m: parseMultiplier(t.intervalMultiplier),
-    j0: Math.round(((parseWeekLabel(t.startWeek) ?? subWeek) - subWeek) / base),
-  }));
-
   // Existing orders keyed by the week they were generated FOR (sourceWeek) —
   // NOT their current plannedAt: a moved order must keep claiming its rhythm
   // week, otherwise the nightly run re-creates it and double-books the customer.
   // (plannedAt-fallback covers rows from before the sourceWeek migration.)
   const existing = await prisma.order.findMany({ where: { subscriptionId: sub.id }, select: { plannedAt: true, sourceWeek: true } });
   const existingWeeks = new Set(existing.map((o) => (o.sourceWeek ?? mondayOf(o.plannedAt)).getTime()));
+  // Leveringsuger, der allerede er optaget (ordrens FAKTISKE placering) —
+  // bruges så et ferie-skubbet besøg ikke lander oven i en eksisterende ordre.
+  const usedDeliveryWeeks = new Set(existing.map((o) => mondayOf(o.plannedAt).getTime()));
 
   // Tombstones: uger hvor brugeren har SLETTET abonnements-ordren — genopliv aldrig.
   const skips = await prisma.subscriptionWeekSkip.findMany({ where: { subscriptionId: sub.id }, select: { week: true } });
   for (const s of skips) existingWeeks.add(mondayOf(s.week).getTime());
+
+  // Anchor at week N. Labels are year-less, so the week is resolved year-aware:
+  //  - NYT abonnement (endnu ingen ordrer/tombstones): startugen er den NÆSTE
+  //    forekomst af uge N — "Uge 40" oprettet i januar starter til efteråret
+  //    (uden for horisonten ⇒ 0 ordrer nu; cron/knappen genererer når
+  //    horisonten når ugen), og "Uge 2" oprettet i august er januar næste år.
+  //  - IGANGVÆRENDE abonnement (har ordrer): rytme-fasen er uge-N uafhængigt af
+  //    år — ligger årets forekomst uden for horisonten, er abonnementet
+  //    videreført fra sidste år, og første besøg rykkes fasejusteret frem.
+  const hasOrders = existing.length > 0 || skips.length > 0;
+  let anchor = mondayOfIsoWeek(refYear, subWeek).getTime();
+  if (hasOrders) {
+    if (anchor > horizonEnd) anchor = mondayOfIsoWeek(refYear - 1, subWeek).getTime();
+  } else if (anchor < thisMonday) {
+    anchor = mondayOfIsoWeek(refYear + 1, subWeek).getTime();
+  }
+
+  // Per task: its multiplier m and the visit offset j0 from the subscription
+  // start, derived from the week-number difference. Årløst uge-tal LAVERE end
+  // startugen er næste års forekomst (fx "Uge 2" på et uge-40-abonnement er
+  // januar) — ikke et negativt offset, der ville medtage opgaven fra første besøg.
+  const tasks = sub.tasks.map((t) => {
+    const taskWeek = parseWeekLabel(t.startWeek) ?? subWeek;
+    const weekDiff = taskWeek >= subWeek ? taskWeek - subWeek : taskWeek - subWeek + 52;
+    return { t, m: parseMultiplier(t.intervalMultiplier), j0: Math.round(weekDiff / base) };
+  });
 
   const holidays = await prisma.holidayWeek.findMany();
   const isHoliday = (ms: number) => holidays.some((h) => ms >= h.startWeek.getTime() && ms <= h.endWeek.getTime());
@@ -131,26 +149,61 @@ export async function generateForSubscription(sub: SubWithTasks, ref: Date = new
   let v = anchor;
   if (v < thisMonday) v += Math.ceil((thisMonday - v) / step) * step;
 
+  // Tasks due at a visit index (i base-steps from the anchor): a task recurs
+  // every m visits from its own offset j0. "På anmodning" (m == null) is skipped,
+  // og sæsonpausede opgaver udelades i deres pausevindue (rytmen — besøgsindeks
+  // i — tæller videre gennem pausen, så opgaven genoptages på sin fase).
+  const dueAt = (i: number, weekMs: number) =>
+    tasks.filter((x) => x.m != null && i >= x.j0 && (i - x.j0) % x.m === 0 && !isPausedOn(x.t, weekMs)).map((x) => x.t);
+  // Opgaver fra et ferie-skubbet besøg, der flettes ind i rytmens eget næste
+  // besøg (nøgle: målugens rytme-uge). UNION frem for skip: opgaver, der kun
+  // var due på det skubbede besøg (fx "Hver 13. gang"), må ikke mistes.
+  const carriedByWeek = new Map<number, SubWithTasks["tasks"]>();
+
   let created = 0;
   for (; v <= horizonEnd; v += step) {
-    if (isHoliday(v) || existingWeeks.has(v)) continue;
+    if (existingWeeks.has(v)) continue;
 
-    // Tasks due at this visit index (i base-steps from the anchor): a task recurs
-    // every m visits from its own offset j0. "På anmodning" (m == null) is skipped,
-    // og sæsonpausede opgaver udelades i deres pausevindue (rytmen — besøgsindeks
-    // i — tæller videre gennem pausen, så opgaven genoptages på sin fase). Er ALLE
-    // ugens opgaver på pause, giver `!due.length` ingen ordre den uge.
+    // Ferielukket uge: besøget mistes IKKE — det skubbes til den første LEDIGE
+    // åbne uge efter ferien (som /holidays-forklaringen lover). sourceWeek
+    // forbliver rytme-ugen, så dedup/tombstones stadig virker, og rytmen
+    // fortsætter uændret fra næste besøg. Rammer skubbet rytmens eget næste
+    // besøg, flettes opgaverne ind i det (carriedByWeek) i stedet for at
+    // besøget slettes; er ugen optaget/tombstonet, prøves den næste uge.
+    let deliveryWeek = v;
+    let mergedInto: number | null = null;
+    let placeable = false;
+    for (let guard = 0; guard < 53; guard++) {
+      if (isHoliday(deliveryWeek)) { deliveryWeek += WEEK_MS; continue; }
+      if (deliveryWeek === v) { placeable = true; break; }
+      const stepsFromAnchor = Math.round((deliveryWeek - anchor) / WEEK_MS);
+      const isRhythmWeek = stepsFromAnchor % base === 0;
+      if (isRhythmWeek && !existingWeeks.has(deliveryWeek)) { mergedInto = deliveryWeek; break; }
+      if (isRhythmWeek || usedDeliveryWeeks.has(deliveryWeek)) { deliveryWeek += WEEK_MS; continue; }
+      placeable = true; break;
+    }
+
     const i = Math.round((v - anchor) / step);
-    const due = tasks.filter((x) => x.m != null && i >= x.j0 && (i - x.j0) % x.m === 0 && !isPausedOn(x.t, v)).map((x) => x.t);
-    if (!due.length) continue;
+    if (mergedInto != null) {
+      const dueHere = dueAt(i, v);
+      if (dueHere.length) carriedByWeek.set(mergedInto, [...(carriedByWeek.get(mergedInto) ?? []), ...dueHere]);
+      continue;
+    }
+    if (!placeable) continue; // 52+ ugers sammenhængende blokering — opgiv besøget
+
+    const due = dueAt(i, v);
+    // Flet opgaver båret med fra et ferie-skubbet besøg ind (dedup på id) —
+    // kunden skal have ÉN samlet ordre i ugen, uden at noget udgår.
+    for (const t of carriedByWeek.get(v) ?? []) if (!due.some((d) => d.id === t.id)) due.push(t);
+    if (!due.length) continue; // alle ugens opgaver på pause/"På anmodning"
 
     try {
       await prisma.order.create({
         data: {
           contactId: sub.contactId,
           deliveryAddress: sub.deliveryAddress,
-          plannedAt: new Date(v + 10 * 3600 * 1000), // Monday 10:00 UTC
-          sourceWeek: new Date(v),                   // rytme-ugen — dedup-nøgle, flytning rører den ikke
+          plannedAt: new Date(deliveryWeek + 10 * 3600 * 1000), // Monday 10:00 UTC (evt. ferie-skubbet uge)
+          sourceWeek: new Date(v),                              // rytme-ugen — dedup-nøgle, flytning rører den ikke
           sourceType: "subscription",
           subscriptionId: sub.id,
           employeeId,
@@ -171,6 +224,7 @@ export async function generateForSubscription(sub: SubWithTasks, ref: Date = new
       throw e;
     }
     existingWeeks.add(v);
+    usedDeliveryWeeks.add(deliveryWeek);
     created++;
   }
   return created;
@@ -206,6 +260,13 @@ export async function regenerateFutureOrders(
   ref: Date = new Date(),
   horizonWeeks = DEFAULT_HORIZON_WEEKS
 ): Promise<{ generated: number }> {
+  // Defensiv guard: kan skabelonen slet ikke generere (abonnementet er slettet,
+  // eller startugen er i et format genereringen ikke forstår), må de
+  // eksisterende fremtidige ordrer IKKE slettes — en ugyldig redigering ville
+  // ellers tømme kalenderen uden at genskabe noget.
+  const sub = await prisma.subscription.findUnique({ where: { id }, select: { startWeek: true } });
+  if (!sub || parseWeekLabel(sub.startWeek) == null) return { generated: 0 };
+
   const nextMonday = new Date(mondayOf(ref).getTime() + WEEK_MS);
   const stale = await prisma.order.findMany({
     where: { subscriptionId: id, plannedAt: { gte: nextMonday }, status: "Afventer levering" },

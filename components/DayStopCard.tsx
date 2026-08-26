@@ -6,18 +6,38 @@
 // flows, and "Mere ▾" opens a dropdown (vis i kalender / kundedetaljer / send
 // notifikation / slet ordre).
 import Link from "next/link";
-import { useState, useTransition } from "react";
+import { usePathname, useSearchParams } from "next/navigation";
+import { useEffect, useRef, useState, useTransition } from "react";
 import { CatChip, money, telHref, telDisplay } from "@/components/ui";
 import { deleteOrder } from "@/app/actions/orders";
-import type { DayStop } from "@/lib/calendar";
+import type { DayStop, DayUnplannedStop } from "@/lib/calendar";
 
-export default function DayStopCard({ stop, weekMonday }: { stop: DayStop; weekMonday: string }) {
+export default function DayStopCard({ stop, weekMonday }: { stop: DayStop | DayUnplannedStop; weekMonday: string }) {
+  // Afslut ordre-flowet skal vende TILBAGE til dagsprogrammet (inkl. valgt
+  // dato), ikke til kontorets /orders — send den aktuelle relative sti med
+  // som ?back, som complete-siden whitelister og bruger som backUrl.
+  const pathname = usePathname();
+  const qs = useSearchParams().toString();
+  const backParam = encodeURIComponent(qs ? `${pathname}?${qs}` : pathname);
   const [panel, setPanel] = useState<string | null>(null);
   const [more, setMore] = useState(false);
   const [confirm, setConfirm] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
+  const moreRef = useRef<HTMLDivElement>(null);
   const toggle = (k: string) => setPanel((p) => (p === k ? null : k));
+
+  // Luk "Mere ▾" ved klik/tap UDENFOR — onMouseLeave alene virker ikke på
+  // touch-skærme, hvor menuen ellers blev hængende åben.
+  useEffect(() => {
+    if (!more) return;
+    const close = (e: MouseEvent) => {
+      if (moreRef.current?.contains(e.target as Node)) return;
+      setMore(false);
+    };
+    document.addEventListener("click", close);
+    return () => document.removeEventListener("click", close);
+  }, [more]);
 
   const tel = telHref(stop.phone);
 
@@ -31,7 +51,11 @@ export default function DayStopCard({ stop, weekMonday }: { stop: DayStop; weekM
   return (
     <div className="daycal-stop">
       <div style={{ minWidth: 0 }}>
-        <div className="when">{stop.from} - {stop.to}</div>
+        {"reason" in stop ? (
+          <div className="when" style={{ color: "var(--danger, #C4183C)" }}>Ikke planlagt · {stop.reason}</div>
+        ) : (
+          <div className="when">{stop.from} - {stop.to}</div>
+        )}
         <a className="maplink" href={`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(stop.address)}`} target="_blank" rel="noopener noreferrer">
           <i className="bi bi-geo-alt-fill" /> {stop.address}
         </a>
@@ -72,8 +96,8 @@ export default function DayStopCard({ stop, weekMonday }: { stop: DayStop; weekM
         )}
       </div>
 
-      <div className="row-actions" style={{ position: "relative" }}>
-        <Link href={`/orders/${stop.orderId}/complete`} className="btn btn-outline-primary btn-sm">Afslut ordre</Link>
+      <div className="row-actions" style={{ position: "relative" }} ref={moreRef}>
+        <Link href={`/orders/${stop.orderId}/complete?back=${backParam}`} className="btn btn-outline-primary btn-sm">Afslut ordre</Link>
         <Link href={`/orders/${stop.orderId}`} className="btn btn-outline-primary btn-sm">Rediger ordre</Link>
         {stop.subscriptionNo != null
           ? <Link href={`/subscriptions/${stop.subscriptionNo}`} className="btn btn-outline-primary btn-sm">Rediger abo.</Link>

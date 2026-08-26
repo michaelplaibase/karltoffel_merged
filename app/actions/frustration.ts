@@ -11,9 +11,12 @@ import { sendEmail } from "@/lib/email";
 export type FrustrationReportState = { sent?: boolean; error?: string };
 
 const TO = process.env.FRUSTRATION_REPORT_EMAIL?.trim() || "hej@karltoffel.dk";
-// Grænse matcher Vercel Server Actions' body-limit med luft til base64-overhead
-// (~33%) og øvrige felter — 3 MB rå billeddata er rigeligt til en telefon-screenshot.
-const MAX_SCREENSHOT_BYTES = 3 * 1024 * 1024;
+// Server actions' requests er som standard begrænset til 1 MB i denne
+// Next-version (docs: server-actions.md, "Action requests are capped at 1MB") —
+// et større screenshot ville dø i frameworket, FØR denne action overhovedet
+// kører. FrustrationButton nedskalerer derfor billedet client-side til under
+// ~900 KB før submit; grænsen her er kun et bagstopper-værn for samme tal.
+const MAX_SCREENSHOT_BYTES = 900 * 1024;
 
 export async function submitFrustrationReport(_prev: FrustrationReportState, formData: FormData): Promise<FrustrationReportState> {
   const me = await getSessionUser();
@@ -28,7 +31,7 @@ export async function submitFrustrationReport(_prev: FrustrationReportState, for
   let inlineImage = "";
   if (screenshot instanceof File && screenshot.size > 0) {
     if (screenshot.size > MAX_SCREENSHOT_BYTES) {
-      return { error: "Screenshot er for stort (maks. 3 MB) — prøv at beskære det." };
+      return { error: "Screenshot er for stort (maks. ca. 900 KB) — prøv at beskære det eller vælg et mindre billede." };
     }
     const buf = Buffer.from(await screenshot.arrayBuffer());
     const b64 = buf.toString("base64");

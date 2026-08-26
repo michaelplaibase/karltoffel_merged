@@ -2,6 +2,7 @@ import { prisma } from "@/lib/db";
 import { consumeQuoteToken, type Choice } from "@/lib/quote-tokens";
 import { convertLeadCore } from "@/app/actions/leads";
 import { sendEmail } from "@/lib/email";
+import { underLimit, recordHit } from "@/lib/rate-limit";
 import type { NextRequest } from "next/server";
 
 // Kunden lander her fra Ja/Måske/Nej-knappen i tilbudsmailen. Ingen login —
@@ -66,6 +67,11 @@ async function notifyCustomer(to: string, name: string, company: { name: string;
 }
 
 export async function GET(req: NextRequest) {
+  // Uautentificeret offentligt link — samme pr.-IP-værn som rabatkode-API'et,
+  // så gentagne klik/scanning ikke kan hamre databasen eller udløse mails.
+  const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "local";
+  if (!underLimit(`quote:${ip}`, 30)) return tak("error");
+  recordHit(`quote:${ip}`, 60_000);
   const url = new URL(req.url);
   const token = url.searchParams.get("t") ?? "";
   const choiceRaw = url.searchParams.get("c") ?? "";
@@ -89,13 +95,21 @@ export async function GET(req: NextRequest) {
     // AFVENTENDE abonnement/ordre. "Afventende" er bevidst — der sendes ikke
     // en håndværker ud, og der oprettes intet bindende, før nogen har ringet
     // og bekræftet tid/pris med kunden (samme flow som alle andre leads).
-    const contactId = await convertLeadCore(lead.id);
+    // try/catch: tokenet ER forbrugt på dette tidspunkt — kaster konverteringen,
+    // skal staff-mailen STADIG afsted (ellers forsvinder accepten sporløst,
+    // og kundens næste klik rammer "already_used").
+    const result = await convertLeadCore(lead.id).catch((e) => {
+      console.error("[quote-response] convertLeadCore exception:", e);
+      return { ok: false as const, error: "Uventet fejl under konverteringen — konvertér emnet manuelt i CRM'et." };
+    });
     await notifyStaff(
       `✅ ${lead.name} accepterede tilbuddet`,
       `${lead.name} har klikket "Ja tak" i tilbudsmailen.\n\n` +
-        (contactId != null
-          ? `Oprettet som kunde: https://crm.karltoffel.dk/customers/${contactId}\nRing og bekræft tid/pris — abonnementet/ordren afventer stadig godkendelse.`
-          : `Kunne IKKE konverteres automatisk (mangler firmaopsætning eller leadet var allerede slettet) — tjek CRM'et manuelt: https://crm.karltoffel.dk/leads`),
+        (result.ok
+          ? result.alreadyConverted
+            ? `Leadet var allerede konverteret — der er IKKE oprettet noget nyt (ingen dublet). Kunden: https://crm.karltoffel.dk/customers/${result.contactId}`
+            : `Oprettet som kunde: https://crm.karltoffel.dk/customers/${result.contactId}\nRing og bekræft tid/pris — abonnementet/ordren afventer stadig godkendelse.`
+          : `Kunne IKKE konverteres automatisk: ${result.error}\nTjek CRM'et manuelt: https://crm.karltoffel.dk/leads`),
     );
     if (lead.email) {
       const company = await prisma.company.findFirst();
@@ -105,12 +119,29 @@ export async function GET(req: NextRequest) {
   }
 
   if (choice === "maybe") {
-    await notifyStaff(`🤔 ${lead.name} er i tvivl om tilbuddet`, `${lead.name} klikkede "Måske" i tilbudsmailen. Følg op med en opringning: https://crm.karltoffel.dk/leads`);
+    // Kun FØRSTE "Måske" udløser staff-mail — gentagne klik/prefetch af linket
+    // må ikke give en mail pr. GET.
+    if (result.firstMaybe) {
+      await notifyStaff(`🤔 ${lead.name} er i tvivl om tilbuddet`, `${lead.name} klikkede "Måske" i tilbudsmailen. Følg op med en opringning: https://crm.karltoffel.dk/leads`);
+    }
     return tak("maybe", fornavn);
   }
 
-  // decline
-  await prisma.lead.update({ where: { id: lead.id }, data: { status: "rejected" } });
-  await notifyStaff(`❌ ${lead.name} afviste tilbuddet`, `${lead.name} klikkede "Nej tak" i tilbudsmailen. Leadet er markeret afvist i CRM'et.`);
+  // decline — men KUN til "rejected" hvis leadet ikke allerede er konverteret:
+  // ellers ville konverter-handlingerne dukke op igen på /leads (dublet-risiko),
+  // mens kunde + afventende abonnement/ordre blev hængende uden varsel. Svaret
+  // er allerede noteret på tokenet (choice=decline); staff-mailen peger på
+  // oprydningen. Atomisk på samme måde som konverteringen (status-betinget).
+  const declined = await prisma.lead.updateMany({
+    where: { id: lead.id, status: { not: "converted" } },
+    data: { status: "rejected" },
+  });
+  await notifyStaff(
+    `❌ ${lead.name} afviste tilbuddet`,
+    declined.count > 0
+      ? `${lead.name} klikkede "Nej tak" i tilbudsmailen. Leadet er markeret afvist i CRM'et.`
+      : `${lead.name} klikkede "Nej tak" i tilbudsmailen — men leadet er ALLEREDE konverteret til kunde. Ryd op i det afventende abonnement/ordren` +
+        (lead.contactId ? `: https://crm.karltoffel.dk/customers/${lead.contactId}` : ` via https://crm.karltoffel.dk/leads`),
+  );
   return tak("decline", fornavn);
 }

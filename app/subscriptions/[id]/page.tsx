@@ -1,18 +1,15 @@
 import { notFound } from "next/navigation";
 import { getSubscriptionEditData, getContactOptions, getEmployeeNames, getMinuteRate } from "@/lib/queries";
 import { updateSubscription, stopSubscription, approveSubscription } from "@/app/actions/subscriptions";
+import { routeId } from "@/lib/route-ids";
 import SubscriptionForm from "@/components/SubscriptionForm";
 import ConfirmButton from "@/components/ConfirmButton";
 
 export const metadata = { title: "Rediger abonnement · Karltoffel" };
 
-export default async function EditSubscription({
-  params, searchParams,
-}: { params: Promise<{ id: string }>; searchParams: Promise<{ skippedLocked?: string }> }) {
+export default async function EditSubscription({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const { skippedLocked: skippedLockedRaw } = await searchParams;
-  const skippedLocked = Number(skippedLockedRaw ?? 0) || 0;
-  const displayNo = Number(id);
+  const displayNo = routeId(id); // ikke-numerisk id ⇒ 404, ikke Prisma-500
   const [sub, contacts, employees, minuteRate] = await Promise.all([
     getSubscriptionEditData(displayNo),
     getContactOptions(),
@@ -38,16 +35,6 @@ export default async function EditSubscription({
               body={`Godkend abonnement #${sub.displayNo}? Abonnementet aktiveres, og de kommende ordrer lægges i kalenderen.`}
               confirmLabel="Godkend"
             />
-          </div>
-        </div>
-      )}
-      {skippedLocked > 0 && (
-        <div className="card" style={{ marginBottom: 16, borderLeft: "4px solid #d9534f" }}>
-          <div className="card-body">
-            <b>{skippedLocked} fastlåste ordre{skippedLocked > 1 ? "r" : ""} blev IKKE opdateret til det nye interval</b>
-            <div className="muted" style={{ fontSize: 13 }}>
-              Ordrerne er markeret som helt fastlåst (fx importeret fra WorkMaker) og røres derfor aldrig automatisk. Tjek dem manuelt under abonnementets ordrer.
-            </div>
           </div>
         </div>
       )}

@@ -1,15 +1,39 @@
+import { redirect } from "next/navigation";
+import { getSessionUser } from "@/lib/api-auth";
+import { todayCphISO } from "@/lib/calendar";
+
 export const metadata = { title: "Rapporter · Karltoffel" };
 
-/** Indeværende måneds første/sidste dag (UTC) som YYYY-MM-DD — rapportens default-periode. */
+// Uden denne prerenderes siden ved BUILD (ingen request-time-API'er ⇒ statisk i
+// Next' default-model), og default-datoerne fryser på deploy-dagen — tre uger
+// efter et deploy foreslår felterne stadig deploy-månedens datoer.
+export const dynamic = "force-dynamic";
+
+/** Indeværende måneds første/sidste dag (dansk tid) som YYYY-MM-DD — rapportens
+ *  default-periode. todayCphISO, ikke UTC: kl. 00-02 dansk tid er UTC-datoen i går. */
 function monthRange(): { start: string; end: string } {
-  const now = new Date();
-  const y = now.getUTCFullYear(), m = now.getUTCMonth();
+  const [y, m] = todayCphISO().split("-").map(Number);
   const pad = (n: number) => String(n).padStart(2, "0");
-  const last = new Date(Date.UTC(y, m + 1, 0)).getUTCDate();
-  return { start: `${y}-${pad(m + 1)}-01`, end: `${y}-${pad(m + 1)}-${pad(last)}` };
+  const last = new Date(Date.UTC(y, m, 0)).getUTCDate();
+  return { start: `${y}-${pad(m)}-01`, end: `${y}-${pad(m)}-${pad(last)}` };
 }
 
-export default function ReportDownloadPage() {
+export default async function ReportDownloadPage() {
+  // Rapporterne (og CSV-endpoints'ene bag knapperne) er admin-flader — samme
+  // besked som /payroll i stedet for et råt 403 fra API-ruten.
+  const me = await getSessionUser();
+  if (me == null) redirect("/login");
+  if (!me.isAdmin) {
+    return (
+      <div className="container-1140" style={{ maxWidth: 760 }}>
+        <div className="card"><div className="card-body">
+          <h1 className="page-title">Rapporter</h1>
+          <div className="table-empty">Kun administratorer har adgang til rapporterne.</div>
+        </div></div>
+      </div>
+    );
+  }
+
   const { start, end } = monthRange();
   return (
     <div className="container-1140" style={{ maxWidth: 760 }}>

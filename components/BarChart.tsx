@@ -3,8 +3,30 @@
 // Self-contained SVG chart (the portal uses Plotly-style SVG charts). Client
 // component so the Måned/Uge (monthly vs weekly series) and Søjle/Linje (grouped
 // bars vs line) toggles work. No dependency — draws axes, gridlines and marks.
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import type { ChartData } from "@/lib/reports-data";
+
+/** Tastaturbetjenbar segment-knap (Måned/Uge, Søjle/Linje, Sidste 12 mdr/ÅTD):
+ *  en rigtig <button> med aria-pressed, så Tab + Enter/Space og skærmlæser-
+ *  semantik følger med — rene <span onClick> kan aldrig fokuseres. Stylet
+ *  inline, da .seg-CSS'en kun rammer spans. Deles med KpiSection. */
+export function SegButton({ on, onClick, children }: { on: boolean; onClick: () => void; children: ReactNode }) {
+  return (
+    <button
+      type="button"
+      className={on ? "on" : ""}
+      aria-pressed={on}
+      onClick={onClick}
+      style={{
+        font: "inherit", padding: "4px 11px", cursor: "pointer",
+        border: 0, borderLeft: "1px solid var(--card-border)", marginLeft: -1,
+        background: on ? "var(--primary)" : "#fff", color: on ? "#fff" : "var(--muted)",
+      }}
+    >
+      {children}
+    </button>
+  );
+}
 
 const W = 720, H = 280;
 const PAD = { top: 14, right: 14, bottom: 30, left: 56 };
@@ -41,12 +63,12 @@ export default function BarChart({ chart }: { chart: ChartData }) {
       <h3>{chart.title}</h3>
       <div className="chart-toggles">
         <span className="seg">
-          <span className={gran === "month" ? "on" : ""} onClick={() => setGran("month")}>Måned</span>
-          <span className={gran === "week" ? "on" : ""} onClick={() => setGran("week")}>Uge</span>
+          <SegButton on={gran === "month"} onClick={() => setGran("month")}>Måned</SegButton>
+          <SegButton on={gran === "week"} onClick={() => setGran("week")}>Uge</SegButton>
         </span>
         <span className="seg">
-          <span className={mode === "bar" ? "on" : ""} onClick={() => setMode("bar")}>Søjle</span>
-          <span className={mode === "line" ? "on" : ""} onClick={() => setMode("line")}>Linje</span>
+          <SegButton on={mode === "bar"} onClick={() => setMode("bar")}>Søjle</SegButton>
+          <SegButton on={mode === "line"} onClick={() => setMode("line")}>Linje</SegButton>
         </span>
       </div>
 

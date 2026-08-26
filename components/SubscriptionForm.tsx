@@ -39,8 +39,17 @@ export default function SubscriptionForm({
   // samme state (pause redigeres i sit eget kort, men submittes via editorens
   // skjulte felter — én række, ét sæt felter, indeks-flugt bevaret).
   const [rows, setRows] = useState<TaskRow[]>(initial?.tasks?.length ? initial.tasks : [blankTaskRow()]);
-  const baseOptions = initial?.baseInterval && !BASE_INTERVALS.includes(initial.baseInterval)
-    ? [initial.baseInterval, ...BASE_INTERVALS] : BASE_INTERVALS;
+  // React 19 resetter ukontrollerede felter til deres defaultValue når en
+  // form-action afvikles — ved valideringsfejl ekkoer serveren derfor de
+  // indsendte værdier tilbage i state.values, som prefiller felterne igen.
+  const v = state.values;
+  const baseInterval = v?.baseInterval ?? initial?.baseInterval ?? "Hver 2. uge";
+  const baseOptions = !BASE_INTERVALS.includes(baseInterval) ? [baseInterval, ...BASE_INTERVALS] : BASE_INTERVALS;
+  // En gemt fast medarbejder, der er deaktiveret (mangler i den aktive liste),
+  // skal stadig kunne SES og bevares — ellers falder browseren stille tilbage
+  // til første option ("Ingen"), og tilknytningen mistes ved næste gem.
+  const savedEmployee = initial?.fixedEmployee;
+  const inactiveEmployee = savedEmployee && savedEmployee !== "Ingen" && !employees.includes(savedEmployee) ? savedEmployee : null;
 
   return (
     <form action={formAction}>
@@ -63,13 +72,13 @@ export default function SubscriptionForm({
           <div className="grid-2" style={{ marginBottom: 12 }}>
             <div>
               <label className="field-label">Basis-interval</label>
-              <select name="baseInterval" defaultValue={initial?.baseInterval ?? "Hver 2. uge"} className="form-control form-control-sm">
+              <select name="baseInterval" defaultValue={baseInterval} className="form-control form-control-sm">
                 {baseOptions.map((o) => <option key={o} value={o}>{o}</option>)}
               </select>
             </div>
             <div>
               <label className="field-label">Startuge</label>
-              <input name="startWeek" defaultValue={initial?.startWeek ?? ""} placeholder="Uge 29" className="form-control form-control-sm" />
+              <input name="startWeek" defaultValue={v?.startWeek ?? initial?.startWeek ?? ""} placeholder="Uge 29" className="form-control form-control-sm" />
             </div>
           </div>
           <TaskLineEditor mode="subscription" rows={rows} setRows={setRows} minuteRate={minuteRate} />
@@ -80,7 +89,8 @@ export default function SubscriptionForm({
         <div className="card-header"><h4 className="section-title">Særlige betingelser for planlægning</h4></div>
         <div className="card-body tight">
           <label className="field-label">Medarbejder</label>
-          <select name="fixedEmployee" defaultValue={initial?.fixedEmployee ?? "Ingen"} className="form-control form-control-sm">
+          <select name="fixedEmployee" defaultValue={v?.fixedEmployee ?? initial?.fixedEmployee ?? "Ingen"} className="form-control form-control-sm">
+            {inactiveEmployee && <option value={inactiveEmployee}>Nuværende: {inactiveEmployee} (deaktiveret)</option>}
             {employees.map((e) => <option key={e} value={e}>{e === "Ingen" ? "Vælges automatisk" : e}</option>)}
           </select>
         </div>

@@ -1,6 +1,7 @@
 {
   "crons": [
     { "path": "/api/plan", "schedule": "1 3 * * *" },
+    { "path": "/api/calendar-consistency", "schedule": "31 3 * * *" },
     { "path": "/api/business-invoicing", "schedule": "0 5 20 * *" }
   ]
 }

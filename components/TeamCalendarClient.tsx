@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname, useSearchParams } from "next/navigation";
 import { Fragment, useEffect, useRef, useState, useSyncExternalStore, useTransition } from "react";
 import type { CalendarMonth, CalendarTaskDetail, CalendarWeek, CalStatus } from "@/lib/calendar";
 import { categoryColor } from "@/lib/categories";
@@ -25,7 +26,7 @@ const STATUS_CLASS: Record<CalStatus, string> = {
 // to these same values via --tc-*), so legend swatches match the cards exactly.
 const STATUS_LEGEND: [string, string][] = [
   ["var(--success)", "Afsluttet"], ["var(--primary)", "Afventer"],
-  ["var(--warning)", "Ikke afsluttet"], ["var(--danger)", "Mislykket"],
+  ["var(--warning)", "Sprunget over / anden status"], ["var(--danger)", "Skal genplanlægges"],
 ];
 
 const DAY_HEADS = ["Man", "Tir", "Ons", "Tor", "Fre", "Lør", "Søn"];
@@ -33,6 +34,9 @@ const UNPLANNED_REASON_LABEL: Record<string, string> = {
   unverified_address: "Adresse ikke verificeret",
   unverified_route: "Køretidsmatrix ikke verificeret",
   unassigned: "Ikke tildelt kollega",
+  inactive_employee: "Kollega ikke aktiv i kalenderen",
+  overflow: "Ingen ledig arbejdstid i ugen",
+  holiday: "Ferielukket uge",
   invalid_duration: "Besøget mangler gyldig varighed",
 };
 
@@ -89,6 +93,11 @@ function PreviewTaskDetails({ tasks }: { tasks: CalendarTaskDetail[] }) {
 export default function TeamCalendarClient(props: Props) {
   const readOnly = props.readOnly ?? false;
   const basePath = props.basePath ?? "/calendar";
+  // "Afslut ordre …" skal vende tilbage HERTIL (den viste uge), ikke til
+  // /orders — complete-siden whitelister ?back og bruger den som backUrl.
+  const pathname = usePathname();
+  const search = useSearchParams().toString();
+  const backParam = encodeURIComponent(search ? `${pathname}?${search}` : pathname);
   const employees = props.mode === "week" ? props.week.employees : props.month.employees;
   const empById = new Map(employees.map((e) => [e.id, e]));
 
@@ -190,7 +199,7 @@ export default function TeamCalendarClient(props: Props) {
           : `UGE ${props.month.weekNos[0]}–${props.month.weekNos[props.month.weekNos.length - 1]}`}
       </span>
       <span className="sp" />
-      {readOnly && <span className="badge">Arbejdsdag 08:00–18:00 · kapacitet rulles til første ledige hverdag</span>}
+      {readOnly && <span className="badge">Arbejdsdag 08:00–16:00 (+1 time fleks) · man–fre</span>}
       {props.mode === "week" && !readOnly && (
         <button className="cbtn" type="button" disabled={pending} onClick={() => run(() => replanWeek(props.week.monday))}>
           {pending ? "Planlægger…" : "Genplanlæg uge"}
@@ -280,7 +289,7 @@ export default function TeamCalendarClient(props: Props) {
                             </div>
                           ))}
                         </div>
-                      ) : empEvents.length === 0 && day < 5 ? (
+                      ) : day < 5 ? (
                         <span className="idle">Ledig</span>
                       ) : null}
                     </div>
@@ -341,13 +350,21 @@ export default function TeamCalendarClient(props: Props) {
               <div className="ferie">Ferielukket · uge {w.weekNo}</div>
             ) : (
               w.days.map((d) => {
-                const chips = d.chips.filter((c) => selectedEmp.has(c.employeeId));
+                // Ikke-planlagte chips skal altid med — de har ingen (synlig)
+                // medarbejder og må ikke forsvinde med kollega-filteret.
+                const chips = d.chips.filter((c) => c.unplanned || selectedEmp.has(c.employeeId));
                 return (
                   <div key={d.dateISO}
                     className={`md${d.inMonth ? "" : " out"}${d.isToday ? " today" : ""}${d.weekday >= 5 ? " wknd" : ""}`}>
-                    <span className="dn num">{d.dateNum}</span>
+                    <Link href={`/daycalendar?date=${d.dateISO}`} className="dn num" style={{ color: "inherit" }}
+                      title="Åbn dagsprogrammet for dagen">{d.dateNum}</Link>
                     {chips.slice(0, 3).map((c) => (
-                      <span key={c.id} className="chip" style={empVar(empById.get(c.employeeId)?.color ?? "var(--muted)")}>{c.label}</span>
+                      <span key={c.id} className="chip"
+                        title={c.unplanned ? `Ikke planlagt: ${UNPLANNED_REASON_LABEL[c.reason ?? ""] ?? "Ukendt årsag"}` : undefined}
+                        style={{
+                          ...empVar(empById.get(c.employeeId)?.color ?? "var(--muted)"),
+                          ...(c.unplanned ? { outline: "1.5px dashed var(--danger, #C4183C)", outlineOffset: -1 } : {}),
+                        }}>{c.label}</span>
                     ))}
                     {chips.length > 3 && <span className="more">+{chips.length - 3} mere</span>}
                   </div>
@@ -414,7 +431,7 @@ export default function TeamCalendarClient(props: Props) {
           {readOnly && (
             <div role="status" style={{ padding: "12px 16px", borderBottom: "1px solid var(--tc-line-soft)", background: "var(--tc-soft)", display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
               <span className="badge acc">Kalender</span>
-              <span>Read-only projektion af aktive abonnementer. Der oprettes eller ændres ingen ordrer, opgaver eller abonnementer.</span>
+              <span>Ugens planlagte ordrer — samme plan som dagsprogrammet. Redigering sker fra dagsprogrammet eller ordrelisten.</span>
             </div>
           )}
           {toolbar}
@@ -478,7 +495,7 @@ export default function TeamCalendarClient(props: Props) {
               )}
               <div className="ctxmenu-item" style={{ paddingLeft: 34 }}
                 onClick={() => { setNotice(`Notifikation sendt til kunden for ordre #${menu.ev.id} (simuleret).`); setMenu(null); }}>Send notifikation nu</div>
-              <Link href={`/orders/${menu.ev.id}/complete`} className="ctxmenu-item" style={{ paddingLeft: 34 }}>Afslut ordre …</Link>
+              <Link href={`/orders/${menu.ev.id}/complete?back=${backParam}`} className="ctxmenu-item" style={{ paddingLeft: 34 }}>Afslut ordre …</Link>
               <div className="ctxmenu-item" style={{ paddingLeft: 34, color: "var(--danger, #C4183C)" }}
                 onClick={() => { setConfirmDel(menu.ev); setMenu(null); }}>Slet ordre …</div>
             </>
@@ -495,6 +512,7 @@ export default function TeamCalendarClient(props: Props) {
             <div className="ctxmenu-item" style={{ color: "var(--muted)", opacity: 0.55, cursor: "default" }}>Intet telefonnummer</div>
           )}
           <div className="ctxmenu-sep" />
+          <Link href={`/orders/${menu.ev.id}`} className="ctxmenu-item" role="menuitem">Gå til ordre …</Link>
           <Link href={`/customers/${menu.ev.contactId}`} className="ctxmenu-item" role="menuitem">Gå til kundedetaljer …</Link>
           {menu.ev.subscriptionNo != null && (
             <Link href={`/subscriptions/${menu.ev.subscriptionNo}`} className="ctxmenu-item" role="menuitem">Gå til abonnement …</Link>

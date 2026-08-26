@@ -30,7 +30,9 @@ export default function SettingsForm({
                 {si > 0 ? <hr className="section-hr" /> : null}
                 {s.h ? <h4 className="section-title">{s.h}</h4> : null}
                 {s.fields.map((f, fi) => {
-                  const key = `s${si}f${fi}`;
+                  // f.key vinder over positionen: indsatte noter/dynamiske
+                  // sektioner må ikke forskyde allerede gemte værdier.
+                  const key = f.key ?? `s${si}f${fi}`;
                   const name = editable && savable(f) ? key : undefined;
                   return <Field key={fi} f={f} name={name} value={name ? values[key] : undefined} />;
                 })}

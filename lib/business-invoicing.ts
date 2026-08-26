@@ -26,8 +26,6 @@ import {
   bookInvoice, emailInvoice, getInvoice, findInvoiceByExternalRef, DineroApiError,
 } from "./dinero";
 
-const BOOKED_STATES = new Set(["Booked", "Sent"]);
-
 /** [start, end) for "d. 20. i forrige måned til d. 20. i denne måned" (UTC-dato,
  *  ingen klokkeslæt-afhængighed — ordrer er dato-baserede). `now` er typisk
  *  cron-kørselstidspunktet (d. 20.); perioden dækker altså i går (d. 19.)
@@ -66,10 +64,15 @@ export async function runBusinessBatchInvoicing(now: Date = new Date()): Promise
 
   // Kun erhvervskontakter, kun "Udført", kun ordrer der endnu ikke er lagt ind
   // i en samlefaktura (idempotens-værn ved gentaget kørsel/crash-recovery).
+  // dineroInvoiceGuid: null er andet ben af værnet mod dobbeltfakturering: en
+  // (legacy-)ordre der allerede bærer en pr.-ordre-Dinero-faktura må ALDRIG også
+  // ende på samlefakturaen. (Første ben: issueInvoiceForOrder afviser erhverv —
+  // se lib/dinero.ts, status "Samlefaktura".)
   const orders = await prisma.order.findMany({
     where: {
       status: "Udført",
       businessBatchInvoiceGuid: null,
+      dineroInvoiceGuid: null,
       plannedAt: { gte: start, lt: end },
       contact: { isCompany: true },
     },
@@ -121,7 +124,7 @@ export async function runBusinessBatchInvoicing(now: Date = new Date()): Promise
 
       // Reuse an existing draft for this contact+period if a prior run got this
       // far but crashed before persisting the guid on every order row.
-      let existing = await findInvoiceByExternalRef(access, org, ref);
+      const existing = await findInvoiceByExternalRef(access, org, ref);
       let guid = existing?.guid ?? null;
       let timeStamp = existing?.timeStamp ?? "";
 
@@ -149,7 +152,6 @@ export async function runBusinessBatchInvoicing(now: Date = new Date()): Promise
       });
 
       const alreadyBooked = existing?.number != null;
-      let bookedTotal = existing?.totalInclVat ?? null;
       if (!alreadyBooked) {
         const detail = await getInvoice(access, org, guid);
         if (detail.totalInclVat == null) throw new Error("Momskontrol umulig: Dinero returnerede ingen total — kladden er IKKE bogført.");
@@ -158,7 +160,6 @@ export async function runBusinessBatchInvoicing(now: Date = new Date()): Promise
         }
         const booked = await bookInvoice(access, org, guid, detail.timeStamp || timeStamp);
         timeStamp = booked.timeStamp || timeStamp;
-        bookedTotal = booked.totalInclVat ?? detail.totalInclVat;
         await prisma.order.updateMany({
           where: { id: { in: orderIds } },
           data: { businessBatchInvoiceNumber: booked.number, businessBatchInvoiceTimeStamp: timeStamp, businessBatchInvoiceStatus: "Booked" },

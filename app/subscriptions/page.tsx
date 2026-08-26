@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { prisma } from "@/lib/db";
+import { mondayOf, weekLabel } from "@/lib/weeks";
 import { getSubscriptions, getContacts } from "@/lib/queries";
 import { stopSubscription, approveSubscription } from "@/app/actions/subscriptions";
 import GenerateOrdersButton from "@/components/GenerateOrdersButton";
@@ -14,6 +16,25 @@ export default async function SubscriptionsPage({ searchParams }: { searchParams
   const [all, contacts] = await Promise.all([getSubscriptions(q), getContacts()]);
   const contactById = (id: number) => contacts.find((c) => c.id === id);
   const { slice: subscriptions, page, totalPages } = paginate(all, Number(sp.page) || 1);
+
+  // "Fremtidige ordrer": den FAKTISKE næste ikke-afsluttede ordres uge — ikke
+  // den statiske nextWeek-etiket fra oprettelsen, som aldrig opdateres af
+  // genereringen og derfor fejlinformerer om, hvornår næste besøg er.
+  const nextRows = await prisma.order.groupBy({
+    by: ["subscriptionId"],
+    where: {
+      subscriptionId: { in: subscriptions.map((s) => s.pk) },
+      status: "Afventer levering",
+      plannedAt: { gte: mondayOf(new Date()) },
+    },
+    _min: { plannedAt: true },
+  });
+  const nextBySub = new Map(nextRows.map((r) => [r.subscriptionId, r._min.plannedAt]));
+  const nextOrderLabel = (pk: number) => {
+    const at = nextBySub.get(pk);
+    return at ? weekLabel(mondayOf(at).toISOString().slice(0, 10)) : "Ingen planlagte";
+  };
+
   return (
     <div className="container-1140">
       <h1 className="page-title">Oversigt over abonnementer</h1>
@@ -61,7 +82,7 @@ export default async function SubscriptionsPage({ searchParams }: { searchParams
                       <td>{s.tasks.map((t, i) => <div key={i}>{t.interval}</div>)}</td>
                       <td className="num">{s.tasks.map((t, i) => <div key={i}>{money(t.price)}</div>)}</td>
                       <td>{s.fixedEmployee}</td>
-                      <td>{s.nextWeek}</td>
+                      <td>{nextOrderLabel(s.pk)}</td>
                     </tr>
                   );
                 })}
