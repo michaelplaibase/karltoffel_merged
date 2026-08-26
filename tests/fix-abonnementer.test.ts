@@ -105,7 +105,7 @@ test("årløs startuge fortolkes år-bevidst: nyt abonnement starter ALDRIG før
 test("regenerateFutureOrders har defensiv guard FØR den destruktive sletning", async () => {
   const rec = await src("lib/recurrence.ts");
   const block = rec.slice(rec.indexOf("export async function regenerateFutureOrders"));
-  assert.match(block, /if \(!sub \|\| parseWeekLabel\(sub\.startWeek\) == null\) return \{ generated: 0 \}/);
+  assert.match(block, /if \(!sub \|\| \(parseWeekLabel\(sub\.startWeek\) \?\? parseWeekLabel\(sub\.nextWeek\)\) == null\) return \{ generated: 0 \}/);
   // Guarden skal stå før sletningen.
   assert.ok(block.indexOf("return { generated: 0 }") < block.indexOf("order.deleteMany"));
 });

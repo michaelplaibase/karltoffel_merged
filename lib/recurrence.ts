@@ -43,11 +43,17 @@ function parseMultiplier(label: string | null): number | null {
   return 1;
 }
 
-/** "Uge 29" → 29 (year-less; resolved against a reference year). */
+/** "Uge 29"/"uge29"/"29" → 29 (year-less; resolved against a reference year).
+ *  Produktionsdata indeholder BÅDE "Uge N" og rå ugetal ("35") — importen fra
+ *  før repo-sammenlægningen og den gamle abonnements-formular gemte rå input.
+ *  Accepterede parseren kun "Uge N", genererede de abonnementer stille NUL
+ *  ordrer (hændelsen uge 35: ~30 abonnementer forsvandt fra kalenderen, mens
+ *  kunde og abonnement så intakte ud). Ugyldigt tal (0, 54+) → null. */
 export function parseWeekLabel(label: string | null): number | null {
   if (!label) return null;
-  const m = label.match(/Uge\s+(\d+)/i);
-  return m ? Number(m[1]) : null;
+  const m = label.match(/Uge\s*(\d{1,2})\b/i) ?? label.trim().match(/^(\d{1,2})$/);
+  const week = m ? Number(m[1]) : null;
+  return week != null && week >= 1 && week <= 53 ? week : null;
 }
 
 /** Sæsonpause ("Måneder på pause"): er opgaven på pause i ugen med mandag `v`
@@ -92,7 +98,9 @@ async function defaultEmployeeId(fixedEmployee: string): Promise<number | null> 
 /** Generate the upcoming orders for one subscription. Returns the count created. */
 export async function generateForSubscription(sub: SubWithTasks, ref: Date = new Date(), horizonWeeks = DEFAULT_HORIZON_WEEKS): Promise<number> {
   const base = parseBaseInterval(sub.baseInterval);
-  const subWeek = parseWeekLabel(sub.startWeek);
+  // Mangler startugen helt (gamle rækker tillod tom startuge), er "Fremtidige
+  // ordrer"-ugen (nextWeek) det bedste anker — bedre end stille nul ordrer.
+  const subWeek = parseWeekLabel(sub.startWeek) ?? parseWeekLabel(sub.nextWeek);
   if (subWeek == null) return 0;
 
   const step = base * WEEK_MS;
@@ -264,8 +272,8 @@ export async function regenerateFutureOrders(
   // eller startugen er i et format genereringen ikke forstår), må de
   // eksisterende fremtidige ordrer IKKE slettes — en ugyldig redigering ville
   // ellers tømme kalenderen uden at genskabe noget.
-  const sub = await prisma.subscription.findUnique({ where: { id }, select: { startWeek: true } });
-  if (!sub || parseWeekLabel(sub.startWeek) == null) return { generated: 0 };
+  const sub = await prisma.subscription.findUnique({ where: { id }, select: { startWeek: true, nextWeek: true } });
+  if (!sub || (parseWeekLabel(sub.startWeek) ?? parseWeekLabel(sub.nextWeek)) == null) return { generated: 0 };
 
   const nextMonday = new Date(mondayOf(ref).getTime() + WEEK_MS);
   const stale = await prisma.order.findMany({
