@@ -24,10 +24,14 @@ test("ordre låst til lørdag kan ikke placeres (man–fre) og ender som unplann
   assert.equal(plan.unplanned.length, 1);
 });
 
-test("ordre der overskrider ugens kapacitet ender som unplanned (overløb)", () => {
-  // 5 arbejdsdage à 8t+1t fleks = 2700 min. Én opgave på 3000 min kan aldrig placeres.
+test("ordre der overskrider dagens kapacitet placeres som OVERARBEJDE — aldrig usynlig", () => {
+  // Michaels beslutning efter uge 35-hændelsen: en bunden ordre uden plads
+  // inden for arbejdstiden lægges som overarbejde på dagen med færrest timer
+  // i stedet for at ende i "Ikke planlagt".
   const plan = planWeek([job({ durationMin: 3000 })], "2026-08-24", [EMP]);
-  assert.equal(plan.unplanned.length, 1);
+  assert.equal(plan.unplanned.length, 0);
+  const stop = plan.days.flatMap((d) => d.stops).find((s) => s.overtime);
+  assert.ok(stop, "overarbejds-stoppet skal være markeret overtime");
 });
 
 // --- Kildetests: dagsprogrammet viser de ikke-planlagte ordrer på deres dag ---
@@ -62,7 +66,8 @@ test("DayStopCard kan vise et unplanned-kort med årsag i stedet for klokkeslæt
 
 test("ugekalenderen kender ordre-pipelinens unplanned-årsager (ingen 'Ukendt årsag')", async () => {
   const component = await source("components/TeamCalendarClient.tsx");
-  assert.match(component, /overflow: "Ingen ledig arbejdstid i ugen"/);
+  assert.match(component, /overflow: "Ingen mulig dag tilbage i ugen"/);
+  assert.match(component, /fixed_weekday_unavailable: "Fast ugedag er ikke en tilbageværende arbejdsdag"/);
   assert.match(component, /holiday: "Ferielukket uge"/);
   assert.match(component, /inactive_employee: "Kollega ikke aktiv i kalenderen"/);
 });

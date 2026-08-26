@@ -41,6 +41,7 @@ export type Stop = {
   startMin: number;
   endMin: number;
   driveMin: number; // driving to reach this stop
+  overtime?: boolean; // placeret UD OVER arbejdstid+flex (fallback frem for "Ikke planlagt")
 };
 
 export type DayPlan = {
@@ -78,15 +79,26 @@ export function isoWeek(mondayISO: string): number {
  * the nearest still-unscheduled job that fits before end-of-day (incl. flex),
  * respecting the job's fixed weekday/employee. Moves to the next day when full.
  */
-export function planWeek(jobs: Job[], weekMonday: string, employees: Employee[] = [DEFAULT_EMPLOYEE]): WeekPlan {
+export function planWeek(
+  jobs: Job[],
+  weekMonday: string,
+  employees: Employee[] = [DEFAULT_EMPLOYEE],
+  opts: { fromWeekday?: number } = {}
+): WeekPlan {
+  // Dagsbevidsthed: i indeværende uge må NYE placeringer kun ske fra og med
+  // i dag (fromWeekday) — før blev en ordre født onsdag lagt på den allerede
+  // passerede mandag, hvor ingen så den. Låste/udførte ordrer (pass 1) beholder
+  // deres dag: de ER sket / er aftalt med kunden.
+  const fromWeekday = opts.fromWeekday ?? 0;
   const remaining = [...jobs];
-  const days: DayPlan[] = [];
+  const states: { emp: Employee; day: DayPlan; st: { curAddr: string | null; cursor: number }; hardEnd: number }[] = [];
 
   for (const emp of employees) {
     for (const weekday of emp.workdays) {
       const day: DayPlan = { employeeId: emp.id, weekday, stops: [], driveMin: 0, serviceMin: 0 };
       const st = { curAddr: null as string | null, cursor: emp.workStartMin };
       const hardEnd = emp.workEndMin + emp.flexMin;
+      states.push({ emp, day, st, hardEnd });
 
       const drive = (j: Job) => (st.curAddr === null ? driveFromHomeMinutes(j.address, emp.home) : driveMinutes(st.curAddr, j.address));
       const place = (idx: number, d: number) => {
@@ -118,6 +130,8 @@ export function planWeek(jobs: Job[], weekMonday: string, employees: Employee[] 
       }
 
       // Pass 2: greedily add the nearest feasible unlocked job that still fits.
+      // Kun på dage fra og med fromWeekday — fortidige dage modtager intet nyt.
+      if (weekday < fromWeekday) continue;
       // eslint-disable-next-line no-constant-condition
       while (true) {
         let best: { idx: number; drive: number } | null = null;
@@ -133,12 +147,49 @@ export function planWeek(jobs: Job[], weekMonday: string, employees: Employee[] 
         if (!best) break;
         place(best.idx, best.drive);
       }
-
-      if (day.stops.length) days.push(day);
     }
   }
 
-  return { weekMonday, days, unplanned: remaining };
+  // Pass 3 — OVERARBEJDS-FALLBACK (Michaels beslutning efter uge 35-hændelsen):
+  // en ordre, hvis bundne medarbejder ikke har plads inden for arbejdstiden,
+  // må ikke ende som "Ikke planlagt" — den lægges som overarbejde sidst på
+  // medarbejderens tilladte dag med FÆRREST samlede minutter (kørsel+service).
+  // Kun ordrer med en gyldig dag tilbage: låste ordrer og ordrer, hvis faste
+  // ugedage ikke findes blandt de resterende dage, forbliver ærligt uplacerede.
+  // eslint-disable-next-line no-constant-condition
+  while (true) {
+    let placedAny = false;
+    for (let i = 0; i < remaining.length; i++) {
+      const j = remaining[i];
+      if (j.locked || j.fixedEmployeeId == null) continue;
+      const candidates = states.filter(
+        (s) =>
+          s.emp.id === j.fixedEmployeeId &&
+          s.day.weekday >= fromWeekday &&
+          (!j.fixedWeekdays || j.fixedWeekdays.includes(s.day.weekday))
+      );
+      if (!candidates.length) continue;
+      const target = candidates.reduce((best, s) => {
+        const load = s.day.driveMin + s.day.serviceMin;
+        const bestLoad = best.day.driveMin + best.day.serviceMin;
+        return load < bestLoad || (load === bestLoad && s.day.weekday < best.day.weekday) ? s : best;
+      });
+      const d = target.st.curAddr === null ? driveFromHomeMinutes(j.address, target.emp.home) : driveMinutes(target.st.curAddr, j.address);
+      remaining.splice(i, 1);
+      const start = target.st.cursor + d;
+      const end = start + j.durationMin;
+      target.day.stops.push({ job: j, startMin: start, endMin: end, driveMin: d, overtime: true });
+      target.day.driveMin += d;
+      target.day.serviceMin += j.durationMin;
+      target.st.cursor = end;
+      target.st.curAddr = j.address;
+      placedAny = true;
+      break; // genstart scanningen: belastningen har ændret sig
+    }
+    if (!placedAny) break;
+  }
+
+  return { weekMonday, days: states.map((s) => s.day).filter((d) => d.stops.length), unplanned: remaining };
 }
 
 export const fmtTime = (min: number) => `${String(Math.floor(min / 60)).padStart(2, "0")}:${String(min % 60).padStart(2, "0")}`;

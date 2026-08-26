@@ -35,7 +35,8 @@ const UNPLANNED_REASON_LABEL: Record<string, string> = {
   unverified_route: "Køretidsmatrix ikke verificeret",
   unassigned: "Ikke tildelt kollega",
   inactive_employee: "Kollega ikke aktiv i kalenderen",
-  overflow: "Ingen ledig arbejdstid i ugen",
+  overflow: "Ingen mulig dag tilbage i ugen",
+  fixed_weekday_unavailable: "Fast ugedag er ikke en tilbageværende arbejdsdag",
   holiday: "Ferielukket uge",
   invalid_duration: "Besøget mangler gyldig varighed",
 };

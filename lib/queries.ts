@@ -628,8 +628,11 @@ async function buildWeekPlan(weekMonday: string) {
       source: sourceLabel(o.sourceType, o.subscription?.displayNo),
       fixedWeekdays: o.subscription?.fixedWeekdays ? o.subscription.fixedWeekdays.split("").map(Number) : undefined,
       fixedEmployeeId: o.employeeId ?? undefined,
-      locked: o.lockedFully,
-      lockedWeekday: o.lockedFully ? (o.plannedAt.getUTCDay() + 6) % 7 : undefined,
+      // UDFØRTE/afgjorte ordrer (alt andet end "Afventer levering") er sket i
+      // virkeligheden — de pinnes til deres persisterede dag ligesom låste,
+      // så dagsbevidst planlægning aldrig "flytter fortiden".
+      locked: o.lockedFully || o.status !== "Afventer levering",
+      lockedWeekday: o.lockedFully || o.status !== "Afventer levering" ? (o.plannedAt.getUTCDay() + 6) % 7 : undefined,
     };
   });
   // Only jobs pinned to an ACTIVE employee go through the router — everything
@@ -641,16 +644,24 @@ async function buildWeekPlan(weekMonday: string) {
   // problemer for kontoret — vis dem med hver sin årsag i stedet for én pulje.
   const unassigned = holiday ? [] : jobs.filter((j) => j.fixedEmployeeId == null);
   const inactiveEmp = holiday ? [] : jobs.filter((j) => j.fixedEmployeeId != null && !activeIds.has(j.fixedEmployeeId));
-  const plan = planWeek(placeable, weekMonday, plannerEmps);
+  // Dagsbevidsthed (uge 35-hændelsen: en ordre født onsdag blev lagt på den
+  // passerede mandag): i indeværende uge planlægges NYE placeringer kun fra
+  // og med i dag. Udførte/låste ordrer beholder deres dag (pass 1).
+  const todayIdx = weekdayIdxIfThisWeek(weekMonday);
+  const plan = planWeek(placeable, weekMonday, plannerEmps, { fromWeekday: todayIdx ?? 0 });
   // Fremryk resten af dagens stops for hver medarbejder, der afsluttede en
   // opgave hurtigere end planlagt — men KUN for dagens ugedag (i går/i morgen
   // giver "hurtigere end planlagt" ingen mening at fremrykke visuelt for).
-  const todayIdx = weekdayIdxIfThisWeek(weekMonday);
   if (todayIdx != null) reflowEarlyCompletions(plan.days.filter((d) => d.weekday === todayIdx), completedAtById);
-  const unplanned: { job: Job; reason: "unassigned" | "inactive_employee" | "overflow" | "holiday" }[] = holiday
+  // Ærlige årsager: efter overarbejds-fallbacken er "overflow" reserveret til
+  // ordrer uden nogen mulig dag (fx uge slut / låst uden match); faste ugedage
+  // uden en tilbageværende arbejdsdag får deres egen forklaring.
+  const noRemainingFixedDay = (job: Job) =>
+    job.fixedWeekdays != null && !job.fixedWeekdays.some((w) => w >= (todayIdx ?? 0) && w <= 4);
+  const unplanned: { job: Job; reason: "unassigned" | "inactive_employee" | "overflow" | "holiday" | "fixed_weekday_unavailable" }[] = holiday
     ? jobs.map((job) => ({ job, reason: "holiday" as const }))
     : [
-        ...plan.unplanned.map((job) => ({ job, reason: "overflow" as const })),
+        ...plan.unplanned.map((job) => ({ job, reason: noRemainingFixedDay(job) ? ("fixed_weekday_unavailable" as const) : ("overflow" as const) })),
         ...unassigned.map((job) => ({ job, reason: "unassigned" as const })),
         ...inactiveEmp.map((job) => ({ job, reason: "inactive_employee" as const })),
       ];
@@ -858,7 +869,8 @@ export async function getCalendarWeek(weekMonday: string, viewer?: { id: number;
 const DAY_UNPLANNED_REASON: Record<string, string> = {
   unassigned: "Ikke tildelt en kollega",
   inactive_employee: "Tildelt kollega er ikke aktiv i kalenderen",
-  overflow: "Kunne ikke placeres inden for arbejdstiden",
+  overflow: "Ingen mulig dag tilbage i ugen",
+  fixed_weekday_unavailable: "Fast ugedag er ikke en tilbageværende arbejdsdag",
   holiday: "Ferielukket uge",
 };
 

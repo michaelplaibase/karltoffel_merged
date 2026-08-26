@@ -7,6 +7,9 @@
 import { prisma } from "@/lib/db";
 import { guardAction } from "@/lib/api-auth";
 import { regenerateFutureOrders } from "@/lib/recurrence";
+import { isoWeek } from "@/lib/planner";
+import { isoWeekYear } from "@/lib/weeks";
+import { weekMondayToday } from "@/lib/calendar";
 import { revalidatePath } from "next/cache";
 
 export type ActionState = { error?: string; ok?: boolean; message?: string };
@@ -166,7 +169,10 @@ export async function applyOptimization(pks: number[], toWeek: number, notify = 
   await guardAction();
   if (!pks.length) return { error: "Ingen abonnementer at flytte." };
   for (const pk of pks) {
-    await prisma.subscription.update({ where: { id: pk }, data: { startWeek: `Uge ${toWeek}`, nextWeek: `Uge ${toWeek}` } });
+    // Gem med årstal: optimeringen flytter altid til en KOMMENDE uge.
+    const nowMonday = weekMondayToday();
+    const label = `Uge ${toWeek}, ${isoWeekYear(nowMonday) + (toWeek < isoWeek(nowMonday) ? 1 : 0)}`;
+    await prisma.subscription.update({ where: { id: pk }, data: { startWeek: label, nextWeek: label } });
     await regenerateFutureOrders(pk);
   }
   revalidatePath("/optimization");

@@ -80,20 +80,23 @@ test("ferie-forklaringen matcher den faktiske adfærd (skub til første åbne ug
 test("parse() afviser en startuge genereringen ikke forstår og ekkoer indtastningen", async () => {
   const actions = await src("app/actions/subscriptions.ts");
   assert.match(actions, /function normalizeWeekLabel/);
-  // Normalisering: "29"/"uge29" → "Uge 29"; alt uforståeligt → fejl med values.
-  assert.match(actions, /return \{ error: "Angiv startuge som fx 'Uge 29'\.", values \}/);
+  // Normalisering: alt gemmes ÅRSTEMPLET ("Uge N, YYYY"); uforståeligt → fejl med values.
+  assert.match(actions, /return \{ error: "Angiv startuge som fx 'Uge 29' eller 'Uge 29, 2026'\.", values \}/);
   // Ugyldig "Næste gang" på en opgavelinje ignoreres heller ikke stille.
-  assert.match(actions, /Angiv 'Næste gang' som fx 'Uge 29' på opgaven/);
+  assert.match(actions, /Angiv 'Næste gang' som fx 'Uge 29' eller 'Uge 29, 2026' på opgaven/);
   // Der gemmes den validerede uge — ikke længere `p.startWeek || null`.
   assert.doesNotMatch(actions, /startWeek: p\.startWeek \|\| null/);
 });
 
-test("årløs startuge fortolkes år-bevidst: nyt abonnement starter ALDRIG før sin uge", async () => {
+test("startugens anker deles mellem generator og vagt — passeret uge = 'skulle allerede køre'", async () => {
   const rec = await src("lib/recurrence.ts");
-  // Nyt abonnement (ingen ordrer/tombstones): fremtidig uge bevares, forgangen
-  // uge betyder næste års forekomst — kun igangværende abonnementer rykkes frem.
+  // Michaels beslutning efter Ejerlaugs-hændelsen: en PASSERET årløs startuge
+  // skubbes ALDRIG stille til næste års forekomst; eksplicit år ("Uge 33,
+  // 2026") er det entydige format, og generator + vagt deler samme opløsning.
   assert.match(rec, /const hasOrders = existing\.length > 0 \|\| skips\.length > 0/);
-  assert.match(rec, /if \(hasOrders\) \{\s*\n\s*if \(anchor > horizonEnd\) anchor = mondayOfIsoWeek\(refYear - 1, subWeek\)\.getTime\(\);\s*\n\s*\} else if \(anchor < thisMonday\) \{\s*\n\s*anchor = mondayOfIsoWeek\(refYear \+ 1, subWeek\)\.getTime\(\);/);
+  assert.match(rec, /function resolveStartAnchor/);
+  assert.match(rec, /const anchor = resolveStartAnchor\(startParts, hasOrders, refYear, horizonEnd\)/);
+  assert.doesNotMatch(rec, /mondayOfIsoWeek\(refYear \+ 1, subWeek\)/);
   // Opgave-uger FØR startugen er næste års forekomst — aldrig negativ j0.
   assert.match(rec, /taskWeek >= subWeek \? taskWeek - subWeek : taskWeek - subWeek \+ 52/);
 });

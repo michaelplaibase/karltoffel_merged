@@ -43,17 +43,42 @@ function parseMultiplier(label: string | null): number | null {
   return 1;
 }
 
-/** "Uge 29"/"uge29"/"29" → 29 (year-less; resolved against a reference year).
- *  Produktionsdata indeholder BÅDE "Uge N" og rå ugetal ("35") — importen fra
- *  før repo-sammenlægningen og den gamle abonnements-formular gemte rå input.
- *  Accepterede parseren kun "Uge N", genererede de abonnementer stille NUL
- *  ordrer (hændelsen uge 35: ~30 abonnementer forsvandt fra kalenderen, mens
- *  kunde og abonnement så intakte ud). Ugyldigt tal (0, 54+) → null. */
-export function parseWeekLabel(label: string | null): number | null {
+/** Uge-etiket med valgfrit ÅRSTAL: "Uge 33, 2026" / "Uge 33" / "uge33" / "33".
+ *  Produktionsdata indeholder alle formater (importen 15/7 og den gamle
+ *  formular gemte rå input). Årstallet fjerner al tvetydighed om HVILKEN
+ *  forekomst af uge N der menes — uden år er etiketten årløs, og kalderen
+ *  må selv opløse den (se anker-reglerne i generateForSubscription).
+ *  Ugyldigt ugetal (0, 54+) eller urimeligt år → null. */
+export function parseWeekLabelParts(label: string | null): { week: number; year: number | null } | null {
   if (!label) return null;
-  const m = label.match(/Uge\s*(\d{1,2})\b/i) ?? label.trim().match(/^(\d{1,2})$/);
-  const week = m ? Number(m[1]) : null;
-  return week != null && week >= 1 && week <= 53 ? week : null;
+  const m = label.match(/Uge\s*(\d{1,2})\b(?:\s*[,/]?\s*(\d{4})\b)?/i) ?? label.trim().match(/^(\d{1,2})(?:\s*[,/]\s*(\d{4}))?$/);
+  if (!m) return null;
+  const week = Number(m[1]);
+  if (week < 1 || week > 53) return null;
+  const year = m[2] ? Number(m[2]) : null;
+  if (year != null && (year < 2000 || year > 2100)) return null;
+  return { week, year };
+}
+
+/** Bagudkompatibel: kun ugetallet ("Uge 33, 2026" → 33). */
+export function parseWeekLabel(label: string | null): number | null {
+  return parseWeekLabelParts(label)?.week ?? null;
+}
+
+/** "Uge N, YYYY"-etiket for en given uge/år — det entydige lagringsformat. */
+export function weekLabelWithYear(week: number, year: number): string {
+  return `Uge ${week}, ${year}`;
+}
+
+/** Opløs en startuge til dens anker-mandag (ms). Deles af GENERATOREN og
+ *  STILLE-NUL-VAGTEN, så de aldrig kan være uenige om, hvornår et abonnement
+ *  burde køre (vagtens blinde vinkel i uge 35-hændelsen). Reglerne står
+ *  dokumenteret ved kaldsstedet i generateForSubscription. */
+function resolveStartAnchor(parts: { week: number; year: number | null }, hasOrders: boolean, refYear: number, horizonEnd: number): number {
+  if (parts.year != null) return mondayOfIsoWeek(parts.year, parts.week).getTime();
+  const anchor = mondayOfIsoWeek(refYear, parts.week).getTime();
+  if (hasOrders && anchor > horizonEnd) return mondayOfIsoWeek(refYear - 1, parts.week).getTime();
+  return anchor;
 }
 
 /** Sæsonpause ("Måneder på pause"): er opgaven på pause i ugen med mandag `v`
@@ -100,8 +125,9 @@ export async function generateForSubscription(sub: SubWithTasks, ref: Date = new
   const base = parseBaseInterval(sub.baseInterval);
   // Mangler startugen helt (gamle rækker tillod tom startuge), er "Fremtidige
   // ordrer"-ugen (nextWeek) det bedste anker — bedre end stille nul ordrer.
-  const subWeek = parseWeekLabel(sub.startWeek) ?? parseWeekLabel(sub.nextWeek);
-  if (subWeek == null) return 0;
+  const startParts = parseWeekLabelParts(sub.startWeek) ?? parseWeekLabelParts(sub.nextWeek);
+  if (startParts == null) return 0;
+  const subWeek = startParts.week;
 
   const step = base * WEEK_MS;
   const thisMonday = mondayOf(ref).getTime();
@@ -122,21 +148,21 @@ export async function generateForSubscription(sub: SubWithTasks, ref: Date = new
   const skips = await prisma.subscriptionWeekSkip.findMany({ where: { subscriptionId: sub.id }, select: { week: true } });
   for (const s of skips) existingWeeks.add(mondayOf(s.week).getTime());
 
-  // Anchor at week N. Labels are year-less, so the week is resolved year-aware:
-  //  - NYT abonnement (endnu ingen ordrer/tombstones): startugen er den NÆSTE
-  //    forekomst af uge N — "Uge 40" oprettet i januar starter til efteråret
-  //    (uden for horisonten ⇒ 0 ordrer nu; cron/knappen genererer når
-  //    horisonten når ugen), og "Uge 2" oprettet i august er januar næste år.
-  //  - IGANGVÆRENDE abonnement (har ordrer): rytme-fasen er uge-N uafhængigt af
-  //    år — ligger årets forekomst uden for horisonten, er abonnementet
-  //    videreført fra sidste år, og første besøg rykkes fasejusteret frem.
+  // Anker ved uge N — årsopløsning (hændelsen "Ejerlauget usynlig i et år"):
+  //  - Etiket MED årstal ("Uge 33, 2026"): ankeret er ENTYDIGT dét års uge N.
+  //    Er ugen passeret, betyder det "skulle allerede køre" — første besøg
+  //    rykkes fasejusteret frem til indeværende uge (catch-up-linjen nedenfor).
+  //    Er den ude i fremtiden, ventes der (0 ordrer til horisonten når den).
+  //  - Årløs etiket + IGANGVÆRENDE abonnement (har ordrer/tombstones): rytme-
+  //    fasen er uge-N uafhængigt af år — ligger årets forekomst uden for
+  //    horisonten, er abonnementet videreført fra sidste år.
+  //  - Årløs etiket + NYT abonnement: en PASSERET uge betyder "skulle allerede
+  //    køre" (Michaels beslutning efter uge 35-hændelsen) — før blev starten
+  //    stille skudt til NÆSTE års forekomst, og abonnementet forsvandt fra
+  //    kalenderen i op til et år. Formularen skriver fremover altid årstal,
+  //    så bevidste sæsonstarter udtrykkes eksplicit ("Uge 20, 2027").
   const hasOrders = existing.length > 0 || skips.length > 0;
-  let anchor = mondayOfIsoWeek(refYear, subWeek).getTime();
-  if (hasOrders) {
-    if (anchor > horizonEnd) anchor = mondayOfIsoWeek(refYear - 1, subWeek).getTime();
-  } else if (anchor < thisMonday) {
-    anchor = mondayOfIsoWeek(refYear + 1, subWeek).getTime();
-  }
+  const anchor = resolveStartAnchor(startParts, hasOrders, refYear, horizonEnd);
 
   // Per task: its multiplier m and the visit offset j0 from the subscription
   // start, derived from the week-number difference. Årløst uge-tal LAVERE end
@@ -307,8 +333,8 @@ export function subscriptionOutlookProblem(
   horizonWeeks = DEFAULT_HORIZON_WEEKS
 ): string | null {
   if (!sub.active || sub.pending || futureOrderCount > 0) return null;
-  const subWeek = parseWeekLabel(sub.startWeek) ?? parseWeekLabel(sub.nextWeek);
-  if (subWeek == null) return "startugen kan ikke læses — angiv den som fx 'Uge 35'";
+  const parts = parseWeekLabelParts(sub.startWeek) ?? parseWeekLabelParts(sub.nextWeek);
+  if (parts == null) return "startugen kan ikke læses — angiv den som fx 'Uge 35, 2026'";
   // Kun "På anmodning"-opgaver planlægges aldrig automatisk — nul er korrekt.
   if (!sub.tasks.some((t) => parseMultiplier(t.intervalMultiplier) != null)) return null;
 
@@ -323,11 +349,12 @@ export function subscriptionOutlookProblem(
     return "ingen kommende ordrer på et igangværende abonnement — kør 'Generér kommende ordrer' og tjek abonnementet";
   }
 
-  // NYT abonnement (aldrig ordrer) eller meget langt interval: nul er kun et
-  // problem, hvis næste forekomst af startugen faktisk ligger inden for
-  // genererings-horisonten — en bevidst sæsonstart længere ude er legitim.
-  let anchor = mondayOfIsoWeek(ref.getUTCFullYear(), subWeek).getTime();
-  if (anchor < thisMonday) anchor = mondayOfIsoWeek(ref.getUTCFullYear() + 1, subWeek).getTime();
+  // SAMME anker-opløsning som generatoren (delt helper — vagtens tidligere
+  // egen-beregning skubbede en passeret startuge til NÆSTE år og var dermed
+  // blind for præcis det tilfælde, der gjorde 8 abonnementer usynlige i uge
+  // 35-hændelsen). Kun et anker EFTER horisonten (bevidst fremtidig
+  // sæsonstart, fx "Uge 20, 2027") er et legitimt nul.
+  const anchor = resolveStartAnchor(parts, totalOrderCount > 0, ref.getUTCFullYear(), horizonEnd);
   if (anchor > horizonEnd) return null;
   return "ingen kommende ordrer trods startuge inden for horisonten — kør 'Generér kommende ordrer' og tjek abonnementet";
 }
