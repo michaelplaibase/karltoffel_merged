@@ -6,7 +6,8 @@ import { prisma } from "./db";
 import type { Contact, Subscription, Order, TaskLine } from "./data";
 import { planWeek, isoWeek, fmtTime, stopInstant, type Job, type Employee as PlannerEmployee, type DayPlan } from "./planner";
 import { weekLabel } from "./weeks";
-import { todayCphISO } from "./calendar";
+import { todayCphISO, weekMondayToday } from "./calendar";
+import { subscriptionOutlookProblem } from "./recurrence";
 import { coordFor } from "./geo";
 import {
   sourceType, type CalEvent, type CalStatus, type LockState,
@@ -61,7 +62,7 @@ function mapContact(c: ContactRow): Contact {
 }
 
 type SubRow = Prisma.SubscriptionGetPayload<{ include: { tasks: true } }>;
-function mapSubscription(s: SubRow): Subscription {
+function mapSubscription(s: SubRow, generationWarning: string | null = null): Subscription {
   return {
     id: s.displayNo,
     pk: s.id,
@@ -72,7 +73,31 @@ function mapSubscription(s: SubRow): Subscription {
     fixedEmployee: s.fixedEmployee,
     nextWeek: s.nextWeek ?? "",
     pending: s.pending,
+    generationWarning,
   };
+}
+
+/** STILLE-NUL-VAGT (uge 35-hændelsen): pr. abonnement — står et AKTIVT
+ *  abonnement uden kommende ordrer, selvom rytmen siger, det burde have nogen?
+ *  Genereringen fejler stille (returnerer 0), så uden denne vagt kan et
+ *  abonnement forsvinde fra kalenderen i ugevis, mens alt ser intakt ud. */
+async function generationWarningsByPk(rows: SubRow[]): Promise<Map<number, string>> {
+  const out = new Map<number, string>();
+  const candidates = rows.filter((r) => r.active && !r.pending);
+  if (!candidates.length) return out;
+  const from = new Date(`${weekMondayToday()}T00:00:00Z`);
+  const ids = candidates.map((r) => r.id);
+  const [future, total] = await Promise.all([
+    prisma.order.groupBy({ by: ["subscriptionId"], where: { subscriptionId: { in: ids }, plannedAt: { gte: from } }, _count: { _all: true } }),
+    prisma.order.groupBy({ by: ["subscriptionId"], where: { subscriptionId: { in: ids } }, _count: { _all: true } }),
+  ]);
+  const futureBySub = new Map(future.map((g) => [g.subscriptionId, g._count._all]));
+  const totalBySub = new Map(total.map((g) => [g.subscriptionId, g._count._all]));
+  for (const r of candidates) {
+    const problem = subscriptionOutlookProblem(r, futureBySub.get(r.id) ?? 0, totalBySub.get(r.id) ?? 0);
+    if (problem) out.set(r.id, problem);
+  }
+  return out;
 }
 
 type OrderRow = Prisma.OrderGetPayload<{ include: { tasks: true; subscription: true; employee: true } }>;
@@ -235,7 +260,8 @@ export async function getSubscriptions(q?: string): Promise<Subscription[]> {
     include: { tasks: true },
     orderBy: { displayNo: "desc" },
   });
-  return rows.map(mapSubscription);
+  const warnings = await generationWarningsByPk(rows);
+  return rows.map((r) => mapSubscription(r, warnings.get(r.id) ?? null));
 }
 
 export async function getSubscriptionsForContact(contactId: number): Promise<Subscription[]> {
@@ -244,7 +270,8 @@ export async function getSubscriptionsForContact(contactId: number): Promise<Sub
     include: { tasks: true },
     orderBy: { displayNo: "desc" },
   });
-  return rows.map(mapSubscription);
+  const warnings = await generationWarningsByPk(rows);
+  return rows.map((r) => mapSubscription(r, warnings.get(r.id) ?? null));
 }
 
 /** Editor data for a subscription, keyed by its display no ("Abo. nr."). */
