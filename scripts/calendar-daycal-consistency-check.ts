@@ -17,8 +17,8 @@
 //                   kørsel ændrer intet, og visningen er identisk før/efter.
 import { prisma } from "../lib/db";
 import { getCalendarWeek, getDayProgram, planAndPersistWeek } from "../lib/queries";
+import { checkWeekConsistency } from "../lib/calendar-consistency";
 import { todayCphISO } from "../lib/calendar";
-import { fmtTime } from "../lib/planner";
 
 const addDays = (iso: string, n: number) => new Date(Date.parse(`${iso}T00:00:00Z`) + n * 864e5).toISOString().slice(0, 10);
 const mondayOf = (iso: string) => {
@@ -33,44 +33,26 @@ const ok = (msg: string) => console.log(`  ✓ ${msg}`);
 
 async function checkWeek(monday: string, persist: boolean) {
   console.log(`\nUge der starter ${monday}:`);
-  const week = await getCalendarWeek(monday);
-  const days = await Promise.all(Array.from({ length: 7 }, (_, i) => getDayProgram(addDays(monday, i))));
+  // 1-3) Partition + dag==uge + tal — SAMME kerne som det natlige
+  // produktions-tjek (lib/calendar-consistency.ts), så udvikler-scriptet og
+  // vagtværnet i produktionen aldrig kan drive fra hinanden.
+  const core = await checkWeekConsistency(monday);
+  for (const p of core.problems) fail(monday, `[${p.kind}] ${p.detail}`);
+  if (core.ok) {
+    ok(`partition: alle ${core.orders} ordrer vises præcis én gang (${core.planned} planlagt, ${core.unplanned} ikke planlagt)`);
+    ok("dag == uge: alle 7 dagsprogrammer matcher ugekalenderen (stops, tider, unplanned og tal)");
+  }
 
-  // 1) Partition: DB-ordrer i ugen == events ∪ unplanned, hver præcis én gang.
+  // Ugetotal på tværs af dagsprogrammerne (scriptets ekstra-tjek).
   const start = new Date(`${monday}T00:00:00Z`);
   const end = new Date(start.getTime() + 7 * 864e5);
-  const dbOrders = await prisma.order.findMany({ where: { plannedAt: { gte: start, lt: end } }, select: { id: true } });
-  const eventIds = week.events.map((e) => e.id);
+  const week = await getCalendarWeek(monday);
+  const days = await Promise.all(Array.from({ length: 7 }, (_, i) => getDayProgram(addDays(monday, i))));
   const unplannedIds = week.unplanned.map((u) => u.id);
-  const union = sortNum([...eventIds, ...unplannedIds]);
-  if (new Set(union).size !== union.length) fail(monday, "en ordre optræder mere end én gang i ugekalenderen (events/unplanned)");
-  if (JSON.stringify(union) !== JSON.stringify(sortNum(dbOrders.map((o) => o.id))))
-    fail(monday, `ugekalenderen dækker ikke præcis DB'ens ordrer (DB: ${dbOrders.length}, vist: ${union.length})`);
-  else ok(`partition: alle ${dbOrders.length} ordrer vises præcis én gang (${eventIds.length} planlagt, ${unplannedIds.length} ikke planlagt)`);
-
-  // 2) Dag == uge, dag for dag (id + klokkeslæt for stops; id for unplanned).
   for (let i = 0; i < 7; i++) {
-    const evs = week.events.filter((e) => e.day === i).map((e) => `${e.id}@${fmtTime(Math.round(e.start * 60))}-${fmtTime(Math.round(e.end * 60))}`).sort();
-    const stops = days[i].stops.map((s) => `${s.orderId}@${s.from}-${s.to}`).sort();
-    if (JSON.stringify(evs) !== JSON.stringify(stops))
-      fail(monday, `dag ${i}: stops afviger fra ugekalenderen\n      uge: ${evs.join(", ") || "-"}\n      dag: ${stops.join(", ") || "-"}`);
-  }
-  const dayUnplannedUnion = sortNum(days.flatMap((d) => d.unplanned.map((u) => u.orderId)));
-  if (JSON.stringify(dayUnplannedUnion) !== JSON.stringify(sortNum(unplannedIds)))
-    fail(monday, `unplanned afviger: uge=[${sortNum(unplannedIds)}] dage=[${dayUnplannedUnion}]`);
-  if (!failures) ok("dag == uge: alle 7 dagsprogrammer matcher ugekalenderen (stops, tider og unplanned)");
-
-  // 3) Tal: dagsomsætning, kørsel og ugetotal.
-  for (let i = 0; i < 7; i++) {
-    if (week.days[i].revenue !== days[i].revenueDay)
-      fail(monday, `dag ${i}: omsætning uge=${week.days[i].revenue} dag=${days[i].revenueDay}`);
-    const wkDrive = week.days[i].driving ?? "0 t 0 min";
-    if (wkDrive !== days[i].driving)
-      fail(monday, `dag ${i}: kørsel uge='${wkDrive}' dag='${days[i].driving}'`);
     if (days[i].revenueWeek !== week.planned.week)
       fail(monday, `dag ${i}: ugeomsætning dag=${days[i].revenueWeek} uge=${week.planned.week}`);
   }
-  ok("tal: omsætning (dag/uge) og kørsel stemmer i begge visninger");
 
   // 4) Viewer-reglen: medarbejder-visningen er præcis egen delmængde af admin.
   const users = await prisma.user.findMany({ where: { activeCalendar: true }, orderBy: { id: "asc" }, take: 3 });

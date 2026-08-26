@@ -628,6 +628,17 @@ async function buildWeekPlan(weekMonday: string) {
         ...inactiveEmp.map((job) => ({ job, reason: "inactive_employee" as const })),
       ];
   const empName = new Map(users.map((u) => [u.id, `${u.firstName} ${u.lastName}`]));
+  // TRIPWIRE — kalender-invarianten håndhæves ved HVER beregning: hver ordre i
+  // ugen skal ende i præcis én af {planlagte stops, ikke planlagt}. Skrider det
+  // (en fremtidig regression), logges en fejl, der er synlig i produktions-
+  // overvågningen — visningen fortsætter uændret, men bruddet er ALDRIG tavst.
+  const placedIds = new Set(plan.days.flatMap((d) => d.stops.map((s) => s.job.id)));
+  const unplannedIds = new Set(unplanned.map((u) => u.job.id));
+  const invisible = jobs.filter((j) => !placedIds.has(j.id) && !unplannedIds.has(j.id));
+  const doubled = jobs.filter((j) => placedIds.has(j.id) && unplannedIds.has(j.id));
+  if (invisible.length || doubled.length) {
+    console.error(`[kalender-invariant] uge ${weekMonday}: ${invisible.length} ordre(r) USYNLIGE [${invisible.map((j) => j.id).join(", ")}], ${doubled.length} vist dobbelt [${doubled.map((j) => j.id).join(", ")}]`);
+  }
   return { start, plan, priceById, metaById, weekdayById, users, empName, holiday, unplanned };
 }
 
