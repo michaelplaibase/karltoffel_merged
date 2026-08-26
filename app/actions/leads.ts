@@ -7,7 +7,7 @@
 import { prisma, isUniqueViolation } from "@/lib/db";
 import { guardAction } from "@/lib/api-auth";
 import { categoryColor } from "@/lib/categories";
-import { isoWeek } from "@/lib/planner";
+import { weekLabel } from "@/lib/weeks";
 import { weekMondayToday } from "@/lib/calendar";
 import { parseLeadPayload, beregn, medRabatkode, type LeadPayload, type PricedService } from "@/lib/tilbudsmotor-pricing";
 import { revalidatePath } from "next/cache";
@@ -70,10 +70,11 @@ function subscriptionSpecFromPayload(payload: LeadPayload) {
   // ±8-28 % i forhold til tilbudsmailens aarNet.
   const visitsPerYear = 52 / baseN;
 
-  // Start i næste uge (label-formatet "Uge N" som recurrence-parseren forstår).
+  // Start i næste uge — gemmes med ÅRSTAL ("Uge N, YYYY"), så en passeret uge
+  // aldrig kan fejltolkes som næste års forekomst (uge 35-hændelsen).
   const nextMondayISO = new Date(new Date(`${weekMondayToday()}T00:00:00Z`).getTime() + 7 * 864e5)
     .toISOString().slice(0, 10);
-  const startWeek = `Uge ${isoWeek(nextMondayISO)}`;
+  const startWeek = weekLabel(nextMondayISO);
 
   const faktor = rabatFaktor(payload);
   const lines = services.map((s, i) => {

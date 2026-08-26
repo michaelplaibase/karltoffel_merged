@@ -24,6 +24,13 @@ test("igangværende abonnement uden kommende ordrer alarmerer — hændelsens ke
   assert.match(p ?? "", /igangværende abonnement/);
 });
 
+test("årløs PASSERET startuge alarmerer — den betyder 'skulle allerede køre'", () => {
+  // Ejerlaugs-hændelsen: før blev "33" (passeret) stille tolket som uge 33
+  // NÆSTE år, og hverken generator eller vagt reagerede i ~49 uger.
+  const p = subscriptionOutlookProblem(sub({ startWeek: "33" }), 0, 0, REF);
+  assert.match(p ?? "", /inden for horisonten/);
+});
+
 test("nyt abonnement med startuge inden for horisonten alarmerer", () => {
   const p = subscriptionOutlookProblem(sub({ startWeek: "36" }), 0, 0, REF);
   assert.match(p ?? "", /inden for horisonten/);
@@ -47,10 +54,10 @@ test("legitime nul-tilfælde er TAVSE", () => {
   assert.equal(subscriptionOutlookProblem(sub({ active: false }), 0, 0, REF), null);
   // Kun "På anmodning"-opgaver planlægges aldrig automatisk.
   assert.equal(subscriptionOutlookProblem(sub({ tasks: [task("På anmodning")] }), 0, 5, REF), null);
-  // Nyt abonnement med bevidst sæsonstart NÆSTE forår (uge 20 > 26 uger ude).
-  assert.equal(subscriptionOutlookProblem(sub({ startWeek: "Uge 20" }), 0, 0, REF), null);
+  // Bevidst sæsonstart udtrykkes nu med EKSPLICIT år — uden for horisonten = tavs.
+  assert.equal(subscriptionOutlookProblem(sub({ startWeek: "Uge 20, 2027" }), 0, 0, REF), null);
   // Igangværende men med interval længere end horisonten og fjern startuge.
-  assert.equal(subscriptionOutlookProblem(sub({ startWeek: "Uge 20", baseInterval: "Hver 40. uge" }), 0, 4, REF), null);
+  assert.equal(subscriptionOutlookProblem(sub({ startWeek: "Uge 20, 2027", baseInterval: "Hver 40. uge" }), 0, 4, REF), null);
 });
 
 // --- Ledningsføringen: vagten skal være aktiv i både UI og natligt tjek ---

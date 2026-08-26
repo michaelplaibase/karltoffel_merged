@@ -5,8 +5,9 @@
 import { prisma, isUniqueViolation } from "@/lib/db";
 import { guardAction } from "@/lib/api-auth";
 import { categoryColor } from "@/lib/categories";
-import { generateForSubscriptionId, generateAllSubscriptionOrders, regenerateFutureOrders, parseWeekLabel } from "@/lib/recurrence";
+import { generateForSubscriptionId, generateAllSubscriptionOrders, regenerateFutureOrders, parseWeekLabel, parseWeekLabelParts } from "@/lib/recurrence";
 import { isoWeek } from "@/lib/planner";
+import { isoWeekYear, weekLabel } from "@/lib/weeks";
 import { weekMondayToday } from "@/lib/calendar";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
@@ -76,16 +77,20 @@ function taskCreate(lines: ReturnType<typeof readTaskLines>) {
   });
 }
 
-/** Normalisér en uge-angivelse til det format genereringen forstår
- *  (parseWeekLabel i lib/recurrence.ts kræver /Uge\s+\d+/): "29"/"uge29"/
- *  "Uge 29" → "Uge 29". Ugyldigt/ude af interval → null. */
+/** Normalisér en uge-angivelse til det ENTYDIGE lagringsformat "Uge N, YYYY".
+ *  Accepterer "29", "uge29", "Uge 29" og "Uge 29, 2026". Årløst input opløses
+ *  til NÆSTE forekomst (uge ≥ indeværende uge = i år, ellers næste år) — så
+ *  en bevidst sæsonstart altid gemmes med eksplicit år, og en passeret uge
+ *  aldrig igen kan fejltolkes som "næste års forekomst" (uge 35-hændelsen,
+ *  hvor 8 abonnementer forsvandt fra kalenderen i op til et år).
+ *  Ugyldigt/ude af interval → null. */
 function normalizeWeekLabel(raw: string): string | null {
-  const bare = raw.match(/^uge\s*(\d{1,2})$/i) ?? raw.match(/^(\d{1,2})$/);
-  const label = bare ? `Uge ${Number(bare[1])}` : raw;
-  const m = label.match(/Uge\s+(\d{1,2})\b/i); // samme format som parseWeekLabel
-  if (!m) return null;
-  const week = Number(m[1]);
-  return week >= 1 && week <= 53 ? label : null;
+  const parts = parseWeekLabelParts(raw.trim());
+  if (!parts) return null;
+  if (parts.year != null) return `Uge ${parts.week}, ${parts.year}`;
+  const nowMonday = weekMondayToday();
+  const year = isoWeekYear(nowMonday) + (parts.week < isoWeek(nowMonday) ? 1 : 0);
+  return `Uge ${parts.week}, ${year}`;
 }
 
 type Fields = { contactId: number; baseInterval: string; startWeek: string; fixedEmployee: string; lines: ReturnType<typeof readTaskLines> };
@@ -103,7 +108,7 @@ function parse(formData: FormData): Fields | ({ error: string } & Pick<Subscript
   // Startuge SKAL kunne forstås af genereringen — ellers oprettes et abonnement,
   // der aldrig genererer én eneste ordre, helt stille.
   const startWeek = normalizeWeekLabel(startWeekRaw);
-  if (!startWeek) return { error: "Angiv startuge som fx 'Uge 29'.", values };
+  if (!startWeek) return { error: "Angiv startuge som fx 'Uge 29' eller 'Uge 29, 2026'.", values };
   const lines = readTaskLines(formData);
   if (!lines.length) return { error: "Tilføj mindst én opgave.", values };
   for (const l of lines) {
@@ -111,7 +116,7 @@ function parse(formData: FormData): Fields | ({ error: string } & Pick<Subscript
     // genereringen forstår — ellers ignoreres den stille.
     if (l.nextWeek) {
       const nw = normalizeWeekLabel(l.nextWeek);
-      if (!nw) return { error: `Angiv 'Næste gang' som fx 'Uge 29' på opgaven '${l.description}'.`, values };
+      if (!nw) return { error: `Angiv 'Næste gang' som fx 'Uge 29' eller 'Uge 29, 2026' på opgaven '${l.description}'.`, values };
       l.nextWeek = nw;
     }
     // Pause: et sat flueben med ryddet/ugyldig dato må aldrig stille gemmes som
@@ -174,7 +179,7 @@ export async function approveSubscription(pk: number): Promise<void> {
     const weeksUntil = ((stored - currentWeek) + 52) % 52;
     if (weeksUntil > 26) {
       const nextMondayISO = new Date(Date.parse(`${weekMondayToday()}T00:00:00Z`) + 7 * 864e5).toISOString().slice(0, 10);
-      const label = `Uge ${isoWeek(nextMondayISO)}`;
+      const label = weekLabel(nextMondayISO); // "Uge N, YYYY" — entydigt år
       await prisma.subscription.update({ where: { id: pk }, data: { startWeek: label, nextWeek: label } });
     }
   }
