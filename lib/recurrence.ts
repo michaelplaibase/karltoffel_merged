@@ -179,9 +179,14 @@ export async function generateForSubscription(sub: SubWithTasks, ref: Date = new
 
   const employeeId = await defaultEmployeeId(sub.fixedEmployee);
 
-  // First visit at or after the current week, keeping the base rhythm.
+  // Første besøg: IGANGVÆRENDE abonnement rykkes fasejusteret frem (næste
+  // rytme-slot — et årligt abonnement, hvis uge netop er passeret, HAR fået
+  // sit besøg og venter legitimt til næste år). Et NYT abonnement med passeret
+  // startuge betyder derimod "skulle allerede køre" (Hermes-fundene 235870/71:
+  // årlige abonnementer uden ét eneste besøg blev ellers udskudt til 2027) —
+  // første besøg lægges NU, og rytmen fortsætter derfra.
   let v = anchor;
-  if (v < thisMonday) v += Math.ceil((thisMonday - v) / step) * step;
+  if (v < thisMonday) v = hasOrders ? v + Math.ceil((thisMonday - v) / step) * step : thisMonday;
 
   // Tasks due at a visit index (i base-steps from the anchor): a task recurs
   // every m visits from its own offset j0. "På anmodning" (m == null) is skipped,
@@ -349,12 +354,18 @@ export function subscriptionOutlookProblem(
     return "ingen kommende ordrer på et igangværende abonnement — kør 'Generér kommende ordrer' og tjek abonnementet";
   }
 
-  // SAMME anker-opløsning som generatoren (delt helper — vagtens tidligere
-  // egen-beregning skubbede en passeret startuge til NÆSTE år og var dermed
-  // blind for præcis det tilfælde, der gjorde 8 abonnementer usynlige i uge
-  // 35-hændelsen). Kun et anker EFTER horisonten (bevidst fremtidig
-  // sæsonstart, fx "Uge 20, 2027") er et legitimt nul.
+  // SAMME anker-opløsning OG næste-besøgs-matematik som generatoren — vagten
+  // må hverken være blind (uge 35-hændelsen) eller råbe falsk (Hermes-fund
+  // 235812: årligt abonnement MED historik, hvis uge netop er passeret, venter
+  // legitimt til næste år). Alarm kun når generatorens NÆSTE besøg faktisk
+  // ligger inden for horisonten, men ingen ordrer findes.
   const anchor = resolveStartAnchor(parts, totalOrderCount > 0, ref.getUTCFullYear(), horizonEnd);
-  if (anchor > horizonEnd) return null;
+  const step = base * WEEK_MS;
+  const vNext = anchor >= thisMonday
+    ? anchor
+    : totalOrderCount > 0
+      ? anchor + Math.ceil((thisMonday - anchor) / step) * step
+      : thisMonday; // nyt abonnement med passeret startuge = "skulle allerede køre"
+  if (vNext > horizonEnd) return null;
   return "ingen kommende ordrer trods startuge inden for horisonten — kør 'Generér kommende ordrer' og tjek abonnementet";
 }
