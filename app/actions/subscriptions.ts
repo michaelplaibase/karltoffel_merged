@@ -16,15 +16,25 @@ import { redirect } from "next/navigation";
 // når en form-action afvikles — indtastning må aldrig gå tabt ved fejl).
 export type SubscriptionState = { error?: string; values?: { startWeek: string; baseInterval: string; fixedEmployee: string } };
 
-/** Materialise upcoming orders for every active subscription (manual button). */
-export async function regenerateOrders(): Promise<void> {
+export type GenerateOrdersState = { created?: number; error?: string };
+
+/** Materialise upcoming orders for every active subscription (manual button).
+ *  Returns the number of orders created so the button can show feedback;
+ *  errors are returned (not thrown) so the UI can surface them inline. */
+export async function regenerateOrders(_prev: GenerateOrdersState, _formData: FormData): Promise<GenerateOrdersState> {
   await guardAction();
-  await generateAllSubscriptionOrders();
+  let created: number;
+  try {
+    created = await generateAllSubscriptionOrders();
+  } catch (e) {
+    console.error("regenerateOrders fejlede:", e);
+    return { error: "Genereringen fejlede. Prøv igen — eller kontakt support, hvis problemet gentager sig." };
+  }
   revalidatePath("/subscriptions");
   revalidatePath("/orders");
   revalidatePath("/calendar");
   revalidatePath("/daycalendar");
-  redirect("/orders");
+  return { created };
 }
 
 function readTaskLines(formData: FormData) {
