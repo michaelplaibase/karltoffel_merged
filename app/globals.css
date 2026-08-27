@@ -49,6 +49,14 @@ hr { border: 0; border-top: 1px solid rgba(0,0,0,.1); margin: 18px 0; }
 /* ---------- layout ---------- */
 .app-main { padding-top: var(--navbar-h); min-height: 100vh; }
 .container-1140 { max-width: var(--container); margin: 0 auto; padding: 24px; }
+/* Brede liste-sider (mange tabel-kolonner): på desktop bruges hele vinduets
+   bredde, så alle kolonner er synlige uden vandret scroll. Under 1200px
+   gælder 1140-rammen igen, og .table-wrap's overflow-x tager over. */
+@media (min-width: 1200px) { .container-1140.container-wide { max-width: 1840px; padding: 24px 40px; } }
+/* Under 1200px kan alle kolonner ikke være synlige samtidig: tabellen holder
+   sin fulde bredde og .table-wrap scroller — kolonnerne må aldrig klemmes
+   ulæseligt smalle. */
+@media (max-width: 1199.98px) { .container-wide table.data-table { min-width: 1200px; } }
 .page-title { font-size: clamp(29px, 2.4vw + 18px, 48.832px); margin: 0 0 12px; }
 .page-desc { color: var(--muted); font-size: 15px; margin: 0 0 20px; }
 .section-title { font-size: 25.008px; margin: 0 0 12px; }

@@ -35,7 +35,7 @@ export default async function SubscriptionsPage({ searchParams }: { searchParams
   };
 
   return (
-    <div className="container-1140">
+    <div className="container-1140 container-wide">
       <h1 className="page-title">Oversigt over abonnementer</h1>
       <p className="page-desc">Oversigten viser alle aktive abonnementer.</p>
 
@@ -48,7 +48,7 @@ export default async function SubscriptionsPage({ searchParams }: { searchParams
           </div>
 
           <div className="table-wrap">
-            <table className="data-table" style={{ minWidth: 1200 }}>
+            <table className="data-table">
               <thead>
                 <tr>
                   <th style={{ width: 34 }} /><th>Abo. nr.</th><th>Kunde</th><th>Leveringsadresse</th>
