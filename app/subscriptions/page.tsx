@@ -6,16 +6,15 @@ import { stopSubscription, approveSubscription } from "@/app/actions/subscriptio
 import GenerateOrdersButton from "@/components/GenerateOrdersButton";
 import { CatChip, CustomerCell, MapLink, money } from "@/components/ui";
 import RowMenu from "@/components/RowMenu";
-import { SearchBar, Pagination, paginate } from "@/components/ListControls";
+import { SearchBar } from "@/components/ListControls";
 
 export const metadata = { title: "Abonnementer · Karltoffel" };
 
 export default async function SubscriptionsPage({ searchParams }: { searchParams: Promise<{ q?: string; page?: string }> }) {
   const sp = await searchParams;
   const q = sp.q?.trim() || undefined;
-  const [all, contacts] = await Promise.all([getSubscriptions(q), getContacts()]);
+  const [subscriptions, contacts] = await Promise.all([getSubscriptions(q), getContacts()]);
   const contactById = (id: number) => contacts.find((c) => c.id === id);
-  const { slice: subscriptions, page, totalPages } = paginate(all, Number(sp.page) || 1);
 
   // "Fremtidige ordrer": den FAKTISKE næste ikke-afsluttede ordres uge — ikke
   // den statiske nextWeek-etiket fra oprettelsen, som aldrig opdateres af
@@ -94,8 +93,6 @@ export default async function SubscriptionsPage({ searchParams }: { searchParams
               </tbody>
             </table>
           </div>
-
-          <Pagination path="/subscriptions" page={page} totalPages={totalPages} q={q} />
         </div>
       </div>
     </div>
