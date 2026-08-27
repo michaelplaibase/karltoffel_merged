@@ -48,7 +48,7 @@ export default async function SubscriptionsPage({ searchParams }: { searchParams
           </div>
 
           <div className="table-wrap">
-            <table className="data-table">
+            <table className="data-table" style={{ minWidth: 1200 }}>
               <thead>
                 <tr>
                   <th style={{ width: 34 }} /><th>Abo. nr.</th><th>Kunde</th><th>Leveringsadresse</th>
