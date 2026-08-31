@@ -677,6 +677,20 @@ function esc(s){ const d = document.createElement("div"); d.textContent = s; ret
 /* ============ RENDER ============ */
 const CAT_ORDER = ["pakke", "groen", "vinduer", "tag", "affald", "vinter", "skadedyr"];
 const CAT_LABELS = { pakke:"Pakke", groen:"Grøn have", vinduer:"Vinduer & glas", tag:"Tag & fliser", affald:"Affald", vinter:"Vinter", skadedyr:"Skadedyrsbekæmpelse" };
+
+/* ============ RUNDTUR I BOLIGEN: 3 kategorikort ============ */
+/* Services grupperes efter hvor arbejdet foregår: i haven, uden på huset
+   eller indendørs. Hvert produkt-id står i præcis ét kort. p.kat beholdes
+   uændret (bruges af GTM item_category + tak-sidens logik) — kortene er kun
+   en visnings-gruppering ovenpå den samme liste. */
+const SERVICE_CARDS = [
+  { key:"haven", emoji:"🌳", title:"I haven",
+    ids:["graes","green","haek","beskaering","ukrudt_sproejt","ukrudt_fjern","sammenriv"] },
+  { key:"ude", emoji:"🏠", title:"Uden på",
+    ids:["vinduer","ovenlys","solcelle","drivhus","alge","tagrender","algeflis","fliserens","myre_ude","myre_saeson"] },
+  { key:"inde", emoji:"🛋️", title:"Indendørs",
+    ids:["vinduerind","myre_inde"] }
+];
 function enhKort(p){ return p.enhed ? p.enhed.split(" ")[0] : "enhed"; }
 function prisEnh(p){ return p.prisEnh || enhKort(p); }   /* ental til "kr pr. X" */
 
@@ -699,17 +713,60 @@ function knap(tegn, label){
    grupperet efter kategori. Til-/fravalg flipper kun checkboxen + .row--off
    (CSS skjuler pris-/frekvens-kontrollerne på stedet) — ingen kolonne-flytning,
    intet farveskift, intet flash. */
+/* Rundtur-kortene: 3 klikbare kategorikort (HAVEN / UDEN PÅ / INDENFRA),
+   sammenklappede som standard. Et klik på kortet folder dets services ud
+   under kortet (accordion) — flere kort kan være åbne samtidig. Checkbox-
+   adfærden i rækkerne er uændret (byggRaekke). */
 function renderRows(){
   const wrap = $("rows");
   wrap.innerHTML = "";
-  CAT_ORDER.forEach(katKey => {
-    const items = PRODUCTS.filter(p => p.kat === katKey);
+  SERVICE_CARDS.forEach(card => {
+    const items = card.ids.map(id => PRODUCTS.find(p => p.id === id)).filter(Boolean);
     if(!items.length) return;
-    const grp = document.createElement("div"); grp.className = "row-grp";
-    const lbl = document.createElement("div"); lbl.className = "row-cat"; lbl.textContent = CAT_LABELS[katKey];
-    grp.appendChild(lbl);
-    items.forEach(p => grp.appendChild(byggRaekke(p)));
-    wrap.appendChild(grp);
+    const box = document.createElement("div");
+    box.className = "tm-card";
+    box.dataset.card = card.key;
+
+    const head = document.createElement("button");
+    head.type = "button";
+    head.className = "tm-card-head";
+    head.setAttribute("aria-expanded", "false");
+    head.setAttribute("aria-controls", "tm-card-body-" + card.key);
+    const emo = document.createElement("span"); emo.className = "tm-card-emoji"; emo.setAttribute("aria-hidden","true"); emo.textContent = card.emoji;
+    const ttl = document.createElement("span"); ttl.className = "tm-card-title"; ttl.textContent = card.title;
+    const cnt = document.createElement("span"); cnt.className = "tm-card-count"; cnt.dataset.cardCount = card.key; cnt.textContent = "0 valgt";
+    const chev = document.createElement("span"); chev.className = "tm-card-chevron"; chev.setAttribute("aria-hidden","true"); chev.textContent = "▾";
+    head.appendChild(emo); head.appendChild(ttl); head.appendChild(cnt); head.appendChild(chev);
+    head.addEventListener("click", ()=>{
+      const open = box.classList.toggle("open");
+      head.setAttribute("aria-expanded", open ? "true" : "false");
+      /* Ikke-brydende måling af kort-fold (best effort — må aldrig stoppe flowet). */
+      try { (window.dataLayer = window.dataLayer || []).push({ event:"tm_card_expand", tm_card: card.key }); } catch(e){}
+    });
+
+    const body = document.createElement("div");
+    body.className = "tm-card-body";
+    body.id = "tm-card-body-" + card.key;
+    items.forEach(p => body.appendChild(byggRaekke(p)));
+
+    box.appendChild(head); box.appendChild(body);
+    wrap.appendChild(box);
+  });
+}
+
+/* Sticky opsummeringslinje: "X ting valgt · Ét besøg klarer det hele · Y kr i alt".
+   Samme sum-beregning som overalt ellers (beregn) — live opdateret via opdater(). */
+function opdaterSticky(){
+  const r = beregn(PRODUCTS);
+  const cnt = $("tm-sticky-count"), tot = $("tm-sticky-total");
+  if(cnt) cnt.textContent = r.count + " ting valgt";
+  if(tot) tot.textContent = kr(r.total) + " i alt";
+  /* Pr. kort: antal valgte i hvert kort. */
+  SERVICE_CARDS.forEach(card => {
+    const el = ROOT.querySelector('[data-card-count="' + card.key + '"]');
+    if(!el) return;
+    const n = PRODUCTS.filter(p => p.on && card.ids.indexOf(p.id) > -1).length;
+    el.textContent = n + " valgt";
   });
 }
 
@@ -846,6 +903,7 @@ function opdater(){
   });
   opdaterRabat();
   opdaterBetaling();
+  opdaterSticky();
   gemState("step-losning");   /* hver frekvens-/til-fravalgs-ændring overlever refresh */
 }
 
