@@ -1,9 +1,15 @@
+import { getSessionUser } from "@/lib/api-auth";
+import { redirect } from "next/navigation";
 import { OPTIMIZATION as O } from "@/lib/funktioner";
 import OptimizationRunner from "@/components/OptimizationRunner";
 
 export const metadata = { title: "Abonnementsoptimering · Karltoffel" };
 
-export default function OptimizationPage() {
+export default async function OptimizationPage() {
+  // Kun administratorer — funktionssiderne er admin-only (Thomas, 2026-08-31).
+  const me = await getSessionUser();
+  if (me == null) redirect("/login");
+  if (!me.isAdmin) redirect("/calendar");
   return (
     <div className="container-1140" style={{ maxWidth: 900 }}>
       <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>

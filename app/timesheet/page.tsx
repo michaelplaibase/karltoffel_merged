@@ -1,15 +1,17 @@
 import { redirect } from "next/navigation";
-import { requireSession } from "@/lib/api-auth";
+import { getSessionUser } from "@/lib/api-auth";
 import { getTimesheet } from "@/lib/timesheet";
 
 export const metadata = { title: "Timeregistrering · Karltoffel" };
 
 export default async function TimesheetPage() {
-  const userId = await requireSession();
-  if (userId == null) redirect("/login");
+  const me = await getSessionUser();
+  if (me == null) redirect("/login");
+  // Kun administratorer — Funktionsmenuen er admin-only (Thomas, 2026-08-31).
+  if (!me.isAdmin) redirect("/calendar");
   // Én sektion PR. medarbejder (admin) hhv. kun egne registreringer — hentet
   // med en grænse pr. bruger, så historikken ikke skrumper med antallet af ansatte.
-  const { isAdmin, groups } = await getTimesheet(userId);
+  const { isAdmin, groups } = await getTimesheet(me.id);
   const harRækker = groups.some((g) => g.rows.length > 0);
 
   return (

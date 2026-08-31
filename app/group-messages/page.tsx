@@ -1,3 +1,5 @@
+import { getSessionUser } from "@/lib/api-auth";
+import { redirect } from "next/navigation";
 import { GROUP_MESSAGES as G } from "@/lib/funktioner";
 import { getEmployeeNames } from "@/lib/queries";
 import { weekOptions } from "@/lib/weeks";
@@ -6,6 +8,10 @@ import GroupMessageForm from "@/components/GroupMessageForm";
 export const metadata = { title: "Gruppebeskeder · Karltoffel" };
 
 export default async function GroupMessagesPage() {
+  // Kun administratorer — funktionssiderne er admin-only (Thomas, 2026-08-31).
+  const me = await getSessionUser();
+  if (me == null) redirect("/login");
+  if (!me.isAdmin) redirect("/calendar");
   const employees = (await getEmployeeNames()).filter((n) => n !== "Ingen");
   const weekOpts = weekOptions(new Date(), 13, -4); // 4 weeks back → ~2 months ahead
 
