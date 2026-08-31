@@ -766,7 +766,7 @@ function esc(s){ const d = document.createElement("div"); d.textContent = s; ret
 
 /* ============ RENDER ============ */
 const CAT_ORDER = ["pakke", "groen", "vinduer", "tag", "affald", "vinter", "skadedyr"];
-const CAT_LABELS = { pakke:"Fra Villapakken", groen:"Grøn have", vinduer:"Vinduer & glas", tag:"Tag & fliser", affald:"Affald", vinter:"Vinter", skadedyr:"Skadedyrsbekæmpelse" };
+const CAT_LABELS = { pakke:"Pakke", groen:"Grøn have", vinduer:"Vinduer & glas", tag:"Tag & fliser", affald:"Affald", vinter:"Vinter", skadedyr:"Skadedyrsbekæmpelse" };
 function enhKort(p){ return p.enhed ? p.enhed.split(" ")[0] : "enhed"; }
 function prisEnh(p){ return p.prisEnh || enhKort(p); }   /* ental til "kr pr. X" */
 
