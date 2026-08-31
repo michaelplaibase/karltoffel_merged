@@ -1,0 +1,41 @@
+<!-- Variant B: fælles ydelsesoversigt-sektion.
+     Indsættes mellem sidens tekstsektion og FAQ-sektionen.
+     Erstat {{SERVICE}}, {{FACTS}} (li-elementer), {{QUOTE}} og {{CTA-TEKST}}.
+     Kræver: <link rel="stylesheet" href="/assets/css/service-variant-b.css?v=1"> i <head>. -->
+<div class="section section--type-standard section--theme-secondary section--padding-top-xlarge section--padding-bottom-xlarge" id="section-id-variant-b">
+	<div class="section__background"></div>
+	<div class="section__anchor" id="section-variant-b"></div>
+	<div class="grid-container">
+		<div class="svb" data-in-view-scope>
+			<div class="svb__grid">
+				<div class="svb__main">
+					<h2 class="svb__title">Sådan klarer vi din {{SERVICE}}</h2>
+					<p class="svb__lead">Vi tilpasser altid arbejdet efter opgavens størrelse og behov.</p>
+					<ul class="svb__facts">
+						{{FACTS}}
+						<!-- Eksempel (hækklipning):
+						<li><span class="svb__check">✓</span><span>Høje hække op til 220 cm</span></li>
+						<li><span class="svb__check">✓</span><span>Formklipning og kraftig tilbagebeskæring: <span class="svb__note">special pris – det aftales, når du får tilbuddet</span></span></li>
+						-->
+					</ul>
+				</div>
+				<aside class="svb__side">
+					<figure class="svb__quote">
+						<blockquote class="svb__quote-text">“{{QUOTE}}”</blockquote>
+						<figcaption class="svb__quote-source">Kundecitat (placeholder)</figcaption>
+					</figure>
+					<div class="svb__cta">
+						<a href="/#tilbudsmotor" class="big-button"><span>{{CTA-TEKST}}</span></a>
+					</div>
+				</aside>
+			</div>
+			<p class="svb__faq-note">Spørgsmål? Se de oftest stillede spørgsmål herunder – eller <a href="#footer">kontakt os</a>.</p>
+		</div>
+	</div>
+</div>
+<!-- /Variant B -->
+
+<!-- FAQ: tilføj som FØRSTE spørgsmål i .collapse--faq (eksisterende tekst uændret):
+<h3 dir="ltr">Hvornår på året skal {{SERVICE}}?</h3>
+<p dir="ltr">Svaret på dette spørgsmål kommer fra teamet – fagligt svar tilpasses senere.</p>
+Ikke i JSON-LD før teamet har leveret det faglige svar. -->
