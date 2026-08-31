@@ -6,6 +6,15 @@ import { redirect } from "next/navigation";
 import { verifySession, SESSION_COOKIE } from "@/lib/session";
 import { prisma } from "@/lib/db";
 
+/** 403 for gyldigt indloggede brugere uden admin-rolle — til API-ruter, der
+ *  udstiller virksomhedsbrede/admin-data (siderne bag dem er allerede lukket). */
+export function forbidden(): Response {
+  return new Response(JSON.stringify({ error: "Forbidden" }), {
+    status: 403,
+    headers: { "content-type": "application/json" },
+  });
+}
+
 /** Returns the logged-in userId, or null if the request has no valid session. */
 export async function requireSession(): Promise<number | null> {
   const token = (await cookies()).get(SESSION_COOKIE)?.value;

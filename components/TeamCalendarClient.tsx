@@ -9,8 +9,8 @@ import { telHref, telDisplay } from "@/components/ui";
 import { setOrderLock, moveOrderWeeks, replanWeek, deleteOrder } from "@/app/actions/orders";
 
 type Props =
-  | { mode: "week"; week: CalendarWeek; nav: { prevWeek: string; nextWeek: string; monthParam: string }; readOnly?: boolean; basePath?: string }
-  | { mode: "month"; month: CalendarMonth; nav: { prevWeek?: never }; readOnly?: boolean; basePath?: string };
+  | { mode: "week"; week: CalendarWeek; nav: { prevWeek: string; nextWeek: string; monthParam: string }; readOnly?: boolean; moveOnly?: boolean; basePath?: string }
+  | { mode: "month"; month: CalendarMonth; nav: { prevWeek?: never }; readOnly?: boolean; moveOnly?: boolean; basePath?: string };
 
 /** What the context menu needs to act on an order — both board events and unplanned jobs qualify. */
 type MenuTarget = { id: number; contactId: number; subscriptionNo: number | null; phone: string | null };
@@ -93,6 +93,9 @@ function PreviewTaskDetails({ tasks }: { tasks: CalendarTaskDetail[] }) {
 
 export default function TeamCalendarClient(props: Props) {
   const readOnly = props.readOnly ?? false;
+  // moveOnly: brugeren må flytte/låse ordrer (flyt til anden uge), men IKKE
+  // genplanlægge hele ugen eller slette ordrer — bruges til medarbejdere.
+  const moveOnly = props.moveOnly ?? false;
   const basePath = props.basePath ?? "/calendar";
   // "Afslut ordre …" skal vende tilbage HERTIL (den viste uge), ikke til
   // /orders — complete-siden whitelister ?back og bruger den som backUrl.
@@ -201,7 +204,7 @@ export default function TeamCalendarClient(props: Props) {
       </span>
       <span className="sp" />
       {readOnly && <span className="badge">Arbejdsdag 08:00–16:00 (+1 time fleks) · man–fre</span>}
-      {props.mode === "week" && !readOnly && (
+      {props.mode === "week" && !readOnly && !moveOnly && (
         <button className="cbtn" type="button" disabled={pending} onClick={() => run(() => replanWeek(props.week.monday))}>
           {pending ? "Planlægger…" : "Genplanlæg uge"}
         </button>
@@ -463,7 +466,7 @@ export default function TeamCalendarClient(props: Props) {
         </div>
       </div>
 
-      {!readOnly && menu && (
+      {(!readOnly || moveOnly) && menu && (
         <div className="ctxmenu" ref={menuRef} style={{ left: menu.x, top: menu.y }}>
           {menuTel != null ? (
             <a href={menuTel} className="ctxmenu-item">Ring kunden op · {telDisplay(menu.ev.phone)}</a>
@@ -485,10 +488,13 @@ export default function TeamCalendarClient(props: Props) {
             <div className="ctxmenu-item" key={label} style={{ paddingLeft: 34 }}
               onClick={() => run(() => moveOrderWeeks(menu.ev.id, w, unlock))}>{label}</div>
           ))}
-          <div className="ctxmenu-item" onClick={() => setExpanded(expanded === "mere" ? null : "mere")}>
-            Mere … <i className="bi bi-caret-right-fill" />
-          </div>
-          {expanded === "mere" && (
+          {/* "Mere …"-undermenuen (slet ordre, notifikation m.m.) er kun til admins. */}
+          {!moveOnly && (
+            <div className="ctxmenu-item" onClick={() => setExpanded(expanded === "mere" ? null : "mere")}>
+              Mere … <i className="bi bi-caret-right-fill" />
+            </div>
+          )}
+          {expanded === "mere" && !moveOnly && (
             <>
               <Link href={`/customers/${menu.ev.contactId}`} className="ctxmenu-item" style={{ paddingLeft: 34 }}>Gå til kundedetaljer …</Link>
               {menu.ev.subscriptionNo != null && (
@@ -521,7 +527,7 @@ export default function TeamCalendarClient(props: Props) {
         </div>
       )}
 
-      {!readOnly && confirmDel && (
+      {!readOnly && !moveOnly && confirmDel && (
         <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,.4)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 3000 }}
           onClick={() => !pending && setConfirmDel(null)}>
           <div style={{ background: "#fff", borderRadius: 6, padding: "20px 22px", width: 440, maxWidth: "92vw", boxShadow: "0 10px 40px rgba(0,0,0,.25)" }} onClick={(e) => e.stopPropagation()}>

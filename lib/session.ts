@@ -1,6 +1,10 @@
 // Signed session token, using Web Crypto HMAC so it works in BOTH the Node
-// runtime (server actions) and the Edge runtime (middleware). The token is
-// `<userId>.<iat>.<exp>.<hmac(payload)>`; there is no server-side session store.
+// runtime (server actions) and the Edge runtime (proxy/middleware). The token
+// is `<version>.<userId>.<iat>.<exp>.<isAdmin>.<hmac(payload)>`; there is no
+// server-side session store. Version "2" carries isAdmin in the signed payload
+// so proxy/middleware kan håndhæve rollebegrænsningen uden Prisma/DB-adgang.
+// Version "1" (uden version-felt og isAdmin) er IKKE gyldig længere — brugere
+// med et gammelt token bliver blot bedt om at logge ind igen.
 // IMPORTANT: keep this file Edge-safe — Web Crypto only, no node:crypto,
 // no @prisma/client, no next/headers.
 export const SESSION_COOKIE = "kt_session";
@@ -37,15 +41,21 @@ async function hmac(data: string): Promise<string> {
   return b64url(new Uint8Array(sig));
 }
 
-export async function signSession(userId: number, ttlSeconds: number = SESSION_TTL_SECONDS): Promise<string> {
+/** Signer en session for en bruger. isAdmin indgår i den signerede payload, så
+ *  proxy/middleware kan filtrere medarbejder-sider uden databaseadgang. */
+export async function signSession(userId: number, ttlSeconds: number = SESSION_TTL_SECONDS, isAdmin: boolean = false): Promise<string> {
   const iat = Math.floor(Date.now() / 1000);
   const exp = iat + ttlSeconds;
-  const payload = `${userId}.${iat}.${exp}`;
+  const payload = `2.${userId}.${iat}.${exp}.${isAdmin ? 1 : 0}`;
   return `${payload}.${await hmac(payload)}`;
 }
 
-/** Returns the userId if the token's signature is valid and it has not expired, else null. */
-export async function verifySession(token: string | undefined): Promise<number | null> {
+export type SessionClaims = { userId: number; isAdmin: boolean };
+
+/** Returns the session claims (userId + isAdmin) if the token's signature is
+ *  valid, the format version is current and it has not expired, else null.
+ *  Gammel formatversion → null (brugeren logges bare ind igen). */
+export async function verifySessionClaims(token: string | undefined): Promise<SessionClaims | null> {
   if (!token) return null;
   const i = token.lastIndexOf(".");
   if (i < 0) return null;
@@ -57,10 +67,17 @@ export async function verifySession(token: string | undefined): Promise<number |
   for (let j = 0; j < sig.length; j++) diff |= sig.charCodeAt(j) ^ expected.charCodeAt(j);
   if (diff !== 0) return null;
   const parts = payload.split(".");
-  if (parts.length !== 3) return null;
-  const id = Number(parts[0]);
-  const exp = Number(parts[2]);
+  if (parts.length !== 5 || parts[0] !== "2") return null;
+  const id = Number(parts[1]);
+  const exp = Number(parts[3]);
+  const isAdmin = parts[4] === "1";
   if (!Number.isFinite(id) || !Number.isFinite(exp)) return null;
   if (exp <= Math.floor(Date.now() / 1000)) return null;
-  return id;
+  return { userId: id, isAdmin };
+}
+
+/** Returns the userId if the token's signature is valid and it has not expired, else null. */
+export async function verifySession(token: string | undefined): Promise<number | null> {
+  const claims = await verifySessionClaims(token);
+  return claims?.userId ?? null;
 }

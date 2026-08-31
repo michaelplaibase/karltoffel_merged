@@ -31,8 +31,8 @@ export const TOP_NAV: NavMenu[] = [
       { label: "Brugere", en: "Users", href: "/users", adminOnly: true },
       { label: "Arbejdstider", en: "Working hours", href: "/working-hours", adminOnly: true },
       { label: "Planlægning", en: "Planning", href: "/planning-settings", adminOnly: true },
-      { label: "Rabatkoder", en: "Discount codes", href: "/discount-codes" },
-      { label: "Standardopgaver", en: "Standard tasks", href: "/standard-tasks" },
+      { label: "Rabatkoder", en: "Discount codes", href: "/discount-codes", adminOnly: true },
+      { label: "Standardopgaver", en: "Standard tasks", href: "/standard-tasks", adminOnly: true },
       { label: "Regnskab", en: "Accounting", href: "/accounting", adminOnly: true },
       { label: "E-mail og SMS skabeloner", en: "Templates", href: "/templates", adminOnly: true },
     ],
@@ -40,11 +40,11 @@ export const TOP_NAV: NavMenu[] = [
   {
     label: "Funktioner", en: "Functions",
     items: [
-      { label: "Timeregistrering", en: "Timesheet", href: "/timesheet" },
-      { label: "Gruppebeskeder", en: "Group messages", href: "/group-messages" },
-      { label: "Ferieplanlægning", en: "Holiday planning", href: "/holidays" },
-      { label: "Abonnementsoptimering", en: "Subscription optimization", href: "/optimization" },
-      { label: "Prisjustering", en: "Price adjustment", href: "/price-adjustments" },
+      { label: "Timeregistrering", en: "Timesheet", href: "/timesheet", adminOnly: true },
+      { label: "Gruppebeskeder", en: "Group messages", href: "/group-messages", adminOnly: true },
+      { label: "Ferieplanlægning", en: "Holiday planning", href: "/holidays", adminOnly: true },
+      { label: "Abonnementsoptimering", en: "Subscription optimization", href: "/optimization", adminOnly: true },
+      { label: "Prisjustering", en: "Price adjustment", href: "/price-adjustments", adminOnly: true },
     ],
   },
   {
@@ -69,11 +69,11 @@ export const TOP_NAV: NavMenu[] = [
   {
     label: "Hjælp", en: "Help",
     items: [
-      { label: "Vejledninger", en: "Guides", href: "/guides" },
-      { label: "Samarbejdspartnere", en: "Partners", href: "/partners" },
-      { label: "Karltoffel quiz", en: "Quiz", href: "/quiz" },
-      { label: "Kontakt support", en: "Support", href: "/support" },
-      { label: "AI Receptionist (prototype)", en: "AI Receptionist (prototype)", href: "/ai-receptionist" },
+      { label: "Vejledninger", en: "Guides", href: "/guides", adminOnly: true },
+      { label: "Samarbejdspartnere", en: "Partners", href: "/partners", adminOnly: true },
+      { label: "Karltoffel quiz", en: "Quiz", href: "/quiz", adminOnly: true },
+      { label: "Kontakt support", en: "Support", href: "/support", adminOnly: true },
+      { label: "AI Receptionist (prototype)", en: "AI Receptionist (prototype)", href: "/ai-receptionist", adminOnly: true },
     ],
   },
 ];
