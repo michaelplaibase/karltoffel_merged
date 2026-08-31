@@ -55,6 +55,24 @@ Besøg os på www.bubble.dk eller ring til os på +45 6069 8700
 			<meta property="og:image" content="https://karltoffel.dk/f/design/share.jpg">
 													
 		<link rel="canonical" href="/">
+	<style>
+	/* forside-udkast A: polering */
+	.tm2-grid { margin-top: 2rem; align-items: stretch; }
+	.tm2-card { height: 100%; display: flex; flex-direction: column; }
+	.tm2-card .card__content { padding: 1.75rem; flex: 1 1 auto; }
+	.tm2-card .card__title { margin-bottom: .5rem; }
+	.tm2-card .card__content p { margin: 0; }
+	.tm2-step { text-align: center; padding: 1rem .5rem; }
+	.tm2-step h3 { margin-bottom: .5rem; }
+	.tm2-step p { margin: 0; }
+	.tm2-caption { text-align: center; margin: 1.75rem auto 1rem; max-width: 40rem; }
+	.tm2-center { text-align: center; margin-top: 1rem; }
+	@media (max-width: 39.9375em) {
+		.tm2-card .card__content { padding: 1.25rem; }
+		.tm2-caption { margin: 1.25rem 1rem 1rem; }
+	}
+	</style>
+
 	</head>
 
 
@@ -291,12 +309,12 @@ Besøg os på www.bubble.dk eller ring til os på +45 6069 8700
                 <h2 style="text-align:center;">Én bil. Én dag. Alt det her.</h2>
             </div>
         </div>
-        <div class="grid-x grid-margin-x grid-margin-y" style="margin-top:2rem;">
+        <div class="grid-x grid-margin-x grid-margin-y tm2-grid">
             <div class="cell small-12 medium-4">
                 <div class="card card--service in-view in-view--slide-up" style="height:100%;">
                     <div class="card__content" style="padding:1.5rem;">
                         <h3 class="card__title">🌳 I haven</h3>
-                        <p>Plænen, hækken, bedene og bladene der altid lander forkert. Greenkeeper-græspleje, beskæring og ukrudt — ordnet.</p>
+                        <p>Plænen, hækken, bedene — og bladene, der altid lander forkert. Greenkeeper-græspleje, beskæring og ukrudt — ordnet.</p>
                     </div>
                 </div>
             </div>
@@ -304,7 +322,7 @@ Besøg os på www.bubble.dk eller ring til os på +45 6069 8700
                 <div class="card card--service in-view in-view--slide-up" style="height:100%;">
                     <div class="card__content" style="padding:1.5rem;">
                         <h3 class="card__title">🏠 Uden på</h3>
-                        <p>Udvendig vinduesvask, solcellevask og drivhusvask. Fliser og tagrender. Alt det vejret pifter ned på.</p>
+                        <p>Udvendig vinduesvask, solcellevask og drivhusvask. Fliser og tagrender. Alt det, vejret er hårdt ved.</p>
                     </div>
                 </div>
             </div>
@@ -317,8 +335,8 @@ Besøg os på www.bubble.dk eller ring til os på +45 6069 8700
                 </div>
             </div>
         </div>
-        <p style="text-align:center;margin-top:1.5rem;">Og ja — det hele sker i <b>ét besøg</b>. Vi booker ikke tre gange for at nå det hele.</p>
-        <div class="buttons" style="text-align:center;margin-top:1rem;">
+        <p class="tm2-caption">Og ja — det hele sker i <b>ét besøg</b>. Vi booker ikke tre gange for at nå det hele.</p>
+        <div class="buttons tm2-center">
             <a href="/#tilbudsmotor" class="button in-view in-view--slide-up"><span>Sæt dit besøg sammen</span></a>
         </div>
     </div>
@@ -333,21 +351,21 @@ Besøg os på www.bubble.dk eller ring til os på +45 6069 8700
                 <h2 style="text-align:center;">Sådan funker det</h2>
             </div>
         </div>
-        <div class="grid-x grid-margin-x grid-margin-y" style="margin-top:2rem;">
+        <div class="grid-x grid-margin-x grid-margin-y tm2-grid">
             <div class="cell small-12 medium-4">
-                <div class="rte" data-in-view-scope style="text-align:center;">
+                <div class="rte tm2-step" data-in-view-scope>
                     <h3>1. Du siger ja</h3>
                     <p>To minutter i tilbudsmotoren — og du har din pris med det samme.</p>
                 </div>
             </div>
             <div class="cell small-12 medium-4">
-                <div class="rte" data-in-view-scope style="text-align:center;">
+                <div class="rte tm2-step" data-in-view-scope>
                     <h3>2. Vi pakker bilen</h3>
                     <p>Haven, udefra og indvendigt. Alt klar i én tur — vi klarer det, når vi først er der.</p>
                 </div>
             </div>
             <div class="cell small-12 medium-4">
-                <div class="rte" data-in-view-scope style="text-align:center;">
+                <div class="rte tm2-step" data-in-view-scope>
                     <h3>3. Du gør ingenting</h3>
                     <p>Måned efter måned. Mindre bøvl. Mere overskud.</p>
                 </div>
@@ -1237,7 +1255,7 @@ Besøg os på www.bubble.dk eller ring til os på +45 6069 8700
 	<div class="grid-x grid-margin-x align-middle">
 									<div class="cell small-12 medium-6">
 				<div class="section__text rte rte--larger-h2" data-in-view-scope>
-					<h2>Klar til at blive en heldig kartoffel?</h2>
+					<h2>Klar til lidt mere overskud?</h2>
 <p>Lad os pakke bilen og tage det praktiske — så du slipper for bøvlet og får et hjem, der står helt skarpt.</p>
 
 									</div>
@@ -1262,6 +1280,20 @@ Besøg os på www.bubble.dk eller ring til os på +45 6069 8700
 </div>
 					
 		
+<!-- ===== NY SEKTION: Slut-CTA (mørk) ===== -->
+<div class="section section--type-cta section--theme-secondary section--padding-top-xlarge section--padding-bottom-xlarge" id="bliv-heldig-karltoffel" style="background:#1C140B;color:#FFFFF0;">
+    <div class="section__background"></div>
+    <div class="grid-container">
+        <div class="rte rte--larger-h2" data-in-view-scope style="text-align:center;">
+            <h2>Vil du også være en heldig karltoffel?</h2>
+            <p>Sig ja — og lad os pakke bilen.</p>
+            <div class="buttons" style="margin-top:1.5rem;">
+                <a href="/#tilbudsmotor" class="big-button in-view in-view--slide-up"><span>Få dit tilbud</span></a>
+            </div>
+        </div>
+    </div>
+</div>
+
 <footer class="site-footer section--theme-secondary">
 	<div class="section__anchor" id="footer"></div>
 	<div class="grid-container">
@@ -1338,19 +1370,6 @@ Besøg os på www.bubble.dk eller ring til os på +45 6069 8700
 		<img src="/assets/img/design/karltoffel-logo-gul.svg" alt="Karltoffel">
 	</div>
 
-<!-- ===== NY SEKTION: Slut-CTA (mørk) ===== -->
-<div class="section section--type-cta section--theme-secondary section--padding-top-xlarge section--padding-bottom-xlarge" id="bliv-heldig-kartoffel" style="background:#1C140B;color:#FFFFF0;">
-    <div class="section__background"></div>
-    <div class="grid-container">
-        <div class="rte rte--larger-h2" data-in-view-scope style="text-align:center;">
-            <h2>Klar til at blive en heldig kartoffel?</h2>
-            <p>Sig ja — og lad os pakke bilen.</p>
-            <div class="buttons" style="margin-top:1.5rem;">
-                <a href="/#tilbudsmotor" class="big-button in-view in-view--slide-up"><span>Få dit tilbud</span></a>
-            </div>
-        </div>
-    </div>
-</div>
 </footer>
 
 		<a href="javascript:void(0)" id="csconsentlink" class="cookie-badge"><i class="fa-default fa-cookie"></i></a>
