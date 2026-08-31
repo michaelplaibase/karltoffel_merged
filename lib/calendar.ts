@@ -50,7 +50,7 @@ export type UnplannedJob = {
 
 /** Read-only Kalender 2 route evidence. Contains no customer or employee address. */
 export type Calendar2Audit = {
-  optimizationContract: "deterministic-nearest-feasible-not-global-optimum";
+  optimizationContract: "deterministic-nearest-feasible-2opt-or-opt";
   matrixVersion: "calendar2-route-audit-v1";
   matrixHash: string;
   matrixProvider: string;
