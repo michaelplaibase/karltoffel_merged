@@ -37,7 +37,7 @@ const PRODUCTS = [
   {id:"graes",     navn:"Græsslåning",                            enhed:"m² plæne",  pris:1.60,   note:"Klip i sæsonen",          qty:450, freq:1,  fmax:26, on:false, pakke:false, kat:"groen",   wm:"Græsslåning"},
   {id:"beskaering",navn:"Beskæring af buske, træer og planter",   enhed:"træer",     pris:500.00, note:"Små træer/frugttræer — større træer efter besøg", qty:3, freq:1, fmax:2, on:false, pakke:false, kat:"groen", prisEnh:"træ", wm:"Beskæring Små træer / Frugttræer"},
   {id:"stub",      navn:"Stubfræsning",                           enhed:"",          pris:null,   note:"Pris ved besøg",          qty:1,   freq:1,  fmax:1,  on:false, pakke:false, kat:"groen",   wm:null},
-  {id:"vinduerind",navn:"Vinduesvask indvendigt",                 enhed:"glas",      pris:19.87,  note:"Indvendige ruder",        qty:14,  freq:1,  fmax:6,  on:false, pakke:false, kat:"vinduer", wm:"Vindeuspudsning Indvendig pr glas"},
+  {id:"vinduerind",navn:"Indendørs vinduespudsning",              enhed:"glas",      pris:19.87,  note:"Indvendige døre, vinduer og porte", qty:0,   freq:1,  fmax:6,  on:false, pakke:false, kat:"vinduer", wm:"Indendørs vinduespudsning pr glas"},
   {id:"ovenlys",   navn:"Ovenlysvinduesvask",                     enhed:"stk",       pris:25.00,  note:"Pr. ovenlysvindue",       qty:2,   freq:1,  fmax:4,  on:false, pakke:false, kat:"vinduer", wm:"Ovenlys vinduesvask pr stk"},
   {id:"solcelle",  navn:"Solcellevask",                           enhed:"paneler",   pris:25.00,  note:"Pr. solcellepanel",       qty:0,   freq:1,  fmax:4,  on:false, pakke:false, kat:"vinduer", prisEnh:"panel", wm:"Solcellevask pr solcelle"},
   {id:"drivhus",   navn:"Drivhusvask",                            enhed:"",          pris:null,   note:"Pris ved besøg",          qty:1,   freq:1,  fmax:2,  on:false, pakke:false, kat:"vinduer", wm:null},
@@ -219,41 +219,6 @@ function applyMeasurements(m){
   if(active && active.id === "step-losning") opdater();
 }
 
-/* AI-vinduestælling: send det renderede skråfoto til /api/windows (Anthropic-nøglen
-   bor på serveren) og brug estimatet som glasantal for udvendig vinduespudsning.
-   Alt er best-effort og fejler stille — uden svar (eller uden ANTHROPIC_API_KEY)
-   beholder motoren sit standard-glasantal. Respekterer kundens egne rettelser. */
-let windowsReq = 0;
-function taelVinduerAI(){
-  try{
-    const canvas = ROOT.querySelector("#sf-canvas");
-    if(!canvas || !canvas.width || typeof canvas.toDataURL !== "function") return;
-    let dataUrl;
-    try{ dataUrl = canvas.toDataURL("image/jpeg", 0.85); }
-    catch(e){ return; }   /* tainted canvas → kan ikke læses ud, drop */
-    if(!dataUrl || dataUrl.length < 800) return;
-    const req = ++windowsReq;
-    fetch("/api/windows", {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ imageBase64: dataUrl, address: state.adresse })
-    })
-    .then(r => r.ok ? r.json() : null)
-    .then(d => {
-      if(!d || !d.ok || req !== windowsReq) return;   /* forældet/tomt svar → ignorer */
-      const panes = Math.round(d.panes);
-      if(!(panes >= 1 && panes <= 300)) return;
-      /* Kun indvendig — til udvendig vinduespudsning skriver kunden selv
-         antallet af ruder ind (se "Antal døre, ruder og porte"-feltet på rækken). */
-      ["vinduerind"].forEach(id => {
-        const p = PRODUCTS.find(x => x.id === id);
-        if(p && !p.touched) p.qty = panes;            /* rør ikke mængder kunden selv har rettet */
-      });
-      opdater();   /* på stedet: priserne tæller blødt til det nye glasantal */
-    })
-    .catch(()=>{});
-  }catch(e){}
-}
 
 let measureReq = 0;
 function resetProducts(){
@@ -420,7 +385,7 @@ $("ls-skift").addEventListener("click", ()=>{
   adrInput.focus();
 });
 
-$("btn-ja").addEventListener("click", ()=>{ visStep("step-losning"); taelVinduerAI(); });
+$("btn-ja").addEventListener("click", ()=>{ visStep("step-losning"); });
 btnNej.addEventListener("click", ()=>{
   verifyDir++;
   if(verifyDir < VERIFY_DIRS.length){
@@ -775,20 +740,20 @@ function byggRaekke(p){
   navn.htmlFor = chk.id;
   navn.textContent = p.navn;
 
-  /* Antal døre, ruder og porte — til udvendig vinduespudsning tæller vi IKKE selv ruderne.
-     Kunden skriver selv, hvor mange ruder der skal pudses, og prisen er bare
-     enhedsprisen ganget med det indtastede antal. Tomt felt = ingen pris endnu. */
+  /* Antal døre, vinduer og porte — til udvendig OG indendørs vinduespudsning tæller
+     vi IKKE selv ruderne. Kunden skriver selv, hvor mange der skal pudses, og prisen
+     er bare enhedsprisen ganget med det indtastede antal. Tomt felt = ingen pris endnu. */
   let qw = null;
-  if(p.id === "vinduer"){
+  if(p.id === "vinduer" || p.id === "vinduerind"){
     qw = document.createElement("div");
     qw.className = "qw";
     const qlbl = document.createElement("span"); qlbl.className = "qw-lbl"; qlbl.textContent = "Antal døre, vinduer og porte";
     const qin = document.createElement("input");
-    qin.type = "number"; qin.id = "qty-vinduer"; qin.inputMode = "numeric";
+    qin.type = "number"; qin.id = "qty-" + p.id; qin.inputMode = "numeric";
     qin.min = "1"; qin.max = "300"; qin.step = "1";
     qin.placeholder = "f.eks. 12";
     qin.value = p.qty > 0 ? p.qty : "";
-    qin.setAttribute("aria-label", "Antal døre, vinduer og porte til udvendig vinduesvask");
+    qin.setAttribute("aria-label", "Antal døre, vinduer og porte til " + (p.id === "vinduerind" ? "indendørs vinduespudsning" : "udvendig vinduesvask"));
     qin.addEventListener("input", ()=>{
       const raw = qin.value.trim();
       if(raw === ""){ p.qty = 0; opdater(); return; }   /* tomt felt = vent på kunden */
