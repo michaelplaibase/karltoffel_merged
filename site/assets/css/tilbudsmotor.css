@@ -209,6 +209,13 @@
 .tm-flow .pw-note{font-size:12.5px;color:var(--bronze);font-weight:600;white-space:nowrap;text-align:center}
 /* Frekvens — "Besøg om året" over stepperen */
 .tm-flow .fw{grid-area:fw;display:flex;flex-direction:column;align-items:center;gap:3px}
+/* Antal ruder — kundens eget antal-felt (kun vinduespudsning udvendig) */
+.tm-flow .qrow{grid-template-columns:auto minmax(0,1fr) 74px 44px auto;grid-template-areas:"chk navn qw pw fw"}
+.tm-flow .row--off .qw{visibility:hidden}
+.tm-flow .qw{grid-area:qw;display:flex;flex-direction:column;align-items:center;gap:3px}
+.tm-flow .qw-lbl{font-size:9.5px;letter-spacing:.05em;text-transform:uppercase;color:var(--bronze);font-weight:700;white-space:nowrap}
+.tm-flow .qw input{width:60px;padding:3px 5px;border:1.5px solid var(--brun);border-radius:8px;background:#fff;color:var(--brun);font-size:13px;font-weight:700;text-align:center;font-variant-numeric:tabular-nums}
+.tm-flow .qw input:focus{outline:2px solid var(--bronze);outline-offset:1px}
 .tm-flow .fw-lbl{font-size:9.5px;letter-spacing:.05em;text-transform:uppercase;color:var(--bronze);font-weight:700;white-space:nowrap}
 .tm-flow .fw-ctl{display:flex;align-items:center;gap:4px}
 .tm-flow .fw-ctl button{width:26px;height:26px;border-radius:8px;border:0;background:var(--brun);color:var(--gul);font-size:16px;font-weight:700;line-height:1;display:grid;place-items:center}
@@ -225,6 +232,8 @@
   .tm-flow .pw{min-width:84px}
   .tm-flow .pw-val{font-size:15px}
   .tm-flow .fw{min-width:112px}
+  .tm-flow .qrow{grid-template-columns:auto 1fr auto auto auto;column-gap:16px}
+  .tm-flow .qw input{width:72px}
   .tm-flow .fw-ctl{gap:8px}
   .tm-flow .fw-ctl button{width:36px;height:36px;font-size:19px}
   .tm-flow .fw-ctl b{min-width:20px;font-size:15px}
