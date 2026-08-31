@@ -109,5 +109,5 @@ test("ingen jobs går tabt og faste ugedage respekteres efter optimering", () =>
   assert.equal(plan.unplanned.length, 0);
   const placed = plan.days.flatMap((d) => d.stops.map((s) => s.job.id)).sort();
   assert.deepEqual(placed, [1, 2, 3]);
-  assert.ok(plan.days.every((d) => d.stops.every((s) => d.weekday === 0)));
+  assert.ok(plan.days.every((d) => d.weekday === 0));
 });
