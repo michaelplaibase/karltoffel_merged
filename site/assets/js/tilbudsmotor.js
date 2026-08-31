@@ -36,7 +36,7 @@ const PRODUCTS = [
   {id:"graes",     navn:"Græsslåning",                            enhed:"m² plæne",  pris:1.60,   note:"Klip i sæsonen",          qty:450, freq:1,  fmax:26, on:false, pakke:false, kat:"groen",   wm:"Græsslåning"},
   {id:"beskaering",navn:"Beskæring af buske, træer og planter",   enhed:"træer",     pris:500.00, note:"Små træer/frugttræer — større træer efter besøg", qty:3, freq:1, fmax:2, on:false, pakke:false, kat:"groen", prisEnh:"træ", wm:"Beskæring Små træer / Frugttræer"},
   {id:"vinduerind",navn:"Indendørs vinduespudsning",              enhed:"glas",      pris:19.87,  note:"Indvendige døre, vinduer og porte", qty:0,   freq:1,  fmax:6,  on:false, pakke:false, kat:"vinduer", wm:"Indendørs vinduespudsning pr glas"},
-  {id:"solcelle",  navn:"Solcellevask",                           enhed:"paneler",   pris:25.00,  note:"Pr. solcellepanel",       qty:0,   freq:1,  fmax:4,  on:false, pakke:false, kat:"vinduer", prisEnh:"panel", wm:"Solcellevask pr solcelle"},
+  {id:"solcelle",  navn:"Solcellevask",                           enhed:"paneler",   pris:40.00,  note:"Solcellepaneler på taget",          qty:0,   freq:1,  fmax:4,  on:false, pakke:false, kat:"vinduer", prisEnh:"panel", wm:"Solcellevask pr panel"},
   {id:"drivhus",   navn:"Drivhusvask",                            enhed:"gang",      pris:100.00, note:"Fast pris pr. gang — så er drivhuset vasket", qty:1, freq:1,  fmax:2,  on:false, pakke:false, kat:"vinduer", wm:"Drivhusvask — fast pris pr. gang"},
   {id:"algeflis",  navn:"Algebehandling af belægning",            enhed:"m² fliser", pris:3.30,   note:"Alger på fliser, terrasse og indkørsel", qty:60, freq:1, fmax:2, on:false, pakke:false, kat:"tag", wm:"Algebehandling af belægning"},
   {id:"fliserens", navn:"Fliserens",                              enhed:"",          pris:null,   note:"Dybderens med maskine — pris ved besøg", qty:1, freq:1, fmax:2, on:false, pakke:false, kat:"tag", wm:null},
@@ -795,16 +795,19 @@ function byggRaekke(p){
      vi IKKE selv ruderne. Kunden skriver selv, hvor mange der skal pudses, og prisen
      er bare enhedsprisen ganget med det indtastede antal. Tomt felt = ingen pris endnu. */
   let qw = null;
-  if(p.id === "vinduer" || p.id === "vinduerind"){
+  if(p.id === "vinduer" || p.id === "vinduerind" || p.id === "solcelle"){
     qw = document.createElement("div");
     qw.className = "qw";
-    const qlbl = document.createElement("span"); qlbl.className = "qw-lbl"; qlbl.textContent = "Antal døre, vinduer og porte";
+    const qlbl = document.createElement("span"); qlbl.className = "qw-lbl";
+    qlbl.textContent = (p.id === "solcelle" ? "Antal paneler" : "Antal døre, vinduer og porte");
     const qin = document.createElement("input");
     qin.type = "number"; qin.id = "qty-" + p.id; qin.inputMode = "numeric";
     qin.min = "1"; qin.max = "300"; qin.step = "1";
     qin.placeholder = "f.eks. 12";
     qin.value = p.qty > 0 ? p.qty : "";
-    qin.setAttribute("aria-label", "Antal døre, vinduer og porte til " + (p.id === "vinduerind" ? "indendørs vinduespudsning" : "udvendig vinduesvask"));
+    qin.setAttribute("aria-label", p.id === "solcelle"
+      ? "Antal paneler til solcellevask"
+      : "Antal døre, vinduer og porte til " + (p.id === "vinduerind" ? "indendørs vinduespudsning" : "udvendig vinduesvask"));
     qin.addEventListener("input", ()=>{
       const raw = qin.value.trim();
       if(raw === ""){ p.qty = 0; opdater(); return; }   /* tomt felt = vent på kunden */
