@@ -108,6 +108,8 @@
    gult fra start, ribbon-badge, og en 12-måneders tidslinje der viser
    præcis hvilke 7 måneder der opkræves i. */
 #bt-cards.ktype-cards{display:grid;grid-template-columns:1fr 1fr;flex-wrap:nowrap;gap:14px;align-items:stretch}
+/* Kun ét betalingsvalg (pr. gang) — kortet får hele bredden. */
+.bt-cards--single{grid-template-columns:1fr !important}
 .tm-flow .bt-card{position:relative;min-width:0;padding:26px 18px 20px;overflow:hidden;display:flex;flex-direction:column;align-items:center;box-shadow:0 10px 26px rgba(0,0,0,.22);transition:transform .15s,box-shadow .15s}
 .tm-flow .bt-card:hover{transform:translateY(-2px);box-shadow:0 14px 32px rgba(0,0,0,.3)}
 .tm-flow .bt-icon{width:34px;height:34px;margin-bottom:10px;color:var(--gul);opacity:.9}

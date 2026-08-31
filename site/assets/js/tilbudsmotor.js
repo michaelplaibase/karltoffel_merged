@@ -108,7 +108,7 @@ function animateNumber(el, from, to, fmt){
 const state = {
   adresse: "",
   kundetype: null,   /* "privat" | "erhverv" — vælges på step 2 */
-  betaling: null,    /* "abonnement" | "pr_gang" — vælges på step 4 (løsning) */
+  betaling: "pr_gang",   /* fast: betaling pr. gang — abonnements-valg fjernet */
   rabatkode: { code:"", percent:0, valid:false },   /* valideret server-side via /api/rabatkode */
   ejendom: { type:"Villa, 1 fam.", grund:"827 m²", opfoert:"2007", haek:"65 m" }
 };
@@ -394,48 +394,21 @@ ktErhverv.addEventListener("click", ()=> ktKlik("erhverv"));
 ktVidere.addEventListener("click", ()=>{ if(state.kundetype) ktFortsaet(); });
 $("kt-tilbage").addEventListener("click", ()=>{ clearTimeout(ktTimer); visStep("step-adresse"); });
 
-/* ============ BETALING (abonnement/pr. gang) — splittest på step-losning ============ */
-const btAbo = $("bt-abonnement"), btPrGang = $("bt-prgang"), btAboMd = $("bt-abo-md"),
-      btAboMdFuld = $("bt-abo-md-fuld"), btGangPris = $("bt-gang-pris"), lsVidere = $("ls-videre"),
-      btRabatDetail = $("bt-rabat-detail"), btGangSnit = $("bt-gang-snit");
-const HAVE_SAESON_MDR = 7;   /* 1. april – 31. oktober, inklusive begge måneder */
-const BT_ABO_RABAT = 0.10;   /* 10% rabat for at vælge fast abonnement (nudge væk fra pr. gang) */
+/* ============ BETALING (pr. gang) — fast abonnement fjernet ============ */
+const btGangPris = $("bt-gang-pris"), lsVidere = $("ls-videre"),
+      btGangSnit = $("bt-gang-snit");
 function vaelgBetaling(t){
   state.betaling = t;
-  btAbo.classList.toggle("selected", t === "abonnement");
-  btPrGang.classList.toggle("selected", t === "pr_gang");
-  btAbo.setAttribute("aria-checked", t === "abonnement" ? "true" : "false");
-  btPrGang.setAttribute("aria-checked", t === "pr_gang" ? "true" : "false");
   lsVidere.disabled = false;
 }
-btAbo.addEventListener("click", ()=> vaelgBetaling("abonnement"));
-btPrGang.addEventListener("click", ()=> vaelgBetaling("pr_gang"));
 
-/* Sæson-månedsprisen for abonnementet: årssummen (efter mængderabat) med
-   yderligere 10% abonnements-rabat, fordelt over KUN de 7 havesæson-måneder —
-   IKKE 12, så tallet der vises er det kunden faktisk betaler pr. opkrævning. */
+/* Pris-tekst på pr.-gang-kortet: års-summen (efter mængderabat) og snittet
+   pr. besøg. Abonnement-rabatten er fjernet — samme beregning som før. */
 function opdaterBetaling(){
-  if(!btAboMd) return;
+  if(!btGangPris) return;
   const r = beregn(PRODUCTS);
-  /* r.aar er allerede netto EFTER mængderabat (r.rabatPct) — det er den
-     retfærdige sammenligningsbund: pr.-gang-kunden får også mængderabatten,
-     bare ikke de ekstra 10% for at binde sig til abonnement. */
-  const mdFuldPris = r.aar / HAVE_SAESON_MDR;                 /* = pr.-gang-kundens månedssnit i sæsonen */
-  const mdISaeson = r.aar * (1 - BT_ABO_RABAT) / HAVE_SAESON_MDR;
-  btAboMd.textContent = DKK0.format(Math.round(mdISaeson));
-  if(btAboMdFuld) btAboMdFuld.textContent = mdFuldPris > mdISaeson ? DKK0.format(Math.round(mdFuldPris)) + " kr/md" : "";
-  if(btGangPris) btGangPris.textContent = DKK0.format(Math.round(r.snit));
-  if(btGangSnit) btGangSnit.textContent = r.aar > 0 ? "≈ " + DKK0.format(Math.round(mdFuldPris)) + " kr/md i snit i sæsonen" : "";
-
-  /* Rabat-detaljen på abonnement-kortet: de to rabatter stables synligt i
-     stedet for kun at vise slutprisen — mængderabatten (r.rabatPct, allerede
-     i r.aar) + de ekstra 10% for abonnementet. */
-  if(btRabatDetail){
-    const dele = [];
-    if(r.rabatPct > 0) dele.push(r.rabatPct + "% mængderabat");
-    dele.push(Math.round(BT_ABO_RABAT*100) + "% abonnementsrabat");
-    btRabatDetail.textContent = "10% billigere end pr. gang · " + dele.join(" + ");
-  }
+  btGangPris.textContent = DKK0.format(Math.round(r.snit));
+  if(btGangSnit) btGangSnit.textContent = r.aar > 0 ? "≈ " + DKK0.format(Math.round(r.aar / 7)) + " kr/md i snit i sæsonen" : "";
 }
 
 /* ============ VIDERE/TILBAGE-NAVIGATION ============ */
@@ -943,7 +916,7 @@ function opdater(){
   state.adresse = s.adresse;
   adrInput.value = s.adresse;
   if(s.kundetype === "privat" || s.kundetype === "erhverv") vaelgKundetype(s.kundetype);
-  if(s.betaling === "abonnement" || s.betaling === "pr_gang") vaelgBetaling(s.betaling);
+  if(s.betaling === "pr_gang") vaelgBetaling(s.betaling);
   if(s.prod) PRODUCTS.forEach(p => {
     const d = s.prod[p.id];
     if(d){ p.on = !!d.on; if(typeof d.qty === "number") p.qty = d.qty; if(typeof d.freq === "number") p.freq = d.freq; p.touched = !!d.touched; }
