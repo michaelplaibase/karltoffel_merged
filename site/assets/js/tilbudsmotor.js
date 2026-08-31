@@ -24,7 +24,7 @@ const $ = (id) => ROOT.querySelector("#" + id);
 /*PRICING-START*/
 const PRODUCTS = [
   /* ---- Villapakken (ikke forudvalgt — kunden vælger selv) ---- */
-  {id:"vinduer",  navn:"Vinduespudsning udvendig",       enhed:"glas",       pris:15.30, note:"Udvendige ruder",                 qty:0,   freq:8,  fmax:12, on:false, pakke:true, kat:"pakke", wm:"Vinduespudsning udvendig pr glas"},
+  {id:"vinduer",  navn:"Vinduespudsning udvendig",       enhed:"glas",       pris:15.30, note:"Udvendige døre, ruder og porte",                 qty:0,   freq:8,  fmax:12, on:false, pakke:true, kat:"pakke", wm:"Vinduespudsning udvendig pr glas"},
   {id:"haek",     navn:"Hækklipning",                    enhed:"m hæk",      pris:27.50, note:"1 side, under 220 cm",            qty:65,  freq:1,  fmax:3,  on:false, pakke:true, kat:"pakke", wm:"Hækklipning 1 side pr meter Under 220 cm"},
   {id:"green",    navn:"Greenkeeper græspleje",          enhed:"m² plæne",   pris:2.30,  note:"Gødning og pleje af plænen",      qty:450, freq:3,  fmax:6,  on:false, pakke:true, kat:"pakke", wm:"Greenkeeper græspleje"},
   {id:"alge",     navn:"Algebehandling af tag",          enhed:"m² tag",     pris:4.20,  note:"Mos og alger, beregnet på skråt tagareal", qty:120, freq:1, fmax:2, on:false, pakke:true, kat:"pakke", wm:"Algebehandling af tag"},
@@ -244,7 +244,7 @@ function taelVinduerAI(){
       const panes = Math.round(d.panes);
       if(!(panes >= 1 && panes <= 300)) return;
       /* Kun indvendig — til udvendig vinduespudsning skriver kunden selv
-         antallet af ruder ind (se "Antal ruder"-feltet på rækken). */
+         antallet af ruder ind (se "Antal døre, ruder og porte"-feltet på rækken). */
       ["vinduerind"].forEach(id => {
         const p = PRODUCTS.find(x => x.id === id);
         if(p && !p.touched) p.qty = panes;            /* rør ikke mængder kunden selv har rettet */
@@ -775,20 +775,20 @@ function byggRaekke(p){
   navn.htmlFor = chk.id;
   navn.textContent = p.navn;
 
-  /* Antal ruder — til udvendig vinduespudsning tæller vi IKKE selv ruderne.
+  /* Antal døre, ruder og porte — til udvendig vinduespudsning tæller vi IKKE selv ruderne.
      Kunden skriver selv, hvor mange ruder der skal pudses, og prisen er bare
      enhedsprisen ganget med det indtastede antal. Tomt felt = ingen pris endnu. */
   let qw = null;
   if(p.id === "vinduer"){
     qw = document.createElement("div");
     qw.className = "qw";
-    const qlbl = document.createElement("span"); qlbl.className = "qw-lbl"; qlbl.textContent = "Antal ruder";
+    const qlbl = document.createElement("span"); qlbl.className = "qw-lbl"; qlbl.textContent = "Antal døre, ruder og porte";
     const qin = document.createElement("input");
     qin.type = "number"; qin.id = "qty-vinduer"; qin.inputMode = "numeric";
     qin.min = "1"; qin.max = "300"; qin.step = "1";
     qin.placeholder = "f.eks. 12";
     qin.value = p.qty > 0 ? p.qty : "";
-    qin.setAttribute("aria-label", "Antal ruder til vinduespudsning udvendig");
+    qin.setAttribute("aria-label", "Antal døre, ruder og porte til vinduespudsning udvendig");
     qin.addEventListener("input", ()=>{
       const raw = qin.value.trim();
       if(raw === ""){ p.qty = 0; opdater(); return; }   /* tomt felt = vent på kunden */

@@ -209,7 +209,7 @@
 .tm-flow .pw-note{font-size:12.5px;color:var(--bronze);font-weight:600;white-space:nowrap;text-align:center}
 /* Frekvens — "Besøg om året" over stepperen */
 .tm-flow .fw{grid-area:fw;display:flex;flex-direction:column;align-items:center;gap:3px}
-/* Antal ruder — kundens eget antal-felt (kun vinduespudsning udvendig) */
+/* Antal døre, ruder og porte — kundens eget antal-felt (kun vinduespudsning udvendig) */
 .tm-flow .qrow{grid-template-columns:auto minmax(0,1fr) 74px 44px auto;grid-template-areas:"chk navn qw pw fw"}
 .tm-flow .row--off .qw{visibility:hidden}
 .tm-flow .qw{grid-area:qw;display:flex;flex-direction:column;align-items:center;gap:3px}
