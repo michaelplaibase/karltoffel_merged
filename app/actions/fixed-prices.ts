@@ -104,3 +104,58 @@ export async function updateFixedPrice(pk: number, _prev: FixedPriceState, formD
   if (fp) revalidatePath(`/customers/${fp.contactId}`);
   redirect(`/fixed-prices/${fp?.displayNo ?? ""}`);
 }
+
+// ---- Planlægning i kalender (ad hoc) ---------------------------------------
+// Thomas (2026-08): når en kunde ringer og bestiller opgaven under en
+// fastprisaftale, skal den kunne planlægges i kalenderen som ENKELTOPGAVE —
+// samme planlægningsflow som abonnementsopgaver (dato + medarbejder), bare
+// UDEN interval/gentagelse. Ordren bærer sourceType "fixed" + fixedPriceId,
+// så lister viser "Fastprisaftale" og prisjusteringer (funktioner.ts) rammer
+// de ikke-lukkede ordrelinjer via ordrens fixedPriceId.
+
+export type FixedPriceScheduleState = { error?: string; values?: { date: string; employeeId: string } };
+
+/** Create ONE ad hoc calendar order from a fixed-price agreement, copying its
+ *  task lines (paused template lines are skipped, matching generation logic).
+ *  plannedAt følger createOrder-konventionen: Dansk kalenderdato kl. 10 UTC. */
+export async function scheduleFixedPrice(pk: number, _prev: FixedPriceScheduleState, formData: FormData): Promise<FixedPriceScheduleState> {
+  await guardAction();
+  const date = String(formData.get("date") ?? "").trim();
+  const employeeIdRaw = String(formData.get("employeeId") ?? "").trim();
+  const values = { date, employeeId: employeeIdRaw }; // ekko ved valideringsfejl (React 19 form-reset)
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return { error: "Vælg en gyldig dato.", values };
+
+  const fp = await prisma.fixedPriceAgreement.findUnique({ where: { id: pk }, include: { tasks: true } });
+  if (!fp) return { error: "Fastprisaftalen blev ikke fundet.", values };
+  const lines = fp.tasks.filter((t) => !t.pauseActive).sort((a, b) => a.sort - b.sort);
+  if (!lines.length) return { error: "Fastprisaftalen har ingen opgaver — tilføj mindst én opgave på aftalen først.", values };
+
+  // Medarbejder: samme konvention som createOrder — eksplicit valg, ellers
+  // første aktive bruger (planneren ruter kun ordrer med sat employeeId).
+  const employeeId = employeeIdRaw
+    ? Number(employeeIdRaw) || null
+    : (await prisma.user.findFirst({ where: { active: true }, orderBy: { id: "asc" } }))?.id ?? null;
+
+  const order = await prisma.order.create({
+    data: {
+      contactId: fp.contactId,
+      deliveryAddress: fp.deliveryAddress,
+      plannedAt: new Date(`${date}T10:00:00Z`),
+      sourceType: "fixed",
+      fixedPriceId: fp.id,
+      employeeId,
+      status: "Afventer levering",
+      tasks: {
+        create: lines.map((t, i) => ({
+          category: t.category, letter: t.letter, color: t.color,
+          description: t.description, price: t.price, durationMin: t.durationMin, sort: i,
+        })),
+      },
+    },
+  });
+
+  revalidatePath("/orders");
+  revalidatePath("/calendar");
+  revalidatePath("/daycalendar");
+  redirect(`/orders/${order.id}`);
+}

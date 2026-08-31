@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import Link from "next/link";
 import { getFixedPriceEditData, getContactOptions, getMinuteRate } from "@/lib/queries";
 import { updateFixedPrice, deleteFixedPrice } from "@/app/actions/fixed-prices";
 import { routeId } from "@/lib/route-ids";
@@ -19,6 +20,11 @@ export default async function EditFixedPrice({ params }: { params: Promise<{ id:
 
   return (
     <div className="container-1140">
+      <div className="toolbar" style={{ justifyContent: "flex-end" }}>
+        <Link href={`/fixed-prices/${displayNo}/schedule`} className="btn btn-outline-primary">
+          Planlæg i kalender
+        </Link>
+      </div>
       <FixedPriceForm
         action={updateFixedPrice.bind(null, fp.pk)}
         contacts={contacts}
