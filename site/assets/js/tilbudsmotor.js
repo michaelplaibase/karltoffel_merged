@@ -24,7 +24,7 @@ const $ = (id) => ROOT.querySelector("#" + id);
 /*PRICING-START*/
 const PRODUCTS = [
   /* ---- Villapakken (ikke forudvalgt — kunden vælger selv) ---- */
-  {id:"vinduer",  navn:"Vinduespudsning udvendig",       enhed:"glas",       pris:15.30, note:"Udvendige døre, ruder og porte",                 qty:0,   freq:8,  fmax:12, on:false, pakke:true, kat:"pakke", wm:"Vinduespudsning udvendig pr glas"},
+  {id:"vinduer",  navn:"Vinduespudsning udvendig",       enhed:"glas",       pris:15.30, note:"Udvendige døre, vinduer og porte",                 qty:0,   freq:8,  fmax:12, on:false, pakke:true, kat:"pakke", wm:"Vinduespudsning udvendig pr glas"},
   {id:"haek",     navn:"Hækklipning",                    enhed:"m hæk",      pris:27.50, note:"1 side, under 220 cm",            qty:65,  freq:1,  fmax:3,  on:false, pakke:true, kat:"pakke", wm:"Hækklipning 1 side pr meter Under 220 cm"},
   {id:"green",    navn:"Greenkeeper græspleje",          enhed:"m² plæne",   pris:2.30,  note:"Gødning og pleje af plænen",      qty:450, freq:3,  fmax:6,  on:false, pakke:true, kat:"pakke", wm:"Greenkeeper græspleje"},
   {id:"alge",     navn:"Algebehandling af tag",          enhed:"m² tag",     pris:4.20,  note:"Mos og alger, beregnet på skråt tagareal", qty:120, freq:1, fmax:2, on:false, pakke:true, kat:"pakke", wm:"Algebehandling af tag"},
@@ -782,13 +782,13 @@ function byggRaekke(p){
   if(p.id === "vinduer"){
     qw = document.createElement("div");
     qw.className = "qw";
-    const qlbl = document.createElement("span"); qlbl.className = "qw-lbl"; qlbl.textContent = "Antal døre, ruder og porte";
+    const qlbl = document.createElement("span"); qlbl.className = "qw-lbl"; qlbl.textContent = "Antal døre, vinduer og porte";
     const qin = document.createElement("input");
     qin.type = "number"; qin.id = "qty-vinduer"; qin.inputMode = "numeric";
     qin.min = "1"; qin.max = "300"; qin.step = "1";
     qin.placeholder = "f.eks. 12";
     qin.value = p.qty > 0 ? p.qty : "";
-    qin.setAttribute("aria-label", "Antal døre, ruder og porte til vinduespudsning udvendig");
+    qin.setAttribute("aria-label", "Antal døre, vinduer og porte til vinduespudsning udvendig");
     qin.addEventListener("input", ()=>{
       const raw = qin.value.trim();
       if(raw === ""){ p.qty = 0; opdater(); return; }   /* tomt felt = vent på kunden */
