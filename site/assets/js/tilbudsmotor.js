@@ -56,29 +56,18 @@ const PRODUCTS = [
 /* Uberørt kopi til at nulstille pakken når en ny adresse vælges. */
 const DEFAULTS = PRODUCTS.map(function(p){ return Object.assign({}, p); });
 
-/* Mængderabat: "jo mere du vælger, jo mere sparer du" — 3% pr. valgt service,
-   loft på 15% (5+ services = fuld rabat). Rabatten lægges på den prissatte
-   årssum; uprisede "indeholdt/pris ved besøg"-linjer tæller med i antallet
-   men trækker naturligvis 0 kr. */
-var RABAT_PR_SERVICE = 3, RABAT_MAX = 15;
-function rabatPct(count){ return Math.min(RABAT_MAX, RABAT_PR_SERVICE * count); }
-
+/* Prisen er bare en sum: hver valgt service lægges til, og det er det.
+   Ingen regning pr. besøg, ingen snit — det tal kunderne spurgte til. */
 function beregn(products){
-  var brutto = 0, count = 0, visits = 0;
+  var total = 0, count = 0;
   for (var i=0;i<products.length;i++){
     var p = products[i];
     if(!p.on) continue;
     count += 1;                                   /* uprisede ("indeholdt") tæller også med */
-    if(p.freq > visits) visits = p.freq;          /* ydelser bundtes på samme besøg */
-    if(p.pris != null && p.qty > 0) brutto += p.pris * p.qty * p.freq;
+    if(p.pris != null && p.qty > 0) total += p.pris * p.qty;
   }
-  var pct = rabatPct(count);
-  var aar = brutto * (1 - pct/100);
-  return { aar: aar, aarBrutto: brutto, rabatPct: pct, rabatKr: brutto - aar,
-           md: aar/12, snit: visits>0 ? aar/visits : 0, count: count, visits: visits };
+  return { total: total, count: count };
 }
-
-function linjeMd(p){ return (p.pris == null || !p.qty) ? 0 : (p.pris * p.qty * p.freq) / 12; }
 /*PRICING-END*/
 
 const DKK0 = new Intl.NumberFormat("da-DK",{maximumFractionDigits:0});
@@ -224,7 +213,7 @@ function applyMeasurements(m){
     if(m.rygHojde > 5){ tr.pris = 28.00; tr.note = "2-plans hus"; tr.wm = "Tagrenerens 2-plans hus"; }
     else { tr.pris = 18.00; tr.note = "Stueplan / 1-plans hus"; tr.wm = "Tagrenderens Stueplan / 1-plans hus"; }
   }
-  /* Opdater priserne på stedet (ingen gen-render), så "Pris pr. gang" tæller
+  /* Opdater priserne på stedet (ingen gen-render), så priserne tæller
      blødt hen til de auto-målte mængder. */
   const active = ROOT.querySelector(".step.active");
   if(active && active.id === "step-losning") opdater();
@@ -394,21 +383,18 @@ ktErhverv.addEventListener("click", ()=> ktKlik("erhverv"));
 ktVidere.addEventListener("click", ()=>{ if(state.kundetype) ktFortsaet(); });
 $("kt-tilbage").addEventListener("click", ()=>{ clearTimeout(ktTimer); visStep("step-adresse"); });
 
-/* ============ BETALING (pr. gang) — fast abonnement fjernet ============ */
-const btGangPris = $("bt-gang-pris"), lsVidere = $("ls-videre"),
-      btGangSnit = $("bt-gang-snit");
+/* ============ BETALING — én samlet pris ============ */
+const btTotal = $("bt-total"), lsVidere = $("ls-videre");
 function vaelgBetaling(t){
   state.betaling = t;
   lsVidere.disabled = false;
 }
 
-/* Pris-tekst på pr.-gang-kortet: års-summen (efter mængderabat) og snittet
-   pr. besøg. Abonnement-rabatten er fjernet — samme beregning som før. */
+/* Pris-tekst på betalingskortet: summen af de valgte services, intet andet. */
 function opdaterBetaling(){
-  if(!btGangPris) return;
+  if(!btTotal) return;
   const r = beregn(PRODUCTS);
-  btGangPris.textContent = DKK0.format(Math.round(r.snit));
-  if(btGangSnit) btGangSnit.textContent = r.aar > 0 ? "≈ " + DKK0.format(Math.round(r.aar / 7)) + " kr/md i snit i sæsonen" : "";
+  btTotal.textContent = DKK0.format(Math.round(r.total));
 }
 
 /* ============ VIDERE/TILBAGE-NAVIGATION ============ */
@@ -573,11 +559,9 @@ $("btn-send").addEventListener("click", ()=>{
   const r = beregn(PRODUCTS);
   const valgt = PRODUCTS.filter(p=>p.on);
   const ktLabel = state.kundetype === "erhverv" ? " · Erhverv" : (state.kundetype === "privat" ? " · Privat" : "");
-  /* Rabatkode: ekstra rabat oven i mængderabatten — trækkes fra årssummen
-     EFTER mængderabat. Gælder de viste totaler; estimat-felterne er uændrede. */
+  /* Rabatkode: ekstra procentrabat, trukket fra den samlede sum. */
   const kodePct = state.rabatkode.valid ? state.rabatkode.percent : 0;
-  const aarNet = r.aar * (1 - kodePct/100);
-  const snitNet = r.visits > 0 ? aarNet / r.visits : 0;
+  const totalNet = r.total * (1 - kodePct/100);
 
   /* Lead-payload til CRM'et: kontaktinfo + valgte services (med WorkMaker-
      nøgle under overgangen) + estimat + kundetype. Sendes via sitets relay
@@ -590,7 +574,7 @@ $("btn-send").addEventListener("click", ()=>{
     betaling: state.betaling,
     source: "tilbudsmotor",
     services: valgt.map(p=>({ id:p.id, navn:p.navn, wm:p.wm, qty:p.qty, enhed:p.enhed, freq:p.freq, pris:p.pris, erPakkevare:p.pakke })),
-    estimat: { md: Math.round(r.md), snit: Math.round(r.snit), aar: Math.round(r.aar), aarBrutto: Math.round(r.aarBrutto), rabatPct: r.rabatPct, rabatKr: Math.round(r.rabatKr), visits: r.visits, count: r.count }
+    estimat: { total: Math.round(totalNet), count: r.count }
   };
   /* KONTRAKT: feltnavn `rabatkode` (streng, trimmet + uppercased) — kun med når koden er valid. */
   if(state.rabatkode.valid) payload.rabatkode = state.rabatkode.code;
@@ -626,7 +610,7 @@ $("btn-send").addEventListener("click", ()=>{
   .then((data)=>{
     /* Leadet er oprettet — send konverteringen til GTM først, så den ikke kan
        gå tabt hvis noget i tak-siden nedenfor fejler. */
-    pushLeadEvent(valgt, r, aarNet, kodePct);
+    pushLeadEvent(valgt, r, totalNet, kodePct);
 
     /* CRM'et returnerer call:"booked 2026-07-06T15:15:00" når opkalds-slottet
        er lagt i kalenderen — vis det konkrete tidspunkt til kunden. */
@@ -645,18 +629,14 @@ $("btn-send").addEventListener("click", ()=>{
                      : (!p.qty ? " (angiv antal)" : " (" + p.freq + "x/år)");
         return esc(p.navn) + suffix;
       }).join(", ");
-      var rabatLinje = r.rabatPct > 0
-        ? 'Mængderabat: <b>−' + r.rabatPct + '%</b> (du sparer ca. <span id="tak-rabatkr" class="tm-anim-kr">' + kr(r.rabatKr) + '</span> om året)<br>'
-        : "";
       var kodeLinje = kodePct > 0 ? "Rabatkode anvendt: <b>−" + kodePct + "%</b><br>" : "";
       opsum.innerHTML =
         "<b>" + esc(state.adresse) + ktLabel + "</b><br>" +
         "Valgt: " + linjer + "<br>" +
-        rabatLinje + kodeLinje +
-        'Estimeret: <b><span id="tak-snit" class="tm-anim-kr">' + kr(snitNet) + '</span> pr. besøg</b> ved ' + r.visits + " besøg om året.";
+        kodeLinje +
+        'Samlet pris: <b><span id="tak-total" class="tm-anim-kr">' + kr(totalNet) + '</span></b>';
       /* Tak-totalerne tæller blødt op fra 0 (count-animationen). */
-      animateNumber(opsum.querySelector("#tak-rabatkr"), 0, r.rabatKr, kr);
-      animateNumber(opsum.querySelector("#tak-snit"), 0, snitNet, kr);
+      animateNumber(opsum.querySelector("#tak-total"), 0, totalNet, kr);
     }
     rydState();   /* leadet er sendt — intet at gendanne længere */
     visStep("step-tak");
@@ -682,24 +662,19 @@ function sendFejl(t){ const e = $("k-err"); e.textContent = t; e.classList.add("
    vælge hvad der skal bruges som konverteringsværdi.
 
    `items` følger GA4's semantik: `price` = enhedspris, `quantity` = antal
-   enheder (glas, m², træer) — altså værdien pr. besøg. GA4 kender ikke
-   besøgsfrekvensen, så den årlige linjeværdi ligger eksplicit i
-   `item_revenue_yearly`. Uprisede linjer ("indeholdt" / "pris ved besøg")
+   enheder (glas, m², træer) — altså den samlede værdi. Linjeværdien ligger
+   eksplicit i `item_revenue`. Uprisede linjer ("indeholdt" / "pris ved besøg")
    sendes med pris 0, men tæller i `lead_services_count`. */
-function pushLeadEvent(valgt, r, aarNet, kodePct){
+function pushLeadEvent(valgt, r, totalNet, kodePct){
   const dl = (window.dataLayer = window.dataLayer || []);
   const ev = {
     event: "generate_lead",
     currency: "DKK",
-    value: Math.round(aarNet),
+    value: Math.round(totalNet),
     lead_source: "tilbudsmotor",
     lead_kundetype: state.kundetype || "ukendt",
     lead_services_count: r.count,
-    lead_visits_per_year: r.visits,
-    lead_value_monthly: Math.round(aarNet / 12),
-    lead_value_yearly: Math.round(aarNet),
-    lead_value_yearly_gross: Math.round(r.aarBrutto),
-    lead_volume_discount_pct: r.rabatPct,
+    lead_value_total: Math.round(totalNet),
     lead_coupon_discount_pct: kodePct,
     items: valgt.map(function(p, i){
       const enhedspris = p.pris == null ? 0 : p.pris;
@@ -712,7 +687,7 @@ function pushLeadEvent(valgt, r, aarNet, kodePct){
         price: enhedspris,
         quantity: p.qty,
         frequency_per_year: p.freq,
-        item_revenue_yearly: Math.round(enhedspris * p.qty * p.freq)
+        item_revenue: Math.round(enhedspris * p.qty)
       };
     })
   };
@@ -798,7 +773,7 @@ function byggRaekke(p){
   navn.htmlFor = chk.id;
   navn.textContent = p.navn;
 
-  /* Pris pr. gang — label over tallet (indhold sættes/animeres af opdater()). */
+  /* Pris for ydelen — label over tallet (indhold sættes/animeres af opdater()). */
   const pw = document.createElement("div");
   pw.className = "pw"; pw.dataset.id = p.id;
 
@@ -821,35 +796,21 @@ function byggRaekke(p){
   return row;
 }
 
-/* Live mængderabat-banner på løsnings-trinnet — svar på "hvor fremgår det?".
-   Kr-beløbet tæller blødt op/ned (animateNumber), når rabatten ændrer sig. */
+/* Rabatkode-banner på løsnings-trinnet. Mængderabatten er fjernet — prisen
+   er bare summen af de valgte services. Kr-beløbet tæller blødt op/ned. */
 function opdaterRabat(){
   var el = $("tm-rabat");
   if(!el) return;
   var r = beregn(PRODUCTS);
   /* Rabatkode (fra kontakt-trinnet): vis den også her, så kunden ser koden
-     ramme prisen med det samme. Trækkes fra årssummen EFTER mængderabat —
-     samme regnestykke som ved indsendelsen. */
+     ramme prisen med det samme — samme regnestykke som ved indsendelsen. */
   var kodePct = state.rabatkode.valid ? state.rabatkode.percent : 0;
-  var kodeKr = r.aar * kodePct / 100;
+  var kodeKr = r.total * kodePct / 100;
   var kodeHtml = kodePct > 0
     ? '<span class="tm-rabat-kode">Rabatkode <b>' + esc(state.rabatkode.code) + '</b>: ekstra <b>−' + kodePct + '%</b>' +
-      (kodeKr > 0 ? ' (ca. <span class="tm-kode-kr tm-anim-kr">' + kr(kodeKr) + '</span> om året)' : '') + ' oveni.</span>'
+      (kodeKr > 0 ? ' (ca. <span class="tm-kode-kr tm-anim-kr">' + kr(kodeKr) + '</span>)' : '') + '</span>'
     : '';
-  if(r.rabatPct > 0 && r.rabatKr > 0){
-    var prev = parseFloat(el.dataset.kr);
-    el.innerHTML = 'Du har valgt <b>' + r.count + ' services</b> og sparer <b>' + r.rabatPct +
-      '%</b> (ca. <span class="tm-rabat-kr tm-anim-kr">' + kr(r.rabatKr) + '</span> om året). Jo flere du vælger, jo mere sparer du' +
-      (r.rabatPct < RABAT_MAX ? ' — helt op til ' + RABAT_MAX + '%.' : '.') + kodeHtml;
-    if(isFinite(prev) && prev !== r.rabatKr) animateNumber(el.querySelector(".tm-rabat-kr"), prev, r.rabatKr, kr);
-    el.dataset.kr = r.rabatKr;
-    el.hidden = false;
-  } else if(r.rabatPct > 0){
-    el.innerHTML = 'Jo flere services du vælger, jo mere sparer du — <b>' + RABAT_PR_SERVICE +
-      '% pr. service</b>, op til ' + RABAT_MAX + '%.' + kodeHtml;
-    delete el.dataset.kr;
-    el.hidden = false;
-  } else if(kodePct > 0){
+  if(kodePct > 0){
     el.innerHTML = kodeHtml;
     delete el.dataset.kr;
     el.hidden = false;
@@ -882,7 +843,7 @@ function opdater(){
       const prev = parseFloat(el.dataset.val);
       const b = el.querySelector(".pw-val");
       if(!b){   /* første visning: skriv direkte (ingen animation fra ingenting) */
-        el.innerHTML = '<b class="pw-val">' + kr(val) + '</b><span class="pw-unit">pr. gang</span>';
+        el.innerHTML = '<b class="pw-val">' + kr(val) + '</b><span class="pw-unit">i alt</span>';
       } else if(isFinite(prev) && prev !== val){
         animateNumber(b, prev, val, kr);   /* mængde ændret → tæl blødt derhen */
       } else {
