@@ -42,3 +42,8 @@ form button.g-recaptcha:hover{filter:brightness(1.15)}
 @media(max-width:63.99875em){.home-packages__featured{grid-template-columns:1fr 1fr}.home-package--yellow{grid-column:1/-1}.home-package--featured{min-height:340px}}
 @media(max-width:39.99875em){.home-packages{padding:64px 0}.home-packages__header{margin-bottom:34px;text-align:left}.home-packages__featured{grid-template-columns:1fr;gap:16px}.home-package--yellow{grid-column:auto}.home-package--featured{min-height:310px;padding:28px}.home-packages__more-header{margin-top:52px;align-items:flex-start;flex-direction:column}.home-packages__nav{grid-template-columns:48px 1fr 48px}.home-packages__nav .swiper-button-prev,.home-packages__nav .swiper-button-next{width:48px;height:48px}}
 .home-package h3,.home-package h4{color:inherit;overflow-wrap:anywhere}
+
+/* Pakker -> kategorier (2026-08): service-lister i home-package kort */
+.home-package__list{margin:0 0 18px;padding:0;list-style:none;font-size:16px;line-height:1.5}.home-package__list li{padding:6px 0 6px 22px;position:relative}.home-package__list li::before{content:"";position:absolute;left:0;top:13px;width:9px;height:9px;border-radius:50
+/* Pakker -> kategorier (2026-08): service-lister i home-package kort */
+.home-package__list{margin:0 0 18px;padding:0;list-style:none;font-size:16px;line-height:1.5}.home-package__list li{padding:6px 0 6px 22px;position:relative}.home-package__list li::before{content:"";position:absolute;left:0;top:13px;width:9px;height:9px;border-radius:50%;background:#FFF87B}.home-package--yellow .home-package__list li::before{background:#4C3718}
