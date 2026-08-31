@@ -42,3 +42,36 @@ form button.g-recaptcha:hover{filter:brightness(1.15)}
 @media(max-width:63.99875em){.home-packages__featured{grid-template-columns:1fr 1fr}.home-package--yellow{grid-column:1/-1}.home-package--featured{min-height:340px}}
 @media(max-width:39.99875em){.home-packages{padding:64px 0}.home-packages__header{margin-bottom:34px;text-align:left}.home-packages__featured{grid-template-columns:1fr;gap:16px}.home-package--yellow{grid-column:auto}.home-package--featured{min-height:310px;padding:28px}.home-packages__more-header{margin-top:52px;align-items:flex-start;flex-direction:column}.home-packages__nav{grid-template-columns:48px 1fr 48px}.home-packages__nav .swiper-button-prev,.home-packages__nav .swiper-button-next{width:48px;height:48px}}
 .home-package h3,.home-package h4{color:inherit;overflow-wrap:anywhere}
+
+/* ===== Aarshjul section (2026-08-31) ===== */
+:root{--kj-friture:#FFF87B;--kj-jordnaer:#4C3718;--kj-mos:#FFFFF0;--kj-letristet:#AE8642;--kj-ristet:#8A6931;--kj-spire:#616711;--kj-muld:#1C140B;}
+.section--theme-secondary #section-aarshjul + *{content:none;}
+.aarshjul{margin-top:3rem;}
+.aarshjul__hjul{position:relative;width:min(560px,92vw);aspect-ratio:1;margin:0 auto;}
+.aarshjul__hjul svg{width:100%;height:100%;display:block;}
+.aarshjul__midt{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;}
+.aarshjul__blob{width:52%;aspect-ratio:1;background:var(--kj-friture);border-radius:58% 42% 55% 45%/48% 55% 45% 52%;display:flex;flex-direction:column;align-items:center;justify-content:center;color:var(--kj-muld);transform:rotate(3deg);text-align:center;box-shadow:0 10px 30px rgba(28,20,11,.35);padding:8%;}
+.aarshjul__blob span{font-family:'SnagaUniText-Black','Archivo Black','Hanken Grotesk',sans-serif;font-weight:900;font-size:clamp(18px,2.6vw,28px);line-height:1.1;}
+.aarshjul__blob small{font-weight:700;font-size:12px;text-transform:uppercase;letter-spacing:.06em;margin-top:4px;}
+.aarshjul__saesoner{display:grid;grid-template-columns:repeat(2,1fr);gap:22px;margin-top:48px;}
+.aarshjul__saeson{background:var(--kj-mos);color:var(--kj-muld);border-radius:22px;padding:26px 24px;border:3px solid var(--kj-muld);box-shadow:8px 8px 0 var(--kj-friture);}
+.aarshjul__aarstid{font-family:'SnagaUniText-Black','Archivo Black','Hanken Grotesk',sans-serif;font-weight:900;font-size:24px;text-transform:uppercase;letter-spacing:.02em;}
+.aarshjul__maaneder{font-weight:700;font-size:13px;text-transform:uppercase;letter-spacing:.1em;color:var(--kj-mos);display:inline-block;padding:4px 12px;border-radius:999px;margin-top:8px;}
+.aarshjul__saeson ul{list-style:none;margin:16px 0 0;padding:0;}
+.aarshjul__saeson li{font-size:16px;line-height:1.45;padding:7px 0 7px 26px;position:relative;border-top:1px dashed rgba(76,55,24,.25);}
+.aarshjul__saeson li:first-child{border-top:none;}
+.aarshjul__saeson li::before{content:'●';position:absolute;left:2px;top:8px;font-size:11px;}
+.aarshjul__saeson li em{font-style:normal;font-weight:700;}
+.aarshjul__saeson li small{display:block;font-size:13px;opacity:.75;font-weight:400;}
+.aarshjul__saeson--foraar .aarshjul__aarstid{color:var(--kj-spire);} .aarshjul__saeson--foraar .aarshjul__maaneder{background:var(--kj-spire);} .aarshjul__saeson--foraar li::before{color:var(--kj-spire);}
+.aarshjul__saeson--sommer .aarshjul__aarstid{color:var(--kj-letristet);} .aarshjul__saeson--sommer .aarshjul__maaneder{background:var(--kj-letristet);} .aarshjul__saeson--sommer li::before{color:var(--kj-letristet);}
+.aarshjul__saeson--efteraar .aarshjul__aarstid{color:var(--kj-ristet);} .aarshjul__saeson--efteraar .aarshjul__maaneder{background:var(--kj-ristet);} .aarshjul__saeson--efteraar li::before{color:var(--kj-ristet);}
+.aarshjul__saeson--vinter .aarshjul__aarstid{color:var(--kj-jordnaer);} .aarshjul__saeson--vinter .aarshjul__maaneder{background:var(--kj-jordnaer);} .aarshjul__saeson--vinter li::before{color:var(--kj-jordnaer);}
+.aarshjul__slutning{margin-top:64px;background:var(--kj-friture);color:var(--kj-muld);border-radius:26px;padding:40px 32px;text-align:center;transform:rotate(-1deg);border:3px solid var(--kj-muld);box-shadow:8px 8px 0 var(--kj-mos);}
+.aarshjul__slutning p{font-family:'SnagaUniText-Black','Archivo Black','Hanken Grotesk',sans-serif;font-weight:900;font-size:clamp(20px,2.6vw,28px);line-height:1.25;margin:0;}
+.aarshjul__slutning .button{margin-top:22px;}
+@media(max-width:640px){
+  .aarshjul__saesoner{grid-template-columns:1fr;gap:16px;margin-top:36px;}
+  .aarshjul__saeson{padding:22px 18px;box-shadow:6px 6px 0 var(--kj-friture);}
+  .aarshjul__slutning{padding:32px 22px;}
+}
