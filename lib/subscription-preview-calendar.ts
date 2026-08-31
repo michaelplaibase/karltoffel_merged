@@ -66,6 +66,7 @@ async function loadPreviewSource() {
       pauseStart: task.pauseStart,
       pauseEnd: task.pauseEnd,
       pauseYearly: task.pauseYearly,
+      weekdays: task.weekdays,
     })),
   }));
   const employees: Employee[] = users.map((user) => ({

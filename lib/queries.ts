@@ -17,6 +17,7 @@ import {
 } from "./calendar";
 import type { Prisma } from "@prisma/client";
 import { effectiveCalendarTaskDuration } from "./calendar-duration";
+import { effectiveVisitWeekdays } from "./task-weekdays";
 
 /** The order-source display label ("Abo. #…" / "Online ordre" / …). */
 function sourceLabel(type: string, subDisplayNo?: number | null): string {
@@ -294,6 +295,8 @@ export async function getSubscriptionEditData(displayNo: number) {
       // og submitte felterne uændret (round-trip: gem sletter+genopretter linjerne).
       pauseActive: t.pauseActive ? "1" : "0", pauseStart: t.pauseStart ?? "",
       pauseEnd: t.pauseEnd ?? "", pauseYearly: t.pauseYearly ? "1" : "0",
+      // Ugedage: digit-streng runder turen til formularen (checkbokse prefilles).
+      weekdays: t.weekdays ?? "",
     })),
   };
 }
@@ -553,9 +556,13 @@ export async function getPlannerJobs(weekMonday: string): Promise<Job[]> {
     category: o.tasks[0]?.category ?? "Andet",
     durationMin: o.tasks.reduce((a, t) => a + effectiveCalendarTaskDuration(t.durationMin), 0),
     source: sourceLabel(o.sourceType, o.subscription?.displayNo),
-    // Hard planning constraints only — a subscription can pin fixed weekdays.
-    // "Fast medarb." is "Ingen" in the demo, so no fixed-employee constraint.
-    fixedWeekdays: o.subscription?.fixedWeekdays ? o.subscription.fixedWeekdays.split("").map(Number) : undefined,
+    // Hard planning constraints only — a subscription can pin fixed weekdays,
+    // og enkelte opgavers ugedage-begrænsning (TaskLine.weekdays) indsnævrer
+    // mængden yderligere (fx én opgave = kun mandadg → jobbet kun mandag).
+    fixedWeekdays: effectiveVisitWeekdays(
+      o.subscription?.fixedWeekdays,
+      o.tasks.map((t) => t.weekdays),
+    ),
     locked: o.lockedFully,
     lockedWeekday: o.lockedFully ? (o.plannedAt.getUTCDay() + 6) % 7 : undefined,
   }));
@@ -626,7 +633,12 @@ async function buildWeekPlan(weekMonday: string) {
       category: o.tasks[0]?.category ?? "Andet",
       durationMin: o.tasks.reduce((a, t) => a + effectiveCalendarTaskDuration(t.durationMin), 0),
       source: sourceLabel(o.sourceType, o.subscription?.displayNo),
-      fixedWeekdays: o.subscription?.fixedWeekdays ? o.subscription.fixedWeekdays.split("").map(Number) : undefined,
+      // Subscriptionens faste ugedage + enkelte opgavers ugedagsbegrænsning
+      // (TaskLine.weekdays) skæres sammen til joblets effektive mængde.
+      fixedWeekdays: effectiveVisitWeekdays(
+        o.subscription?.fixedWeekdays,
+        o.tasks.map((t) => t.weekdays),
+      ),
       fixedEmployeeId: o.employeeId ?? undefined,
       // UDFØRTE/afgjorte ordrer (alt andet end "Afventer levering") er sket i
       // virkeligheden — de pinnes til deres persisterede dag ligesom låste,

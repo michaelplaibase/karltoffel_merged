@@ -22,7 +22,7 @@ export async function getSubscriptionOrderAudit(referenceDate = new Date(), hori
         tasks: { select: {
           id: true, category: true, letter: true, description: true, price: true,
           durationMin: true, intervalMultiplier: true, startWeek: true,
-          pauseActive: true, pauseStart: true, pauseEnd: true, pauseYearly: true,
+          pauseActive: true, pauseStart: true, pauseEnd: true, pauseYearly: true, weekdays: true,
           customerPresenceRequired: true, isStandardTask: true, fromSubscription: true,
           subscriptionId: true, fixedPriceId: true, orderId: true, color: true, sort: true,
         }, orderBy: { sort: "asc" } },
@@ -52,7 +52,7 @@ export async function getSubscriptionOrderAudit(referenceDate = new Date(), hori
         tasks: { select: {
           id: true, category: true, letter: true, description: true, price: true,
           durationMin: true, intervalMultiplier: true, startWeek: true,
-          pauseActive: true, pauseStart: true, pauseEnd: true, pauseYearly: true,
+          pauseActive: true, pauseStart: true, pauseEnd: true, pauseYearly: true, weekdays: true,
           customerPresenceRequired: true, isStandardTask: true, fromSubscription: true,
           subscriptionId: true, fixedPriceId: true, orderId: true, color: true, sort: true,
         }, orderBy: { sort: "asc" } },

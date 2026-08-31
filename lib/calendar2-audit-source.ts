@@ -13,7 +13,7 @@ export async function getCalendar2AuditSource() {
         fixedWeekdays: true, fixedEmployee: true, active: true,
         tasks: { select: {
           id: true, durationMin: true, intervalMultiplier: true, startWeek: true,
-          pauseActive: true, pauseStart: true, pauseEnd: true, pauseYearly: true,
+          pauseActive: true, pauseStart: true, pauseEnd: true, pauseYearly: true, weekdays: true,
         }, orderBy: { sort: "asc" } },
       },
       orderBy: { id: "asc" },
@@ -45,7 +45,7 @@ export async function getCalendar2AuditSource() {
         tasks: subscription.tasks.map((task) => ({
           stableRef: `task:${task.id}`, taskId: task.id, durationMin: task.durationMin,
           intervalMultiplier: task.intervalMultiplier, startWeek: task.startWeek,
-          pauseActive: task.pauseActive, pauseStart: task.pauseStart, pauseEnd: task.pauseEnd, pauseYearly: task.pauseYearly,
+          pauseActive: task.pauseActive, pauseStart: task.pauseStart, pauseEnd: task.pauseEnd, pauseYearly: task.pauseYearly, weekdays: task.weekdays,
         })),
       };
     }),
