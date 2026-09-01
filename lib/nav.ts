@@ -32,6 +32,7 @@ export const TOP_NAV: NavMenu[] = [
       { label: "Arbejdstider", en: "Working hours", href: "/working-hours", adminOnly: true },
       { label: "Planlægning", en: "Planning", href: "/planning-settings", adminOnly: true },
       { label: "Rabatkoder", en: "Discount codes", href: "/discount-codes", adminOnly: true },
+      { label: "Gavekort", en: "Gift cards", href: "/giftcards", adminOnly: true },
       { label: "Standardopgaver", en: "Standard tasks", href: "/standard-tasks", adminOnly: true },
       { label: "Regnskab", en: "Accounting", href: "/accounting", adminOnly: true },
       { label: "E-mail og SMS skabeloner", en: "Templates", href: "/templates", adminOnly: true },

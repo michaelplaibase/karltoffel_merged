@@ -353,3 +353,33 @@ model DineroConnection {
   connectedAt    DateTime  @default(now())
   updatedAt      DateTime  @updatedAt
 }
+
+// Digitalt gavekort bestilt fra gavekort-siden på det statiske site
+// (/c/det-vi-ordner/gavekort). Fase 0 (MobilePay, manuel): kunden bestiller
+// online, teamet sender en MobilePay-betalingsanmodning manuelt og markerer
+// betalingen i CRM (/giftcards) — FØRST da genereres gavekortskoden
+// (KT-XXXX-XXXX-XXXX) og teamet sender kortet pr. mail (status=sent).
+// Stripe-felterne er placeholder for en senere automatisk integration.
+model GiftCardOrder {
+  id                    String    @id @default(cuid())
+  stripeSessionId       String?   @unique            // placeholder — ikke brugt i fase 0
+  stripePaymentIntentId String?                      // placeholder — ikke brugt i fase 0
+  amountMinor           Int                            // beløb i øre
+  currency              String    @default("dkk")
+  design                String                         // kort-design (én af de 7 navne fra sitet)
+  occasion              String                         // anledningstekst vist på kortet
+  message               String                         // kundens personlige besked (max 300 tegn)
+  recipientName         String
+  recipientEmail        String
+  buyerName             String
+  buyerEmail            String
+  buyerPhone            String                         // kundens mobilnr. til MobilePay-betalingsanmodningen (8 cifre, +45 strippet)
+  status                String    @default("awaiting_payment") // awaiting_payment | paid | sent | cancelled
+  code                  String?   @unique             // KT-XXXX-XXXX-XXXX — genereres ved "Markér som betalt"
+  sentAt                DateTime?                      // hvornår teamet sendte mailen
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  @@index([status])
+  @@index([buyerEmail])
+}

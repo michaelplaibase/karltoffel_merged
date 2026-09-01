@@ -122,6 +122,47 @@ button.gk-amount.is-selected .gk-amount__input{display:block}
 .gk-hero-img .gk-design__title{font-size:1.6rem;bottom:1.25rem}
 
 .gk-flip.is-flipped .gk-design__img,.gk-flip.is-flipped .gk-design__body{visibility:hidden}
+
+/* --- Bestillingsflow (fase 0: MobilePay, manuel betaling) --- */
+.gk-order{display:grid;grid-template-columns:minmax(0,1fr) 380px;gap:2rem;margin-top:2rem;align-items:start}
+@media(max-width:900px){.gk-order{grid-template-columns:1fr}}
+.gk-order__form{display:flex;flex-direction:column;gap:1.75rem}
+.gk-fieldset{background:#FFFFF0;border:2px solid #4C3718;border-radius:1rem;padding:1.5rem}
+.gk-fieldset h3{margin:0 0 1rem;font-size:1.15rem;color:#4C3718}
+.gk-fieldset h3 .gk-step__num{margin-right:.5rem;vertical-align:middle}
+.gk-grid2{display:grid;grid-template-columns:1fr 1fr;gap:1rem}
+@media(max-width:640px){.gk-grid2{grid-template-columns:1fr}}
+.gk-label{display:block;font-size:.85rem;font-weight:700;color:#4C3718;margin:.75rem 0 .25rem}
+.gk-input{width:100%;padding:.65rem .75rem;border:2px solid #4C3718;border-radius:.6rem;font-size:1rem;background:#fff;color:#1C140B;box-sizing:border-box}
+.gk-input:focus{outline:3px solid #616711;outline-offset:1px}
+/* valgbare kort */
+.gk-design.is-selected{outline:4px solid #616711;outline-offset:3px}
+.gk-design.is-selected .gk-design__body h3::after{content:' ✓ valgt';color:#616711}
+/* kort-preview: besked skrives direkte på kortet */
+.gk-preview{position:sticky;top:5.5rem;border:2px solid #4C3718;border-radius:1rem;overflow:hidden;background:#1C140B;box-shadow:0 10px 24px rgba(28,20,11,.2)}
+.gk-preview__img{position:relative;aspect-ratio:16/10;overflow:hidden}
+.gk-preview__img img{width:100%;height:100%;object-fit:cover;display:block}
+.gk-preview__img::after{content:'';position:absolute;inset:0;background:linear-gradient(to top,rgba(28,20,11,.65),transparent 60%)}
+.gk-preview__title{position:absolute;left:0;right:0;bottom:1.5rem;z-index:2;text-align:center;font-family:snaga-unicase-display,SnagaUniText-Black,sans-serif;font-weight:900;font-size:1.2rem;letter-spacing:.02em;color:#FFF87B;text-shadow:0 2px 8px rgba(28,20,11,.6);padding:0 1rem}
+.gk-preview__body{padding:1.25rem 1.25rem 1.5rem;color:#FFFFF0}
+.gk-preview__occasion{text-align:center;font-style:italic;font-size:.95rem;opacity:.9;margin:0 0 .75rem}
+.gk-preview__msg{width:100%;min-height:7rem;resize:vertical;background:transparent;border:2px dashed rgba(255,248,123,.7);border-radius:.75rem;color:#FFFFF0;font-family:'Hanken Grotesk',sans-serif;font-size:1rem;line-height:1.5;padding:.75rem;box-sizing:border-box}
+.gk-preview__msg::placeholder{color:rgba(255,248,123,.65)}
+.gk-preview__msg:focus{outline:3px solid #616711;background:rgba(28,20,11,.6)}
+.gk-preview__hint{font-size:.75rem;opacity:.7;margin:.5rem 0 0;text-align:center}
+/* oversigt + betaling */
+.gk-summary{margin:0;padding:0;list-style:none}
+.gk-summary li{display:flex;justify-content:space-between;gap:1rem;padding:.5rem 0;border-bottom:1px solid rgba(76,55,24,.2);font-size:.95rem;color:#4C3718}
+.gk-summary li span:last-child{text-align:right;font-weight:600;overflow-wrap:anywhere}
+.gk-paybtn{width:100%;min-height:64px;font-size:17px;font-weight:700;border:none;border-radius:999px;background:#FFF87B;color:#4C3718;cursor:pointer;box-shadow:0 10px 30px rgba(0,0,0,.35);transition:background .2s}
+.gk-paybtn:hover:not(:disabled),.gk-paybtn:focus-visible:not(:disabled){background:#4C3718;color:#FFF87B;outline:none}
+.gk-paybtn:disabled{opacity:.6;cursor:wait}
+.gk-error{display:none;margin-top:1rem;padding:.85rem 1rem;border-radius:.6rem;background:#fde8e8;color:#8a1f1f;border:2px solid #8a1f1f;font-size:.95rem}
+.gk-error.is-visible{display:block}
+.gk-thanks{display:none;background:#FFFFF0;border:2px solid #616711;border-radius:1rem;padding:2rem;text-align:center;color:#4C3718;font-size:1.05rem}
+.gk-thanks.is-visible{display:block}
+@media(max-width:640px){.gk-preview{position:static}}
+
 </style>
 		</head>
 
@@ -302,13 +343,13 @@ button.gk-amount.is-selected .gk-amount__input{display:block}
 				<h2 style="text-align:center;">Vælg kortet</h2>
 				<p style="text-align:center;">Syv designs. Én til enhver anledning.</p>
 				<div class="gk-designs">
-						<div class="gk-design gk-flip" tabindex="0" role="button" aria-label="Kartoffelgaven — se hvad kortet kan indeholde"><div class="gk-design__img"><span class="gk-design__title">Gavekort til en heldig kartoffel</span><img src="/assets/img/gavekort-kartoffler.webp" alt="Kartoffelgaven" loading="lazy"></div><div class="gk-design__body"><span class="gk-tag">Bare fordi</span><h3>Kartoffelgaven</h3><p>“Gode ting udefra. Mere overskud indenfor..”</p></div><div class="gk-back"><h4>Hvad kan kortet indeholde?</h4><p>Alt i Karltoffel-universet — alt efter hvad modtageren har brug for. Haven, tagrenderne, fliserne eller det helt store opnud.</p><span class="gk-back__hint">Tryk for at vende tilbage</span></div></div>
-						<div class="gk-design gk-flip" tabindex="0" role="button" aria-label="Fødselsdagskartofflen — se hvad kortet kan indeholde"><div class="gk-design__img"><span class="gk-design__title">Gavekort til en heldig kartoffel</span><img src="/assets/img/gavekort-kartoffler.webp" alt="Fødselsdagskartofflen" loading="lazy"></div><div class="gk-design__body"><span class="gk-tag">Fødselsdag</span><h3>Fødselsdagskartofflen</h3><p>“Ét år ældre. Nul flere opgaver..”</p></div><div class="gk-back"><h4>Hvad kan kortet indeholde?</h4><p>En gave der giver fri tid i stedet for flere ting. Perfekt til den der har alt — også en lang to-do-liste.</p><span class="gk-back__hint">Tryk for at vende tilbage</span></div></div>
-						<div class="gk-design gk-flip" tabindex="0" role="button" aria-label="Julemosset — se hvad kortet kan indeholde"><div class="gk-design__img"><span class="gk-design__title">Gavekort til en heldig kartoffel</span><img src="/assets/img/gavekort-kartoffler.webp" alt="Julemosset" loading="lazy"></div><div class="gk-design__body"><span class="gk-tag">Jul</span><h3>Julemosset</h3><p>“Glædelig jul — og pyh, tagrenderne klarer vi..”</p></div><div class="gk-back"><h4>Hvad kan kortet indeholde?</h4><p>Julegaven der slår sokkegaven: Vi klarer de udvendige pligter, så der er ro og julehygge indendørs.</p><span class="gk-back__hint">Tryk for at vende tilbage</span></div></div>
-						<div class="gk-design gk-flip" tabindex="0" role="button" aria-label="Morsdagskartofflen — se hvad kortet kan indeholde"><div class="gk-design__img"><span class="gk-design__title">Gavekort til en heldig kartoffel</span><img src="/assets/img/gavekort-kartoffler.webp" alt="Morsdagskartofflen" loading="lazy"></div><div class="gk-design__body"><span class="gk-tag">Mors dag</span><h3>Morsdagskartofflen</h3><p>“Hun har ryddet op i dit liv i 30 år. Lad os tage haven..”</p></div><div class="gk-back"><h4>Hvad kan kortet indeholde?</h4><p>Giv mor en dag uden havearbejde — eller et helt år. Vi kommer forbi, så hun kan bruge tiden på det, hun helst vil.</p><span class="gk-back__hint">Tryk for at vende tilbage</span></div></div>
-						<div class="gk-design gk-flip" tabindex="0" role="button" aria-label="Farsdagskartofflen — se hvad kortet kan indeholde"><div class="gk-design__img"><span class="gk-design__title">Gavekort til en heldig kartoffel</span><img src="/assets/img/gavekort-kartoffler.webp" alt="Farsdagskartofflen" loading="lazy"></div><div class="gk-design__body"><span class="gk-tag">Fars dag</span><h3>Farsdagskartofflen</h3><p>“Far har alt nok værktøj. Giv ham tid til at bruge det..”</p></div><div class="gk-back"><h4>Hvad kan kortet indeholde?</h4><p>Giv far overskud i stedet for endnu et værktøj, han ikke fik brug for. Vi tager det grimme arbejde — han tager lørdagen.</p><span class="gk-back__hint">Tryk for at vende tilbage</span></div></div>
-						<div class="gk-design gk-flip" tabindex="0" role="button" aria-label="Flytte-kartofflen — se hvad kortet kan indeholde"><div class="gk-design__img"><span class="gk-design__title">Gavekort til en heldig kartoffel</span><img src="/assets/img/gavekort-kartoffler.webp" alt="Flytte-kartofflen" loading="lazy"></div><div class="gk-design__body"><span class="gk-tag">Flytning</span><h3>Flytte-kartofflen</h3><p>“Nyt hus, nye kartofler. Vi tager det grimme arbejde..”</p></div><div class="gk-back"><h4>Hvad kan kortet indeholde?</h4><p>Den perfekte indflyttergave: Nulstilling af have, fliserens eller tagrender — så det nye hjem står skarpt fra dag én.</p><span class="gk-back__hint">Tryk for at vende tilbage</span></div></div>
-						<div class="gk-design gk-flip" tabindex="0" role="button" aria-label="Kartoffelrosen — se hvad kortet kan indeholde"><div class="gk-design__img"><span class="gk-design__title">Gavekort til en heldig kartoffel</span><img src="/assets/img/gavekort-kartoffler.webp" alt="Kartoffelrosen" loading="lazy"></div><div class="gk-design__body"><span class="gk-tag">Kærlighed &amp; tak</span><h3>Kartoffelrosen</h3><p>“Smukkere end blomster. Og de vander sig selv..”</p></div><div class="gk-back"><h4>Hvad kan kortet indeholde?</h4><p>Til den man er glad for: En have der bliver passet, en terrasse der stråler og en der kommer og tager sig af det hele. Kærlighed i praksis.</p><span class="gk-back__hint">Tryk for at vende tilbage</span></div></div>
+						<div class="gk-design gk-flip" data-design="kartoffelgaven" tabindex="0" role="button" aria-label="Kartoffelgaven — se hvad kortet kan indeholde"><div class="gk-design__img"><span class="gk-design__title">Gavekort til en heldig kartoffel</span><img src="/assets/img/gavekort-kartoffler.webp" alt="Kartoffelgaven" loading="lazy"></div><div class="gk-design__body"><span class="gk-tag">Bare fordi</span><h3>Kartoffelgaven</h3><p>“Gode ting udefra. Mere overskud indenfor..”</p></div><div class="gk-back"><h4>Hvad kan kortet indeholde?</h4><p>Alt i Karltoffel-universet — alt efter hvad modtageren har brug for. Haven, tagrenderne, fliserne eller det helt store opnud.</p><span class="gk-back__hint">Tryk for at vende tilbage</span></div></div>
+						<div class="gk-design gk-flip" data-design="foedselsdagskartofflen" tabindex="0" role="button" aria-label="Fødselsdagskartofflen — se hvad kortet kan indeholde"><div class="gk-design__img"><span class="gk-design__title">Gavekort til en heldig kartoffel</span><img src="/assets/img/gavekort-kartoffler.webp" alt="Fødselsdagskartofflen" loading="lazy"></div><div class="gk-design__body"><span class="gk-tag">Fødselsdag</span><h3>Fødselsdagskartofflen</h3><p>“Ét år ældre. Nul flere opgaver..”</p></div><div class="gk-back"><h4>Hvad kan kortet indeholde?</h4><p>En gave der giver fri tid i stedet for flere ting. Perfekt til den der har alt — også en lang to-do-liste.</p><span class="gk-back__hint">Tryk for at vende tilbage</span></div></div>
+						<div class="gk-design gk-flip" data-design="julemosset" tabindex="0" role="button" aria-label="Julemosset — se hvad kortet kan indeholde"><div class="gk-design__img"><span class="gk-design__title">Gavekort til en heldig kartoffel</span><img src="/assets/img/gavekort-kartoffler.webp" alt="Julemosset" loading="lazy"></div><div class="gk-design__body"><span class="gk-tag">Jul</span><h3>Julemosset</h3><p>“Glædelig jul — og pyh, tagrenderne klarer vi..”</p></div><div class="gk-back"><h4>Hvad kan kortet indeholde?</h4><p>Julegaven der slår sokkegaven: Vi klarer de udvendige pligter, så der er ro og julehygge indendørs.</p><span class="gk-back__hint">Tryk for at vende tilbage</span></div></div>
+						<div class="gk-design gk-flip" data-design="morsdagskartofflen" tabindex="0" role="button" aria-label="Morsdagskartofflen — se hvad kortet kan indeholde"><div class="gk-design__img"><span class="gk-design__title">Gavekort til en heldig kartoffel</span><img src="/assets/img/gavekort-kartoffler.webp" alt="Morsdagskartofflen" loading="lazy"></div><div class="gk-design__body"><span class="gk-tag">Mors dag</span><h3>Morsdagskartofflen</h3><p>“Hun har ryddet op i dit liv i 30 år. Lad os tage haven..”</p></div><div class="gk-back"><h4>Hvad kan kortet indeholde?</h4><p>Giv mor en dag uden havearbejde — eller et helt år. Vi kommer forbi, så hun kan bruge tiden på det, hun helst vil.</p><span class="gk-back__hint">Tryk for at vende tilbage</span></div></div>
+						<div class="gk-design gk-flip" data-design="farsdagskartofflen" tabindex="0" role="button" aria-label="Farsdagskartofflen — se hvad kortet kan indeholde"><div class="gk-design__img"><span class="gk-design__title">Gavekort til en heldig kartoffel</span><img src="/assets/img/gavekort-kartoffler.webp" alt="Farsdagskartofflen" loading="lazy"></div><div class="gk-design__body"><span class="gk-tag">Fars dag</span><h3>Farsdagskartofflen</h3><p>“Far har alt nok værktøj. Giv ham tid til at bruge det..”</p></div><div class="gk-back"><h4>Hvad kan kortet indeholde?</h4><p>Giv far overskud i stedet for endnu et værktøj, han ikke fik brug for. Vi tager det grimme arbejde — han tager lørdagen.</p><span class="gk-back__hint">Tryk for at vende tilbage</span></div></div>
+						<div class="gk-design gk-flip" data-design="flytte-kartofflen" tabindex="0" role="button" aria-label="Flytte-kartofflen — se hvad kortet kan indeholde"><div class="gk-design__img"><span class="gk-design__title">Gavekort til en heldig kartoffel</span><img src="/assets/img/gavekort-kartoffler.webp" alt="Flytte-kartofflen" loading="lazy"></div><div class="gk-design__body"><span class="gk-tag">Flytning</span><h3>Flytte-kartofflen</h3><p>“Nyt hus, nye kartofler. Vi tager det grimme arbejde..”</p></div><div class="gk-back"><h4>Hvad kan kortet indeholde?</h4><p>Den perfekte indflyttergave: Nulstilling af have, fliserens eller tagrender — så det nye hjem står skarpt fra dag én.</p><span class="gk-back__hint">Tryk for at vende tilbage</span></div></div>
+						<div class="gk-design gk-flip" data-design="kartoffelrosen" tabindex="0" role="button" aria-label="Kartoffelrosen — se hvad kortet kan indeholde"><div class="gk-design__img"><span class="gk-design__title">Gavekort til en heldig kartoffel</span><img src="/assets/img/gavekort-kartoffler.webp" alt="Kartoffelrosen" loading="lazy"></div><div class="gk-design__body"><span class="gk-tag">Kærlighed &amp; tak</span><h3>Kartoffelrosen</h3><p>“Smukkere end blomster. Og de vander sig selv..”</p></div><div class="gk-back"><h4>Hvad kan kortet indeholde?</h4><p>Til den man er glad for: En have der bliver passet, en terrasse der stråler og en der kommer og tager sig af det hele. Kærlighed i praksis.</p><span class="gk-back__hint">Tryk for at vende tilbage</span></div></div>
 					</div>
 			</div>
 		</div>
@@ -319,24 +360,91 @@ button.gk-amount.is-selected .gk-amount__input{display:block}
 		<div class="section__anchor" id="bestil"></div>
 		<div class="grid-container">
 			<div class="section__text rte" data-in-view-scope>
-				<h2 style="text-align:center;">Færdig om 2 minutter</h2>
-				<p style="text-align:center;">Sådan fungerer det:</p>
+				<h2 style="text-align:center;">Bestil dit gavekort</h2>
+				<p style="text-align:center;">Du designer kortet selv — og beskeden skrives direkte på det.</p>
 				<div class="gk-flow">
 					<div class="gk-step"><span class="gk-step__num">1</span><h3>Vælg kort</h3><p>Tag det design, der passer til anledningen.</p></div>
-					<div class="gk-step"><span class="gk-step__num">2</span><h3>Skriv noget hyggeligt</h3><p>Vi pakker det pænt ind på kortet. Helt personligt.</p></div>
-					<div class="gk-step"><span class="gk-step__num">3</span><h3>Vælg levering</h3><p>Mail nu eller på datoen, SMS — eller print selv og læg den i konvoluten.</p></div>
+					<div class="gk-step"><span class="gk-step__num">2</span><h3>Skriv noget hyggeligt</h3><p>Din besked skrives direkte på kortet, mens du ser det.</p></div>
+					<div class="gk-step"><span class="gk-step__num">3</span><h3>Betal via MobilePay</h3><p>Du får en betalingsanmodning på dit mobilnummer — og kortet sendes pr. mail, så snart betalingen er inde.</p></div>
 				</div>
-				<h3 style="text-align:center;margin-top:3rem;">Vælg beløb</h3>
-				<div class="gk-amounts">
-						<button type="button" class="gk-amount" data-amount="500"><span class="gk-amount__value">500 kr.</span></button>
-						<button type="button" class="gk-amount" data-amount="1000"><span class="gk-amount__value">1.000 kr.</span></button>
-						<button type="button" class="gk-amount" data-amount="2000"><span class="gk-amount__value">2.000 kr.</span></button>
-						<button type="button" class="gk-amount gk-amount--free" data-amount="fri"><span class="gk-amount__value">Fri beløb</span><span class="gk-amount__note">Eller bestem selv</span><input type="number" min="500" step="50" inputmode="numeric" placeholder="Fx 750" aria-label="Indtast beløb" class="gk-amount__input"></button>
-					</div>
-					<div class="gk-pick" aria-live="polite">Tryk på det beløb du vil give for — vi kontakter dig, når du bestiller.</div>
+
+				<div class="gk-order" id="gk-order">
+					<form class="gk-order__form" id="gk-form" novalidate>
+						<div class="gk-fieldset">
+							<h3><span class="gk-step__num">1</span>Vælg kort</h3>
+							<p style="margin:0;color:#4C3718;font-size:.95rem;">Tryk på et af de syv designs ovenfor (<a href="#gk-designs" style="color:#616711;">se kortene</a>) — dit valg vises på previewet her til højre.<br><strong id="gk-chosen" style="font-weight:700;">Ingen kort valgt endnu.</strong></p>
+						</div>
+
+						<div class="gk-fieldset">
+							<h3><span class="gk-step__num">2</span>Skriv din besked</h3>
+							<p style="margin:0 0 .5rem;color:#4C3718;font-size:.9rem;">Skriv direkte på kortet i previewet — eller her:</p>
+							<textarea id="gk-message" class="gk-input" maxlength="300" rows="4" placeholder="Kære mor — en lørdag uden tagrender er en lørdag med overskud. Kram fra Jens" aria-label="Din personlige besked på kortet"></textarea>
+							<div class="gk-grid2">
+								<div>
+									<label class="gk-label" for="gk-recipientName">Modtagerens navn</label>
+									<input class="gk-input" id="gk-recipientName" name="recipientName" type="text" maxlength="120" autocomplete="off">
+								</div>
+								<div>
+									<label class="gk-label" for="gk-recipientEmail">Modtagerens e-mail</label>
+									<input class="gk-input" id="gk-recipientEmail" name="recipientEmail" type="email" maxlength="200" autocomplete="off">
+								</div>
+								<div>
+									<label class="gk-label" for="gk-buyerName">Dit navn</label>
+									<input class="gk-input" id="gk-buyerName" name="buyerName" type="text" maxlength="120" autocomplete="name">
+								</div>
+								<div>
+									<label class="gk-label" for="gk-buyerEmail">Din e-mail</label>
+									<input class="gk-input" id="gk-buyerEmail" name="buyerEmail" type="email" maxlength="200" autocomplete="email">
+								</div>
+								<div>
+									<label class="gk-label" for="gk-buyerPhone">Dit mobilnummer (MobilePay)</label>
+									<input class="gk-input" id="gk-buyerPhone" name="buyerPhone" type="tel" inputmode="numeric" maxlength="17" placeholder="Fx 12345678" autocomplete="tel">
+								</div>
+							</div>
+						</div>
+
+						<div class="gk-fieldset">
+							<h3><span class="gk-step__num">3</span>Vælg beløb</h3>
+							<div class="gk-amounts">
+								<button type="button" class="gk-amount" data-amount="500"><span class="gk-amount__value">500 kr.</span></button>
+								<button type="button" class="gk-amount" data-amount="1000"><span class="gk-amount__value">1.000 kr.</span></button>
+								<button type="button" class="gk-amount" data-amount="2000"><span class="gk-amount__value">2.000 kr.</span></button>
+								<button type="button" class="gk-amount gk-amount--free" data-amount="fri"><span class="gk-amount__value">Fri beløb</span><span class="gk-amount__note">Eller bestem selv</span><input type="number" min="500" step="50" inputmode="numeric" placeholder="Fx 750" aria-label="Indtast beløb" class="gk-amount__input" id="gk-free-amount"></button>
+							</div>
+							<div class="gk-pick" id="gk-pick" aria-live="polite">Minimum 500 kr. Tryk på det beløb du vil give.</div>
+						</div>
+
+						<div class="gk-fieldset">
+							<h3><span class="gk-step__num">4</span>Gennemgå og betal</h3>
+							<ul class="gk-summary" id="gk-summary"></ul>
+							<div style="margin-top:1.25rem;">
+								<button type="submit" class="gk-paybtn" id="gk-pay">Send betalingsanmodning</button>
+							</div>
+							<p style="margin:.75rem 0 0;font-size:.85rem;color:#4C3718;">Du modtager en MobilePay-betalingsanmodning på dit mobilnummer. Gavekortet sendes pr. mail til modtageren, så snart betalingen er inde.</p>
+							<div class="gk-error" id="gk-error" role="alert"></div>
+						</div>
+					</form>
+
+					<aside class="gk-preview" aria-label="Forhåndsvisning af gavekortet">
+						<div class="gk-preview__img">
+							<img id="gk-preview-img" src="/assets/img/gavekort-kartoffler.webp" alt="Gavekort-design">
+							<span class="gk-preview__title">Gavekort til en heldig kartoffel</span>
+						</div>
+						<div class="gk-preview__body">
+							<p class="gk-preview__occasion" id="gk-preview-occasion">Vælg et design ovenfor — anledningsteksten vises her.</p>
+							<textarea class="gk-preview__msg" id="gk-preview-msg" maxlength="300" placeholder="Skriv din personlige besked her …" aria-label="Skriv din besked direkte på kortet"></textarea>
+							<p class="gk-preview__hint">Beskeden skrives direkte på kortet · maks. 300 tegn</p>
+						</div>
+					</aside>
+				</div>
+
+				<div class="gk-thanks" id="gk-thanks" role="status">
+					<h3 style="margin:0 0 .75rem;">Tak! 🥔</h3>
+					<p id="gk-thanks-text" style="margin:0;">Du modtager en MobilePay-betalingsanmodning inden kort tid.</p>
 				</div>
 			</div>
 		</div>
+	</div>
 
 	<div class="section section--type-standard section--theme- section--padding-top-xlarge section--padding-bottom-xlarge" id="section-id-gk-trust">
 		<div class="section__background"></div>
@@ -378,7 +486,7 @@ button.gk-amount.is-selected .gk-amount__input{display:block}
 							<h3>Hvor længe er gavekortet gyldigt?</h3>
 							<p>Gavekortet er gyldigt i 3 år fra købsdatoen.</p>
 							<h3>Hvordan leveres gavekortet?</h3>
-							<p>Via e-mail (straks eller på en valgt dato), via SMS — eller som PDF, du selv printer og giver i hånden.</p>
+							<p>Gavekortet sendes pr. e-mail til modtageren (eller til dig), så snart betalingen er gennemført — og kan downloades som PDF, hvis du selv vil give det i hånden.</p>
 							<h3>Hvad kan gavekortet bruges til?</h3>
 							<p>Alt. Have, tagrender, fliser, sne — modtageren vælger selv, hvad overskuddet skal gå til.</p>
 						</div>
@@ -396,7 +504,7 @@ button.gk-amount.is-selected .gk-amount__input{display:block}
 				<div class="cell small-12 medium-6">
 					<div class="section__text rte rte--larger-h2" data-in-view-scope>
 						<h2>Giv en heldig kartoffel i gave</h2>
-						<p>Vælg kortet, skriv noget hyggeligt og vælg leveringen. Resten klarer vi.</p>
+						<p>Vælg kortet, skriv noget hyggeligt og betal via MobilePay. Resten klarer vi.</p>
 					</div>
 				</div>
 				<div class="cell small-12 medium-6">
@@ -494,6 +602,186 @@ button.gk-amount.is-selected .gk-amount__input{display:block}
 
 		<script src="/assets/js/script.js"></script>
 		<script src="/assets/js/kundetype.js?v=1" defer></script>
+	<script>
+	// Gavekort-bestillingsflow (fase 0: MobilePay, manuel betaling).
+	// POST'er til CRM'et; teamet sender betalingsanmodningen manuelt.
+	(function () {
+		'use strict';
+
+		// CRM-API'ets base. Override i preview ved at sætte window.GK_CRM_URL.
+		var CRM = (window.GK_CRM_URL || 'https://crm.karltoffel.dk').replace(/\/$/, '');
+
+		var OCCASIONS = {
+			kartoffelgaven: 'Gode ting udefra. Mere overskud indenfor.',
+			foedselsdagskartofflen: 'Ét år ældre. Nul flere opgaver.',
+			julemosset: 'Glædelig jul — og pyh, tagrenderne klarer vi.',
+			morsdagskartofflen: 'Hun har ryddet op i dit liv i 30 år. Lad os tage haven.',
+			farsdagskartofflen: 'Far har alt nok værktøj. Giv ham tid til at bruge det.',
+			'flytte-kartofflen': 'Nyt hus, nye kartofler. Vi tager det grimme arbejde.',
+			kartoffelrosen: 'Smukkere end blomster. Og de vander sig selv.'
+		};
+
+		var state = { design: null, amount: null };
+
+		var $ = function (id) { return document.getElementById(id); };
+		var form = $('gk-form');
+		if (!form) return;
+
+		var fmtKr = function (minor) {
+			return (minor / 100).toLocaleString('da-DK', { maximumFractionDigits: 0 }) + ' kr.';
+		};
+
+		// --- Design-valg (kortene i #gk-designs) ---
+		document.querySelectorAll('.gk-design.gk-flip').forEach(function (card) {
+			card.addEventListener('click', function () {
+				var wasSelected = card.classList.contains('is-selected');
+				document.querySelectorAll('.gk-design.gk-flip').forEach(function (c) {
+					c.classList.remove('is-selected');
+					c.classList.remove('is-flipped');
+				});
+				if (!wasSelected) {
+					card.classList.add('is-selected');
+					card.classList.add('is-flipped');
+					state.design = card.getAttribute('data-design');
+					$('gk-chosen').textContent = 'Valgt: ' + card.querySelector('h3').textContent.trim();
+					$('gk-preview-occasion').textContent = OCCASIONS[state.design] || '';
+					renderSummary();
+				} else {
+					state.design = null;
+					$('gk-chosen').textContent = 'Ingen kort valgt endnu.';
+					$('gk-preview-occasion').textContent = 'Vælg et design ovenfor — anledningsteksten vises her.';
+					renderSummary();
+				}
+			});
+		});
+
+		// --- Beløb ---
+		function selectedAmount() {
+			var sel = document.querySelector('.gk-amount.is-selected');
+			if (!sel) return null;
+			if (sel.getAttribute('data-amount') === 'fri') {
+				var v = Math.round(Number($('gk-free-amount').value) || 0) * 100;
+				return v >= 50000 ? v : null;
+			}
+			return Number(sel.getAttribute('data-amount')) * 100;
+		}
+		document.querySelectorAll('.gk-amount').forEach(function (btn) {
+			btn.addEventListener('click', function (e) {
+				if (e.target.closest('.gk-amount__input')) return; // fri-beløb-feltet klikkes igennem
+				document.querySelectorAll('.gk-amount').forEach(function (b) { b.classList.remove('is-selected'); });
+				btn.classList.add('is-selected');
+				if (btn.getAttribute('data-amount') === 'fri') {
+					$('gk-pick').textContent = 'Skriv dit eget beløb (minimum 500 kr.).';
+					$('gk-free-amount').focus();
+				} else {
+					state.amount = Number(btn.getAttribute('data-amount')) * 100;
+					$('gk-pick').textContent = 'Beløb: ' + fmtKr(state.amount);
+				}
+				renderSummary();
+			});
+		});
+		$('gk-free-amount').addEventListener('input', function () {
+			state.amount = selectedAmount();
+			$('gk-pick').textContent = state.amount
+				? 'Beløb: ' + fmtKr(state.amount)
+				: 'Minimum 500 kr.';
+			renderSummary();
+		});
+
+		// --- Besked: skrives direkte på kortet ---
+		var msg = $('gk-message');
+		var previewMsg = $('gk-preview-msg');
+		function syncMessage(from) {
+			if (from === previewMsg) msg.value = previewMsg.value;
+			else previewMsg.value = msg.value;
+			renderSummary();
+		}
+		msg.addEventListener('input', function () { syncMessage(msg); });
+		previewMsg.addEventListener('input', function () { syncMessage(previewMsg); });
+
+		// --- Oversigt ---
+		function field(id) { return ($(id).value || '').trim(); }
+		function renderSummary() {
+			var rows = [];
+			var amt = selectedAmount();
+			rows.push(['Kort', state.design ? $('gk-chosen').textContent.replace(/^Valgt: /, '') : '— ikke valgt —']);
+			rows.push(['Til', field('gk-recipientName') || '— skriv modtagerens navn —']);
+			rows.push(['Modtagers e-mail', field('gk-recipientEmail') || '— skriv modtagerens e-mail —']);
+			rows.push(['Fra', field('gk-buyerName') || '— skriv dit navn —']);
+			rows.push(['Betaling via', field('gk-buyerPhone') ? 'MobilePay (' + field('gk-buyerPhone') + ')' : '— skriv dit mobilnummer —']);
+			rows.push(['Beløb', amt ? fmtKr(amt) : '— vælg beløb —']);
+			var ul = $('gk-summary');
+			ul.innerHTML = '';
+			rows.forEach(function (r) {
+				var li = document.createElement('li');
+				var a = document.createElement('span'); a.textContent = r[0];
+				var b = document.createElement('span'); b.textContent = r[1];
+				li.appendChild(a); li.appendChild(b); ul.appendChild(li);
+			});
+		}
+		['gk-recipientName', 'gk-recipientEmail', 'gk-buyerName', 'gk-buyerEmail', 'gk-buyerPhone'].forEach(function (id) {
+			$(id).addEventListener('input', renderSummary);
+		});
+		renderSummary();
+
+		// --- Submit ---
+		var errorBox = $('gk-error');
+		function showError(t) { errorBox.textContent = t; errorBox.classList.add('is-visible'); }
+		function hideError() { errorBox.classList.remove('is-visible'); }
+
+		form.addEventListener('submit', function (e) {
+			e.preventDefault();
+			hideError();
+
+			var amt = selectedAmount();
+			if (!state.design) { showError('Vælg venligst et af de syv kort-designs.'); return; }
+			if (!field('gk-recipientName')) { showError('Skriv modtagerens navn.'); return; }
+			if (!field('gk-recipientEmail')) { showError("Skriv modtagerens e-mail."); return; }
+			if (!field('gk-buyerName')) { showError('Skriv dit eget navn.'); return; }
+			if (!field('gk-buyerEmail')) { showError('Skriv din e-mail.'); return; }
+			if (!/^\d{8}$/.test(field('gk-buyerPhone').replace(/[^\d]/g, '').replace(/^(45|0045)(?=\d{8}$)/, ''))) { showError('Indtast dit mobilnummer (8 cifre) — det bruger vi til MobilePay-betalingen.'); return; }
+			if (!msg.value.trim()) { showError('Skriv en personlig besked til modtageren.'); return; }
+			if (!amt || amt < 50000) { showError('Gavekortet skal være mindst 500 kr.'); return; }
+
+			var btn = $('gk-pay');
+			var btnText = btn.textContent;
+			btn.disabled = true;
+			btn.textContent = 'Sender …';
+
+			fetch(CRM + '/api/giftcards/checkout', {
+				method: 'POST',
+				headers: { 'content-type': 'application/json' },
+				body: JSON.stringify({
+					design: state.design,
+					amountMinor: amt,
+					message: msg.value.trim(),
+					recipientName: field('gk-recipientName'),
+					recipientEmail: field('gk-recipientEmail').toLowerCase(),
+					buyerName: field('gk-buyerName'),
+					buyerEmail: field('gk-buyerEmail').toLowerCase(),
+					buyerPhone: field('gk-buyerPhone')
+				})
+			}).then(function (res) {
+				return res.json().catch(function () { return {}; }).then(function (data) { return { ok: res.ok, data: data }; });
+			}).then(function (r) {
+				if (r.ok && r.data.ok) {
+					form.style.display = 'none';
+					$('gk-thanks-text').textContent = 'Du modtager en MobilePay-betalingsanmodning på ' + fmtKr(amt) + ' inden kort tid.';
+					$('gk-thanks').classList.add('is-visible');
+					$('gk-thanks').scrollIntoView({ behavior: 'smooth', block: 'center' });
+				} else {
+					btn.disabled = false;
+					btn.textContent = btnText;
+					showError(r.data.error || 'Noget gik galt. Prøv igen om et øjeblik — eller skriv til hej@karltoffel.dk.');
+				}
+			}).catch(function () {
+				btn.disabled = false;
+				btn.textContent = btnText;
+				showError('Der kunne ikke skabes forbindelse. Tjek dit internet og prøv igen — eller skriv til hej@karltoffel.dk.');
+			});
+		});
+	})();
+	</script>
 	
 
 
