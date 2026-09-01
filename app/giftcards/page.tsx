@@ -5,6 +5,8 @@ import { prisma } from "@/lib/db";
 import { markGiftCardPaid, markGiftCardSent, cancelGiftCard } from "@/app/actions/giftcards";
 
 export const metadata = { title: "Gavekort · Karltoffel" };
+// Prisma-data ved hvert request — må ikke prerenderes ved build.
+export const dynamic = "force-dynamic";
 
 const kr = (minor: number) => new Intl.NumberFormat("da-DK", { maximumFractionDigits: 0 }).format(minor / 100);
 
