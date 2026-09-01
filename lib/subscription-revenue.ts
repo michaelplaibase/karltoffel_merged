@@ -49,10 +49,13 @@ export type SubscriptionRevenue = {
   pendingMonthlyKr: number;
   /** Gennemsnitlig månedlig omsætning pr. aktivt abonnement (0 hvis ingen). */
   avgPerSubscriptionKr: number;
+  /** Månedlig/årlig forventet omsætning pr. fast medarbejder, faldende sorteret. */
+  byEmployee: { employee: string; monthlyKr: number; yearlyKr: number }[];
 };
 
 type SubRow = {
   baseInterval: string;
+  fixedEmployee: string;
   tasks: {
     price: number;
     intervalMultiplier: string | null;
@@ -89,6 +92,7 @@ export async function getSubscriptionRevenue(): Promise<SubscriptionRevenue> {
     select: {
       pending: true,
       baseInterval: true,
+      fixedEmployee: true,
       tasks: {
         select: { price: true, intervalMultiplier: true, pauseActive: true, pauseStart: true, pauseEnd: true, pauseYearly: true },
       },
@@ -98,6 +102,15 @@ export async function getSubscriptionRevenue(): Promise<SubscriptionRevenue> {
   const pending = rows.filter((r) => r.pending);
   const yearlyKr = sumYearlyKr(active);
   const pendingYearlyKr = sumYearlyKr(pending);
+  // Pr. fast medarbejder (samme rytmeregler) — "Ingen" grupperes som ikke-tildelt.
+  const byEmployeeMap = new Map<string, number>();
+  for (const sub of active) {
+    const key = sub.fixedEmployee || "Ingen";
+    byEmployeeMap.set(key, (byEmployeeMap.get(key) ?? 0) + sumYearlyKr([sub]));
+  }
+  const byEmployee = [...byEmployeeMap.entries()]
+    .map(([employee, empYearly]) => ({ employee, monthlyKr: empYearly / MONTHS_PER_YEAR, yearlyKr: empYearly }))
+    .sort((a, b) => b.monthlyKr - a.monthlyKr);
   return {
     activeCount: active.length,
     pendingCount: pending.length,
@@ -105,5 +118,6 @@ export async function getSubscriptionRevenue(): Promise<SubscriptionRevenue> {
     yearlyKr,
     pendingMonthlyKr: pendingYearlyKr / MONTHS_PER_YEAR,
     avgPerSubscriptionKr: active.length ? yearlyKr / active.length / MONTHS_PER_YEAR : 0,
+    byEmployee,
   };
 }

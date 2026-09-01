@@ -43,6 +43,28 @@ export default function RevenuePanel({ revenue }: { revenue: SubscriptionRevenue
           ) : null}
         </dl>
 
+        {revenue.byEmployee.length > 0 ? (
+          <div className="revenue-emps" role="table" aria-label="Forventet omsætning pr. medarbejder">
+            <div className="revenue-emps-header" role="row">
+              <span>Medarbejder</span>
+              <span className="num">Måned</span>
+              <span className="num">År</span>
+            </div>
+            {revenue.byEmployee.map((e) => (
+              <div className="revenue-emps-row" role="row" key={e.employee}>
+                <span role="cell">{e.employee === "Ingen" ? "Ikke tildelt" : e.employee}</span>
+                <span className="num" role="cell">{moneyOre(e.monthlyKr)}</span>
+                <span className="num" role="cell">{moneyOre(e.yearlyKr)}</span>
+              </div>
+            ))}
+            <div className="revenue-emps-row revenue-emps-total" role="row">
+              <span role="cell">I alt</span>
+              <span className="num" role="cell">{moneyOre(revenue.byEmployee.reduce((n, e) => n + e.monthlyKr, 0))}</span>
+              <span className="num" role="cell">{moneyOre(revenue.byEmployee.reduce((n, e) => n + e.yearlyKr, 0))}</span>
+            </div>
+          </div>
+        ) : null}
+
         <p className="revenue-note">
           Beregnet ud fra hver opgaves rytme (basisinterval × interval) over 52 uger.
           &quot;På anmodning&quot;-opgaver og pausevinduer er fratrukket. Bruges til at
