@@ -92,6 +92,36 @@ Besøg os på www.bubble.dk eller ring til os på +45 6069 8700
 .gk-design__img img{width:100%;height:100%;object-fit:cover;display:block}
 .gk-design__body{padding:1.25rem 1.5rem 1.5rem;color:#4C3718}
 .gk-design__body h3,.gk-design__body p{color:#4C3718}
+
+/* trykbare kort: flip-effekt */
+.gk-flip{cursor:pointer;position:relative;transition:transform .25s,box-shadow .25s}
+.gk-flip:hover{transform:translateY(-4px);box-shadow:0 16px 32px rgba(28,20,11,.18)}
+.gk-flip:focus-visible{outline:3px solid #616711;outline-offset:3px}
+.gk-back{position:absolute;inset:0;background:#1C140B;color:#FFFFF0;padding:1.5rem;display:flex;flex-direction:column;justify-content:center;opacity:0;visibility:hidden;transition:opacity .25s;cursor:default}
+.gk-back h4{margin:0 0 .5rem;font-family:snaga-unicase-display,SnagaUniText-Black,sans-serif;font-weight:900;color:#FFF87B}
+.gk-back p{margin:0 0 .75rem;font-size:.95rem;color:#FFFFF0}
+.gk-back__hint{font-size:.75rem;opacity:.7;margin-top:auto}
+.gk-flip.is-flipped .gk-back{opacity:1;visibility:visible}
+/* beløbs-knapper */
+button.gk-amount{font-family:inherit;border:2px solid #1C140B;cursor:pointer;transition:transform .15s,background .2s}
+button.gk-amount:hover{transform:translateY(-2px)}
+button.gk-amount.is-selected{background:#FFF87B;color:#4C3718;border-color:#FFF87B;box-shadow:0 10px 24px rgba(28,20,11,.25)}
+button.gk-amount.is-selected .gk-amount__value{color:#4C3718}
+.gk-amount__input{display:none;margin-top:.5rem;width:90%;padding:.5rem;border-radius:.5rem;border:2px solid #FFF87B;background:#FFFFF0;color:#1C140B;font-size:1rem}
+button.gk-amount.is-selected .gk-amount__input{display:block}
+.gk-pick{margin-top:1rem;text-align:center;font-size:.9rem;color:#4C3718;min-height:1.2em}
+
+/* gul korttekst over billedet */
+.gk-design__img{position:relative}
+.gk-design__img::after{content:'';position:absolute;inset:0;background:linear-gradient(to top,rgba(28,20,11,.55),transparent 55%)}
+.gk-design__title{position:absolute;left:0;right:0;bottom:.75rem;z-index:2;text-align:center;font-family:snaga-unicase-display,SnagaUniText-Black,sans-serif;font-weight:900;font-size:1.15rem;letter-spacing:.02em;color:#FFF87B;text-shadow:0 2px 8px rgba(28,20,11,.6)}
+/* hero overlay */
+.gk-hero-img{position:relative;display:inline-block}
+.gk-hero-img img{display:block}
+.gk-hero-img::after{content:'';position:absolute;inset:0;background:linear-gradient(to top,rgba(28,20,11,.55),transparent 55%);border-radius:1rem}
+.gk-hero-img .gk-design__title{font-size:1.6rem;bottom:1.25rem}
+
+.gk-flip.is-flipped .gk-design__img,.gk-flip.is-flipped .gk-design__body{visibility:hidden}
 </style>
 		</head>
 
@@ -240,7 +270,7 @@ Besøg os på www.bubble.dk eller ring til os på +45 6069 8700
 						<div class="buttons">
 							<a href="#bestil" class="big-button in-view in-view--slide-up"><span>Bliv en heldig kartoffel</span></a>
 							<a href="#gk-designs" class="button in-view in-view--slide-up"><span>Se kortene</span></a>
-										<div class="cell small-12 medium-5"><img src="/assets/img/gavekort-kartoffler.webp" alt="Heldige kartofler holder fri i haven" style="width:100%;border-radius:1rem;box-shadow:0 10px 30px rgba(0,0,0,.15);"></div>
+										<div class="cell small-12 medium-5"><div class="gk-hero-img"><span class="gk-design__title">Gavekort til en heldig kartoffel</span><img src="/assets/img/gavekort-kartoffler.webp" alt="Heldige kartofler holder fri i haven" style="width:100%;border-radius:1rem;box-shadow:0 10px 30px rgba(0,0,0,.15);"></div></div>
 </div>
 					</div>
 				</div>
@@ -272,13 +302,13 @@ Besøg os på www.bubble.dk eller ring til os på +45 6069 8700
 				<h2 style="text-align:center;">Vælg kortet</h2>
 				<p style="text-align:center;">Syv designs. Én til enhver anledning.</p>
 				<div class="gk-designs">
-						<div class="gk-design"><div class="gk-design__img"><img src="/assets/img/gavekort-kartoffler.webp" alt="Kartoffelgaven" loading="lazy"></div><div class="gk-design__body"><span class="gk-tag">Bare fordi</span><h3>Kartoffelgaven</h3><p>“Gode ting udefra. Mere overskud indenfor.”</p></div></div>
-						<div class="gk-design"><div class="gk-design__img"><img src="/assets/img/gavekort-kartoffler.webp" alt="Fødselsdagskartofflen" loading="lazy"></div><div class="gk-design__body"><span class="gk-tag">Fødselsdag</span><h3>Fødselsdagskartofflen</h3><p>“Ét år ældre. Nul flere opgaver.”</p></div></div>
-						<div class="gk-design"><div class="gk-design__img"><img src="/assets/img/gavekort-kartoffler.webp" alt="Julemosset" loading="lazy"></div><div class="gk-design__body"><span class="gk-tag">Jul</span><h3>Julemosset</h3><p>“Glædelig jul — og pyh, tagrenderne klarer vi.”</p></div></div>
-						<div class="gk-design"><div class="gk-design__img"><img src="/assets/img/gavekort-kartoffler.webp" alt="Morsdagskartofflen" loading="lazy"></div><div class="gk-design__body"><span class="gk-tag">Mors dag</span><h3>Morsdagskartofflen</h3><p>“Hun har ryddet op i dit liv i 30 år. Lad os tage haven.”</p></div></div>
-						<div class="gk-design"><div class="gk-design__img"><img src="/assets/img/gavekort-kartoffler.webp" alt="Farsdagskartofflen" loading="lazy"></div><div class="gk-design__body"><span class="gk-tag">Fars dag</span><h3>Farsdagskartofflen</h3><p>“Far har alt nok værktøj. Giv ham tid til at bruge det.”</p></div></div>
-						<div class="gk-design"><div class="gk-design__img"><img src="/assets/img/gavekort-kartoffler.webp" alt="Flytte-kartofflen" loading="lazy"></div><div class="gk-design__body"><span class="gk-tag">Flytning</span><h3>Flytte-kartofflen</h3><p>“Nyt hus, nye kartofler. Vi tager det grimme arbejde.”</p></div></div>
-						<div class="gk-design"><div class="gk-design__img"><img src="/assets/img/gavekort-kartoffler.webp" alt="Kartoffelrosen" loading="lazy"></div><div class="gk-design__body"><span class="gk-tag">Kærlighed &amp; tak</span><h3>Kartoffelrosen</h3><p>“Smukkere end blomster. Og de vander sig selv.”</p></div></div>
+						<div class="gk-design gk-flip" tabindex="0" role="button" aria-label="Kartoffelgaven — se hvad kortet kan indeholde"><div class="gk-design__img"><span class="gk-design__title">Gavekort til en heldig kartoffel</span><img src="/assets/img/gavekort-kartoffler.webp" alt="Kartoffelgaven" loading="lazy"></div><div class="gk-design__body"><span class="gk-tag">Bare fordi</span><h3>Kartoffelgaven</h3><p>“Gode ting udefra. Mere overskud indenfor..”</p></div><div class="gk-back"><h4>Hvad kan kortet indeholde?</h4><p>Alt i Karltoffel-universet — alt efter hvad modtageren har brug for. Haven, tagrenderne, fliserne eller det helt store opnud.</p><span class="gk-back__hint">Tryk for at vende tilbage</span></div></div>
+						<div class="gk-design gk-flip" tabindex="0" role="button" aria-label="Fødselsdagskartofflen — se hvad kortet kan indeholde"><div class="gk-design__img"><span class="gk-design__title">Gavekort til en heldig kartoffel</span><img src="/assets/img/gavekort-kartoffler.webp" alt="Fødselsdagskartofflen" loading="lazy"></div><div class="gk-design__body"><span class="gk-tag">Fødselsdag</span><h3>Fødselsdagskartofflen</h3><p>“Ét år ældre. Nul flere opgaver..”</p></div><div class="gk-back"><h4>Hvad kan kortet indeholde?</h4><p>En gave der giver fri tid i stedet for flere ting. Perfekt til den der har alt — også en lang to-do-liste.</p><span class="gk-back__hint">Tryk for at vende tilbage</span></div></div>
+						<div class="gk-design gk-flip" tabindex="0" role="button" aria-label="Julemosset — se hvad kortet kan indeholde"><div class="gk-design__img"><span class="gk-design__title">Gavekort til en heldig kartoffel</span><img src="/assets/img/gavekort-kartoffler.webp" alt="Julemosset" loading="lazy"></div><div class="gk-design__body"><span class="gk-tag">Jul</span><h3>Julemosset</h3><p>“Glædelig jul — og pyh, tagrenderne klarer vi..”</p></div><div class="gk-back"><h4>Hvad kan kortet indeholde?</h4><p>Julegaven der slår sokkegaven: Vi klarer de udvendige pligter, så der er ro og julehygge indendørs.</p><span class="gk-back__hint">Tryk for at vende tilbage</span></div></div>
+						<div class="gk-design gk-flip" tabindex="0" role="button" aria-label="Morsdagskartofflen — se hvad kortet kan indeholde"><div class="gk-design__img"><span class="gk-design__title">Gavekort til en heldig kartoffel</span><img src="/assets/img/gavekort-kartoffler.webp" alt="Morsdagskartofflen" loading="lazy"></div><div class="gk-design__body"><span class="gk-tag">Mors dag</span><h3>Morsdagskartofflen</h3><p>“Hun har ryddet op i dit liv i 30 år. Lad os tage haven..”</p></div><div class="gk-back"><h4>Hvad kan kortet indeholde?</h4><p>Giv mor en dag uden havearbejde — eller et helt år. Vi kommer forbi, så hun kan bruge tiden på det, hun helst vil.</p><span class="gk-back__hint">Tryk for at vende tilbage</span></div></div>
+						<div class="gk-design gk-flip" tabindex="0" role="button" aria-label="Farsdagskartofflen — se hvad kortet kan indeholde"><div class="gk-design__img"><span class="gk-design__title">Gavekort til en heldig kartoffel</span><img src="/assets/img/gavekort-kartoffler.webp" alt="Farsdagskartofflen" loading="lazy"></div><div class="gk-design__body"><span class="gk-tag">Fars dag</span><h3>Farsdagskartofflen</h3><p>“Far har alt nok værktøj. Giv ham tid til at bruge det..”</p></div><div class="gk-back"><h4>Hvad kan kortet indeholde?</h4><p>Giv far overskud i stedet for endnu et værktøj, han ikke fik brug for. Vi tager det grimme arbejde — han tager lørdagen.</p><span class="gk-back__hint">Tryk for at vende tilbage</span></div></div>
+						<div class="gk-design gk-flip" tabindex="0" role="button" aria-label="Flytte-kartofflen — se hvad kortet kan indeholde"><div class="gk-design__img"><span class="gk-design__title">Gavekort til en heldig kartoffel</span><img src="/assets/img/gavekort-kartoffler.webp" alt="Flytte-kartofflen" loading="lazy"></div><div class="gk-design__body"><span class="gk-tag">Flytning</span><h3>Flytte-kartofflen</h3><p>“Nyt hus, nye kartofler. Vi tager det grimme arbejde..”</p></div><div class="gk-back"><h4>Hvad kan kortet indeholde?</h4><p>Den perfekte indflyttergave: Nulstilling af have, fliserens eller tagrender — så det nye hjem står skarpt fra dag én.</p><span class="gk-back__hint">Tryk for at vende tilbage</span></div></div>
+						<div class="gk-design gk-flip" tabindex="0" role="button" aria-label="Kartoffelrosen — se hvad kortet kan indeholde"><div class="gk-design__img"><span class="gk-design__title">Gavekort til en heldig kartoffel</span><img src="/assets/img/gavekort-kartoffler.webp" alt="Kartoffelrosen" loading="lazy"></div><div class="gk-design__body"><span class="gk-tag">Kærlighed &amp; tak</span><h3>Kartoffelrosen</h3><p>“Smukkere end blomster. Og de vander sig selv..”</p></div><div class="gk-back"><h4>Hvad kan kortet indeholde?</h4><p>Til den man er glad for: En have der bliver passet, en terrasse der stråler og en der kommer og tager sig af det hele. Kærlighed i praksis.</p><span class="gk-back__hint">Tryk for at vende tilbage</span></div></div>
 					</div>
 			</div>
 		</div>
@@ -298,14 +328,15 @@ Besøg os på www.bubble.dk eller ring til os på +45 6069 8700
 				</div>
 				<h3 style="text-align:center;margin-top:3rem;">Vælg beløb</h3>
 				<div class="gk-amounts">
-					<div class="gk-amount"><span class="gk-amount__value">500 kr.</span></div>
-					<div class="gk-amount"><span class="gk-amount__value">1.000 kr.</span></div>
-					<div class="gk-amount"><span class="gk-amount__value">2.000 kr.</span></div>
-					<div class="gk-amount"><span class="gk-amount__value">Fri beløb</span><span class="gk-amount__note">Eller bestem selv</span></div>
+						<button type="button" class="gk-amount" data-amount="500"><span class="gk-amount__value">500 kr.</span></button>
+						<button type="button" class="gk-amount" data-amount="1000"><span class="gk-amount__value">1.000 kr.</span></button>
+						<button type="button" class="gk-amount" data-amount="2000"><span class="gk-amount__value">2.000 kr.</span></button>
+						<button type="button" class="gk-amount gk-amount--free" data-amount="fri"><span class="gk-amount__value">Fri beløb</span><span class="gk-amount__note">Eller bestem selv</span><input type="number" min="500" step="50" inputmode="numeric" placeholder="Fx 750" aria-label="Indtast beløb" class="gk-amount__input"></button>
+					</div>
+					<div class="gk-pick" aria-live="polite">Tryk på det beløb du vil give for — vi kontakter dig, når du bestiller.</div>
 				</div>
 			</div>
 		</div>
-	</div>
 
 	<div class="section section--type-standard section--theme- section--padding-top-xlarge section--padding-bottom-xlarge" id="section-id-gk-trust">
 		<div class="section__background"></div>
@@ -466,5 +497,23 @@ Besøg os på www.bubble.dk eller ring til os på +45 6069 8700
 	
 
 
-		</body>
+		
+<script>
+(function(){
+  document.querySelectorAll('.gk-flip').forEach(function(card){
+    card.addEventListener('click', function(){ card.classList.toggle('is-flipped'); });
+    card.addEventListener('keydown', function(e){ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); card.classList.toggle('is-flipped'); } });
+  });
+  document.querySelectorAll('.gk-amount').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      document.querySelectorAll('.gk-amount').forEach(function(b){ b.classList.remove('is-selected'); });
+      btn.classList.add('is-selected');
+      var label = btn.getAttribute('data-amount') === 'fri' ? 'Fri beløb' : btn.getAttribute('data-amount') + ' kr.';
+      var pick = document.querySelector('.gk-pick');
+      if (pick) pick.textContent = 'Fedt valg — ' + label + ' er noteret. Tryk "Bestil gavekortet" nederst.';
+    });
+  });
+})();
+</script>
+</body>
 </html>
