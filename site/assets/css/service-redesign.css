@@ -25,6 +25,7 @@
 }
 .sp-hero__lead { font-size: 18px; font-weight: 700; }
 .sp-hero__text p { margin: 0 0 14px; }
+.sp-hero__more { display: block; margin-top: 6px; font-weight: 700; color: #FFF87B; }
 
 /* pris-form */
 .sp-form {
