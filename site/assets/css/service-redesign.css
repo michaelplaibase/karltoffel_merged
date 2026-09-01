@@ -256,7 +256,6 @@
 	.sp-included__grid { display: grid; grid-template-columns: minmax(0, 1fr) 520px; gap: 64px; align-items: start; }
 	.sp-beforeafter { margin-top: 0; }
 	.sp-steps__grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 24px; }
-	.sp-steps { padding-bottom: 160px !important; }
 	.sp-step { margin: 0; }
 	.sp-faq-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 640px); gap: 64px; align-items: start; }
 	.sp-faq-grid__quote { position: sticky; top: 120px; }

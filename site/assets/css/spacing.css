@@ -22,6 +22,10 @@
 /* Sidste indholdssektion beholder sin oprindelige bundluft mod footeren. */
 .main-wrap .section--type-cta{ padding-bottom:100px !important; }
 
+/* Steps-sektionen på ydelsessider: ekstra bundluft på desktop, så de tre
+   bokse ikke sidder klebet fast til næste sektion ( Kristian 2026-09-01). */
+.main-wrap .sp-steps{ padding-bottom:160px !important; }
+
 /* Farvede fuld-bredde sektioner (den gule theme-primary) skal have LIGE meget
    luft foroven og forneden — ellers ser farve-boksen "cuttet" ud i bunden:
    overskriften har 100px til toppen, men indholdet/knappen klistrede til
