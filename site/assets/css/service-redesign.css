@@ -275,3 +275,12 @@
 }
 .section--type-cta .button:hover, .section--type-cta .button:focus { background: #fff65c; transform: translateY(-2px); }
 #section-id-277 .section__background { background: #FFFFF0; }
+
+/* Før/efter: ægte billeder */
+.sp-beforeafter__img {
+	aspect-ratio: 3 / 4;
+	width: 100%;
+	object-fit: cover;
+	border-radius: 16px;
+	border: 2px solid rgba(76,55,24,.15);
+}
