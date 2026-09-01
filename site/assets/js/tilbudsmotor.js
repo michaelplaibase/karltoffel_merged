@@ -33,7 +33,6 @@ const PRODUCTS = [
   /* ---- Tilvalg: "Vi tilbyder også" (off som standard, gruppe = kat) ---- */
   {id:"ukrudt_sproejt", navn:"Sprøjtning af ukrudt mellem belægning", enhed:"m² fliser", pris:1.50, note:"Vi holder fugerne rene", qty:60, freq:5, fmax:8, on:false, pakke:false, kat:"groen", wm:"Ukrudt bekæmpelse på belægningsarealer"},
   {id:"ukrudt_fjern", navn:"Fjernelse af ukrudt mellem belægning", enhed:"m² fliser", pris:4.00, note:"Manuel fjernelse af ukrudt", qty:60, freq:5, fmax:8, on:false, pakke:false, kat:"groen", wm:null},
-  {id:"graes",     navn:"Græsslåning",                            enhed:"m² plæne",  pris:1.60,   note:"Klip i sæsonen",          qty:450, freq:1,  fmax:26, on:false, pakke:false, kat:"groen",   wm:"Græsslåning"},
   {id:"beskaering",navn:"Beskæring af buske, træer og planter",   enhed:"træer",     pris:500.00, note:"Små træer/frugttræer — større træer efter besøg", qty:3, freq:1, fmax:2, on:false, pakke:false, kat:"groen", prisEnh:"træ", wm:"Beskæring Små træer / Frugttræer"},
   {id:"vinduerind",navn:"Indendørs vinduespudsning",              enhed:"glas",      pris:19.87,  note:"Indvendige døre, vinduer og porte", qty:0,   freq:1,  fmax:6,  on:false, pakke:false, kat:"vinduer", wm:"Indendørs vinduespudsning pr glas"},
   {id:"solcelle",  navn:"Solcellevask",                           enhed:"paneler",   pris:40.00,  note:"Solcellepaneler på taget",          qty:0,   freq:1,  fmax:4,  on:false, pakke:false, kat:"vinduer", prisEnh:"panel", wm:"Solcellevask pr panel"},
@@ -191,7 +190,7 @@ function applyMeasurements(m){
      det åbne areal — vi bruger 70 % som rundt standardtal, afrundet til 10 m². */
   const PLAENE_FAKTOR = 0.70;
   const plaeneAreal = m.haveAreal > 0 ? Math.max(10, Math.round(m.haveAreal * PLAENE_FAKTOR / 10) * 10) : 0;
-  put("graes", plaeneAreal); put("green", plaeneAreal); put("sammenriv", plaeneAreal);
+  put("green", plaeneAreal); put("sammenriv", plaeneAreal);
   put("haek", m.haekLangde); put("tagrender", m.tagrendeLangde);
   put("alge", m.tagArealSkraat || m.tagAreal);           /* skråt tagareal hvor muligt */
   /* Træantal kan ikke måles — skøn ~1 træ/busk pr. 150 m² have, clamp 2–8. */
@@ -684,7 +683,7 @@ const CAT_LABELS = { pakke:"Pakke", groen:"Grøn have", vinduer:"Vinduer & glas"
    en visnings-gruppering ovenpå den samme liste. */
 const SERVICE_CARDS = [
   { key:"haven", emoji:"🌳", title:"I haven",
-    ids:["graes","green","haek","beskaering","ukrudt_sproejt","ukrudt_fjern","sammenriv"] },
+    ids:["green","haek","beskaering","ukrudt_sproejt","ukrudt_fjern","sammenriv"] },
   { key:"ude", emoji:"🏠", title:"Uden på",
     ids:["vinduer","solcelle","drivhus","alge","tagrender","algeflis","fliserens","myre_ude","myre_saeson"] },
   { key:"inde", emoji:"🛋️", title:"Indendørs",
