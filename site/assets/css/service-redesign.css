@@ -12,7 +12,7 @@
 .sp-hero__bg { position: absolute; inset: 0; pointer-events: none; }
 .sp-hero__bg img { width: 100%; height: 100%; object-fit: cover; }
 .sp-hero__bg::after { content: ""; position: absolute; inset: 0; background: rgba(28,20,11,.55); }
-.sp-hero__grid { position: relative; z-index: 1; display: block; padding-top: 32px; padding-bottom: 40px; }
+.sp-hero__grid { position: relative; z-index: 1; display: block; padding-top: 110px; padding-bottom: 40px; }
 .sp-hero__text { color: #FFFFF0; max-width: 560px; }
 .sp-hero__text h1 {
 	margin: 0 0 16px;
