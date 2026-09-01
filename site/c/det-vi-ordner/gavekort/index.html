@@ -85,6 +85,13 @@ Besøg os på www.bubble.dk eller ring til os på +45 6069 8700
 /* pill-knapper som forsiden (big-button-reglerne er scoped til hero-slider der) */
 #section-id-gk-hero .big-button,#section-id-gk-cta .button{background:#FFF87B;border-color:#FFF87B;color:#4C3718;font-size:17px;min-height:64px;padding:18px 44px;border-radius:999px;box-shadow:0 10px 30px rgba(0,0,0,.35)}
 #section-id-gk-hero .big-button:hover,#section-id-gk-hero .big-button:focus,#section-id-gk-cta .button:hover,#section-id-gk-cta .button:focus{background:#4C3718;color:#FFF87B}
+
+/* kort med univers-billedet */
+.gk-design{background:#FFFFF0;border:2px solid #4C3718;padding:0;overflow:hidden;min-height:0}
+.gk-design__img{aspect-ratio:16/9;overflow:hidden}
+.gk-design__img img{width:100%;height:100%;object-fit:cover;display:block}
+.gk-design__body{padding:1.25rem 1.5rem 1.5rem;color:#4C3718}
+.gk-design__body h3,.gk-design__body p{color:#4C3718}
 </style>
 		</head>
 
@@ -233,7 +240,8 @@ Besøg os på www.bubble.dk eller ring til os på +45 6069 8700
 						<div class="buttons">
 							<a href="#bestil" class="big-button in-view in-view--slide-up"><span>Bliv en heldig kartoffel</span></a>
 							<a href="#gk-designs" class="button in-view in-view--slide-up"><span>Se kortene</span></a>
-						</div>
+										<div class="cell small-12 medium-5"><img src="/assets/img/gavekort-kartoffler.webp" alt="Heldige kartofler holder fri i haven" style="width:100%;border-radius:1rem;box-shadow:0 10px 30px rgba(0,0,0,.15);"></div>
+</div>
 					</div>
 				</div>
 			</div>
@@ -264,14 +272,14 @@ Besøg os på www.bubble.dk eller ring til os på +45 6069 8700
 				<h2 style="text-align:center;">Vælg kortet</h2>
 				<p style="text-align:center;">Syv designs. Én til enhver anledning.</p>
 				<div class="gk-designs">
-						<div class="gk-design gk-design--friture"><span class="gk-tag">Bare fordi</span><h3>Kartoffelgaven</h3><p>“Gode ting udefra. Mere overskud indenfor.”</p></div>
-						<div class="gk-design gk-design--mos"><span class="gk-tag">Fødselsdag</span><h3>Fødselsdagskartofflen</h3><p>“Ét år ældre. Nul flere opgaver.”</p></div>
-						<div class="gk-design gk-design--muld"><span class="gk-tag">Jul</span><h3>Julemosset</h3><p>“Glædelig jul — og pyh, tagrenderne klarer vi.”</p></div>
-						<div class="gk-design gk-design--friture"><span class="gk-tag">Mors dag</span><h3>Morsdagskartofflen</h3><p>“Hun har ryddet op i dit liv i 30 år. Lad os tage haven.”</p></div>
-						<div class="gk-design gk-design--spire"><span class="gk-tag">Fars dag</span><h3>Farsdagskartofflen</h3><p>“Far har alt nok værktøj. Giv ham tid til at bruge det.”</p></div>
-						<div class="gk-design gk-design--mos"><span class="gk-tag">Flytning</span><h3>Flytte-kartofflen</h3><p>“Nyt hus, nye kartofler. Vi tager det grimme arbejde.”</p></div>
-						<div class="gk-design gk-design--ristet"><span class="gk-tag">Kærlighed &amp; tak</span><h3>Kartoffelrosen</h3><p>“Smukkere end blomster. Og de vander sig selv.”</p></div>
-				</div>
+						<div class="gk-design"><div class="gk-design__img"><img src="/assets/img/gavekort-kartoffler.webp" alt="Kartoffelgaven" loading="lazy"></div><div class="gk-design__body"><span class="gk-tag">Bare fordi</span><h3>Kartoffelgaven</h3><p>“Gode ting udefra. Mere overskud indenfor.”</p></div></div>
+						<div class="gk-design"><div class="gk-design__img"><img src="/assets/img/gavekort-kartoffler.webp" alt="Fødselsdagskartofflen" loading="lazy"></div><div class="gk-design__body"><span class="gk-tag">Fødselsdag</span><h3>Fødselsdagskartofflen</h3><p>“Ét år ældre. Nul flere opgaver.”</p></div></div>
+						<div class="gk-design"><div class="gk-design__img"><img src="/assets/img/gavekort-kartoffler.webp" alt="Julemosset" loading="lazy"></div><div class="gk-design__body"><span class="gk-tag">Jul</span><h3>Julemosset</h3><p>“Glædelig jul — og pyh, tagrenderne klarer vi.”</p></div></div>
+						<div class="gk-design"><div class="gk-design__img"><img src="/assets/img/gavekort-kartoffler.webp" alt="Morsdagskartofflen" loading="lazy"></div><div class="gk-design__body"><span class="gk-tag">Mors dag</span><h3>Morsdagskartofflen</h3><p>“Hun har ryddet op i dit liv i 30 år. Lad os tage haven.”</p></div></div>
+						<div class="gk-design"><div class="gk-design__img"><img src="/assets/img/gavekort-kartoffler.webp" alt="Farsdagskartofflen" loading="lazy"></div><div class="gk-design__body"><span class="gk-tag">Fars dag</span><h3>Farsdagskartofflen</h3><p>“Far har alt nok værktøj. Giv ham tid til at bruge det.”</p></div></div>
+						<div class="gk-design"><div class="gk-design__img"><img src="/assets/img/gavekort-kartoffler.webp" alt="Flytte-kartofflen" loading="lazy"></div><div class="gk-design__body"><span class="gk-tag">Flytning</span><h3>Flytte-kartofflen</h3><p>“Nyt hus, nye kartofler. Vi tager det grimme arbejde.”</p></div></div>
+						<div class="gk-design"><div class="gk-design__img"><img src="/assets/img/gavekort-kartoffler.webp" alt="Kartoffelrosen" loading="lazy"></div><div class="gk-design__body"><span class="gk-tag">Kærlighed &amp; tak</span><h3>Kartoffelrosen</h3><p>“Smukkere end blomster. Og de vander sig selv.”</p></div></div>
+					</div>
 			</div>
 		</div>
 	</div>
