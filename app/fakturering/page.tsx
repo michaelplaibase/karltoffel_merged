@@ -25,8 +25,33 @@ type Row = {
   id: number; contactId: number; customer: string; date: string;
   employee: string; price: number; status: string; weekMonday: string;
   invoice: string | null; // kort faktura-status eller null = ingen faktura
+  invoiceTone: "red" | "yellow" | "green" | null; // farven på faktura-kolonnen
   tasks: { category: string; letter: string; description: string }[];
 };
+
+/** Faktura-kolonnen (Michael 2026-09-02): rød = ikke afsendt, gul = afsendt,
+ *  grøn = betalt. null = intet at vise (fx "ingen faktura valgt"). */
+function invoiceTone(o: {
+  dineroInvoiceGuid: string | null; dineroInvoiceStatus: string | null;
+  businessBatchInvoiceGuid: string | null; businessBatchInvoiceStatus: string | null;
+  invoiceDecision: string | null;
+}): "red" | "yellow" | "green" | null {
+  if (o.businessBatchInvoiceGuid) {
+    const s = o.businessBatchInvoiceStatus ?? "";
+    if (s === "Sent" || s === "Booked") return "yellow";
+    if (s === "Draft") return "red";
+    if (s === "Failed") return "red";
+    return "yellow";
+  }
+  if (o.dineroInvoiceGuid) {
+    const s = o.dineroInvoiceStatus ?? "";
+    if (s === "Paid") return "green";
+    if (s === "Sent" || s === "Booked") return "yellow";
+    if (s === "Draft" || s === "Failed" || s === "simulated") return "red";
+    return "yellow";
+  }
+  return null;
+}
 
 /** Kort dansk faktura-status for tabellen. */
 function invoiceLabel(o: {
@@ -79,6 +104,7 @@ async function loadRows(): Promise<Row[]> {
       status: o.status,
       weekMonday: ymd(monday),
       invoice: invoiceLabel(o),
+      invoiceTone: invoiceTone(o),
       tasks: [...o.tasks].sort((a, b) => a.sort - b.sort)
         .map((t) => ({ category: t.category, letter: t.letter, description: t.description })),
     };
@@ -110,7 +136,10 @@ function Table({ rows, empty }: { rows: Row[]; empty: string }) {
               <td className="num">{money(o.price)}</td>
               <td>{o.employee}</td>
               <td>{o.status}</td>
-              <td>{o.invoice ?? <span className="badge badge-soft-warning">Ingen faktura</span>}</td>
+              <td>{o.invoiceTone === "green" ? <span className="badge badge-soft-success">{o.invoice}</span>
+                : o.invoiceTone === "yellow" ? <span className="badge badge-soft-warning">{o.invoice}</span>
+                : o.invoiceTone === "red" ? <span className="badge badge-soft-danger">{o.invoice}</span>
+                : <span className="badge badge-soft-danger">Faktura ikke afsendt</span>}</td>
             </tr>
           ))}
         </tbody>
