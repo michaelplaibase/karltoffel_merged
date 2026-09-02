@@ -99,17 +99,21 @@ export default function TaskLineEditor({
                   )}
                   {timepris(r) > 0 && <small className="form-text field-help">Timepris {timepris(r)} kr/t</small>}
                 </td>
-                <td>
-                  <span className="catchip" style={{ background: categoryColor(r.category), marginRight: 6 }}>
-                    {(r.category[0] ?? "A").toUpperCase()}
+                <td data-label="Kategori">
+                  {/* Kategori på én linje: chip + dropdown flexer side om side,
+                      dropdown fylder resten af bredden (også på smalle skærme). */}
+                  <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                    <span className="catchip" style={{ background: categoryColor(r.category), flexShrink: 0 }}>
+                      {(r.category[0] ?? "A").toUpperCase()}
+                    </span>
+                    <select
+                      name="taskCategory" value={r.category}
+                      onChange={(e) => update(i, { category: e.target.value })}
+                      className="form-control form-control-sm" style={{ flex: 1, minWidth: 0 }}
+                    >
+                      {CAT_NAMES.map((c) => <option key={c} value={c}>{c}</option>)}
+                    </select>
                   </span>
-                  <select
-                    name="taskCategory" value={r.category}
-                    onChange={(e) => update(i, { category: e.target.value })}
-                    className="form-control form-control-sm" style={{ display: "inline-block", width: "auto" }}
-                  >
-                    {CAT_NAMES.map((c) => <option key={c} value={c}>{c}</option>)}
-                  </select>
                 </td>
                 <td data-label="Pris (inkl. moms)">
                   <input name="taskPrice" type="number" min="0" value={r.price}
