@@ -111,7 +111,7 @@ export default function TaskLineEditor({
                     {CAT_NAMES.map((c) => <option key={c} value={c}>{c}</option>)}
                   </select>
                 </td>
-                <td>
+                <td data-label="Pris (inkl. moms)">
                   <input name="taskPrice" type="number" min="0" value={r.price}
                     onChange={(e) => {
                       // Pris tastet → auto-beregn varighed fra minutprisen (ekskl.
@@ -125,7 +125,7 @@ export default function TaskLineEditor({
                       update(i, patch);
                     }} className="form-control form-control-sm num" />
                 </td>
-                <td>
+                <td data-label="Varighed (min.)">
                   <input name="taskDuration" type="number" min="0" value={r.duration}
                     onChange={(e) => update(i, { duration: e.target.value })} className="form-control form-control-sm num" />
                   {Number(r.duration) > 0 && (
@@ -135,7 +135,7 @@ export default function TaskLineEditor({
                   )}
                 </td>
                 {sub && (
-                  <td>
+                  <td data-label="Interval">
                     <select name="taskInterval" value={r.interval ?? "Hver gang"}
                       onChange={(e) => update(i, { interval: e.target.value })} className="form-control form-control-sm">
                       {intervalOptions(r).map((o) => <option key={o} value={o}>{o}</option>)}
@@ -143,12 +143,12 @@ export default function TaskLineEditor({
                   </td>
                 )}
                 {sub && (
-                  <td>
+                  <td data-label="Næste gang">
                     <input name="taskNextWeek" value={r.nextWeek ?? ""} placeholder="Uge 29"
                       onChange={(e) => update(i, { nextWeek: e.target.value })} className="form-control form-control-sm" />
                   </td>
                 )}
-                <td>
+                <td data-label="" className="td-remove">
                   <button type="button" onClick={() => remove(i)} className="btn btn-light btn-sm" title="Fjern opgave">
                     <i className="bi bi-trash" />
                   </button>
@@ -156,10 +156,10 @@ export default function TaskLineEditor({
               </tr>
             ))}
             <tr>
-              <td style={{ textAlign: "right", fontWeight: 600 }}>Sum</td>
+              <td className="td-remove td-sum-label" style={{ textAlign: "right", fontWeight: 600 }} data-label="">Sum</td>
               <td />
-              <td className="num" style={{ fontWeight: 600 }}>{sum.toLocaleString("da-DK")} kr</td>
-              <td className="num" style={{ fontWeight: 600 }}>{dur}</td>
+              <td className="num" data-label="Pris i alt" style={{ fontWeight: 600 }}>{sum.toLocaleString("da-DK")} kr</td>
+              <td className="num" data-label="Minutter i alt" style={{ fontWeight: 600 }}>{dur}</td>
               {sub && <td />}
               {sub && <td />}
               <td />

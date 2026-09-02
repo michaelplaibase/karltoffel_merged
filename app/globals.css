@@ -707,6 +707,33 @@ select.form-control-sm { background-position: right 10px center; padding-right: 
 /* Brand-linkets hit-område (alle bredder) */
 .navbar-brand { padding: 8px 4px; }
 
+/* ---------- Responsiv opgave-tabel (TaskLineEditor) ----------
+   På smalle skærme stables tabellen: hver <td> bliver en linje med sin
+   data-label som lille tekst over feltet, så ingenting klemmes ulæseligt.
+   data-label="" (slette-knap, tomme celler, Sum-mærke) får ingen label. */
+@media (max-width: 860px){
+  .table-wrap table.data-table:has(td[data-label]) thead { display: none; }
+  .table-wrap table.data-table:has(td[data-label]) tbody tr {
+    display: block; padding: 12px 0 4px; border-top: 1px solid var(--table-border);
+  }
+  .table-wrap table.data-table:has(td[data-label]) td {
+    display: block; width: 100%; border-top: 0; padding: 6px 0;
+  }
+  .table-wrap table.data-table:has(td[data-label]) td[data-label]:not([data-label=""])::before {
+    content: attr(data-label);
+    display: block; font-size: 11px; font-weight: 500; letter-spacing: .04em;
+    text-transform: uppercase; color: var(--table-header); margin-bottom: 4px;
+  }
+  /* Sum-rækken: behold "Sum"-mærket inline foran værdierne */
+  .table-wrap table.data-table:has(td[data-label]) td.td-sum-label { text-align: left !important; }
+  .table-wrap table.data-table:has(td[data-label]) td.td-sum-label::before {
+    content: none;
+  }
+  .table-wrap table.data-table:has(td[data-label]) td.td-sum-label::after {
+    content: " —"; font-weight: 400;
+  }
+}
+
 /* ============ Skråfoto-verifikation (components/SkraafotoCard) ============ */
 .sf-foto {
   position: relative; width: 100%; aspect-ratio: 16 / 10;
