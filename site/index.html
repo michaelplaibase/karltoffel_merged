@@ -66,6 +66,9 @@ Besøg os på www.bubble.dk eller ring til os på +45 6069 8700
 	.tm2-step h3 { margin-bottom: .5rem; }
 	.tm2-step p { margin: 0; }
 	.tm2-caption { text-align: center; margin: 1.75rem auto 1rem; max-width: 40rem; }
+	/* Klynge-kort: tekst skal stå i cellen (ikke absolute bund-position fra card--service) */
+	#et-besoeg .card--service { display: flex; flex-direction: column; }
+	#et-besoeg .card--service .card__content { position: static; flex: 1 1 auto; padding: 1.5rem; }
 	.tm2-center { text-align: center; margin-top: 1rem; }
 	@media (max-width: 39.9375em) {
 		.tm2-card .card__content { padding: 1.25rem; }
