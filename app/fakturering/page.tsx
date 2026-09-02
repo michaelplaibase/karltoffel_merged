@@ -9,6 +9,7 @@ import { prisma } from "@/lib/db";
 import { getSessionUser } from "@/lib/api-auth";
 import { todayCphISO } from "@/lib/calendar";
 import { CatChip, money } from "@/components/ui";
+import VerifyInvoicingButton from "@/components/VerifyInvoicingButton";
 
 export const metadata = { title: "Faktureringsoverblik · Karltoffel" };
 
@@ -140,6 +141,8 @@ export default async function InvoicingOverviewPage() {
         Alt der er meldt færdigt og venter på faktura, alt der allerede er faktureret,
         og alt der endnu ikke er meldt færdigt. Åbn en ordre for at rykke dens dato.
       </p>
+
+      <VerifyInvoicingButton />
 
       <div className="card" style={{ marginBottom: 16 }}>
         <div className="card-header"><h4 className="section-title">Klar til fakturering ({ready.length}) — {money(sum(ready))}</h4></div>
