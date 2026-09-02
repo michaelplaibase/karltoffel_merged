@@ -27,7 +27,7 @@ const PRODUCTS = [
   {id:"vinduer",  navn:"Udvendig vinduesvask",       enhed:"glas",       pris:15.30, note:"Udvendige døre, vinduer og porte",                 qty:0,   freq:8,  fmax:12, on:false, pakke:true, kat:"pakke", wm:"Udvendig vinduesvask pr glas"},
   {id:"haek",     navn:"Hækklipning",                    enhed:"m hæk",      pris:27.50, note:"1 side, under 220 cm",            qty:65,  freq:1,  fmax:3,  on:false, pakke:true, kat:"pakke", wm:"Hækklipning 1 side pr meter Under 220 cm"},
   {id:"green",    navn:"Greenkeeper græspleje",          enhed:"m² plæne",   pris:2.30,  note:"Gødning og pleje af plænen",      qty:450, freq:3,  fmax:6,  on:false, pakke:true, kat:"pakke", wm:"Greenkeeper græspleje"},
-  {id:"alge",     navn:"Algebehandling af tag",          enhed:"m² tag",     pris:9.80,  note:"Mos og alger, beregnet på skråt tagareal", qty:120, freq:1, fmax:2, on:false, pakke:true, kat:"pakke", wm:"Algebehandling af tag"},
+  {id:"alge",     navn:"Algebehandling af tag",          enhed:"m² tag",     pris:9.80,  min:950,  note:"Mos og alger, beregnet på skråt tagareal", qty:120, freq:1, fmax:2, on:false, pakke:true, kat:"pakke", wm:"Algebehandling af tag"},
   {id:"tagrender",navn:"Tagrenderens",                   enhed:"m tagrende", pris:18.00, note:"Stueplan / 1-plans hus",          qty:24,  freq:1,  fmax:2,  on:false, pakke:true, kat:"pakke", wm:"Tagrenderens Stueplan / 1-plans hus"},
 
   /* ---- Tilvalg: "Vi tilbyder også" (off som standard, gruppe = kat) ---- */
@@ -37,7 +37,7 @@ const PRODUCTS = [
   {id:"vinduerind",navn:"Indendørs vinduespudsning",              enhed:"glas",      pris:19.87,  note:"Indvendige døre, vinduer og porte", qty:0,   freq:1,  fmax:6,  on:false, pakke:false, kat:"vinduer", wm:"Indendørs vinduespudsning pr glas"},
   {id:"solcelle",  navn:"Solcellevask",                           enhed:"paneler",   pris:40.00,  note:"Solcellepaneler på taget",          qty:0,   freq:1,  fmax:4,  on:false, pakke:false, kat:"vinduer", prisEnh:"panel", wm:"Solcellevask pr panel"},
   {id:"drivhus",   navn:"Drivhusvask",                            enhed:"gang",      pris:100.00, note:"Fast pris pr. gang — så er drivhuset vasket", qty:1, freq:1,  fmax:2,  on:false, pakke:false, kat:"vinduer", wm:"Drivhusvask — fast pris pr. gang"},
-  {id:"algeflis",  navn:"Algebehandling af belægning",            enhed:"m² fliser", pris:7.80,   note:"Alger på fliser, terrasse og indkørsel", qty:60, freq:1, fmax:2, on:false, pakke:false, kat:"tag", wm:"Algebehandling af belægning"},
+  {id:"algeflis",  navn:"Algebehandling af belægning",            enhed:"m² fliser", pris:7.80,   min:850, note:"Alger på fliser, terrasse og indkørsel", qty:60, freq:1, fmax:2, on:false, pakke:false, kat:"tag", wm:"Algebehandling af belægning"},
   {id:"fliserens", navn:"Fliserens",                              enhed:"",          pris:null,   note:"Dybderens med maskine — pris ved besøg", qty:1, freq:1, fmax:2, on:false, pakke:false, kat:"tag", wm:null},
   {id:"sammenriv", navn:"Sammenrivning & bortskaffelse af affald",enhed:"m² plæne",  pris:3.00,   note:"Åbne arealer / plæne",    qty:450, freq:1,  fmax:4,  on:false, pakke:false, kat:"affald",  wm:"Opsamling af løvfald til efteråret Åbne arealer / Græsplæne"},
 
@@ -57,7 +57,7 @@ function beregn(products){
     var p = products[i];
     if(!p.on) continue;
     count += 1;                                   /* uprisede ("indeholdt") tæller også med */
-    if(p.pris != null && p.qty > 0) total += p.pris * p.qty;
+    if(p.pris != null && p.qty > 0) total += Math.max(p.pris * p.qty, p.min || 0);
   }
   return { total: total, count: count };
 }
@@ -889,7 +889,8 @@ function opdater(){
       el.innerHTML = '<span class="pw-note">Pris efter antal</span>';
       delete el.dataset.val;
     } else {
-      const val = p.pris * p.qty;
+      const raw = p.pris * p.qty;
+      const val = p.min ? Math.max(raw, p.min) : raw;
       const prev = parseFloat(el.dataset.val);
       const b = el.querySelector(".pw-val");
       if(!b){   /* første visning: skriv direkte (ingen animation fra ingenting) */
