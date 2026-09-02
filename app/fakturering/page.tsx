@@ -10,6 +10,7 @@ import { getSessionUser } from "@/lib/api-auth";
 import { todayCphISO } from "@/lib/calendar";
 import { CatChip, money } from "@/components/ui";
 import VerifyInvoicingButton from "@/components/VerifyInvoicingButton";
+import CleanupDescriptionsButton from "@/components/CleanupDescriptionsButton";
 
 export const metadata = { title: "Faktureringsoverblik · Karltoffel" };
 
@@ -172,6 +173,8 @@ export default async function InvoicingOverviewPage() {
       </p>
 
       <VerifyInvoicingButton />
+
+      <CleanupDescriptionsButton />
 
       <div className="card" style={{ marginBottom: 16 }}>
         <div className="card-header"><h4 className="section-title">Klar til fakturering ({ready.length}) — {money(sum(ready))}</h4></div>
