@@ -51,6 +51,14 @@ export default async function CompleteOrderPage({
     const globalPreselect = globalValues.s4f2?.[0] ?? "";
     if (isInvoiceDecision(globalPreselect)) preselect = globalPreselect;
   }
+  if (!isInvoiceDecision(preselect) && contactPreselect !== "Blank (ingen forudindstilling)") {
+    // Michael 2026-09-02: "Default på alle privatkunder = send faktura, så
+    // snart opgaven er udført." Hverken kontakt-override eller global
+    // indstilling siger noget andet → forudvælg faktura pr. gang. Erhvervs-
+    // kontakter rammes ikke reelt: pr.-ordre-flowet viderestiller dem til
+    // samlefaktura-sporet (værnet i lib/dinero.ts issueInvoiceForOrder).
+    preselect = "Send faktura - ubetalt";
+  }
   const paymentPreselect = !o.invoiceDecision && isInvoiceDecision(preselect) ? preselect : undefined;
 
   return (
