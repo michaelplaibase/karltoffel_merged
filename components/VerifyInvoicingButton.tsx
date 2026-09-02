@@ -14,7 +14,7 @@ export default function VerifyInvoicingButton() {
     <div style={{ marginBottom: 16 }}>
       <form action={formAction}>
         <button type="submit" className="btn btn-primary" disabled={pending}>
-          {pending ? "Verificerer mod Dinero…" : "Verificér mod Dinero"}
+          {pending ? "Opdaterer fakturastatus…" : "Opdatér fakturastatus"}
         </button>
       </form>
       {state.ok ? (
