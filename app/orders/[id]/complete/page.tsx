@@ -5,6 +5,7 @@ import { prisma } from "@/lib/db";
 import { routeId } from "@/lib/route-ids";
 import { completeOrder } from "@/app/actions/orders";
 import { isInvoiceDecision } from "@/lib/dinero";
+import { getSettingsValues } from "@/lib/settings-store";
 import { MapLink } from "@/components/ui";
 import CompleteOrderForm from "@/components/CompleteOrderForm";
 
@@ -32,13 +33,24 @@ export default async function CompleteOrderPage({
 
   // Kundens "Forudindstilling for Betaling og fakturering" (Contact.
   // invoiceChoicePreselect) — bruges kun når ordren endnu ingen gemt
-  // beslutning har, og kun hvis værdien er et af de fem reelle valg
-  // ("Anvend standardindstilling"/"Blank …"/"default" forudvælger intet).
+  // beslutning har. "Anvend standardindstilling"/"default" falder tilbage til
+  // den GLOBALE forudindstilling fra Indstillinger → Afslut ordre
+  // (/settings, felt s4f2) — Thomas/Michael 2026-09-02: "Alle kunder skal
+  // være default på Send faktura - ubetalt", så global standard + kontakt-
+  // override skal begge gælde her, ikke kun kontakt-overriden.
   const row = await prisma.order.findUnique({
     where: { id: orderId },
     select: { contact: { select: { invoiceChoicePreselect: true } } },
   });
-  const preselect = row?.contact.invoiceChoicePreselect ?? "";
+  const contactPreselect = row?.contact.invoiceChoicePreselect ?? "";
+  let preselect = contactPreselect;
+  if (!isInvoiceDecision(preselect) && contactPreselect !== "Blank (ingen forudindstilling)") {
+    // Kontakt har ingen egen override (standardindstilling/default) → brug
+    // virksomhedens globale forudindstilling, hvis der er valgt en.
+    const globalValues = await getSettingsValues("/settings");
+    const globalPreselect = globalValues.s4f2?.[0] ?? "";
+    if (isInvoiceDecision(globalPreselect)) preselect = globalPreselect;
+  }
   const paymentPreselect = !o.invoiceDecision && isInvoiceDecision(preselect) ? preselect : undefined;
 
   return (
