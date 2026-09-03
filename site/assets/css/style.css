@@ -98,3 +98,7 @@ form button.g-recaptcha:hover{filter:brightness(1.15)}
 .tm-sp-grid .cell{display:flex}
 .tm-sp-grid .cell .card{display:flex;flex-direction:column;width:100%}
 .tm-sp-grid .card__content{flex:1}
+
+/* social proof-kort: ingen absolut positionering (kortene har intet billede) */
+#section-id-socialproof .card--service{height:auto !important;overflow:visible !important}
+#section-id-socialproof .card__content{position:static !important}
