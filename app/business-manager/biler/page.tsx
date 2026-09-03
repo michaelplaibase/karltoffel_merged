@@ -37,8 +37,9 @@ export default async function VehiclesPage({ searchParams }: { searchParams: Pro
         <div className="card-header"><h4 className="section-title">Biler ({active.length} aktive) — {kr(total)} /md i alt</h4></div>
         <div className="card-body tight">
           <p className="page-desc" style={{ marginBottom: 8 }}>
-            En bil kan tildelles én medarbejder — så er det bilens udgifter, der lægges ind i netop
-            den medarbejders kostpris. Biler uden tildeling fordeles ligeligt på alle.
+            En bil kan tildelles én medarbejder — så lægges bilens udgifter ind i netop den
+            medarbejders kostpris. Biler uden tildeling tæller ikke i nogen medarbejders tal
+            (medarbejdere uden bil står med 0 kr), men de tæller med i flåde-totalen øverst.
           </p>
           <div className="table-wrap">
             <table className="data-table">
@@ -94,7 +95,7 @@ export default async function VehiclesPage({ searchParams }: { searchParams: Pro
               <select name="userId" className="form-control form-control-sm" defaultValue={editing?.userId != null ? String(editing.userId) : ""}>
                 {userOptions(editing?.userId ?? null)}
               </select>
-              <small className="form-text field-help">Vælger du en medarbejder, myntes bilens udgifter på vedkommende. Ellers fordeles de ligeligt på alle.</small>
+              <small className="form-text field-help">Vælger du en medarbejder, myntes bilens udgifter på vedkommende. Ellers tæller bilen kun i flåde-totalen — ikke i nogen medarbejders kostpris.</small>
             </div></div>
             <div className="f2"><label>Leasing/afskrivning (kr/md)</label><div><input name="leaseMonthly" type="number" min="0" className="form-control form-control-sm" defaultValue={editing?.leaseMonthly ?? ""} placeholder="fx 3500" /></div></div>
             <div className="f2"><label>Forsikring (kr/md)</label><div><input name="insuranceMonthly" type="number" min="0" className="form-control form-control-sm" defaultValue={editing?.insuranceMonthly ?? ""} placeholder="fx 600" /></div></div>

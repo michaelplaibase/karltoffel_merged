@@ -134,19 +134,16 @@ export async function getBusinessManager(opts?: { fromISO?: string; toISO?: stri
   const machinesMonthly = machines.reduce((a, m) => a + machineMonthlyCost(m), 0);
   const machinesPerEmployee = Math.round(machinesMonthly / nEmployees);
 
-  // Biler: en bil med tildelt medarbejder myntes på DEN medarbejder; ellers
-  // fordeles den ligeligt på alle aktive (samme som maskiner).
-  const unassignedVehicleMonthly = vehicles
-    .filter((v) => v.userId == null)
-    .reduce((a, v) => a + vehicleMonthlyCost(v), 0);
-  const unassignedPerEmployee = Math.round(unassignedVehicleMonthly / nEmployees);
+  // Biler (Thomas, 2026-09-03): KUN tildelte biler tæller i medarbejder-tallene —
+  // en medarbejder uden bil står med 0 kr (ingen ligelig fordeling). U TILDELTE
+  // biler tæller med i flåde-totalen (dashboardet), men i ingen medarbejders kolonne.
   const assignedVehicleByUser = new Map<number, number>();
   for (const v of vehicles) {
     if (v.userId == null) continue;
     assignedVehicleByUser.set(v.userId, (assignedVehicleByUser.get(v.userId) ?? 0) + vehicleMonthlyCost(v));
   }
   const fleetFor = (userId: number) =>
-    (assignedVehicleByUser.get(userId) ?? 0) + unassignedPerEmployee + machinesPerEmployee;
+    (assignedVehicleByUser.get(userId) ?? 0) + machinesPerEmployee;
   const fleetMonthly = vehicles.reduce((a, v) => a + vehicleMonthlyCost(v), 0) + machinesMonthly;
 
   // Realiseret pr. medarbejder (udførte ordrer i perioden) + timer.
