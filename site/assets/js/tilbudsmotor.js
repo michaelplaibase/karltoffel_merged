@@ -34,7 +34,7 @@ const PRODUCTS = [
   {id:"ukrudt_sproejt", navn:"Sprøjtning af ukrudt mellem belægning", enhed:"m² fliser", pris:1.50, note:"Vi holder fugerne rene", qty:60, freq:5, fmax:8, on:false, pakke:false, kat:"groen", wm:"Ukrudt bekæmpelse på belægningsarealer"},
   {id:"ukrudt_fjern", navn:"Fjernelse af ukrudt mellem belægning", enhed:"m² fliser", pris:4.00, note:"Manuel fjernelse af ukrudt", qty:60, freq:5, fmax:8, on:false, pakke:false, kat:"groen", wm:null},
   {id:"beskaering",navn:"Beskæring af buske, træer og planter",   enhed:"træer",     pris:500.00, note:"Små træer/frugttræer — større træer efter besøg", qty:3, freq:1, fmax:2, on:false, pakke:false, kat:"groen", prisEnh:"træ", wm:"Beskæring Små træer / Frugttræer"},
-  {id:"vinduerind",navn:"Indendørs vinduespudsning",              enhed:"glas",      pris:19.87,  note:"Indvendige døre, vinduer og porte", qty:0,   freq:1,  fmax:6,  on:false, pakke:false, kat:"vinduer", wm:"Indendørs vinduespudsning pr glas"},
+  {id:"vinduerind",navn:"Vinduespudsning indeni huset",            enhed:"glas",      pris:19.87,  note:"Indvendige døre, vinduer og porte", qty:0,   freq:1,  fmax:6,  on:false, pakke:false, kat:"vinduer", wm:"Indendørs vinduespudsning pr glas"},
   {id:"solcelle",  navn:"Solcellevask",                           enhed:"paneler",   pris:40.00,  note:"Solcellepaneler på taget",          qty:0,   freq:1,  fmax:4,  on:false, pakke:false, kat:"vinduer", prisEnh:"panel", wm:"Solcellevask pr panel"},
   {id:"drivhus",   navn:"Drivhusvask",                            enhed:"gang",      pris:100.00, note:"Fast pris pr. gang — så er drivhuset vasket", qty:1, freq:1,  fmax:2,  on:false, pakke:false, kat:"vinduer", wm:"Drivhusvask — fast pris pr. gang"},
   {id:"algeflis",  navn:"Algebehandling af belægning",            enhed:"m² fliser", pris:7.80,   min:850, note:"Alger på fliser, terrasse og indkørsel", qty:60, freq:1, fmax:2, on:false, pakke:false, kat:"tag", wm:"Algebehandling af belægning"},
@@ -707,9 +707,9 @@ const CAT_LABELS = { pakke:"Mest valgt", groen:"Grøn have", vinduer:"Vinduer & 
 const SERVICE_CARDS = [
   { key:"haven", emoji:"🌳", title:"I haven",
     ids:["green","haek","beskaering","ukrudt_sproejt","ukrudt_fjern","sammenriv"] },
-  { key:"ude", emoji:"🏠", title:"Uden på",
+  { key:"ude", emoji:"🏠", title:"På huset",
     ids:["vinduer","solcelle","drivhus","alge","tagrender","algeflis","fliserens","myre_ude","myre_saeson"] },
-  { key:"inde", emoji:"🛋️", title:"Indendørs",
+  { key:"inde", emoji:"🛋️", title:"Indeni huset",
     ids:["vinduerind","myre_inde"] }
 ];
 function enhKort(p){ return p.enhed ? p.enhed.split(" ")[0] : "enhed"; }
@@ -836,7 +836,7 @@ function byggRaekke(p){
     qin.value = p.qty > 0 ? p.qty : "";
     qin.setAttribute("aria-label", p.id === "solcelle"
       ? "Antal paneler til solcellevask"
-      : "Antal døre, vinduer og porte til " + (p.id === "vinduerind" ? "indendørs vinduespudsning" : "udvendig vinduesvask"));
+      : "Antal døre, vinduer og porte til " + (p.id === "vinduerind" ? "vinduerne indeni huset" : "vinduerne på huset"));
     qin.addEventListener("input", ()=>{
       const raw = qin.value.trim();
       if(raw === ""){ p.qty = 0; opdater(); return; }   /* tomt felt = vent på kunden */
