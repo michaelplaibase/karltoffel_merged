@@ -12,6 +12,7 @@ import { todayCphISO } from "@/lib/calendar";
 import { CatChip, money } from "@/components/ui";
 import VerifyInvoicingButton from "@/components/VerifyInvoicingButton";
 import CleanupDescriptionsButton from "@/components/CleanupDescriptionsButton";
+import InvoiceAllButton from "@/components/InvoiceAllButton";
 
 export const metadata = { title: "Faktureringsoverblik · Karltoffel" };
 
@@ -129,6 +130,10 @@ export default async function InvoicingOverviewPage() {
       <VerifyInvoicingButton />
 
       <CleanupDescriptionsButton />
+
+      {/* "Fakturér alle" (Michael, 2026-09-03): sender alle klar-til-faktura
+          ordrer med det samme, med "Er du sikker?"-bekræftelse. */}
+      <InvoiceAllButton />
 
       <div className="card" style={{ marginBottom: 16 }}>
         <div className="card-header"><h4 className="section-title">Klar til fakturering ({ready.length}) — {money(sum(ready))}</h4></div>
