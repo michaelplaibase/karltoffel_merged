@@ -3,6 +3,8 @@ import { prisma } from "@/lib/db";
 import { saveMachine, deleteMachine } from "@/app/actions/business-manager";
 import { machineDepreciationMonthly, machineMonthlyCost } from "@/lib/business-manager";
 
+export const dynamic = "force-dynamic";
+
 const kr = (n: number) => n.toLocaleString("da-DK") + " kr";
 
 export default async function MachinesPage() {

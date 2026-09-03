@@ -4,6 +4,8 @@ import { prisma } from "@/lib/db";
 import { saveVehicle, deleteVehicle } from "@/app/actions/business-manager";
 import { vehicleMonthlyCost } from "@/lib/business-manager";
 
+export const dynamic = "force-dynamic";
+
 const kr = (n: number) => n.toLocaleString("da-DK") + " kr";
 
 export default async function VehiclesPage() {
