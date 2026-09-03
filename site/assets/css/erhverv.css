@@ -270,3 +270,89 @@
 	.erhverv-field--wide { grid-column: auto; }
 	.erhverv-callback button { width: 100%; }
 }
+
+
+/* ---- 2026-09-03: kundereferencer + tryghed (trust-udvidelse) ---- */
+.erhverv-logos {
+	padding: 44px 24px;
+	background: #4c3718;
+	color: #fffff0;
+}
+.erhverv-logos__inner { max-width: 1280px; margin: 0 auto; }
+.erhverv-logos__eyebrow {
+	font-size: 14px;
+	letter-spacing: 0.14em;
+	text-transform: uppercase;
+	color: #fff87b;
+	margin: 0 0 18px;
+	text-align: center;
+}
+.erhverv-logos__row {
+	display: flex;
+	flex-wrap: wrap;
+	justify-content: center;
+	gap: 14px 34px;
+}
+.erhverv-logo {
+	font-weight: 700;
+	font-size: 17px;
+	color: #fffff0;
+	opacity: 0.88;
+	white-space: nowrap;
+}
+.erhverv-hero-proof, .erhverv-hero-proof { display: none; }
+.hero-slider__content .erhverv-hero-proof { display: block; margin-top: 18px; font-size: 15px; color: #4c3718; }
+
+.erhverv-trust {
+	padding: 88px 24px;
+	background: #fffff0;
+	color: #4c3718;
+	position: relative;
+	overflow: hidden;
+}
+.erhverv-trust__inner { max-width: 1280px; margin: 0 auto; position: relative; }
+.erhverv-trust h2 { margin: 0 0 34px; }
+.erhverv-trust__grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+	gap: 22px;
+	margin-bottom: 56px;
+}
+.erhverv-trust__item {
+	background: #fffff0;
+	border: 2px solid #4c3718;
+	border-radius: 18px 22px 20px 24px / 22px 18px 24px 20px;
+	padding: 24px;
+}
+.erhverv-trust__item h3 { margin: 0 0 8px; font-size: 20px; }
+.erhverv-trust__item p { margin: 0; line-height: 1.5; }
+.erhverv-trust__team {
+	display: flex;
+	align-items: center;
+	gap: 40px;
+	background: #4c3718;
+	color: #fffff0;
+	border-radius: 26px;
+	padding: 34px;
+}
+.erhverv-trust__team-img { flex: 0 0 44%; }
+.erhverv-trust__team-img img {
+	width: 100%;
+	height: auto;
+	display: block;
+	border-radius: 18px;
+}
+.erhverv-trust__team-txt h3 { color: #fff87b; margin: 0 0 10px; font-size: 26px; }
+.erhverv-trust__team-txt p { margin: 0; line-height: 1.6; }
+.erhverv-trust__tel {
+	color: #4c3718;
+	font-weight: 600;
+	margin-left: 18px;
+	white-space: nowrap;
+}
+@media (max-width: 46em) {
+	.erhverv-trust__team { flex-direction: column; padding: 24px; }
+	.erhverv-trust__team-img { flex: none; width: 100%; }
+	.erhverv-logos__row { gap: 12px 22px; }
+	.erhverv-trust__tel { margin-left: 0; display: inline-block; margin-top: 10px; }
+}
