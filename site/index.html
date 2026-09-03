@@ -40,7 +40,7 @@ Besøg os på www.bubble.dk eller ring til os på +45 6069 8700
 		<link rel="apple-touch-icon" href="/assets/img/design/appicon.png">
 	<link rel="stylesheet" href="/assets/css/typekit.css">
 	<link rel="stylesheet" type="text/css" href="/assets/css/style.css?v=6">
-	<link rel="stylesheet" href="/assets/css/tilbudsmotor.css?v=29">
+	<link rel="stylesheet" href="/assets/css/tilbudsmotor.css?v=30">
 	<link rel="stylesheet" href="/assets/css/spacing.css?v=4">
 	<link rel="stylesheet" href="/assets/css/kundetype.css?v=1">
 		<link rel="preload" as="image"
@@ -391,7 +391,7 @@ Besøg os på www.bubble.dk eller ring til os på +45 6069 8700
 	      <label class="adr-label" for="adr-input">Din adresse</label>
 	      <input id="adr-input" type="text" autocomplete="off" placeholder="F.eks. Sundvej 8, 8700 Horsens" aria-describedby="adr-note">
 	      <div class="adr-list" id="adr-list" role="listbox" aria-label="Adresseforslag"></div>
-	      <p class="adr-note" id="adr-note">Adresseopslaget svarer ikke lige nu — vælg et forslag i listen eller skriv hele adressen.</p>
+	      <p class="adr-note" id="adr-note">Adresseopslaget svarer ikke lige nu — prøv med husnummer og postnummer, eller <a href="tel:+4522223833">ring 22 22 38 33</a>, så klarer vi det på 2 min.</p>
 	    </div>
 	    <p class="tm-reassurance">Ingen binding. Vi ringer og bekræfter tallene, før noget koster dig en krone.</p>
 	    <div class="tm-nav">
@@ -518,9 +518,17 @@ Besøg os på www.bubble.dk eller ring til os på +45 6069 8700
 	    <input id="k-mail" type="email" autocomplete="email" maxlength="200">
 	    <label for="k-note">Noget vi skal vide? (valgfrit)</label>
 	    <textarea id="k-note" rows="3" maxlength="2000"></textarea>
-	    <label for="k-rabat">Rabatkode (valgfri)</label>
+	    <button type="button" class="rk-toggle" id="rk-toggle" aria-expanded="false" aria-controls="rk-wrap">Har du en rabatkode?</button>
+	    <div id="rk-wrap" hidden>
+	    <label for="k-rabat">Rabatkode</label>
 	    <input id="k-rabat" type="text" autocomplete="off" autocapitalize="characters" spellcheck="false" maxlength="40">
 	    <div class="rk-note" id="k-rabat-status" role="status" aria-live="polite" hidden></div>
+	    </div>
+	    <div class="tm-trust">
+	      <img src="/assets/img/kristian.webp" alt="Kristian, medstifter af Karltoffel" width="56" height="56" loading="lazy">
+	      <div><b>Kristian ringer dig op</b> — medstifter og den, der holder styr på de heldige karltofler.<br>
+	      <span class="tm-trust-quote">"De ringede præcis som lovet. Alt det kedelige bare forsvandt."</span></div>
+	    </div>
 	    <div class="err" id="k-err">Udfyld navn og telefonnummer, så vi kan ringe dig op.</div>
 	    <div class="verify-btns" style="justify-content:flex-start">
 	      <button class="btn btn-ja" id="btn-send">Send og bliv kontaktet</button>
@@ -533,6 +541,14 @@ Besøg os på www.bubble.dk eller ring til os på +45 6069 8700
 	    <h2 id="tm-h2t">Tak, heldige karltoffel</h2>
 	    <p>Vi har lagt dit opkald i kalenderen og ringer hurtigst muligt — typisk inden for et kvarter i åbningstiden. Naboen bliver grøn af misundelse.</p>
 	    <div class="tak-ring" id="tak-ring" role="status"></div>
+	    <div class="tak-next">
+	      <b>Sådan går det videre:</b>
+	      <ol>
+	        <li>Vi ringer dig op og bekræfter tallene sammen.</li>
+	        <li>Vi aftaler den første dag — én bil, én dag, alt det valgte.</li>
+	        <li>Du læner dig tilbage. Du betaler først, når arbejdet er gjort.</li>
+	      </ol>
+	    </div>
 	    <div class="opsum" id="tak-opsum"></div>
 	  </section>
 	</div>
@@ -1423,6 +1439,6 @@ Besøg os på www.bubble.dk eller ring til os på +45 6069 8700
 			<script src="/assets/js/tilbudsmotor.config.js?v=9"></script>
 			<script src="/assets/js/vendor/geotiff.min.js"></script>
 			<script src="/assets/js/skraafoto.js?v=12"></script>
-			<script src="/assets/js/tilbudsmotor.js?v=42"></script>
+			<script src="/assets/js/tilbudsmotor.js?v=43"></script>
 </body>
 </html>

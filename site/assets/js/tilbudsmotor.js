@@ -277,9 +277,12 @@ function visStep(id, skipScroll){
     const idx = STEP_ORDER.indexOf(id);
     prog.classList.toggle("done", idx === -1);
     if(idx > -1){
-      $("tm-progress-txt").textContent = "Trin " + (idx+1) + " af " + STEP_ORDER.length + " — " + STEP_NAMES[idx];
+      const tilbage = STEP_ORDER.length - idx - 1;
+      $("tm-progress-txt").textContent = "Trin " + (idx+1) + " af " + STEP_ORDER.length + " — " + STEP_NAMES[idx] +
+        (tilbage > 0 ? " · kun " + tilbage + (tilbage === 1 ? " trin" : " trin") + " tilbage" : " · sidste trin!");
       const dots = $("tm-progress-dots").children;
       for(let i=0;i<dots.length;i++) dots[i].classList.toggle("on", i <= idx);
+      for(let i=0;i<dots.length;i++) dots[i].classList.toggle("done", i < idx);
     }
   }
   if(!skipScroll){
@@ -293,18 +296,21 @@ function visStep(id, skipScroll){
 /* sessionStorage (ikke localStorage): dør med fanen, ingen cookie-samtykke-
    problematik. 1 times udløb. Fejler stille i private-mode. */
 const PERSIST_KEY = "tm-state-v1";
+/* Runde 2: autosave i localStorage (ikke sessionStorage) — kunden kan lukke
+   fanen, skifte telefon eller komme tilbage i morgen og fortsætte, hvor hun
+   slap. 14 dages udløb i gendan-lytten. */
 function gemState(stepId){
   try {
     if(!state.adresse) return;
     const prod = {};
     PRODUCTS.forEach(p => { prod[p.id] = { on: p.on, qty: p.qty, freq: p.freq, touched: !!p.touched }; });
-    sessionStorage.setItem(PERSIST_KEY, JSON.stringify({
+    localStorage.setItem(PERSIST_KEY, JSON.stringify({
       t: Date.now(), adresse: state.adresse, kundetype: state.kundetype, betaling: state.betaling, step: stepId, prod,
       rabatkode: state.rabatkode
     }));
   } catch(e){ /* private mode / kvote — persistens er best-effort */ }
 }
-function rydState(){ try { sessionStorage.removeItem(PERSIST_KEY); } catch(e){} }
+function rydState(){ try { localStorage.removeItem(PERSIST_KEY); } catch(e){} }
 
 /* ============ KUNDETYPE (privat/erhverv) ============ */
 /* Sitedækkende præference — samme localStorage-nøgle som kundetype.js
@@ -343,6 +349,24 @@ ktPrivat.addEventListener("click", ()=> ktKlik("privat"));
 ktErhverv.addEventListener("click", ()=> ktKlik("erhverv"));
 ktVidere.addEventListener("click", ()=>{ if(state.kundetype) ktFortsaet(); });
 $("kt-tilbage").addEventListener("click", ()=>{ clearTimeout(ktTimer); visStep("step-adresse"); });
+
+/* Runde 2: rabatkode vises kun, når kunden spørger efter den. */
+(function(){
+  const t = document.getElementById("rk-toggle"), w = document.getElementById("rk-wrap");
+  if(!t || !w) return;
+  t.addEventListener("click", ()=>{
+    const open = w.hidden;
+    w.hidden = !open;
+    t.setAttribute("aria-expanded", open ? "true" : "false");
+    if(open){
+      t.textContent = "Rabatkode";
+      const i = document.getElementById("k-rabat");
+      if(i) i.focus();
+    } else {
+      t.textContent = "Har du en rabatkode?";
+    }
+  });
+})();
 
 /* ============ BETALING — én samlet pris ============ */
 const btTotal = $("bt-total"), lsVidere = $("ls-videre");
@@ -781,7 +805,17 @@ function opdaterSticky(){
   const r = beregn(PRODUCTS);
   const cnt = $("tm-sticky-count"), tot = $("tm-sticky-total");
   if(cnt) cnt.textContent = r.count + " ting valgt";
-  if(tot) tot.textContent = kr(r.total) + " i alt";
+  if(tot){
+    const old = tot.dataset.v;
+    tot.textContent = kr(r.total) + " i alt";
+    /* Runde 2: kort pulse på beløbet når det ændrer sig — prisen skal mærkes. */
+    if(old !== undefined && old !== String(r.total)){
+      tot.classList.remove("tm-pulse");
+      void tot.offsetWidth;                       /* reflow → animation genstarter */
+      tot.classList.add("tm-pulse");
+    }
+    tot.dataset.v = String(r.total);
+  }
   /* Pr. kort: antal valgte i hvert kort. */
   SERVICE_CARDS.forEach(card => {
     const el = ROOT.querySelector('[data-card-count="' + card.key + '"]');
@@ -952,8 +986,8 @@ function opdater(){
 })();
 (function gendan(){
   let s = null;
-  try { s = JSON.parse(sessionStorage.getItem(PERSIST_KEY) || "null"); } catch(e){ return; }
-  if(!s || !s.adresse || Date.now() - (s.t || 0) > 3600e3) return;
+  try { s = JSON.parse(localStorage.getItem(PERSIST_KEY) || "null"); } catch(e){ return; }
+  if(!s || !s.adresse || Date.now() - (s.t || 0) > 14 * 86400e3) return;
   if(["step-kundetype","step-verify","step-losning","step-kontakt"].indexOf(s.step) === -1) return;
 
   state.adresse = s.adresse;
@@ -981,6 +1015,13 @@ function opdater(){
   if(window.KARLTOFFEL && window.KARLTOFFEL.measureProperty){
     window.KARLTOFFEL.measureProperty(s.adresse).then(function(m){ if(req === measureReq) applyMeasurements(m); });
   }
+  /* Runde 2: fortæl kunden, at hendes valg overlevede — ingen forvirring. */
+  const resume = document.createElement("p");
+  resume.className = "tm-resume";
+  resume.textContent = "Dine valg er gemt — fortsæt, hvor du slap.";
+  const akt = $(s.step);
+  if(akt && akt.querySelector(".topbar")) akt.querySelector(".topbar").after(resume);
+  else if(akt) akt.prepend(resume);
   visStep(s.step, true);   /* stille: intet scroll-hop, ingen fokus-tyveri */
 })();
 
