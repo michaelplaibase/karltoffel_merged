@@ -24,6 +24,9 @@ model Company {
   minutePriceOere Int     @default(860)   // øre pr. minut EKSKL. moms (8,60 kr/min) — prisberegner: varighed = (pris inkl. moms / 1,25) / (minutePriceOere/100)
   users         User[]
   contacts      Contact[]
+  vehicles      Vehicle[]
+  machines      Machine[]
+  budgets       Budget[]
   standardTasks StandardTask[]
   leads         Lead[]
   settings      String?   // JSON blob (SQLite has no native Json)
@@ -57,6 +60,60 @@ model User {
   orders           Order[]
   timeEntries      TimeEntry[]
 
+  @@index([companyId])
+}
+
+// --- Business Manager 1.0 (Thomas, 2026-09-03) ------------------------------
+// Modulært, datadrevet økonomisystem: medarbejdere (User har allerede
+// payModel/monthlySalary/commissionPct/fixedMonthlyCost), biler + maskiner
+// (faste driftsomkostninger) og økonomiovervågning (budget vs. realiseret).
+// Regnemotoren bor i lib/business-manager.ts; API i app/api/business-manager.
+model Vehicle {
+  id            Int      @id @default(autoincrement())
+  company       Company  @relation(fields: [companyId], references: [id])
+  companyId     Int
+  name          String   // fx "Van 1 — Ford Transit"
+  active        Boolean  @default(true)
+  // Faste månedlige omkostninger (kr/md)
+  leaseMonthly  Int      @default(0)  // leasing/afskrivning
+  insuranceMonthly Int   @default(0)  // forsikring
+  fuelMonthly   Int      @default(0)  // brændstof (gns.)
+  serviceMonthly Int     @default(0)  // værksted/service/grøn afgift
+  otherMonthly  Int      @default(0)  // diverse (vask, afgifter, parkering)
+  note          String?
+  createdAt     DateTime @default(now())
+
+  @@index([companyId])
+}
+
+model Machine {
+  id            Int      @id @default(autoincrement())
+  company       Company  @relation(fields: [companyId], references: [id])
+  companyId     Int
+  name          String   // fx "Vandrenser 2"
+  active        Boolean  @default(true)
+  purchasePrice Int      @default(0)  // indkøbspris (kr)
+  lifetimeYears Int      @default(0)  // forventet levetid i år (0 = ingen afskrivning)
+  serviceMonthly Int     @default(0)  // vedligehold/service (kr/md)
+  otherMonthly  Int      @default(0)  // diverse faste omkostninger (kr/md)
+  note          String?
+  createdAt     DateTime @default(now())
+
+  @@index([companyId])
+}
+
+model Budget {
+  id            Int      @id @default(autoincrement())
+  company       Company  @relation(fields: [companyId], references: [id])
+  companyId     Int
+  year          Int
+  month         Int      // 1-12
+  revenueBudget Int      @default(0)  // budgetteret omsætning inkl. moms (kr)
+  costBudget    Int      @default(0)  // budgetterede omkostninger ekskl. løn (kr)
+  note          String?
+  createdAt     DateTime @default(now())
+
+  @@unique([companyId, year, month])
   @@index([companyId])
 }
 

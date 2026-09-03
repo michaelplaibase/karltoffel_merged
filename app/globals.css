@@ -777,3 +777,11 @@ textarea.task-desc { resize: none; overflow: hidden; min-height: 34px; height: a
 .sf-fact { display: flex; flex-direction: column; gap: 2px; }
 .sf-fact b { font-family: var(--font-head); font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .02em; color: var(--muted); }
 .sf-fact span { font-size: 15px; color: var(--heading); }
+
+/* Business Manager: faner under sidetitlen */
+.bm-tabs { display: flex; gap: 6px; flex-wrap: wrap; margin: 12px 0 16px; }
+.bm-tab { padding: 7px 14px; border-radius: 999px; background: var(--light, #f2efe9); color: var(--heading, #1C140B); font-size: 13.5px; font-weight: 600; text-decoration: none; }
+.bm-tab:hover { filter: brightness(0.96); }
+.bm-tab-active { background: var(--heading, #1C140B); color: #FFF87B; }
+.bm-kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 12px; margin-bottom: 16px; }
+.bm-kpis .revenue-kpi { display: flex; flex-direction: column; gap: 4px; }
