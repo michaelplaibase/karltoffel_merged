@@ -482,10 +482,7 @@ export async function issueInvoiceForOrder(
   // kun efter erhvervs-flaget — alle kontakter med reglen maaned/kvartal skal
   // samles (lib/business-invoicing.ts); ''/auto afledes (erhverv → maaned,
   // privat → pr_gang). pr_gang (inkl. privat-auto) fortsætter som før.
-  // Thomas, 2026-09-03: "Fakturer nu" overroller ALT — også samlefaktura-værnet.
-  // Batchen udelukker allerede ordrer med guid (dineroInvoiceGuid != null), så en
-  // manuel pr.-ordre-faktura her aldrig kan give dobbeltfakturering på d. 20.
-  const goesToBatch = !opts?.overrideInvoiceDecision && effectiveInvoiceFrequency(order.contact) !== "pr_gang";
+  const goesToBatch = effectiveInvoiceFrequency(order.contact) !== "pr_gang";
   if (goesToBatch && !perOrderBooked && !hasPerOrderDraft && decision !== D_SEND_CASH) {
     await prisma.order.updateMany({
       where: { id: orderId, dineroInvoiceGuid: null, dineroInvoiceNumber: null },
