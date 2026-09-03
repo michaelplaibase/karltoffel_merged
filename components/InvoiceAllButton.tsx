@@ -54,7 +54,7 @@ export default function InvoiceAllButton() {
             </p>
             <p className="page-desc" style={{ marginTop: 4 }}>
               {counts
-                ? <>Der venter <b>{counts.orders} ordrer</b> fordelt på <b>{counts.contacts} kunder</b>.</>
+                ? <>Der venter <b>{counts.orders} {counts.orders === 1 ? "ordre" : "ordrer"}</b> fordelt på <b>{counts.contacts} {counts.contacts === 1 ? "kunde" : "kunder"}</b>.</>
                 : "Tæller ordrer…"}
             </p>
             <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
