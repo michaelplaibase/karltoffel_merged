@@ -27,6 +27,8 @@ model Company {
   vehicles      Vehicle[]
   machines      Machine[]
   budgets       Budget[]
+  leadAcquisitions LeadAcquisition[]
+  marketingSpends  MarketingSpend[]
   standardTasks StandardTask[]
   leads         Lead[]
   settings      String?   // JSON blob (SQLite has no native Json)
@@ -120,6 +122,42 @@ model Budget {
   @@index([companyId])
 }
 
+// --- Lead-beregner (Thomas, 2026-09-03) -------------------------------------
+// Nye kunder ryger automatisk herind: når en kunde får sit første abonnement,
+// sin første fastprisaftale — eller via "Registrér erhvervelse"-knappen på
+// Lead-beregneren. Kategori: privat | virksomhed | fastpris. Kanal: SEO, Meta,
+// Sociale medier, Anbefaling, Direkte, Andet (fritekst tilladt).
+model LeadAcquisition {
+  id           Int      @id @default(autoincrement())
+  company      Company  @relation(fields: [companyId], references: [id])
+  companyId    Int
+  contact      Contact  @relation(fields: [contactId], references: [id])
+  contactId    Int
+  category     String   // privat | virksomhed | fastpris
+  source       String   @default("Direkte")
+  startedAt    DateTime @default(now())
+  note         String?
+  createdAt    DateTime @default(now())
+
+  @@unique([contactId, category])
+  @@index([companyId, startedAt])
+  @@index([companyId, source])
+}
+
+model MarketingSpend {
+  id        Int      @id @default(autoincrement())
+  company   Company  @relation(fields: [companyId], references: [id])
+  companyId Int
+  channel   String
+  year      Int
+  month     Int      // 1-12
+  amount    Int      // kr brugt på kanalen i måneden
+  createdAt DateTime @default(now())
+
+  @@unique([companyId, channel, year, month])
+  @@index([companyId, year, month])
+}
+
 model Contact {
   id            Int       @id @default(autoincrement())
   company       Company   @relation(fields: [companyId], references: [id])
@@ -154,6 +192,7 @@ model Contact {
   fixedPrices   FixedPriceAgreement[]
   orders        Order[]
   leads         Lead[]
+  acquisitions  LeadAcquisition[]
   createdAt     DateTime  @default(now())
 
   @@index([companyId])

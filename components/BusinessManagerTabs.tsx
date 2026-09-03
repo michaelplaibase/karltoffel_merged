@@ -9,7 +9,7 @@ const TABS = [
   { href: "/business-manager/medarbejdere", label: "Omsætning & medarbejdere" },
   { href: "/business-manager/biler", label: "Biler" },
   { href: "/business-manager/maskiner", label: "Maskiner" },
-  { href: "/business-manager/oekonomi", label: "Økonomiovervågning" },
+  { href: "/business-manager/leads", label: "Lead-beregner" },
 ];
 
 export default function BusinessManagerTabs() {

@@ -78,7 +78,16 @@ export async function createContact(_prev: ContactFormState, formData: FormData)
   const company = await prisma.company.findFirst();
   if (!company) return { error: "Ingen virksomhed fundet.", values: f };
   const created = await prisma.contact.create({ data: { companyId: company.id, ...data } });
+  // Lead-beregner (Thomas, 2026-09-03): nye kunder ryger AUTOMATISK ind som
+  // erhvervelse — privat/virksomhed ud fra kundetypen, kanal via frit felt.
+  try {
+    const source = String(formData.get("leadSource") ?? "").trim() || "Direkte";
+    await prisma.leadAcquisition.create({
+      data: { companyId: company.id, contactId: created.id, category: data.isCompany ? "virksomhed" : "privat", source },
+    });
+  } catch { /* best effort — kundeoprettelse må aldrig fejle pga. Lead-beregneren */ }
   revalidatePath("/customers");
+  revalidatePath("/business-manager/leads");
   redirect(`/customers/${created.id}`);
 }
 
