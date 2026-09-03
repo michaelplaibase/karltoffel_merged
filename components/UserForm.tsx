@@ -117,6 +117,11 @@ export default function UserForm({
           <input name="belob" type="number" min="0" value={belob} onChange={(e) => setBelob(e.target.value)} className="form-control form-control-sm" placeholder={payModel === "akkord" ? "fx 43" : "fx 32000"} />
         </div>
         <div className="f2">
+          <label>Faste udgifter (kr/md)</label>
+          <input name="fixedMonthlyCost" type="number" min="0" defaultValue={v("fixedMonthlyCost", initial.fixedMonthlyCost != null ? String(initial.fixedMonthlyCost) : "")} className="form-control form-control-sm" placeholder="fx 1500" />
+          <small className="form-text field-help">Fx voucher, transport o.l. — bruges i Omsætningsoverblikket.</small>
+        </div>
+        <div className="f2">
           <label>Ny adgangskode</label>
           <div>
             <input name="password" type="password" className="form-control form-control-sm" autoComplete="new-password" placeholder="Mindst 8 tegn" />

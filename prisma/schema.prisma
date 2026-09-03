@@ -53,6 +53,7 @@ model User {
   payModel         String   @default("fast")  // lønmodel: "fast" | "akkord"
   commissionPct    Int?     // akkord: provisionssats i % (fx 40)
   monthlySalary    Int?     // fast løn: manuelt beløb (kr/md)
+  fixedMonthlyCost Int?     // faste udgifter pr. md (fx voucher, transport)
   orders           Order[]
   timeEntries      TimeEntry[]
 

@@ -19,13 +19,15 @@ export type UserState = { error?: string; ok?: boolean; values?: Record<string, 
 
 // Fast løn = manuelt beløb (kr/md). Akkord = provisionssats i % (default 43,
 // beregnes af omsætning ekskl. moms — se lib/payroll.ts).
-function payFields(payModel: string, belob: number | null) {
+function payFields(payModel: string, belob: number | null, fixedMonthlyCost?: number | null) {
   const model = payModel === "akkord" ? "akkord" : "fast";
   const b = belob != null && Number.isFinite(belob) && belob >= 0 ? Math.round(belob) : null;
+  const fmc = fixedMonthlyCost != null && Number.isFinite(fixedMonthlyCost) && fixedMonthlyCost >= 0 ? Math.round(fixedMonthlyCost) : null;
   return {
     payModel: model,
     commissionPct: model === "akkord" ? (b ?? 43) : null,
     monthlySalary: model === "fast" ? b : null,
+    fixedMonthlyCost: fmc,
   };
 }
 
@@ -43,7 +45,9 @@ export async function createUser(_prev: UserState, formData: FormData): Promise<
   const payModel = String(formData.get("payModel") ?? "fast");
   const belobRaw = String(formData.get("belob") ?? "").trim();
   const belob = belobRaw === "" ? null : Number(belobRaw);
-  const values = { username, firstName, lastName, email, rolle, payModel, belob: belobRaw };
+  const fixedCostRaw = String(formData.get("fixedMonthlyCost") ?? "").trim();
+  const fixedMonthlyCost = fixedCostRaw === "" ? null : Number(fixedCostRaw);
+  const values = { username, firstName, lastName, email, rolle, payModel, belob: belobRaw, fixedMonthlyCost: fixedCostRaw };
 
   if (!/^[a-z0-9._-]{3,40}$/.test(username)) return { error: "Brugernavn skal være 3–40 tegn: små bogstaver, tal, . _ -", values };
   if (!firstName || !lastName) return { error: "Angiv både for- og efternavn.", values };
@@ -52,6 +56,7 @@ export async function createUser(_prev: UserState, formData: FormData): Promise<
   if (rolle !== "admin" && rolle !== "medarbejder") return { error: "Ugyldig rolle.", values };
   if (belob != null && (!Number.isFinite(belob) || belob < 0)) return { error: "Beløb/sats skal være et positivt tal.", values };
   if (payModel === "akkord" && belob != null && belob > 100) return { error: "Provisionssatsen skal være mellem 0 og 100 %.", values };
+  if (fixedMonthlyCost != null && (!Number.isFinite(fixedMonthlyCost) || fixedMonthlyCost < 0)) return { error: "Faste udgifter skal være et positivt tal.", values };
 
   const company = await prisma.company.findFirst();
   if (!company) return { error: "Ingen virksomhed fundet.", values };
@@ -66,7 +71,7 @@ export async function createUser(_prev: UserState, formData: FormData): Promise<
         email: email || null,
         passwordHash: hashPassword(password),
         isAdmin: rolle === "admin",
-        ...payFields(payModel, belob),
+        ...payFields(payModel, belob, fixedMonthlyCost),
       },
     });
   } catch (e) {
@@ -79,13 +84,13 @@ export async function createUser(_prev: UserState, formData: FormData): Promise<
 }
 
 // Sæt/ret en eksisterende brugers lønmodel (admin). Kaldes fra brugerlisten.
-export async function updateUserPay(userId: number, payModel: string, belob: number | null): Promise<void> {
+export async function updateUserPay(userId: number, payModel: string, belob: number | null, fixedMonthlyCost?: number | null): Promise<void> {
   const me = await getSessionUser();
   if (!me?.isAdmin) return;
   // Nægt stille (som de øvrige værn her): en provisionssats over 100 % er
   // altid en fejltastning — PayEditor afviser den også client-side.
   if (payModel === "akkord" && belob != null && belob > 100) return;
-  await prisma.user.update({ where: { id: userId }, data: payFields(payModel, belob) });
+  await prisma.user.update({ where: { id: userId }, data: payFields(payModel, belob, fixedMonthlyCost) });
   revalidatePath("/users");
   revalidatePath("/payroll");
 }
@@ -119,9 +124,12 @@ export async function updateUser(userId: number, _prev: UserState, formData: For
   const payModel = String(formData.get("payModel") ?? "fast");
   const belobRaw = String(formData.get("belob") ?? "").trim();
   const belob = belobRaw === "" ? null : Number(belobRaw);
+  const fixedCostRaw = String(formData.get("fixedMonthlyCost") ?? "").trim();
+  const fixedMonthlyCost = fixedCostRaw === "" ? null : Number(fixedCostRaw);
   const checkbox = (name: string) => (formData.get(name) === "on" ? "on" : "");
   const values: Record<string, string> = {
     username, firstName, lastName, email, rolle, calendarColor, homeAddress, payModel, belob: belobRaw,
+    fixedMonthlyCost: fixedCostRaw,
     activeCalendar: checkbox("activeCalendar"),
     canReceiveOnline: checkbox("canReceiveOnline"),
     canSeePrices: checkbox("canSeePrices"),
@@ -137,6 +145,7 @@ export async function updateUser(userId: number, _prev: UserState, formData: For
   if (rolle !== "admin" && rolle !== "medarbejder") return { error: "Ugyldig rolle.", values };
   if (belob != null && (!Number.isFinite(belob) || belob < 0)) return { error: "Beløb/sats skal være et positivt tal.", values };
   if (payModel === "akkord" && belob != null && belob > 100) return { error: "Provisionssatsen skal være mellem 0 og 100 %.", values };
+  if (fixedMonthlyCost != null && (!Number.isFinite(fixedMonthlyCost) || fixedMonthlyCost < 0)) return { error: "Faste udgifter skal være et positivt tal.", values };
 
   const target = await prisma.user.findUnique({ where: { id: userId } });
   if (!target) return { error: "Brugeren blev ikke fundet.", values };
@@ -171,7 +180,7 @@ export async function updateUser(userId: number, _prev: UserState, formData: For
           canHandlePayment: formData.get("canHandlePayment") === "on",
           canChangePaymentOption: formData.get("canChangePaymentOption") === "on",
           isAdmin: rolle === "admin",
-          ...payFields(payModel, belob),
+          ...payFields(payModel, belob, fixedMonthlyCost),
           ...(password ? { passwordHash: hashPassword(password) } : {}),
         },
       }),

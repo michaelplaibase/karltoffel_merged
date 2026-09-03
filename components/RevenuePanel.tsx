@@ -50,13 +50,37 @@ export default function RevenuePanel({ revenue }: { revenue: SubscriptionRevenue
               <span className="num">Måned</span>
               <span className="num">År</span>
             </div>
-            {revenue.byEmployee.map((e) => (
-              <div className="revenue-emps-row" role="row" key={e.employee}>
-                <span role="cell">{e.employee === "Ingen" ? "Ikke tildelt" : e.employee}</span>
-                <span className="num" role="cell">{moneyOre(e.monthlyKr)}</span>
-                <span className="num" role="cell">{moneyOre(e.yearlyKr)}</span>
-              </div>
-            ))}
+            {revenue.byEmployee.map((e) => {
+              const cost = (e.salaryMonthlyKr ?? 0) + (e.fixedMonthlyCostKr ?? 0);
+              const harCost = e.salaryMonthlyKr != null || e.fixedMonthlyCostKr != null;
+              return (
+                <div role="row" key={e.employee}>
+                  <div className="revenue-emps-row">
+                    <span role="cell">{e.employee === "Ingen" ? "Ikke tildelt" : e.employee}</span>
+                    <span className="num" role="cell">{moneyOre(e.monthlyKr)}</span>
+                    <span className="num" role="cell">{moneyOre(e.yearlyKr)}</span>
+                  </div>
+                  {e.salaryMonthlyKr != null ? (
+                    <div className="revenue-emps-row revenue-emps-cost" role="row">
+                      <span role="cell" className="revenue-emps-cost-label">Løn</span>
+                      <span className="num" role="cell">{moneyOre(e.salaryMonthlyKr)} /md</span>
+                    </div>
+                  ) : null}
+                  {e.fixedMonthlyCostKr != null ? (
+                    <div className="revenue-emps-row revenue-emps-cost" role="row">
+                      <span role="cell" className="revenue-emps-cost-label">Faste udgifter</span>
+                      <span className="num" role="cell">{moneyOre(e.fixedMonthlyCostKr)} /md</span>
+                    </div>
+                  ) : null}
+                  {harCost ? (
+                    <div className="revenue-emps-row revenue-emps-cost revenue-emps-margin" role="row">
+                      <span role="cell" className="revenue-emps-cost-label">Tilbage</span>
+                      <span className="num" role="cell">{moneyOre(e.monthlyKr - cost)} /md</span>
+                    </div>
+                  ) : null}
+                </div>
+              );
+            })}
             <div className="revenue-emps-row revenue-emps-total" role="row">
               <span role="cell">I alt</span>
               <span className="num" role="cell">{moneyOre(revenue.byEmployee.reduce((n, e) => n + e.monthlyKr, 0))}</span>
@@ -66,6 +90,7 @@ export default function RevenuePanel({ revenue }: { revenue: SubscriptionRevenue
         ) : null}
 
         <p className="revenue-note">
+          Løn vises som medarbejderens lønmodel (fast månedsløn eller akkord-provision omregnet til pr. md) — tastes under brugerstyring, sammen med evt. faste udgifter.
           Beregnet ud fra hver opgaves rytme (basisinterval × interval) over 52 uger.
           &quot;På anmodning&quot;-opgaver og pausevinduer er fratrukket. Bruges til at
           vurdere, om der er nok abonnementsarbejde til det nuværende personale.

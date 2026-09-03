@@ -50,7 +50,13 @@ export type SubscriptionRevenue = {
   /** Gennemsnitlig månedlig omsætning pr. aktivt abonnement (0 hvis ingen). */
   avgPerSubscriptionKr: number;
   /** Månedlig/årlig forventet omsætning pr. fast medarbejder, faldende sorteret. */
-  byEmployee: { employee: string; monthlyKr: number; yearlyKr: number }[];
+  byEmployee: {
+    employee: string;
+    monthlyKr: number;
+    yearlyKr: number;
+    salaryMonthlyKr: number | null;   // akkord: provision (kr/md, samme grundlag som lønrapporten); fast: fast månedsløn
+    fixedMonthlyCostKr: number | null; // faste udgifter tastes pr. medarbejder under brugerstyring
+  }[];
 };
 
 type SubRow = {
@@ -108,8 +114,35 @@ export async function getSubscriptionRevenue(): Promise<SubscriptionRevenue> {
     const key = sub.fixedEmployee || "Ingen";
     byEmployeeMap.set(key, (byEmployeeMap.get(key) ?? 0) + sumYearlyKr([sub]));
   }
+
+  // Løn + faste udgifter pr. medarbejder (User.payModel/monthlySalary/commissionPct/
+  // fixedMonthlyCost, sat under brugerstyring). Akkord-provision omregnes til et
+  // månedsniveau ud fra MEDARBEJDERENS forventede abonnementsomsætning (samme
+  // grundlag som lønrapporten: omsætning ekskl. moms × sats).
+  const MOMS = 1.25;
+  const users = await prisma.user.findMany({
+    where: { active: true },
+    select: { firstName: true, lastName: true, payModel: true, commissionPct: true, monthlySalary: true, fixedMonthlyCost: true },
+  });
+  const payByName = new Map(users.map((u) => [`${u.firstName} ${u.lastName}`.trim(), u]));
+  const DEFAULT_COMMISSION_PCT = 43;
   const byEmployee = [...byEmployeeMap.entries()]
-    .map(([employee, empYearly]) => ({ employee, monthlyKr: empYearly / MONTHS_PER_YEAR, yearlyKr: empYearly }))
+    .map(([employee, empYearly]) => {
+      const u = payByName.get(employee);
+      const monthly = empYearly / MONTHS_PER_YEAR;
+      let salary: number | null = null;
+      if (u) {
+        if (u.payModel === "akkord") salary = Math.round((monthly / MOMS) * (u.commissionPct ?? DEFAULT_COMMISSION_PCT)) / 100;
+        else salary = u.monthlySalary;
+      }
+      return {
+        employee,
+        monthlyKr: monthly,
+        yearlyKr: empYearly,
+        salaryMonthlyKr: salary,
+        fixedMonthlyCostKr: u?.fixedMonthlyCost ?? null,
+      };
+    })
     .sort((a, b) => b.monthlyKr - a.monthlyKr);
   return {
     activeCount: active.length,

@@ -22,6 +22,7 @@ export type UserRow = {
   payModel: "fast" | "akkord";
   commissionPct: number | null;
   monthlySalary: number | null;
+  fixedMonthlyCost: number | null;
   active: boolean;
 };
 
@@ -31,7 +32,7 @@ const SELECT = {
   calendarColor: true, activeCalendar: true, canReceiveOnline: true, homeAddress: true,
   isAdmin: true, canSeePrices: true, canEditOrders: true, canHandlePayment: true,
   canChangePaymentOption: true, passwordHash: true, payModel: true,
-  commissionPct: true, monthlySalary: true, active: true,
+  commissionPct: true, monthlySalary: true, fixedMonthlyCost: true, active: true,
 } as const;
 
 type UserSelected = Prisma.UserGetPayload<{ select: typeof SELECT }>;
@@ -57,6 +58,7 @@ function mapUser(u: UserSelected): UserRow {
     payModel: u.payModel === "akkord" ? "akkord" : "fast",
     commissionPct: u.commissionPct,
     monthlySalary: u.monthlySalary,
+    fixedMonthlyCost: u.fixedMonthlyCost,
     active: u.active,
   };
 }
