@@ -265,6 +265,11 @@ table.data-table tbody tr:hover { background-color: var(--row-hover); }
 textarea.form-control-sm { height: auto; min-height: 80px; }
 select.form-control-sm { background-position: right 10px center; padding-right: 30px; }
 
+/* Auto-voksende opgavebeskrivelse (TaskLineEditor): hele teksten skal kunne
+   læses — feltet ombryder og gør rækken højere i stedet for at klippe af.
+   (Overskrider textarea.form-control-sm's 80px min-højde fra én-linjes brug.) */
+textarea.task-desc { resize: none; overflow: hidden; min-height: 34px; height: auto; line-height: 1.45; }
+
 /* detached search bar */
 .searchbar { display: flex; gap: 8px; align-items: stretch; max-width: 540px; flex: 1; }
 .searchbar .form-control { flex: 1; }
