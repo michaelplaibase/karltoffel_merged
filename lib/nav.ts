@@ -52,7 +52,7 @@ export const TOP_NAV: NavMenu[] = [
     label: "Business Manager", en: "Business Manager",
     items: [
       { label: "Dashboard", en: "Dashboard", href: "/business-manager", adminOnly: true },
-      { label: "Medarbejderkalkulator", en: "Employee calculator", href: "/business-manager/medarbejdere", adminOnly: true },
+      { label: "Omsætning & medarbejdere", en: "Revenue & employees", href: "/business-manager/medarbejdere", adminOnly: true },
       { label: "Biler", en: "Vehicles", href: "/business-manager/biler", adminOnly: true },
       { label: "Maskiner", en: "Machines", href: "/business-manager/maskiner", adminOnly: true },
       { label: "Økonomiovervågning", en: "Economy monitor", href: "/business-manager/oekonomi", adminOnly: true },
@@ -81,7 +81,6 @@ export const TOP_NAV: NavMenu[] = [
     label: "Fakturering", en: "Invoicing",
     items: [
       { label: "Faktureringsoverblik", en: "Invoicing overview", href: "/fakturering" },
-      { label: "Omsætningsoverblik", en: "Revenue overview", href: "/omsaetningsoverblik", adminOnly: true },
     ],
   },
   {

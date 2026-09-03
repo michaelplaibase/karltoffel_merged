@@ -59,6 +59,7 @@ model User {
   fixedMonthlyCost Int?     // faste udgifter pr. md (fx voucher, transport)
   orders           Order[]
   timeEntries      TimeEntry[]
+  vehicles         Vehicle[]
 
   @@index([companyId])
 }
@@ -80,6 +81,8 @@ model Vehicle {
   fuelMonthly   Int      @default(0)  // brændstof (gns.)
   serviceMonthly Int     @default(0)  // værksted/service/grøn afgift
   otherMonthly  Int      @default(0)  // diverse (vask, afgifter, parkering)
+  assignedTo    User?    @relation(fields: [userId], references: [id])
+  userId        Int?     // bilens udgifter kommer på denne medarbejder; null = fordelt på alle
   note          String?
   createdAt     DateTime @default(now())
 
