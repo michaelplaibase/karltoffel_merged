@@ -11,6 +11,7 @@ import { useEffect, useRef, useState, useTransition } from "react";
 import { CatChip, money, telHref, telDisplay } from "@/components/ui";
 import { deleteOrder } from "@/app/actions/orders";
 import type { DayStop, DayUnplannedStop } from "@/lib/calendar";
+import OrderPhotoPanel from "@/components/OrderPhotoPanel";
 
 // Ordrer der er lukket/faktureret (samme sæt som CLOSED_STATUSES i lib/queries
 // og lib/booking) — markeres med grønt flueben, så medarbejderen kan SE, at
@@ -113,7 +114,7 @@ export default function DayStopCard({ stop, weekMonday }: { stop: DayStop | DayU
 
         {panel && (
           <div className="help-note" style={{ marginTop: 8, fontSize: 12.5 }}>
-            {panel === "fotos" && "Ingen fotos på ordren."}
+            {panel === "fotos" && <OrderPhotoPanel stop={stop} />}
             {panel === "bemærkninger" && (stop.comment || stop.addressNote
               ? <>{stop.comment && <div>Ordrekommentar: {stop.comment}</div>}{stop.addressNote && <div>Adressebemærkning: {stop.addressNote}</div>}</>
               : "Ingen bemærkninger")}

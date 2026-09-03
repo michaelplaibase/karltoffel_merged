@@ -53,6 +53,7 @@ model User {
   isAdmin          Boolean  @default(false)
   canSeePrices     Boolean  @default(true)
   canEditOrders    Boolean  @default(true)
+  photos           OrderPhoto[]
   canHandlePayment Boolean  @default(true)
   canChangePaymentOption Boolean @default(true)
   payModel         String   @default("fast")  // lønmodel: "fast" | "akkord"
@@ -188,6 +189,7 @@ model Contact {
   // efterfølgende ordrer kan springe opslag/oprettelse over. @unique er et værn
   // mod at oprette den samme kontakt to gange i Dinero.
   dineroContactGuid            String? @unique
+  photos        OrderPhoto[]
   subscriptions Subscription[]
   fixedPrices   FixedPriceAgreement[]
   orders        Order[]
@@ -329,6 +331,7 @@ model Order {
   businessBatchInvoicedAt       DateTime?
   businessBatchError            String?
   tasks         TaskLine[]
+  photos        OrderPhoto[]
   createdAt     DateTime  @default(now())
 
   @@unique([subscriptionId, sourceWeek]) // concurrency-værn: cron + manuel generering kan ikke dobbelt-oprette en uge
@@ -336,6 +339,27 @@ model Order {
   @@index([subscriptionId])
   @@index([plannedAt])
   @@index([businessBatchInvoiceGuid])
+}
+
+// Kvalitetssikrings-fotos (KS) fra dagsprogrammets kamera-knap (Thomas 2026-09-03).
+// Én række pr. billede. Billed-filen selv bor i Vercel Blob; her gemmes kun
+// URL'en og metadata. Kobles på ORDREN (besøget) og vises også på kunden.
+model OrderPhoto {
+  id          Int      @id @default(autoincrement())
+  order       Order    @relation(fields: [orderId], references: [id])
+  orderId     Int
+  contact     Contact  @relation(fields: [contactId], references: [id])
+  contactId   Int
+  uploadedBy  User?    @relation(fields: [uploadedById], references: [id])
+  uploadedById Int?
+  url         String   // Blob-URL (public)
+  pathname    String   // Blob-path (til sletning)
+  kind        String   @default("ks") // KS = kvalitetssikring
+  note        String?
+  createdAt   DateTime @default(now())
+
+  @@index([orderId])
+  @@index([contactId])
 }
 
 // Engangs-token udstedt sammen med en tilbudsmail, så kunden kan klikke Ja/
