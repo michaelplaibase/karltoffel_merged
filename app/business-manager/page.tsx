@@ -3,7 +3,7 @@
 import { getSessionUser } from "@/lib/api-auth";
 import { redirect } from "next/navigation";
 import { getBusinessManager } from "@/lib/business-manager";
-import { todayCphISO } from "@/lib/calendar";
+import ResultChart from "@/components/ResultChart";
 
 const kr = (n: number) => n.toLocaleString("da-DK") + " kr";
 
@@ -36,6 +36,25 @@ export default async function BusinessManagerDashboard({ searchParams }: { searc
         <div className="revenue-kpi">
           <span className="revenue-kpi-label">Timer solgt i perioden</span>
           <span className="revenue-kpi-value">{data.realised.hours.toLocaleString("da-DK")} t</span>
+        </div>
+        <div className="revenue-kpi">
+          <span className="revenue-kpi-label">Resultat — måned</span>
+          <span className="revenue-kpi-value" style={{ color: data.companyResultat.md < 0 ? "var(--danger, #C4183C)" : "var(--success, #2e7d32)" }}>
+            {kr(data.companyResultat.md)}{data.companyResultat.mdPct != null ? ` (${data.companyResultat.mdPct > 0 ? "+" : ""}${data.companyResultat.mdPct} %)` : ""}
+          </span>
+        </div>
+        <div className="revenue-kpi">
+          <span className="revenue-kpi-label">Resultat — år til dato</span>
+          <span className="revenue-kpi-value" style={{ color: data.companyResultat.year < 0 ? "var(--danger, #C4183C)" : "var(--success, #2e7d32)" }}>
+            {kr(data.companyResultat.year)}{data.companyResultat.yearPct != null ? ` (${data.companyResultat.yearPct > 0 ? "+" : ""}${data.companyResultat.yearPct} %)` : ""}
+          </span>
+        </div>
+      </div>
+
+      <div className="card" style={{ marginBottom: 16 }}>
+        <div className="card-header"><h4 className="section-title">Årets udvikling — omsætning, omkostninger og resultat pr. måned</h4></div>
+        <div className="card-body">
+          <ResultChart data={data.monthly} />
         </div>
       </div>
 
