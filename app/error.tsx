@@ -5,6 +5,9 @@ import Link from "next/link";
 // Global error boundary — uden den ender enhver uventet fejl som en rå
 // Next.js-500 uden navigation eller forklaring.
 export default function Error({ error, reset }: { error: Error & { digest?: string }; reset: () => void }) {
+  // Log altid til serveren (Vercel runtime logs) — ellers kan vi ikke se årsagen
+  // bag "Der gik noget galt". Klient-komponent, så det måske duplikerer — fint.
+  if (typeof console !== "undefined") console.error("[error-boundary]", error?.digest, error);
   return (
     <div className="container-1140" style={{ paddingTop: 48, maxWidth: 640 }}>
       <div className="card">

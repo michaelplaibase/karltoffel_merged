@@ -8,6 +8,8 @@ import { getBusinessManager } from "@/lib/business-manager";
 import { saveBudget } from "@/app/actions/business-manager";
 
 const kr = (n: number) => n.toLocaleString("da-DK") + " kr";
+export const dynamic = "force-dynamic";
+
 const MD = ["Januar", "Februar", "Marts", "April", "Maj", "Juni", "Juli", "August", "September", "Oktober", "November", "December"];
 
 export default async function EconomyPage({ searchParams }: { searchParams: Promise<{ year?: string; month?: string }> }) {

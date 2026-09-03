@@ -81,7 +81,10 @@ export async function invoiceNow(orderId: number): Promise<InvoiceNowResult> {
   const user = await getSessionUser();
   if (!user?.isAdmin) return { ok: false, error: "Kun administratorer kan fakturere herfra." };
   try {
-    const res = await issueInvoiceForOrder(orderId);
+    // Thomas, 2026-09-03: "Fakturer nu" er en BEVIDST manuel handling og skal
+    // tilsidesætte en gemt "Send ikke faktura"/"Registrer senere"-beslutning —
+    // dvs. fakturere alligevel (se overrideInvoiceDecision i lib/dinero.ts).
+    const res = await issueInvoiceForOrder(orderId, { overrideInvoiceDecision: true });
     if (!res.ok) return { ok: false, error: res.error ?? "Fakturering fejlede — intet blev sendt." };
     revalidatePath("/fakturering");
     const message =

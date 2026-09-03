@@ -3,6 +3,8 @@ import { redirect } from "next/navigation";
 import { getSessionUser } from "@/lib/api-auth";
 import BusinessManagerTabs from "@/components/BusinessManagerTabs";
 
+export const dynamic = "force-dynamic";
+
 export const metadata = { title: "Business Manager · Karltoffel Business Manager" };
 
 export default async function BusinessManagerLayout({ children }: { children: React.ReactNode }) {

@@ -7,6 +7,8 @@ import ResultChart from "@/components/ResultChart";
 
 const kr = (n: number) => n.toLocaleString("da-DK") + " kr";
 
+export const dynamic = "force-dynamic";
+
 export default async function BusinessManagerDashboard({ searchParams }: { searchParams: Promise<{ year?: string; month?: string }> }) {
   const me = await getSessionUser();
   if (!me) redirect("/login");

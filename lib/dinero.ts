@@ -443,12 +443,17 @@ const BOOKED_STATES = new Set(["Booked", "Sent", "Paid"]);
  * runs and crash-recovery cannot create a second invoice; each later step is
  * persisted before the next.
  */
-export async function issueInvoiceForOrder(orderId: number): Promise<IssueResult> {
+export async function issueInvoiceForOrder(
+  orderId: number,
+  opts?: { /** Thomas, 2026-09-03: bevidst manuelt "Fakturer nu" tilsidesætter en gemt "Send ikke faktura"/"Registrer senere"-beslutning og fakturerer alligevel. */
+    overrideInvoiceDecision?: boolean },
+): Promise<IssueResult> {
   const order = await prisma.order.findUnique({ where: { id: orderId }, include: { contact: true, tasks: true } });
   if (!order) return { ok: false, status: "Failed", error: "Ordre ikke fundet" };
 
   const decision = order.invoiceDecision;
-  if (!decision || !isInvoiceDecision(decision) || decision === D_NONE || decision === D_LATER) {
+  const decisionBlocked = !decision || !isInvoiceDecision(decision) || decision === D_NONE || decision === D_LATER;
+  if (decisionBlocked && !opts?.overrideInvoiceDecision) {
     return { ok: true, status: decision === D_LATER ? "later" : "none" };
   }
 
@@ -477,7 +482,10 @@ export async function issueInvoiceForOrder(orderId: number): Promise<IssueResult
   // kun efter erhvervs-flaget — alle kontakter med reglen maaned/kvartal skal
   // samles (lib/business-invoicing.ts); ''/auto afledes (erhverv → maaned,
   // privat → pr_gang). pr_gang (inkl. privat-auto) fortsætter som før.
-  const goesToBatch = effectiveInvoiceFrequency(order.contact) !== "pr_gang";
+  // Thomas, 2026-09-03: "Fakturer nu" overroller ALT — også samlefaktura-værnet.
+  // Batchen udelukker allerede ordrer med guid (dineroInvoiceGuid != null), så en
+  // manuel pr.-ordre-faktura her aldrig kan give dobbeltfakturering på d. 20.
+  const goesToBatch = !opts?.overrideInvoiceDecision && effectiveInvoiceFrequency(order.contact) !== "pr_gang";
   if (goesToBatch && !perOrderBooked && !hasPerOrderDraft && decision !== D_SEND_CASH) {
     await prisma.order.updateMany({
       where: { id: orderId, dineroInvoiceGuid: null, dineroInvoiceNumber: null },

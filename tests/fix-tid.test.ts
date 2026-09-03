@@ -13,7 +13,10 @@ test("issueInvoiceForOrder afviser pr.-ordre-fakturering for erhvervskontakter",
   // Autoritativt værn (2026-09-03): kunder med faktureringsreglen maaned/kvartal
   // (og erhverv via auto-afledning, se goesToBatch/effectiveInvoiceFrequency)
   // uden allerede bogført pr.-ordre-faktura → status "Samlefaktura", intet Dinero-kald.
-  assert.match(dinero, /goesToBatch = effectiveInvoiceFrequency\(order\.contact\) !== "pr_gang"/);
+  // Thomas, 2026-09-03: "Fakturer nu" overroller ALT (også samlefaktura-værnet) —
+  // goesToBatch er false ved overrideInvoiceDecision. Normal-flowet bevares:
+  assert.match(dinero, /effectiveInvoiceFrequency\(order\.contact\) !== "pr_gang"/);
+  assert.match(dinero, /goesToBatch = !opts\?\.overrideInvoiceDecision &&/);
   assert.match(dinero, /goesToBatch && !perOrderBooked/);
   assert.match(dinero, /dineroInvoiceStatus: "Samlefaktura"/);
   assert.match(dinero, /return \{ ok: true, status: "Samlefaktura" \}/);
