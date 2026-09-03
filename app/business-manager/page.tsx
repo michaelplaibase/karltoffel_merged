@@ -51,6 +51,14 @@ export default async function BusinessManagerDashboard({ searchParams }: { searc
             {kr(data.companyResultat.year)}{data.companyResultat.yearPct != null ? ` (${data.companyResultat.yearPct > 0 ? "+" : ""}${data.companyResultat.yearPct} %)` : ""}
           </span>
         </div>
+        <div className="revenue-kpi">
+          <span className="revenue-kpi-label">Dækningsgrad — måned</span>
+          <span className="revenue-kpi-value">{data.companyCoverage.mdPct != null ? `${data.companyCoverage.mdPct} %` : "—"}</span>
+        </div>
+        <div className="revenue-kpi">
+          <span className="revenue-kpi-label">Dækningsgrad — år til dato</span>
+          <span className="revenue-kpi-value">{data.companyCoverage.yearPct != null ? `${data.companyCoverage.yearPct} %` : "—"}</span>
+        </div>
       </div>
 
       <div className="card" style={{ marginBottom: 16 }}>

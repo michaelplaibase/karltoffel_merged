@@ -70,6 +70,7 @@ export type BusinessManagerData = {
   deviations: Deviation[];
   suggestions: string[];
   companyResultat: { md: number; mdPct: number | null; year: number; yearPct: number | null };
+  companyCoverage: { md: number; mdPct: number | null; year: number; yearPct: number | null };
   monthly: { label: string; revenue: number; cost: number; result: number }[];
 };
 
@@ -221,6 +222,14 @@ export async function getBusinessManager(opts?: { fromISO?: string; toISO?: stri
   const companyMonthlyCost = employees.reduce((a, e) => a + e.totalCostMonthly, 0);
   const companyResultatMd = realised.revenueExVat - companyMonthlyCost;
   const companyResultatYear = Math.round(realised.revenueInclVatYear / (1 + MOMS)) - companyMonthlyCost * monthsElapsed;
+  // Dækningsgrad på virksomheden: (omsætning ekskl. moms − omkostninger) / omsætning ekskl. moms.
+  const revenueYearExVat = Math.round(realised.revenueInclVatYear / (1 + MOMS));
+  const companyCoverage = {
+    md: companyResultatMd,
+    mdPct: realised.revenueExVat > 0 ? Math.round((companyResultatMd / realised.revenueExVat) * 100) : null,
+    year: companyResultatYear,
+    yearPct: revenueYearExVat > 0 ? Math.round((companyResultatYear / revenueYearExVat) * 100) : null,
+  };
 
   const revenueBudget = budgetRow?.revenueBudget ?? 0;
   const costBudget = budgetRow?.costBudget ?? 0;
@@ -300,8 +309,9 @@ export async function getBusinessManager(opts?: { fromISO?: string; toISO?: stri
       md: companyResultatMd,
       mdPct: realised.revenueExVat > 0 ? Math.round((companyResultatMd / realised.revenueExVat) * 100) : null,
       year: companyResultatYear,
-      yearPct: monthsElapsed > 0 ? Math.round((companyResultatYear / Math.max(1, Math.round(realised.revenueInclVatYear / (1 + MOMS)))) * 100) : null,
+      yearPct: revenueYearExVat > 0 ? Math.round((companyResultatYear / revenueYearExVat) * 100) : null,
     },
+    companyCoverage,
     monthly,
   };
 }
