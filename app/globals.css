@@ -290,6 +290,11 @@ select.form-control-sm { background-position: right 10px center; padding-right: 
 .revenue-emps-total span:first-child { color: var(--muted); font-weight: 600; }
 @media (max-width: 575.98px) { .revenue-emps-header, .revenue-emps-row { font-size: 12px; gap: 8px; } .revenue-emps-header { font-size: 10px; } }
 @media (max-width: 1199.98px) { .subs-layout { grid-template-columns: minmax(0, 1fr); } .revenue-panel { position: static; } }
+/* faktureringsoverblik: panelet først i DOM (mobil = øverst), men i højre kolonne på desktop */
+@media (min-width: 1200px) {
+  .subs-layout > .revenue-panel { grid-column: 2; grid-row: 1; }
+  .subs-layout > div:not(.revenue-panel) { grid-column: 1; grid-row: 1; }
+}
 
 /* chromeless modal-style form page (create/edit) */
 .form-page { min-height: 100vh; background: #F3EFE6; display: flex; align-items: flex-start;

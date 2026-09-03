@@ -11,6 +11,8 @@ import { todayCphISO } from "@/lib/calendar";
 import { CatChip, money } from "@/components/ui";
 import VerifyInvoicingButton from "@/components/VerifyInvoicingButton";
 import CleanupDescriptionsButton from "@/components/CleanupDescriptionsButton";
+import RevenuePanel from "@/components/RevenuePanel";
+import { getSubscriptionRevenue } from "@/lib/subscription-revenue";
 
 export const metadata = { title: "Faktureringsoverblik · Karltoffel" };
 
@@ -152,7 +154,8 @@ function Table({ rows, empty }: { rows: Row[]; empty: string }) {
 export default async function InvoicingOverviewPage() {
   const user = await getSessionUser();
   if (!user) redirect("/login");
-  const rows = await loadRows();
+  // Omsætningsoverblik (Thomas, 2026-09-03: flyttet fra regnskab til fakturering) — kun administratorer.
+  const [rows, revenue] = await Promise.all([loadRows(), user.isAdmin ? getSubscriptionRevenue() : Promise.resolve(null)]);
 
   // 1) Færdigmeldt (Udført) og stadig uden faktura → klar til at blive faktureret.
   const ready = rows.filter((o) => o.status === "Udført" && !o.invoice);
@@ -172,23 +175,29 @@ export default async function InvoicingOverviewPage() {
         og alt der endnu ikke er meldt færdigt. Åbn en ordre for at rykke dens dato.
       </p>
 
-      <VerifyInvoicingButton />
+      <div className="subs-layout">
+        {revenue ? <RevenuePanel revenue={revenue} /> : null}
 
-      <CleanupDescriptionsButton />
+        <div>
+          <VerifyInvoicingButton />
 
-      <div className="card" style={{ marginBottom: 16 }}>
-        <div className="card-header"><h4 className="section-title">Klar til fakturering ({ready.length}) — {money(sum(ready))}</h4></div>
-        <div className="card-body tight"><Table rows={ready} empty="Intet venter på fakturering 🎉" /></div>
-      </div>
+          <CleanupDescriptionsButton />
 
-      <div className="card" style={{ marginBottom: 16 }}>
-        <div className="card-header"><h4 className="section-title">Ikke meldt færdigt ({notDone.length}) — {money(sum(notDone))}</h4></div>
-        <div className="card-body tight"><Table rows={notDone} empty="Ingen uafsluttede fortidsordrer." /></div>
-      </div>
+          <div className="card" style={{ marginBottom: 16 }}>
+            <div className="card-header"><h4 className="section-title">Klar til fakturering ({ready.length}) — {money(sum(ready))}</h4></div>
+            <div className="card-body tight"><Table rows={ready} empty="Intet venter på fakturering 🎉" /></div>
+          </div>
 
-      <div className="card">
-        <div className="card-header"><h4 className="section-title">Faktureret / lukket ({done.length}) — {money(sum(done))}</h4></div>
-        <div className="card-body tight"><Table rows={done} empty="Ingenting er faktureret endnu." /></div>
+          <div className="card" style={{ marginBottom: 16 }}>
+            <div className="card-header"><h4 className="section-title">Ikke meldt færdigt ({notDone.length}) — {money(sum(notDone))}</h4></div>
+            <div className="card-body tight"><Table rows={notDone} empty="Ingen uafsluttede fortidsordrer." /></div>
+          </div>
+
+          <div className="card">
+            <div className="card-header"><h4 className="section-title">Faktureret / lukket ({done.length}) — {money(sum(done))}</h4></div>
+            <div className="card-body tight"><Table rows={done} empty="Ingenting er faktureret endnu." /></div>
+          </div>
+        </div>
       </div>
     </div>
   );
