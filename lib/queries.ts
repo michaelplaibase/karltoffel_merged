@@ -821,6 +821,15 @@ export async function getCalendarWeek(weekMonday: string, viewer?: { id: number;
         lock: (s.job.locked ? "fastlaast" : "frigjort") as LockState, employeeId: d.employeeId,
         contactId: s.job.contactId, subscriptionNo: meta?.subNo ?? null,
         phone: meta?.phone ?? null,
+        // Thomas (2026-09-03): kalenderkortene skal kunne vise ordenens opgaver,
+        // ikke kun kundenavn — samme data dagsprogrammet allerede viser.
+        tasks: (meta?.tasks ?? []).map((t) => ({
+          id: t.price, // TaskLine har intet id-felt; nøgle bruges kun til React-listen
+          category: t.category,
+          description: t.description,
+          intervalMultiplier: t.interval ?? null,
+          durationMin: t.durationMin,
+        })),
       };
     })
   );
@@ -856,7 +865,16 @@ export async function getCalendarWeek(weekMonday: string, viewer?: { id: number;
     return {
       id: job.id, postal: job.postal, customer: job.customer, category: job.category,
       status: calStatusOf(meta?.status ?? "Afventer levering"), contactId: job.contactId,
-      subscriptionNo: meta?.subNo ?? null, phone: meta?.phone ?? null, reason,
+      subscriptionNo: meta?.subNo ?? null, phone: meta?.phone ?? null,
+      // Thomas (2026-09-03): også ikke-planlagte kort kan folde opgaverne ud.
+      tasks: (meta?.tasks ?? []).map((t) => ({
+        id: t.price,
+        category: t.category,
+        description: t.description,
+        intervalMultiplier: t.interval ?? null,
+        durationMin: t.durationMin,
+      })),
+      reason,
     };
   });
 
@@ -994,6 +1012,7 @@ export async function getCalendarMonth(monthParam: string, viewer?: { id: number
             postal: s.job.postal, category: s.job.category,
             status: calStatusOf(meta?.status ?? "Afventer levering"),
             contactId: s.job.contactId,
+            tasks: (meta?.tasks ?? []).map((t) => t.description).filter(Boolean),
           };
         }));
       // Ikke-planlagte ordrer vises på deres persisterede ugedag — måneds-
@@ -1007,6 +1026,7 @@ export async function getCalendarMonth(monthParam: string, viewer?: { id: number
           postal: job.postal, category: job.category,
           status: calStatusOf(wp.metaById.get(job.id)?.status ?? "Afventer levering"),
           contactId: job.contactId,
+          tasks: (wp.metaById.get(job.id)?.tasks ?? []).map((t) => t.description).filter(Boolean),
           unplanned: true, reason,
         })));
       return {

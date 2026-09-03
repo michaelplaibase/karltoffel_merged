@@ -74,20 +74,14 @@ const catLetter = (category: string) => (category.charAt(0) || "?").toUpperCase(
 function PreviewTaskDetails({ tasks }: { tasks: CalendarTaskDetail[] }) {
   if (!tasks.length) return null;
   return (
-    <details onClick={(event) => event.stopPropagation()}
-      style={{ marginTop: 5, borderTop: "1px solid var(--tc-line-soft)", paddingTop: 4 }}>
-      <summary style={{ cursor: "pointer", fontSize: 11, fontWeight: 700 }}>
-        {tasks.length} {tasks.length === 1 ? "opgave" : "opgaver"} · vis detaljer
-      </summary>
-      <div style={{ display: "grid", gap: 5, marginTop: 5 }}>
-        {tasks.map((task) => (
-          <div key={task.id} style={{ fontSize: 11, lineHeight: 1.35 }}>
-            <strong>{task.category}</strong> · {task.description}<br />
-            <span>{task.intervalMultiplier ?? "Hver gang"} · {task.durationDefaulted ? "60 min. (standardtid)" : `${task.durationMin} min.`}</span>
-          </div>
-        ))}
-      </div>
-    </details>
+    <span className="ev-tasks" onClick={(event) => event.stopPropagation()}>
+      {tasks.map((task, i) => (
+        <span key={task.id !== undefined ? task.id : i} className="ev-task" style={{ fontSize: 11, lineHeight: 1.35, display: "block" }}>
+          <strong>{task.category}</strong> · {task.description}
+          <span className="num" style={{ opacity: 0.75 }}> · {task.durationMin} min.</span>
+        </span>
+      ))}
+    </span>
   );
 }
 
@@ -288,7 +282,7 @@ export default function TeamCalendarClient(props: Props) {
                                 <i className="cat" style={{ "--cat": categoryColor(ev.category) } as React.CSSProperties}>{catLetter(ev.category)}</i>
                                 <span className="txt">{ev.customer}</span>
                               </span>
-                              {readOnly && <PreviewTaskDetails tasks={ev.tasks ?? []} />}
+                              {<PreviewTaskDetails tasks={ev.tasks ?? []} />}
                               {readOnly && ev.previewSuggestion && <span className="hint">{ev.previewSuggestion}</span>}
                             </div>
                           ))}
@@ -331,7 +325,7 @@ export default function TeamCalendarClient(props: Props) {
                     <span className="unplanned-reason-label">Årsag:</span>
                     {UNPLANNED_REASON_LABEL[job.reason] ?? "Ukendt årsag"}
                   </span>
-                  {readOnly && <PreviewTaskDetails tasks={job.tasks ?? []} />}
+                  <PreviewTaskDetails tasks={job.tasks ?? []} />
                 </div>
               ))}
             </div>
@@ -364,7 +358,7 @@ export default function TeamCalendarClient(props: Props) {
                       title="Åbn dagsprogrammet for dagen">{d.dateNum}</Link>
                     {chips.slice(0, 3).map((c) => (
                       <span key={c.id} className="chip"
-                        title={c.unplanned ? `Ikke planlagt: ${UNPLANNED_REASON_LABEL[c.reason ?? ""] ?? "Ukendt årsag"}` : undefined}
+                        title={[c.unplanned ? `Ikke planlagt: ${UNPLANNED_REASON_LABEL[c.reason ?? ""] ?? "Ukendt årsag"}` : null, ...(c.tasks ?? [])].filter(Boolean).join(" — ") || undefined}
                         style={{
                           ...empVar(empById.get(c.employeeId)?.color ?? "var(--muted)"),
                           ...(c.unplanned ? { outline: "1.5px dashed var(--danger, #C4183C)", outlineOffset: -1 } : {}),

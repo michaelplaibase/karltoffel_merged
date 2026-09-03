@@ -80,6 +80,7 @@ export type MonthChip = {
   postal: string; category: string; status: CalStatus; contactId: number;
   unplanned?: boolean;                    // ordren kunne ikke placeres — vis markeret
   reason?: string;                        // unplanned-årsagsnøgle (se UNPLANNED_REASON_LABEL)
+  tasks?: string[];                       // opgavebeskrivelser (Thomas 2026-09-03: måneds-chips med opgavetekst)
 };
 export type MonthDay = {
   dateISO: string; dateNum: number; weekday: number; // 0..6
