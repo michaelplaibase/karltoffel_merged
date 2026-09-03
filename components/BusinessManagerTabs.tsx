@@ -6,7 +6,7 @@ import { usePathname } from "next/navigation";
 
 const TABS = [
   { href: "/business-manager", label: "Dashboard", exact: true },
-  { href: "/business-manager/medarbejdere", label: "Medarbejderkalkulator" },
+  { href: "/business-manager/medarbejdere", label: "Omsætning & medarbejdere" },
   { href: "/business-manager/biler", label: "Biler" },
   { href: "/business-manager/maskiner", label: "Maskiner" },
   { href: "/business-manager/oekonomi", label: "Økonomiovervågning" },

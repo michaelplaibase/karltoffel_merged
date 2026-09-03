@@ -30,6 +30,8 @@ export type EmployeeCalc = {
   id: number;
   navn: string;
   payModel: "fast" | "akkord";
+  subMonthlyKr: number;       // forventet abonnementsomsætning/md (inkl. moms)
+  subYearlyKr: number;        // forventet abonnementsomsætning/år (inkl. moms)
   salaryMonthly: number;      // fast løn ELLER akkord-provision på normtid (estimat)
   fixedMonthlyCost: number;   // faste udgifter (voucher, transport osv.)
   shareOfFleetMonthly: number; // biler (tildelt + fordelt) + maskiner fordelt ligeligt
@@ -78,7 +80,7 @@ export async function getBusinessManager(opts?: { fromISO?: string; toISO?: stri
   const fromD = new Date(`${fromISO}T00:00:00.000Z`);
   const toD = new Date(`${toISO}T23:59:59.999Z`);
 
-  const [users, vehicles, machines, orders, budgetRow] = await Promise.all([
+  const [users, vehicles, machines, orders, budgetRow, subs] = await Promise.all([
     prisma.user.findMany({
       where: { active: true },
       select: { id: true, firstName: true, lastName: true, payModel: true, commissionPct: true, monthlySalary: true, fixedMonthlyCost: true },
@@ -93,7 +95,37 @@ export async function getBusinessManager(opts?: { fromISO?: string; toISO?: stri
     prisma.budget.findUnique({
       where: { companyId_year_month: { companyId: 1, year, month } },
     }).catch(() => null),
+    prisma.subscription.findMany({
+      where: { active: true, pending: false },
+      select: { fixedEmployee: true, baseInterval: true, tasks: { select: { price: true, intervalMultiplier: true, pauseActive: true, pauseStart: true, pauseEnd: true, pauseYearly: true } } },
+    }),
   ]);
+
+  // Abonnementsomsætning pr. fast medarbejder — samme rytme-regler som
+  // lib/subscription-revenue.ts (genbruger funktionerne via dynamisk import er
+  // unødvendigt: logikken er lille og holdes her, så API'et forbliver ét kald).
+  const WEEKS = 52, MONTHS = 12;
+  const parseBase = (label: string) => { const m = label.match(/Hver\s+(\d+)\.\s*uge/i); return m ? Math.max(1, Number(m[1])) : 1; };
+  const parseMult = (label: string | null) => { if (!label) return 1; if (/anmodning/i.test(label)) return 0; const m = label.match(/Hver\s+(\d+)\.\s*gang/i); return m ? Math.max(1, Number(m[1])) : 1; };
+  const pausedOn = (t: { pauseActive: boolean; pauseStart: string | null; pauseEnd: string | null }, iso: string) =>
+    !!(t.pauseActive && t.pauseStart && t.pauseEnd && iso >= t.pauseStart && iso <= t.pauseEnd);
+  const subYearlyByEmployee = new Map<string, number>();
+  for (const sub of subs) {
+    let yearly = 0;
+    for (const t of sub.tasks) {
+      const mult = parseMult(t.intervalMultiplier);
+      if (mult === 0) continue;
+      const stepWeeks = parseBase(sub.baseInterval) * mult;
+      let activeWeeks = 0;
+      for (let w = 0; w < Math.ceil(WEEKS / stepWeeks); w++) {
+        const d = new Date(Date.UTC(2026, 0, 1) + w * stepWeeks * 7 * 864e5);
+        if (!pausedOn(t, d.toISOString().slice(0, 10))) activeWeeks++;
+      }
+      yearly += (t.price * activeWeeks) / stepWeeks;
+    }
+    const key = sub.fixedEmployee || "Ingen";
+    subYearlyByEmployee.set(key, (subYearlyByEmployee.get(key) ?? 0) + yearly);
+  }
 
   const nEmployees = Math.max(1, users.length);
   const machinesMonthly = machines.reduce((a, m) => a + machineMonthlyCost(m), 0);
@@ -144,6 +176,8 @@ export async function getBusinessManager(opts?: { fromISO?: string; toISO?: stri
       id: u.id,
       navn: `${u.firstName} ${u.lastName}`.trim(),
       payModel,
+      subYearlyKr: subYearlyByEmployee.get(`${u.firstName} ${u.lastName}`.trim()) ?? 0,
+      subMonthlyKr: Math.round(((subYearlyByEmployee.get(`${u.firstName} ${u.lastName}`.trim()) ?? 0) / MONTHS) * 100) / 100,
       salaryMonthly,
       fixedMonthlyCost,
       shareOfFleetMonthly,
