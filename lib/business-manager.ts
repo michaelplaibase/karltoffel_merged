@@ -8,6 +8,7 @@
 import { prisma } from "./db";
 import { MOMS } from "./data";
 import { getSubscriptionRevenue } from "./subscription-revenue";
+import { getPayroll } from "./payroll";
 
 export const HOURS_PER_MONTH = 160; // standardnorm: 1 fuldtidsmedarbejder
 
@@ -88,8 +89,9 @@ export async function getBusinessManager(opts?: { fromISO?: string; toISO?: stri
   const now = new Date();
   const year = opts?.year ?? now.getFullYear();
   const month = opts?.month ?? now.getMonth() + 1;
-  const fromISO = opts?.fromISO ?? iso(new Date(year, month - 1, 1));
-  const toISO = opts?.toISO ?? iso(new Date(year, month - 1 + 1, 0)); // sidste dag i måneden
+  // LØNPERIODE (Thomas, 2026-09-03): 21. i forrige måned → 20. i denne måned.
+  const fromISO = opts?.fromISO ?? iso(new Date(year, month - 2, 21));
+  const toISO = opts?.toISO ?? iso(new Date(year, month - 1, 20));
 
   const fromD = new Date(`${fromISO}T00:00:00.000Z`);
   const toD = new Date(`${toISO}T23:59:59.999Z`);
@@ -122,6 +124,8 @@ export async function getBusinessManager(opts?: { fromISO?: string; toISO?: stri
   // Abonnementsomsætning pr. fast medarbejder: hentes fra lib/subscription-revenue
   // (SAMME kilde som det gamle Omsætningsoverblik — tallene er dermed identiske).
   const subRev = await getSubscriptionRevenue();
+  const payroll = await getPayroll(fromISO, toISO);
+  const payrollByUser = new Map(payroll.rows.map((r) => [r.id, r]));
   const subMonthlyByName = new Map(subRev.byEmployee.map((e) => [e.employee, e.monthlyKr]));
   const subYearlyByName = new Map(subRev.byEmployee.map((e) => [e.employee, e.yearlyKr]));
 
@@ -171,9 +175,12 @@ export async function getBusinessManager(opts?: { fromISO?: string; toISO?: stri
 
   const employees: EmployeeCalc[] = users.map((u) => {
     const payModel = u.payModel === "akkord" ? "akkord" : "fast";
+    // Løn hentes fra LØNRAPPORTEN (lib/payroll.ts — samme kalkule som der):
+    // fast løn = det manuelle månedsbeløb; akkord = provisionen på den seneste
+    // lønperiode (21.–20.), ganget op til et månedsniveau.
     const salaryMonthly = payModel === "fast"
       ? (u.monthlySalary ?? 0)
-      : Math.round((HOURS_PER_MONTH * 300 * (u.commissionPct ?? 43)) / 100); // akkord-estimat: 300 kr/time ekskl. moms × sats på normtid
+      : (payrollByUser.get(u.id)?.provision ?? 0);
     const fixedMonthlyCost = u.fixedMonthlyCost ?? 0;
     const shareOfFleetMonthly = fleetFor(u.id);
     const totalCostMonthly = salaryMonthly + fixedMonthlyCost + shareOfFleetMonthly;
