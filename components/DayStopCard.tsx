@@ -45,6 +45,21 @@ export default function DayStopCard({ stop, weekMonday }: { stop: DayStop | DayU
   }, [more]);
 
   const tel = telHref(stop.phone);
+  const smsNum = telHref(stop.phone)?.replace("tel:", "");
+  // SMS-knapper (Thomas 2026-09-03): åbn tablettelefonens besked-app med nummer
+  // + standardtekst allerede udfyldt. Medarbejderen ser teksten og trykker Send.
+  // Opgavetitlen (kategori + beskrivelse på første opgavelinje) sættes automatisk ind.
+  const firstTask = stop.tasks[0];
+  const taskTitle = firstTask ? [firstTask.category, firstTask.description].filter(Boolean).join(" – ") : "";
+  const SMS_TEMPLATES: [string, string][] = [
+    ["Vi er på vej", `Vi er på vej\nMvh Karltoffel.dk`],
+    ["Puds vinduer i morgen", `Vi kommer i morgen og pudser vinduer indvendig\nMvh Karltoffel.dk`],
+    ["Udføre opgaven i morgen", `Vi kommer i morgen og udføre ${taskTitle || "den aftalte opgave"}\nMvh Karltoffel.dk`],
+  ];
+  // Returnér `string | undefined` (ikke null) — Next <Link>/<a> title-prop-typen
+  // tillader ikke null, og null fortæller React "kontrolleret tom titel".
+  const smsHref = (text: string): string | undefined =>
+    smsNum ? `sms:${smsNum}?&body=${encodeURIComponent(text)}` : undefined;
 
   const icons: [string, string, string][] = [
     ["fotos", "bi-image", "fotos"],
@@ -116,12 +131,36 @@ export default function DayStopCard({ stop, weekMonday }: { stop: DayStop | DayU
           : <button className="btn btn-outline-primary btn-sm" disabled title="Ordren stammer ikke fra et abonnement">Rediger abo.</button>}
         <button className="btn btn-outline-primary btn-sm" onClick={() => setMore((v) => !v)}>Mere ▾</button>
 
+        {smsNum ? (
+          <a className="btn btn-outline-primary btn-sm" href={smsHref(SMS_TEMPLATES[0][1])}
+            title={`Send SMS: ${SMS_TEMPLATES[0][0]}`}>
+            <i className="bi bi-chat-dots" /> Send SMS
+          </a>
+        ) : (
+          <button className="btn btn-outline-primary btn-sm" disabled
+            title="Kunden har intet telefonnummer — der kan ikke sendes SMS">
+            <i className="bi bi-chat-dots" /> Send SMS
+          </button>
+        )}
+
         {more && (
           <div className="dropdown-menu" style={{ display: "block", right: 0, left: "auto", top: "calc(100% + 2px)" }} onMouseLeave={() => setMore(false)}>
             <Link href={`/calendar?week=${weekMonday}`} className="dropdown-item" onClick={() => setMore(false)}><span>Vis i kalender</span></Link>
             <Link href={`/customers/${stop.contactId}`} className="dropdown-item" onClick={() => setMore(false)}><span>Gå til kundedetaljer</span></Link>
             <button type="button" className="dropdown-item" style={{ width: "100%", textAlign: "left", background: "none", border: 0, cursor: "pointer" }}
               onClick={() => { setMore(false); setNotice(`Notifikation sendt til ${stop.customer} (simuleret).`); }}><span>Send notifikation nu</span></button>
+            {smsNum && (
+              <a href={smsHref(SMS_TEMPLATES[1][1])} className="dropdown-item"
+                title={`Send SMS: ${SMS_TEMPLATES[1][0]}`} onClick={() => setMore(false)}>
+                <span>Send SMS: {SMS_TEMPLATES[1][0]}</span>
+              </a>
+            )}
+            {smsNum && (
+              <a href={smsHref(SMS_TEMPLATES[2][1])} className="dropdown-item"
+                title={`Send SMS: ${SMS_TEMPLATES[2][0]}` as string | undefined} onClick={() => setMore(false)}>
+                <span>Send SMS: {SMS_TEMPLATES[2][0]}</span>
+              </a>
+            )}
             <button type="button" className="dropdown-item" style={{ width: "100%", textAlign: "left", background: "none", border: 0, cursor: "pointer", color: "var(--danger, #C4183C)" }}
               onClick={() => { setMore(false); setConfirm(true); }}><span>Slet ordre …</span></button>
           </div>
