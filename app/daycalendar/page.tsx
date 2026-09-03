@@ -7,7 +7,7 @@ import { getSessionUser } from "@/lib/api-auth";
 import { getOpenTimeEntry, cphTime } from "@/lib/timesheet";
 import CheckInOut from "@/components/CheckInOut";
 
-export const metadata = { title: "Dagsprogram · Karltoffel" };
+export const metadata = { title: "Dagsprogram · Karltoffel Business Manager" };
 
 export default async function DayCalendarPage({ searchParams }: { searchParams: Promise<{ date?: string }> }) {
   const sp = await searchParams;

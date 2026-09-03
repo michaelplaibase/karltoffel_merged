@@ -5,7 +5,7 @@ import { isoWeek } from "@/lib/planner";
 import { weekMondayToday } from "@/lib/calendar";
 import OrderCreateForm, { type WeekOption } from "@/components/OrderCreateForm";
 
-export const metadata = { title: "Opret ny ordre · Karltoffel" };
+export const metadata = { title: "Opret ny ordre · Karltoffel Business Manager" };
 
 /** Next `count` week options starting at `fromMondayISO`, value = Monday ISO. */
 function weekOptions(fromMondayISO: string, count: number): WeekOption[] {

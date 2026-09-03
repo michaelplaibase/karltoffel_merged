@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import { getSessionUser } from "@/lib/api-auth";
 import { getTimesheet } from "@/lib/timesheet";
 
-export const metadata = { title: "Timeregistrering · Karltoffel" };
+export const metadata = { title: "Timeregistrering · Karltoffel Business Manager" };
 
 export default async function TimesheetPage() {
   const me = await getSessionUser();

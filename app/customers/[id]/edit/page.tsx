@@ -4,7 +4,7 @@ import { getContactEditData } from "@/lib/queries";
 import { updateContact } from "@/app/actions/contacts";
 import ContactForm from "@/components/ContactForm";
 
-export const metadata = { title: "Rediger kontakt · Karltoffel" };
+export const metadata = { title: "Rediger kontakt · Karltoffel Business Manager" };
 
 export default async function EditContact({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;

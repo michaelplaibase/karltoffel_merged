@@ -5,7 +5,7 @@ import { routeId } from "@/lib/route-ids";
 import SubscriptionForm from "@/components/SubscriptionForm";
 import ConfirmButton from "@/components/ConfirmButton";
 
-export const metadata = { title: "Rediger abonnement · Karltoffel" };
+export const metadata = { title: "Rediger abonnement · Karltoffel Business Manager" };
 
 export default async function EditSubscription({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;

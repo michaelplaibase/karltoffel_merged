@@ -5,7 +5,7 @@ import { getHolidays } from "@/lib/queries";
 import { weekOptions } from "@/lib/weeks";
 import HolidayManager from "@/components/HolidayManager";
 
-export const metadata = { title: "Ferieplanlægning · Karltoffel" };
+export const metadata = { title: "Ferieplanlægning · Karltoffel Business Manager" };
 
 export default async function HolidaysPage() {
   // Kun administratorer — funktionssiderne er admin-only (Thomas, 2026-08-31).

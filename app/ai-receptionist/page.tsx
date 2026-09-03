@@ -1,6 +1,6 @@
 import ReceptionistWidget from "@/components/ReceptionistWidget";
 
-export const metadata = { title: "AI Receptionist (prototype) · Karltoffel" };
+export const metadata = { title: "AI Receptionist (prototype) · Karltoffel Business Manager" };
 
 export default function AiReceptionistPage() {
   return (

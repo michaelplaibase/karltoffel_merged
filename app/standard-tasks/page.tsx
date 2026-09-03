@@ -1,7 +1,7 @@
 import { getStandardTasks } from "@/lib/queries";
 import StandardTaskManager from "@/components/StandardTaskManager";
 
-export const metadata = { title: "Standardopgaver · Karltoffel" };
+export const metadata = { title: "Standardopgaver · Karltoffel Business Manager" };
 
 export default async function StandardTasksPage({ searchParams }: { searchParams: Promise<{ q?: string; inactive?: string }> }) {
   const sp = await searchParams;

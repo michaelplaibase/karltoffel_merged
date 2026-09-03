@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { getSessionUser } from "@/lib/api-auth";
 import { TEMPLATES } from "@/lib/templates-config";
 
-export const metadata = { title: "E-mail og SMS skabeloner · Karltoffel" };
+export const metadata = { title: "E-mail og SMS skabeloner · Karltoffel Business Manager" };
 
 export default async function TemplatesPage() {
   // Skabelonerne bruges i rigtige kundemails (fx tilbud) — kun administratorer

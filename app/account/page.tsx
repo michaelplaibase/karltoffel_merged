@@ -3,7 +3,7 @@ import { prisma } from "@/lib/db";
 import SettingsButtons from "@/components/SettingsButtons";
 import { logout } from "@/app/actions/auth";
 
-export const metadata = { title: "Konto · Karltoffel" };
+export const metadata = { title: "Konto · Karltoffel Business Manager" };
 
 export default async function AccountPage() {
   const company = await prisma.company.findFirst();

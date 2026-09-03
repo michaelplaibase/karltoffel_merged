@@ -5,7 +5,7 @@ import { buildQuoteDraft } from "@/lib/quote";
 import { sendQuoteEmail } from "@/app/actions/quotes";
 import QuoteComposer from "@/components/QuoteComposer";
 
-export const metadata = { title: "Send tilbud · Karltoffel" };
+export const metadata = { title: "Send tilbud · Karltoffel Business Manager" };
 
 // Quote based on a specific order — the primary flow: the order's priced task
 // lines become the quote's task list and total.

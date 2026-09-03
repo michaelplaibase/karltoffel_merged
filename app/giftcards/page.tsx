@@ -4,7 +4,7 @@
 import { prisma } from "@/lib/db";
 import { markGiftCardPaid, markGiftCardSent, cancelGiftCard } from "@/app/actions/giftcards";
 
-export const metadata = { title: "Gavekort · Karltoffel" };
+export const metadata = { title: "Gavekort · Karltoffel Business Manager" };
 // Prisma-data ved hvert request — må ikke prerenderes ved build.
 export const dynamic = "force-dynamic";
 

@@ -4,7 +4,7 @@ import { getReportData, type Kpi } from "@/lib/reports-data";
 import BarChart from "@/components/BarChart";
 import KpiSection from "@/components/KpiSection";
 
-export const metadata = { title: "Grafer og nøgletal · Karltoffel" };
+export const metadata = { title: "Grafer og nøgletal · Karltoffel Business Manager" };
 
 // Uden denne prerenderes siden ved BUILD (ingen request-time-API'er ⇒ statisk i
 // Next' default-model), og KPI'er/grafer fryser på deploy-tidspunktet — i dev

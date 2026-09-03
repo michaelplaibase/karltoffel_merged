@@ -5,7 +5,7 @@ import { todayCphISO, weekMondayToday } from "@/lib/calendar";
 import { getSessionUser } from "@/lib/api-auth";
 import { redirect } from "next/navigation";
 
-export const metadata = { title: "Kalender · Karltoffel" };
+export const metadata = { title: "Kalender · Karltoffel Business Manager" };
 
 // Samme ordre-baserede ugeplan (buildWeekPlan) som /daycalendar og ordre-listerne
 // bruger — ÉN kilde til sandhed for hvilke ordrer ligger på hvilken dag/hos hvem.

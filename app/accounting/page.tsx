@@ -8,7 +8,7 @@ import DineroAccountsForm from "@/components/DineroAccountsForm";
 import DineroTestButton from "@/components/DineroTestButton";
 import { redirect } from "next/navigation";
 
-export const metadata = { title: "Regnskab · Karltoffel" };
+export const metadata = { title: "Regnskab · Karltoffel Business Manager" };
 
 export default async function AccountingPage() {
   const user = await getSessionUser();

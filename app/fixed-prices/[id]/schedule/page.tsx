@@ -5,7 +5,7 @@ import { routeId } from "@/lib/route-ids";
 import { todayCphISO } from "@/lib/calendar";
 import FixedPriceScheduleForm from "@/components/FixedPriceScheduleForm";
 
-export const metadata = { title: "Planlæg fastprisaftale i kalender · Karltoffel" };
+export const metadata = { title: "Planlæg fastprisaftale i kalender · Karltoffel Business Manager" };
 
 // Planlæg ENKELTOPGAVE ud fra en fastprisaftale — når kunden ringer og
 // bestiller opgaven via telefon eller mail. Samme flow som abonnementsopgaver

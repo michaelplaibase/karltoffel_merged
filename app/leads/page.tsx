@@ -3,7 +3,7 @@ import { prisma } from "@/lib/db";
 import RowMenu, { type RowMenuItem } from "@/components/RowMenu";
 import { markLeadContacted, rejectLead, convertLead } from "@/app/actions/leads";
 
-export const metadata = { title: "Emner · Karltoffel" };
+export const metadata = { title: "Emner · Karltoffel Business Manager" };
 
 const STATUS_LABEL: Record<string, string> = { new: "Ny", contacted: "Kontaktet", converted: "Konverteret", rejected: "Afvist" };
 

@@ -1,6 +1,6 @@
 import ChangePasswordForm from "@/components/ChangePasswordForm";
 
-export const metadata = { title: "Skift password · Karltoffel" };
+export const metadata = { title: "Skift password · Karltoffel Business Manager" };
 
 export default function ChangePasswordPage() {
   return (
