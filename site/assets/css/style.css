@@ -85,3 +85,10 @@ form button.g-recaptcha:hover{filter:brightness(1.15)}
 /* social proof-kort: citat i kursiv, navn i mørk brun */
 #section-id-socialproof .card__content p{font-style:italic;color:#4C3718}
 #section-id-socialproof .card__content b{display:block;margin-top:.5rem;color:#8A6931;font-style:normal;font-size:.9rem}
+
+/* social proof-kort: lyse kort, mørk tekst (theme-standard gav mørke kort) */
+#section-id-socialproof .card--service{background:#FFFFF0 !important}
+#section-id-socialproof .card--service .card__content,
+#section-id-socialproof .card--service .card__content p,
+#section-id-socialproof .card--service .card__content b{color:#4C3718 !important}
+#section-id-socialproof .card--service .card__content b{color:#8A6931 !important}
