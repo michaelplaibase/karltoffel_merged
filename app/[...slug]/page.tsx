@@ -9,6 +9,7 @@ import { getUsers } from "@/lib/users";
 import { saveSettings } from "@/app/actions/settings";
 import SettingsForm from "@/components/SettingsForm";
 import MinuteRateForm from "@/components/MinuteRateForm";
+import RecalculateDurationsButton from "@/components/RecalculateDurationsButton";
 
 function labelFor(path: string): { label: string; en: string } | null {
   for (const menu of TOP_NAV) {
@@ -60,6 +61,7 @@ export default async function CatchAll({
         <>
           {form}
           <MinuteRateForm rate={minuteRate} />
+          <RecalculateDurationsButton />
         </>
       );
     }

@@ -3,12 +3,13 @@
 // Server actions for the settings pages + message templates. They persist into
 // the JSON store on Company.settings (see lib/settings-store).
 import { setSettingsValues, setTemplateValues } from "@/lib/settings-store";
+import { recalculateTaskLineDurations } from "@/lib/duration-recalc";
 import { guardAdminAction } from "@/lib/api-auth";
 import { prisma } from "@/lib/db";
 import { revalidatePath } from "next/cache";
 
 export type SaveState = { saved?: boolean };
-export type MinuteRateState = { saved?: boolean; error?: string };
+export type MinuteRateState = { saved?: boolean; error?: string; recalculated?: number };
 
 export async function saveSettings(route: string, _prev: SaveState, formData: FormData): Promise<SaveState> {
   // Virksomhedsbrede indstillinger — kun administratorer (samme afgrænsning som /users).
@@ -32,12 +33,19 @@ export async function saveMinuteRate(_prev: MinuteRateState, formData: FormData)
   const raw = String(formData.get("minuteRate") ?? "").trim().replace(",", ".");
   const rate = Number(raw);
   if (!raw || !Number.isFinite(rate) || rate <= 0) return { error: "Angiv en gyldig minutpris." };
+  const company = await prisma.company.findFirst();
+  if (!company) return { error: "Ingen virksomhed fundet." };
+  const minutePriceOere = Math.round(rate * 100);
   await prisma.company.update({
-    where: { id: (await prisma.company.findFirst())!.id },
-    data: { minutePriceOere: Math.round(rate * 100) },
+    where: { id: company.id },
+    data: { minutePriceOere },
   });
+  // Retroaktiv genberegnelse (Thomas): gemmes en ny minutpris, skal ALLE
+  // eksisterende TaskLine-varigheder følge med — samme formel som client-side.
+  // Manuelt justerede varigheder overskrives bevidst.
+  const { changed } = await recalculateTaskLineDurations(minutePriceOere);
   revalidatePath("/settings");
-  return { saved: true };
+  return { saved: true, recalculated: changed };
 }
 
 export async function saveTemplate(key: string, _prev: SaveState, formData: FormData): Promise<SaveState> {
