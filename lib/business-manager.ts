@@ -11,6 +11,13 @@ import { getSubscriptionRevenue } from "./subscription-revenue";
 
 export const HOURS_PER_MONTH = 160; // standardnorm: 1 fuldtidsmedarbejder
 
+/** Antal forløbne måneder i et år (til årsresultat "til dato"). */
+export function monthsElapsedIn(year: number, now = new Date()): number {
+  if (year < now.getFullYear()) return 12;
+  if (year > now.getFullYear()) return 0;
+  return now.getMonth() + 1;
+}
+
 /** Maskinens månedlige afskrivning: indkøbspris / levetid / 12 (0 hvis udefineret). */
 export function machineDepreciationMonthly(m: { purchasePrice: number; lifetimeYears: number }): number {
   if (!m.purchasePrice || !m.lifetimeYears || m.lifetimeYears <= 0) return 0;
@@ -43,6 +50,9 @@ export type EmployeeCalc = {
   realisedRevenueYear: number;  // realiseret omsætning inkl. moms (udførte ordrer, ÅR til dato)
   coverage: number | null;    // dækningsbidrag kr/md (realiseret ekskl. moms − kostpris), null uden data
   coveragePct: number | null;
+  resultatMd: number | null;   // resultat denne måned (ekskl. moms − kostpris), null uden ordrer
+  resultatYear: number | null; // resultat år til dato (ekskl. moms − kostpris × måneder forløbet)
+  resultatPct: number | null;  // resultat/md som % af omsætningen
   breakEvenHours: number;     // timer pr. md der skal sælges for at kostpris er dækket (bruger timetilknytning)
   breakEvenPricePerHour: number; // Timepris (ekskl. moms) der skal til ved normtid
 };
@@ -58,6 +68,8 @@ export type BusinessManagerData = {
   budget: { year: number; month: number; revenueBudget: number; costBudget: number } | null;
   deviations: Deviation[];
   suggestions: string[];
+  companyResultat: { md: number; mdPct: number | null; year: number; yearPct: number | null };
+  monthly: { label: string; revenue: number; cost: number; result: number }[];
 };
 
 export type Deviation = {
@@ -96,7 +108,7 @@ export async function getBusinessManager(opts?: { fromISO?: string; toISO?: stri
     }),
     prisma.order.findMany({
       where: { status: "Udført", plannedAt: { gte: new Date(Date.UTC(year, 0, 1)), lte: toD } },
-      select: { employeeId: true, tasks: { select: { price: true } } },
+      select: { employeeId: true, plannedAt: true, tasks: { select: { price: true } } },
     }),
     prisma.budget.findUnique({
       where: { companyId_year_month: { companyId: 1, year, month } },
@@ -183,6 +195,9 @@ export async function getBusinessManager(opts?: { fromISO?: string; toISO?: stri
       realisedRevenueYear: yearByEmp.get(u.id) ?? 0,
       coverage,
       coveragePct: r && realisedEx > 0 ? Math.round((coverage! / realisedEx) * 100) : null,
+      resultatMd: r ? realisedEx - totalCostMonthly : null,
+      resultatYear: (r || yearByEmp.get(u.id)) ? Math.round(yearByEmp.get(u.id) ?? 0) / (1 + MOMS) - totalCostMonthly * monthsElapsed : null,
+      resultatPct: r && realisedEx > 0 ? Math.round(((realisedEx - totalCostMonthly) / realisedEx) * 100) : null,
       breakEvenHours: totalCostMonthly > 0 && r && r.minutes > 0
         ? Math.ceil(totalCostMonthly / (realisedEx / (r.minutes / 60)))
         : (totalCostMonthly > 0 ? Math.ceil(totalCostMonthly / 300) : 0),
@@ -199,6 +214,9 @@ export async function getBusinessManager(opts?: { fromISO?: string; toISO?: stri
   };
 
   const companyMonthlyCost = employees.reduce((a, e) => a + e.totalCostMonthly, 0);
+  const monthsElapsed = monthsElapsedIn(year);
+  const companyResultatMd = realised.revenueExVat - companyMonthlyCost;
+  const companyResultatYear = Math.round(realised.revenueInclVatYear / (1 + MOMS)) - companyMonthlyCost * monthsElapsed;
 
   const revenueBudget = budgetRow?.revenueBudget ?? 0;
   const costBudget = budgetRow?.costBudget ?? 0;
@@ -225,6 +243,25 @@ export async function getBusinessManager(opts?: { fromISO?: string; toISO?: stri
         : 0,
     });
   }
+
+  // Månedsserie til grafer: realiseret omsætning (ekskl. moms) pr. måned i det
+  // viste år fra udførte ordrer; omkostninger = nutidens niveau (lønnene i CRM
+  // er aktuelle — historiske løndata findes ikke).
+  const monthRevenue = new Array(12).fill(0) as number[];
+  for (const o of ordersYear) {
+    const m = new Date(o.plannedAt).getUTCMonth();
+    monthRevenue[m] += o.tasks.reduce((a, t) => a + t.price, 0);
+  }
+  const MONTH_LABELS = ["jan", "feb", "mar", "apr", "maj", "jun", "jul", "aug", "sep", "okt", "nov", "dec"];
+  const monthly = MONTH_LABELS.map((label, i) => {
+    const revenueExVat = Math.round(monthRevenue[i] / (1 + MOMS));
+    return {
+      label,
+      revenue: revenueExVat,
+      cost: companyMonthlyCost,
+      result: revenueExVat - companyMonthlyCost,
+    };
+  });
 
   // --- Beslutningsforslag (regelbaseret, AI kan udvides) ---
   const suggestions: string[] = [];
@@ -255,5 +292,12 @@ export async function getBusinessManager(opts?: { fromISO?: string; toISO?: stri
     budget: budgetRow ? { year, month, revenueBudget, costBudget } : null,
     deviations,
     suggestions,
+    companyResultat: {
+      md: companyResultatMd,
+      mdPct: realised.revenueExVat > 0 ? Math.round((companyResultatMd / realised.revenueExVat) * 100) : null,
+      year: companyResultatYear,
+      yearPct: monthsElapsed > 0 ? Math.round((companyResultatYear / Math.max(1, Math.round(realised.revenueInclVatYear / (1 + MOMS)))) * 100) : null,
+    },
+    monthly,
   };
 }

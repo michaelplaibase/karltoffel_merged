@@ -76,12 +76,14 @@ export default async function EmployeeCalcPage() {
                   <th data-label="Realiseret/md (ekskl. moms)">Realiseret/md</th>
                   <th data-label="Realiseret/år (inkl. moms)">Realiseret/år</th>
                   <th data-label="Dækning">Dækning</th>
+                  <th data-label="Resultat/md">Resultat/md</th>
+                  <th data-label="Resultat %">Resultat %</th>
                   <th data-label="Break-even">Break-even</th>
                 </tr>
               </thead>
               <tbody>
                 {data.employees.length === 0 ? (
-                  <tr><td colSpan={13}><div className="table-empty">Ingen aktive medarbejdere.</div></td></tr>
+                  <tr><td colSpan={15}><div className="table-empty">Ingen aktive medarbejdere.</div></td></tr>
                 ) : data.employees.map((e) => (
                   <tr key={e.id}>
                     <td data-label="Medarbejder">{e.navn}</td>
@@ -97,6 +99,12 @@ export default async function EmployeeCalcPage() {
                     <td data-label="Realiseret/år (inkl. moms)" className="num">{kr(e.realisedRevenueYear)}</td>
                     <td data-label="Dækning" className="num" style={{ color: e.coverage != null && e.coverage < 0 ? "var(--danger, #C4183C)" : undefined }}>
                       {e.coverage != null ? <><b>{kr(e.coverage)}</b>{e.coveragePct != null ? ` (${e.coveragePct} %)` : ""}</> : "—"}
+                    </td>
+                    <td data-label="Resultat/md" className="num" style={{ color: e.resultatMd != null && e.resultatMd < 0 ? "var(--danger, #C4183C)" : e.resultatMd != null ? "var(--success, #2e7d32)" : undefined }}>
+                      {e.resultatMd != null ? <b>{kr(e.resultatMd)}</b> : "—"}
+                    </td>
+                    <td data-label="Resultat %" className="num" style={{ color: e.resultatPct != null && e.resultatPct < 0 ? "var(--danger, #C4183C)" : undefined }}>
+                      {e.resultatPct != null ? `${e.resultatPct > 0 ? "+" : ""}${e.resultatPct} %` : "—"}
                     </td>
                     <td data-label="Break-even" className="num">{e.breakEvenHours} t/md · {kr(e.breakEvenPricePerHour)}/t</td>
                   </tr>
