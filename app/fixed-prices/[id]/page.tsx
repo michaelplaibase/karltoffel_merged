@@ -6,7 +6,7 @@ import { routeId } from "@/lib/route-ids";
 import FixedPriceForm from "@/components/FixedPriceForm";
 import ConfirmButton from "@/components/ConfirmButton";
 
-export const metadata = { title: "Rediger fastprisaftale · Karltoffel" };
+export const metadata = { title: "Rediger fastprisaftale · Karltoffel Business Manager" };
 
 export default async function EditFixedPrice({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;

@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { OPTIMIZATION as O } from "@/lib/funktioner";
 import OptimizationRunner from "@/components/OptimizationRunner";
 
-export const metadata = { title: "Abonnementsoptimering · Karltoffel" };
+export const metadata = { title: "Abonnementsoptimering · Karltoffel Business Manager" };
 
 export default async function OptimizationPage() {
   // Kun administratorer — funktionssiderne er admin-only (Thomas, 2026-08-31).

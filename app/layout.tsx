@@ -12,7 +12,10 @@ const poppins = Poppins({
 });
 
 export const metadata: Metadata = {
-  title: "Karltoffel Portal",
+  title: {
+    default: "Karltoffel Business Manager",
+    template: "%s",
+  },
   description: "Drift og administration for vinduespudsere.",
 };
 

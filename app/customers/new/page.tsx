@@ -1,7 +1,7 @@
 import { createContact } from "@/app/actions/contacts";
 import ContactForm from "@/components/ContactForm";
 
-export const metadata = { title: "Opret ny kontakt · Karltoffel" };
+export const metadata = { title: "Opret ny kontakt · Karltoffel Business Manager" };
 
 export default function NewContact() {
   return (

@@ -3,7 +3,7 @@ import { getSessionUser } from "@/lib/api-auth";
 import { todayCphISO } from "@/lib/calendar";
 import { redirect } from "next/navigation";
 
-export const metadata = { title: "Dagsprogram i PDF · Karltoffel" };
+export const metadata = { title: "Dagsprogram i PDF · Karltoffel Business Manager" };
 
 export default async function DayPdfPage() {
   const me = await getSessionUser();

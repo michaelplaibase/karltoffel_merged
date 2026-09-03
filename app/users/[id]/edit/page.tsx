@@ -5,7 +5,7 @@ import { getUser } from "@/lib/users";
 import { updateUser } from "@/app/actions/users";
 import UserForm from "@/components/UserForm";
 
-export const metadata = { title: "Rediger bruger · Karltoffel" };
+export const metadata = { title: "Rediger bruger · Karltoffel Business Manager" };
 
 export default async function EditUserPage({ params }: { params: Promise<{ id: string }> }) {
   const me = await getSessionUser();

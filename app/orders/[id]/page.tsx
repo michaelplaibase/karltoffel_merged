@@ -8,7 +8,7 @@ import { retryInvoice } from "@/app/actions/dinero";
 import { CatChip, MapLink, StatusPill, money } from "@/components/ui";
 import ConfirmButton from "@/components/ConfirmButton";
 
-export const metadata = { title: "Rediger ordre · Karltoffel" };
+export const metadata = { title: "Rediger ordre · Karltoffel Business Manager" };
 
 // dineroInvoiceStatus → Danish label + colour for the Fakturering card.
 const INVOICE_STATUS: Record<string, { label: string; color: string }> = {

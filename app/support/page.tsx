@@ -1,6 +1,6 @@
 import Link from "next/link";
 
-export const metadata = { title: "Kontakt support · Karltoffel" };
+export const metadata = { title: "Kontakt support · Karltoffel Business Manager" };
 
 export default function SupportPage() {
   return (

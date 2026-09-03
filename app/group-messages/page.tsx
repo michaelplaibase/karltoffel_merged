@@ -5,7 +5,7 @@ import { getEmployeeNames } from "@/lib/queries";
 import { weekOptions } from "@/lib/weeks";
 import GroupMessageForm from "@/components/GroupMessageForm";
 
-export const metadata = { title: "Gruppebeskeder · Karltoffel" };
+export const metadata = { title: "Gruppebeskeder · Karltoffel Business Manager" };
 
 export default async function GroupMessagesPage() {
   // Kun administratorer — funktionssiderne er admin-only (Thomas, 2026-08-31).

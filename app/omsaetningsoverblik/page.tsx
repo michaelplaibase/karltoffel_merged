@@ -7,7 +7,7 @@ import { getSessionUser } from "@/lib/api-auth";
 import RevenuePanel from "@/components/RevenuePanel";
 import { getSubscriptionRevenue } from "@/lib/subscription-revenue";
 
-export const metadata = { title: "Omsætningsoverblik · Karltoffel" };
+export const metadata = { title: "Omsætningsoverblik · Karltoffel Business Manager" };
 
 export default async function OmsaetningsoverblikPage() {
   const user = await getSessionUser();

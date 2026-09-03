@@ -1,7 +1,7 @@
 import { GUIDES } from "@/lib/guides";
 import { GuideBody } from "@/components/GuideContent";
 
-export const metadata = { title: "Vejledninger · Karltoffel" };
+export const metadata = { title: "Vejledninger · Karltoffel Business Manager" };
 
 // In-app help: all how-to guides on one page, with a jump-to table of contents.
 export default function GuidesPage() {

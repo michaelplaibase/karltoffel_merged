@@ -2,7 +2,7 @@ import { getContactOptions, getMinuteRate } from "@/lib/queries";
 import { createFixedPrice } from "@/app/actions/fixed-prices";
 import FixedPriceForm from "@/components/FixedPriceForm";
 
-export const metadata = { title: "Opret fastprisaftale · Karltoffel" };
+export const metadata = { title: "Opret fastprisaftale · Karltoffel Business Manager" };
 
 export default async function NewFixedPrice({ searchParams }: { searchParams: Promise<{ for_contact?: string }> }) {
   const { for_contact } = await searchParams;

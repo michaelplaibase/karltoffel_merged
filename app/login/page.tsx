@@ -1,6 +1,6 @@
 import LoginForm from "@/components/LoginForm";
 
-export const metadata = { title: "Log ind · Karltoffel" };
+export const metadata = { title: "Log ind · Karltoffel Business Manager" };
 
 // ?next= sættes af middleware, når en udløbet session afbrød et dybt link —
 // login-action'en sender brugeren videre dertil efter validering.

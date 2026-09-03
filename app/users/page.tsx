@@ -3,7 +3,7 @@ import { getSessionUser } from "@/lib/api-auth";
 import { getUsers } from "@/lib/users";
 import UserManager from "@/components/UserManager";
 
-export const metadata = { title: "Brugere · Karltoffel" };
+export const metadata = { title: "Brugere · Karltoffel Business Manager" };
 
 export default async function UsersPage({ searchParams }: { searchParams: Promise<{ inactive?: string }> }) {
   const me = await getSessionUser();

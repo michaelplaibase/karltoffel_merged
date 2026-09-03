@@ -15,7 +15,7 @@ import CleanupDescriptionsButton from "@/components/CleanupDescriptionsButton";
 import InvoiceAllButton from "@/components/InvoiceAllButton";
 import InvoiceNowButton from "@/components/InvoiceNowButton";
 
-export const metadata = { title: "Faktureringsoverblik · Karltoffel" };
+export const metadata = { title: "Faktureringsoverblik · Karltoffel Business Manager" };
 
 // Lukkede statusser, invoiceLabel og invoiceTone er flyttet til
 // lib/invoice-status.ts, så den daglige faktura-rapport deler samme logik.

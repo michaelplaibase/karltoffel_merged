@@ -2,7 +2,7 @@ import { getContactOptions, getEmployeeNames, getMinuteRate } from "@/lib/querie
 import { createSubscription } from "@/app/actions/subscriptions";
 import SubscriptionForm from "@/components/SubscriptionForm";
 
-export const metadata = { title: "Opret abonnement · Karltoffel" };
+export const metadata = { title: "Opret abonnement · Karltoffel Business Manager" };
 
 export default async function NewSubscription({ searchParams }: { searchParams: Promise<{ for_contact?: string }> }) {
   const { for_contact } = await searchParams;

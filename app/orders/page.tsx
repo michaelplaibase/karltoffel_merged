@@ -6,7 +6,7 @@ import { CatChip, CustomerCell, MapLink, StatusPill, money } from "@/components/
 import RowMenu, { type RowMenuItem } from "@/components/RowMenu";
 import { SearchBar, Pagination } from "@/components/ListControls";
 
-export const metadata = { title: "Ordrer · Karltoffel" };
+export const metadata = { title: "Ordrer · Karltoffel Business Manager" };
 
 /** Spejler CLOSED_STATUSES i lib/queries.ts — lukkede ordrer er aldrig "forfaldne". */
 const CLOSED_STATUSES = new Set(["Afsluttet", "Udført", "Sprunget over"]);

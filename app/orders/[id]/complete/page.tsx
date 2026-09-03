@@ -9,7 +9,7 @@ import { getSettingsValues } from "@/lib/settings-store";
 import { MapLink } from "@/components/ui";
 import CompleteOrderForm from "@/components/CompleteOrderForm";
 
-export const metadata = { title: "Afslut ordre · Karltoffel" };
+export const metadata = { title: "Afslut ordre · Karltoffel Business Manager" };
 
 export default async function CompleteOrderPage({
   params, searchParams,

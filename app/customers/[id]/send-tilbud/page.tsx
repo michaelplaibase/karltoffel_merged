@@ -5,7 +5,7 @@ import { buildQuoteDraft } from "@/lib/quote";
 import { sendQuoteEmail } from "@/app/actions/quotes";
 import QuoteComposer from "@/components/QuoteComposer";
 
-export const metadata = { title: "Send tilbud · Karltoffel" };
+export const metadata = { title: "Send tilbud · Karltoffel Business Manager" };
 
 // Quote based on a customer — prefills from the customer's most recent order (if
 // any), so the task list/total match real priced work; otherwise the quote is

@@ -1,7 +1,7 @@
 import { getDiscountCodes } from "@/lib/queries";
 import DiscountCodeManager from "@/components/DiscountCodeManager";
 
-export const metadata = { title: "Rabatkoder · Karltoffel" };
+export const metadata = { title: "Rabatkoder · Karltoffel Business Manager" };
 
 export default async function DiscountCodesPage() {
   const codes = await getDiscountCodes();
