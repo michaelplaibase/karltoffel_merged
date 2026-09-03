@@ -75,3 +75,13 @@ form button.g-recaptcha:hover{filter:brightness(1.15)}
   .aarshjul__saeson{padding:22px 18px;box-shadow:6px 6px 0 var(--kj-friture);}
   .aarshjul__slutning{padding:32px 22px;}
 }
+
+/* ==== UX runde 3 (2026-09-03): forside ==== */
+.hero-garanti{margin:.75rem auto 0;text-align:center;font-size:.9rem;font-weight:600;color:#4C3718;max-width:420px}
+/* årshjul-knappen: mørk tekst på gul (kontrast-fix) */
+.aarshjul .button span,.aarshjul .button{color:#4C3718 !important}
+.aarshjul .button{background:#FFF87B !important;border-radius:999px;padding:.8rem 1.6rem;display:inline-block;font-weight:700;text-decoration:none}
+.aarshjul .button:hover{background:#fff65c !important}
+/* social proof-kort: citat i kursiv, navn i mørk brun */
+#section-id-socialproof .card__content p{font-style:italic;color:#4C3718}
+#section-id-socialproof .card__content b{display:block;margin-top:.5rem;color:#8A6931;font-style:normal;font-size:.9rem}
