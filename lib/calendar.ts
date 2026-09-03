@@ -50,7 +50,7 @@ export type UnplannedJob = {
 
 /** Read-only Kalender 2 route evidence. Contains no customer or employee address. */
 export type Calendar2Audit = {
-  optimizationContract: "deterministic-nearest-feasible-not-global-optimum";
+  optimizationContract: "deterministic-nearest-feasible-2opt-or-opt";
   matrixVersion: "calendar2-route-audit-v1";
   matrixHash: string;
   matrixProvider: string;
@@ -80,6 +80,7 @@ export type MonthChip = {
   postal: string; category: string; status: CalStatus; contactId: number;
   unplanned?: boolean;                    // ordren kunne ikke placeres — vis markeret
   reason?: string;                        // unplanned-årsagsnøgle (se UNPLANNED_REASON_LABEL)
+  tasks?: string[];                       // opgavebeskrivelser (Thomas 2026-09-03: måneds-chips med opgavetekst)
 };
 export type MonthDay = {
   dateISO: string; dateNum: number; weekday: number; // 0..6

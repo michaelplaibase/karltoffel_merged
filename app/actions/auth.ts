@@ -50,7 +50,7 @@ export async function login(_prev: LoginState, formData: FormData): Promise<Logi
   // "Husk mig" (default til): 30 dages login, ellers 7 dage. Cookie-maxAge og
   // token-exp holdes ens, så cookien ikke overlever tokenet (eller omvendt).
   const ttl = formData.get("remember") != null ? 60 * 60 * 24 * 30 : SESSION_TTL_SECONDS;
-  const token = await signSession(user.id, ttl);
+  const token = await signSession(user.id, ttl, user.isAdmin);
   (await cookies()).set(SESSION_COOKIE, token, {
     httpOnly: true, sameSite: "lax", path: "/", maxAge: ttl,
     secure: process.env.NODE_ENV === "production",

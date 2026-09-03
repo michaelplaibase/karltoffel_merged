@@ -4,7 +4,7 @@ import { getContactSettings } from "@/lib/queries";
 import { updateContactSettings } from "@/app/actions/contacts";
 import ContactSettingsForm from "@/components/ContactSettingsForm";
 
-export const metadata = { title: "Kundeindstillinger · Karltoffel" };
+export const metadata = { title: "Kundeindstillinger · Karltoffel Business Manager" };
 
 export default async function ContactSettingsPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;

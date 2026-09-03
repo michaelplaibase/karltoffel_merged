@@ -4,15 +4,15 @@ import Link from "next/link";
 import { useActionState } from "react";
 import type { ContactFormState } from "@/app/actions/contacts";
 
-const PRESET = [
-  "Anvend standardindstilling",
-  "Blank (ingen forudindstilling)",
-  "Send faktura - ubetalt",
-  "Send faktura - betalt kontant",
-  "Send ikke faktura fra Karltoffel",
-  "Opret fakturakladde",
-  "Registrer på et senere tidspunkt",
+// Faktureringsregel pr. kunde (Thomas, 2026-09-03). ''/'auto' = afled af
+// isCompany (privat → pr. gang, erhverv → pr. måned).
+const FREQUENCY = [
+  { value: "", label: "Automatisk (privat: pr. gang · erhverv: pr. måned)" },
+  { value: "pr_gang", label: "Faktura pr. gang (sendes automatisk kl. 23 hver aften)" },
+  { value: "maaned", label: "Faktura pr. måned (samles og sendes automatisk den 20.)" },
+  { value: "kvartal", label: "Faktura pr. kvartal (samles og sendes automatisk den 20. efter kvartalet)" },
 ];
+const freqOf = (v: string) => (FREQUENCY.some((f) => f.value === v) ? v : "");
 
 const checkRow: React.CSSProperties = { display: "inline-flex", alignItems: "center", gap: 9, fontWeight: 300, marginTop: 6 };
 
@@ -21,6 +21,7 @@ export type ContactSettingsInitial = {
   showDeliveryNameOnInvoice: boolean;
   skipInvoiceOverSms: boolean;
   invoiceChoicePreselect: string;
+  invoiceFrequency: string;
 };
 
 export default function ContactSettingsForm({
@@ -32,7 +33,7 @@ export default function ContactSettingsForm({
   cancelHref: string;
 }) {
   const [state, formAction, pending] = useActionState(action, {});
-  const preset = PRESET.includes(initial.invoiceChoicePreselect) ? initial.invoiceChoicePreselect : PRESET[0];
+  const freq = freqOf(initial.invoiceFrequency);
 
   return (
     <form action={formAction} className="card form-card">
@@ -71,14 +72,14 @@ export default function ContactSettingsForm({
         </div>
 
         <div className="f2">
-          <label>Forudindstilling for &apos;Betaling og fakturering&apos;</label>
+          <label>Faktureringsregel</label>
           <div>
-            {PRESET.map((p) => (
-              <label key={p} style={{ display: "flex", alignItems: "center", gap: 9, fontWeight: 300, padding: "2px 0" }}>
-                <input type="radio" name="invoiceChoicePreselect" value={p} defaultChecked={p === preset} /> {p}
+            {FREQUENCY.map((f) => (
+              <label key={f.value || "auto"} style={{ display: "flex", alignItems: "center", gap: 9, fontWeight: 300, padding: "2px 0" }}>
+                <input type="radio" name="invoiceFrequency" value={f.value} defaultChecked={f.value === freq} /> {f.label}
               </label>
             ))}
-            <small className="form-text field-help">Vælg hvordan sektionen &quot;Betaling og Fakturering&quot; på siden &quot;Afslut ordre&quot; skal forudindstilles for denne kunde. Indstillingen overskriver den generelle standardindstilling.</small>
+            <small className="form-text field-help">Hvornår skal kundens fakturaer sendes automatisk? &quot;Automatisk&quot; betyder: privatkunder faktureres pr. gang, erhvervskunder samles pr. måned (sendes den 20.).</small>
           </div>
         </div>
 

@@ -85,11 +85,22 @@ export default function TaskLineEditor({
           <tbody>
             {rows.map((r, i) => (
               <tr key={i}>
-                <td>
-                  <input
-                    name="taskDescription" value={r.description}
-                    onChange={(e) => update(i, { description: e.target.value })}
-                    className="form-control form-control-sm" placeholder="Opgavebeskrivelse"
+                <td data-label="Opgavebeskrivelse">
+                  {/* Auto-voksende textarea i stedet for input: hele teksten
+                      er altid synlig (ombryder + linjen bliver højere), også
+                      når teksten er hentet fra databasen. Samme felt-
+                      navn/taskDescription → server action uændret. */}
+                  <textarea
+                    name="taskDescription" value={r.description} rows={1}
+                    onChange={(e) => {
+                      update(i, { description: e.target.value });
+                      e.target.style.height = "auto";
+                      e.target.style.height = `${e.target.scrollHeight}px`;
+                    }}
+                    ref={(el) => {
+                      if (el) { el.style.height = "auto"; el.style.height = `${el.scrollHeight}px`; }
+                    }}
+                    className="form-control form-control-sm task-desc" placeholder="Opgavebeskrivelse"
                   />
                   {sub && (
                     // "Måneder på pause": skjulte felter (IKKE checkbokse) der ALTID
@@ -104,19 +115,23 @@ export default function TaskLineEditor({
                   )}
                   {timepris(r) > 0 && <small className="form-text field-help">Timepris {timepris(r)} kr/t</small>}
                 </td>
-                <td>
-                  <span className="catchip" style={{ background: categoryColor(r.category), marginRight: 6 }}>
-                    {(r.category[0] ?? "A").toUpperCase()}
+                <td data-label="Kategori">
+                  {/* Kategori på én linje: chip + dropdown flexer side om side,
+                      dropdown fylder resten af bredden (også på smalle skærme). */}
+                  <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                    <span className="catchip" style={{ background: categoryColor(r.category), flexShrink: 0 }}>
+                      {(r.category[0] ?? "A").toUpperCase()}
+                    </span>
+                    <select
+                      name="taskCategory" value={r.category}
+                      onChange={(e) => update(i, { category: e.target.value })}
+                      className="form-control form-control-sm" style={{ flex: 1, minWidth: 0 }}
+                    >
+                      {CAT_NAMES.map((c) => <option key={c} value={c}>{c}</option>)}
+                    </select>
                   </span>
-                  <select
-                    name="taskCategory" value={r.category}
-                    onChange={(e) => update(i, { category: e.target.value })}
-                    className="form-control form-control-sm" style={{ display: "inline-block", width: "auto" }}
-                  >
-                    {CAT_NAMES.map((c) => <option key={c} value={c}>{c}</option>)}
-                  </select>
                 </td>
-                <td>
+                <td data-label="Pris (inkl. moms)">
                   <input name="taskPrice" type="number" min="0" value={r.price}
                     onChange={(e) => {
                       // Pris tastet → auto-beregn varighed fra minutprisen (ekskl.
@@ -130,7 +145,7 @@ export default function TaskLineEditor({
                       update(i, patch);
                     }} className="form-control form-control-sm num" />
                 </td>
-                <td>
+                <td data-label="Varighed (min.)">
                   <input name="taskDuration" type="number" min="0" value={r.duration}
                     onChange={(e) => update(i, { duration: e.target.value })} className="form-control form-control-sm num" />
                   {Number(r.duration) > 0 && (
@@ -140,7 +155,7 @@ export default function TaskLineEditor({
                   )}
                 </td>
                 {sub && (
-                  <td>
+                  <td data-label="Interval">
                     <select name="taskInterval" value={r.interval ?? "Hver gang"}
                       onChange={(e) => update(i, { interval: e.target.value })} className="form-control form-control-sm">
                       {intervalOptions(r).map((o) => <option key={o} value={o}>{o}</option>)}
@@ -148,7 +163,7 @@ export default function TaskLineEditor({
                   </td>
                 )}
                 {sub && (
-                  <td>
+                  <td data-label="Næste gang">
                     <input name="taskNextWeek" value={r.nextWeek ?? ""} placeholder="Uge 29"
                       onChange={(e) => update(i, { nextWeek: e.target.value })} className="form-control form-control-sm" />
                   </td>
@@ -159,7 +174,7 @@ export default function TaskLineEditor({
                   // formData.getAll-zippet med taskDescription når nogle er tomme) —
                   // i stedet submittes digit-strengen via et skjult felt der ALTID
                   // sendes for hver række, som ved "Måneder på pause".
-                  <td>
+                  <td data-label="Ugedage">
                     <div role="group" aria-label={`Ugedage for ${r.description || "opgaven"}`} style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
                       {WEEKDAYS_DA_SHORT.map((name, day) => {
                         const selected = (r.weekdays ?? "").includes(String(day));
@@ -182,7 +197,7 @@ export default function TaskLineEditor({
                     <input type="hidden" name="taskWeekdays" value={r.weekdays ?? ""} />
                   </td>
                 )}
-                <td>
+                <td data-label="" className="td-remove">
                   <button type="button" onClick={() => remove(i)} className="btn btn-light btn-sm" title="Fjern opgave">
                     <i className="bi bi-trash" />
                   </button>
@@ -190,10 +205,10 @@ export default function TaskLineEditor({
               </tr>
             ))}
             <tr>
-              <td style={{ textAlign: "right", fontWeight: 600 }}>Sum</td>
+              <td className="td-remove td-sum-label" style={{ textAlign: "right", fontWeight: 600 }} data-label="">Sum</td>
               <td />
-              <td className="num" style={{ fontWeight: 600 }}>{sum.toLocaleString("da-DK")} kr</td>
-              <td className="num" style={{ fontWeight: 600 }}>{dur}</td>
+              <td className="num" data-label="Pris i alt" style={{ fontWeight: 600 }}>{sum.toLocaleString("da-DK")} kr</td>
+              <td className="num" data-label="Minutter i alt" style={{ fontWeight: 600 }}>{dur}</td>
               {sub && <td />}
               {sub && <td />}
               {sub && <td />}

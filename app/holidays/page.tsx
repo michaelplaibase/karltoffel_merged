@@ -1,11 +1,17 @@
+import { getSessionUser } from "@/lib/api-auth";
+import { redirect } from "next/navigation";
 import { HOLIDAYS as H } from "@/lib/funktioner";
 import { getHolidays } from "@/lib/queries";
 import { weekOptions } from "@/lib/weeks";
 import HolidayManager from "@/components/HolidayManager";
 
-export const metadata = { title: "Ferieplanlægning · Karltoffel" };
+export const metadata = { title: "Ferieplanlægning · Karltoffel Business Manager" };
 
 export default async function HolidaysPage() {
+  // Kun administratorer — funktionssiderne er admin-only (Thomas, 2026-08-31).
+  const me = await getSessionUser();
+  if (me == null) redirect("/login");
+  if (!me.isAdmin) redirect("/calendar");
   const holidays = await getHolidays();
   const weekOpts = weekOptions(new Date(), 52, 1); // from next week, ~a year ahead
   return (

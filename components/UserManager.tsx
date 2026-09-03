@@ -14,6 +14,7 @@ function PayEditor({ u }: { u: UserRow }) {
   const [belob, setBelob] = useState<string>(
     u.payModel === "akkord" ? String(u.commissionPct ?? 43) : (u.monthlySalary != null ? String(u.monthlySalary) : "")
   );
+  const [fixedCost, setFixedCost] = useState<string>(u.fixedMonthlyCost != null ? String(u.fixedMonthlyCost) : "");
   const [pending, start] = useTransition();
   const [saved, setSaved] = useState(false);
   const [fejl, setFejl] = useState<string | null>(null);
@@ -24,7 +25,7 @@ function PayEditor({ u }: { u: UserRow }) {
       return;
     }
     setFejl(null);
-    start(async () => { await updateUserPay(u.id, model, belob === "" ? null : Number(belob)); setSaved(true); });
+    start(async () => { await updateUserPay(u.id, model, belob === "" ? null : Number(belob), fixedCost === "" ? null : Number(fixedCost)); setSaved(true); });
   };
   return (
     <div style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap" }}>
@@ -46,6 +47,9 @@ function PayEditor({ u }: { u: UserRow }) {
       <button type="button" className="btn btn-sm btn-light" disabled={pending} onClick={gem}>
         {pending ? "…" : saved ? "Gemt ✓" : "Gem"}
       </button>
+      <input type="number" min="0" value={fixedCost} placeholder="Faste udgifter kr/md"
+        className="form-control form-control-sm" style={{ width: 128 }}
+        onChange={(e) => { setFixedCost(e.target.value); setSaved(false); }} />
       {fejl ? <span style={{ color: "var(--danger, #C4183C)", fontSize: 12 }}>{fejl}</span> : null}
     </div>
   );
@@ -160,6 +164,9 @@ export default function UserManager({ users, meId, includeInactive }: { users: U
               </div></div>
               <div className="f2"><label className="col-label">{createPay === "akkord" ? "Provisionssats (%)" : "Fast løn (kr/md)"}</label><div>
                 <input name="belob" type="number" min="0" value={createBelob} onChange={(e) => setCreateBelob(e.target.value)} className="form-control form-control-sm" placeholder={createPay === "akkord" ? "fx 43" : "fx 32000"} />
+              </div></div>
+              <div className="f2"><label className="col-label">Faste udgifter (kr/md)</label><div>
+                <input name="fixedMonthlyCost" type="number" min="0" className="form-control form-control-sm" placeholder="fx 1500" />
               </div></div>
               {state.error ? <div className="help-note" style={{ color: "var(--danger, #C4183C)" }}>{state.error}</div> : null}
               <hr className="section-hr" />

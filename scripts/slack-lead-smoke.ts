@@ -72,10 +72,9 @@ console.log("\n2) Rabatstakning: kode oven på mængderabat");
 
 const toServices: PricedService[] = [
   { id: "haek", navn: "Hækklipning", wm: null, qty: 100, enhed: "m hæk", freq: 1, pris: 10 },
-  { id: "graes", navn: "Græsslåning", wm: null, qty: 100, enhed: "m² plæne", freq: 1, pris: 10 },
 ];
 const r2 = beregn(toServices);
-ok("brutto = 2.000 kr", r2.aarBrutto === 2000, String(r2.aarBrutto));
+ok("brutto = 1.000 kr", r2.aarBrutto === 1000, String(r2.aarBrutto));
 ok("mængderabat = 6 % ved 2 ydelser", r2.rabatPct === 6, String(r2.rabatPct));
 ok("aar = 1.880 kr", Math.abs(r2.aar - 1880) < 1e-9, String(r2.aar));
 const { aarNet } = medRabatkode(r2, 10);

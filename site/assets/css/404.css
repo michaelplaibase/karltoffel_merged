@@ -1,0 +1,75 @@
+/* Karltoffel - 404-side (2026-09-02)
+   Farver: officiel palette (#FFF87B friture-gul, #4C3718 jordnær, #FFFFF0 kartoffelmos). */
+
+.err404 { font-family: "Hanken Grotesk", sans-serif; color: #4C3718; }
+.err404__inner { max-width: 760px; margin: 0 auto; padding: 24px 0 40px; }
+
+.err404__code {
+	margin: 0;
+	font-family: snaga-unicase-display, sans-serif;
+	font-weight: 900;
+	font-size: clamp(110px, 22vw, 190px);
+	line-height: .9;
+	color: #FFF87B;
+	text-transform: uppercase;
+	-webkit-text-stroke: 3px #4C3718;
+	letter-spacing: .02em;
+}
+
+.err404__inner h1 {
+	margin: 8px 0 14px;
+	font-family: snaga-unicase-display, sans-serif;
+	font-weight: 900;
+	font-size: clamp(28px, 5vw, 44px);
+	line-height: 1.05;
+	color: #4C3718;
+	text-transform: uppercase;
+}
+
+.err404__lead { font-size: 18px; line-height: 1.5; max-width: 520px; margin: 0 auto 28px; }
+
+.err404__actions { display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; margin: 0 0 34px; }
+.err404__actions .button {
+	display: inline-flex;
+	padding: 14px 24px;
+	border-radius: 999px;
+	background: #FFF87B;
+	color: #4C3718;
+	font-family: snaga-unicase-display, sans-serif;
+	font-weight: 900;
+	font-size: 16px;
+	text-transform: uppercase;
+	letter-spacing: .02em;
+	text-decoration: none;
+	transition: background .25s, transform .25s;
+}
+.err404__actions .button:hover,
+.err404__actions .button:focus { background: #fff65c; transform: translateY(-2px); color: #4C3718; }
+.err404__actions .button--outline { background: transparent; border: 2px solid #4C3718; }
+.err404__actions .button--outline:hover { background: rgba(255,248,123,.4); }
+
+.err404__links { font-weight: 700; margin: 0 0 12px; }
+
+.err404__chips { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin: 0; padding: 0; list-style: none; }
+.err404__chips li { list-style: none; margin: 0; padding: 0; }
+.err404__chips li::before, .err404__chips li::after { content: none !important; }
+.err404__chips a {
+	display: inline-block;
+	padding: 9px 18px;
+	border: 1px solid rgba(76,55,24,.35);
+	border-radius: 999px;
+	background: #FFFFF0;
+	color: #4C3718;
+	font-weight: 700;
+	font-size: 14px;
+	text-decoration: none !important;
+	transition: all .25s;
+}
+.err404__chips a::before, .err404__chips a::after { content: none !important; }
+.err404__chips a:hover,
+.err404__chips a:focus { background: #4C3718; color: #FFFFF0; border-color: #4C3718; text-decoration: none; }
+
+@media (max-width: 39.9375em) {
+	.err404__inner { padding: 8px 0 24px; }
+	.err404__lead { font-size: 16px; }
+}

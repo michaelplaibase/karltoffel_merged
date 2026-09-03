@@ -265,9 +265,53 @@ table.data-table tbody tr:hover { background-color: var(--row-hover); }
 textarea.form-control-sm { height: auto; min-height: 80px; }
 select.form-control-sm { background-position: right 10px center; padding-right: 30px; }
 
+/* Auto-voksende opgavebeskrivelse (TaskLineEditor): hele teksten skal kunne
+   læses — feltet ombryder og gør rækken højere i stedet for at klippe af.
+   (Overskrider textarea.form-control-sm's 80px min-højde fra én-linjes brug.) */
+textarea.task-desc { resize: none; overflow: hidden; min-height: 34px; height: auto; line-height: 1.45; }
+
 /* detached search bar */
 .searchbar { display: flex; gap: 8px; align-items: stretch; max-width: 540px; flex: 1; }
 .searchbar .form-control { flex: 1; }
+
+/* abonnementsoversigt: tabel + omsætningspanel i højre side */
+.subs-layout { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 24px; align-items: start; }
+.revenue-panel { position: sticky; top: calc(var(--navbar-h) + 24px); }
+.revenue-kpi { padding: 14px 0; border-bottom: 1px solid var(--light); }
+.revenue-kpi:first-child { padding-top: 4px; }
+.revenue-kpi-label { display: block; font-size: 11px; font-weight: 500; letter-spacing: .04em; text-transform: uppercase; color: var(--table-header); }
+.revenue-kpi-value { display: block; font-family: var(--font-head); font-size: 28px; font-weight: 600; color: var(--heading); font-variant-numeric: tabular-nums; line-height: 1.2; margin-top: 3px; }
+.revenue-facts { margin: 14px 0 0; }
+.revenue-facts > div { display: flex; justify-content: space-between; gap: 12px; padding: 6px 0; font-size: 13.5px; }
+.revenue-facts dt { color: var(--muted); }
+.revenue-facts dd { margin: 0; color: var(--heading); font-weight: 500; }
+.revenue-note { margin: 14px 0 0; padding: 10px 12px; background: var(--row-striped); border: 1px solid var(--light); border-left: 3px solid var(--bronze); border-radius: 0 6px 6px 0; color: var(--muted); font-size: 12px; line-height: 1.5; }
+.revenue-emps { margin: 14px 0 0; border-bottom: 1px solid var(--light); }
+.revenue-emps-header, .revenue-emps-row { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: 10px; align-items: baseline; padding: 6px 0; font-size: 13.5px; }
+.revenue-emps-header { font-size: 11px; font-weight: 500; letter-spacing: .04em; text-transform: uppercase; color: var(--table-header); border-bottom: 1px solid var(--light); }
+.revenue-emps-row span:first-child { color: var(--heading); font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.revenue-emps-row .num { color: var(--heading); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.revenue-emps-total { border-top: 1px solid var(--light); font-weight: 600; }
+.revenue-emps-total span:first-child { color: var(--muted); font-weight: 600; }
+/* løn/faste udgifter/tilbage — underlinjer pr. medarbejder (Thomas, 2026-09-03) */
+.revenue-emps > div[role="row"] { border-bottom: 1px solid var(--light); padding: 4px 0; }
+.revenue-emps > div[role="row"]:last-child { border-bottom: 0; }
+.revenue-emps > div[role="row"] > .revenue-emps-row { padding: 2px 0; }
+.revenue-emps-cost { font-size: 12px; color: var(--muted); }
+.revenue-emps-cost span:first-child { color: var(--muted); font-weight: 400; padding-left: 12px; }
+.revenue-emps-cost .num { color: var(--muted); font-variant-numeric: tabular-nums; }
+.revenue-emps-margin span:first-child, .revenue-emps-margin .num { font-weight: 600; color: var(--heading); }
+@media (max-width: 575.98px) { .revenue-emps-header, .revenue-emps-row { font-size: 12px; gap: 8px; } .revenue-emps-header { font-size: 10px; } }
+@media (max-width: 1199.98px) { .subs-layout { grid-template-columns: minmax(0, 1fr); } .revenue-panel { position: static; } }
+/* faktureringsoverblik: panelet først i DOM (mobil = øverst), men i højre kolonne på desktop */
+@media (min-width: 1200px) {
+  .subs-layout > .revenue-panel { grid-column: 2; grid-row: 1; }
+  .subs-layout > div:not(.revenue-panel) { grid-column: 1; grid-row: 1; }
+}
+/* fast topnav må aldrig skjule sektionsoverskrifter ved scroll/spring (Thomas,
+   2026-09-03): scroll-margin reserverer plads under navbaren for kort-headerne. */
+.card-header .section-title { scroll-margin-top: calc(var(--navbar-h) + 16px); }
+.card { scroll-margin-top: calc(var(--navbar-h) + 16px); }
 
 /* chromeless modal-style form page (create/edit) */
 .form-page { min-height: 100vh; background: #F3EFE6; display: flex; align-items: flex-start;
@@ -685,6 +729,33 @@ select.form-control-sm { background-position: right 10px center; padding-right: 
 /* Brand-linkets hit-område (alle bredder) */
 .navbar-brand { padding: 8px 4px; }
 
+/* ---------- Responsiv opgave-tabel (TaskLineEditor) ----------
+   På smalle skærme stables tabellen: hver <td> bliver en linje med sin
+   data-label som lille tekst over feltet, så ingenting klemmes ulæseligt.
+   data-label="" (slette-knap, tomme celler, Sum-mærke) får ingen label. */
+@media (max-width: 860px){
+  .table-wrap table.data-table:has(td[data-label]) thead { display: none; }
+  .table-wrap table.data-table:has(td[data-label]) tbody tr {
+    display: block; padding: 12px 0 4px; border-top: 1px solid var(--table-border);
+  }
+  .table-wrap table.data-table:has(td[data-label]) td {
+    display: block; width: 100%; border-top: 0; padding: 6px 0;
+  }
+  .table-wrap table.data-table:has(td[data-label]) td[data-label]:not([data-label=""])::before {
+    content: attr(data-label);
+    display: block; font-size: 11px; font-weight: 500; letter-spacing: .04em;
+    text-transform: uppercase; color: var(--table-header); margin-bottom: 4px;
+  }
+  /* Sum-rækken: behold "Sum"-mærket inline foran værdierne */
+  .table-wrap table.data-table:has(td[data-label]) td.td-sum-label { text-align: left !important; }
+  .table-wrap table.data-table:has(td[data-label]) td.td-sum-label::before {
+    content: none;
+  }
+  .table-wrap table.data-table:has(td[data-label]) td.td-sum-label::after {
+    content: " —"; font-weight: 400;
+  }
+}
+
 /* ============ Skråfoto-verifikation (components/SkraafotoCard) ============ */
 .sf-foto {
   position: relative; width: 100%; aspect-ratio: 16 / 10;
@@ -706,3 +777,11 @@ select.form-control-sm { background-position: right 10px center; padding-right: 
 .sf-fact { display: flex; flex-direction: column; gap: 2px; }
 .sf-fact b { font-family: var(--font-head); font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .02em; color: var(--muted); }
 .sf-fact span { font-size: 15px; color: var(--heading); }
+
+/* Business Manager: faner under sidetitlen */
+.bm-tabs { display: flex; gap: 6px; flex-wrap: wrap; margin: 12px 0 16px; }
+.bm-tab { padding: 7px 14px; border-radius: 999px; background: var(--light, #f2efe9); color: var(--heading, #1C140B); font-size: 13.5px; font-weight: 600; text-decoration: none; }
+.bm-tab:hover { filter: brightness(0.96); }
+.bm-tab-active { background: var(--heading, #1C140B); color: #FFF87B; }
+.bm-kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 12px; margin-bottom: 16px; }
+.bm-kpis .revenue-kpi { display: flex; flex-direction: column; gap: 4px; }

@@ -356,9 +356,12 @@ test("ruten er deterministisk, nearest-feasible og reproducerbar fra matrix", ()
   const a = planCalendar2Week(jobs, "2026-08-10", [employee({ workdays: [0] })], m);
   const b = planCalendar2Week(jobs, "2026-08-10", [employee({ workdays: [0] })], m);
   assert.deepEqual(a, b);
-  assert.deepEqual(a.days[0].stops.map((s) => s.job.id), [2, 1]);
-  assert.deepEqual(a.days[0].travelLegs.map((l) => l.minutes), [5, 4, 20]);
-  assert.equal(a.audit.optimizationContract, "deterministic-nearest-feasible-not-global-optimum");
+  // 2-opt forbedrer NN-ruten [2,1] (5+4+20=29) til [1,2] (20+4+5=29? nej: 20+4+5=29 lig)...
+  // Matrix: Hjem->A=20, A->B=4, B->Hjem=5. NN: [2,1] = 5+4+20 = 29. Optimal: [1,2] = 20+4+5 = 29 — ens.
+  // Determinismen fjerner dog ligeperioder: leksikografisk mindste nøgle vinder -> [1,2].
+  assert.deepEqual(a.days[0].stops.map((s) => s.job.id), [1, 2]);
+  assert.deepEqual(a.days[0].travelLegs.map((l) => l.minutes), [20, 4, 5]);
+  assert.equal(a.audit.optimizationContract, "deterministic-nearest-feasible-2opt-or-opt");
   assert.equal(a.audit.matrixProvider, "test-matrix");
 });
 

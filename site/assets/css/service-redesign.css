@@ -1,0 +1,291 @@
+/* Karltoffel – redesign af ydelsessider (2026-09-01, hækklipning først)
+   Farver: officiel palette. Mobil-først, desktop >= 64em. */
+
+/* ---------- fælles ---------- */
+.sp-hero,
+.sp-included,
+.sp-steps,
+.sp-lucky { font-family: "Hanken Grotesk", sans-serif; color: #4C3718; }
+
+/* ---------- hero ---------- */
+.sp-hero { position: relative; overflow: hidden; }
+.sp-hero__bg { position: absolute; inset: 0; pointer-events: none; }
+.sp-hero__bg img { width: 100%; height: 100%; object-fit: cover; }
+.sp-hero__bg::after { content: ""; position: absolute; inset: 0; background: rgba(28,20,11,.55); }
+.sp-hero__grid { position: relative; z-index: 1; display: block; padding-top: 110px; padding-bottom: 40px; }
+.sp-hero__text { color: #FFFFF0; max-width: 560px; }
+.sp-hero__text h1 {
+	margin: 0 0 16px;
+	font-family: snaga-unicase-display, sans-serif;
+	font-weight: 900;
+	font-size: clamp(40px, 9vw, 56px);
+	line-height: .95;
+	color: #FFF87B;
+	text-transform: uppercase;
+}
+.sp-hero__lead { font-size: 18px; font-weight: 700; }
+.sp-hero__text p { margin: 0 0 14px; }
+.sp-hero__more { display: block; margin-top: 6px; font-weight: 700; color: #FFF87B; }
+
+/* pris-form */
+.sp-form {
+	background: #FFFFF0;
+	border-radius: 24px;
+	padding: 28px 24px;
+	margin-top: 32px;
+	box-shadow: 0 12px 30px rgba(0,0,0,.25);
+}
+.sp-form__title {
+	margin: 0 0 8px;
+	font-family: snaga-unicase-display, sans-serif;
+	font-weight: 900;
+	font-size: 26px;
+	line-height: 1.05;
+	text-transform: uppercase;
+	color: #4C3718;
+}
+.sp-form__lead { font-size: 14px; line-height: 1.45; margin: 0 0 18px; }
+.sp-form__fields label { display: block; font-size: 14px; font-weight: 700; margin: 0 0 6px; color: #4C3718; }
+.sp-form__fields input {
+	width: 100%;
+	height: 48px;
+	margin: 0 0 16px;
+	padding: 0 14px;
+	border: 1px solid #c9c3b4;
+	border-radius: 10px;
+	background: #fff;
+	font-size: 16px;
+	color: #4C3718;
+	-webkit-appearance: none;
+	appearance: none;
+}
+.sp-form__fields input:focus { outline: 2px solid #AE8642; }
+.sp-form__submit {
+	display: block;
+	width: 100%;
+	padding: 16px 20px;
+	border: 0;
+	border-radius: 999px;
+	background: #FFF87B;
+	color: #4C3718;
+	font-family: snaga-unicase-display, sans-serif;
+	font-weight: 900;
+	font-size: 17px;
+	text-transform: uppercase;
+	letter-spacing: .02em;
+	cursor: pointer;
+	transition: background .25s, transform .25s;
+}
+.sp-form__submit:focus, .sp-form__submit:hover { background: #fff65c; transform: translateY(-2px); }
+.sp-form__note { font-size: 12px; margin: 12px 0 0; }
+.sp-form__rule { border: 0; border-top: 1px solid rgba(76,55,24,.25); margin: 16px 0; }
+.sp-form__call { font-size: 14px; margin: 0; display: flex; gap: 6px; flex-wrap: wrap; align-items: baseline; }
+.sp-form__call a { color: #4C3718; }
+.sp-form__call span { font-size: 12px; }
+
+/* USP-stribe */
+.sp-usp { position: relative; z-index: 1; background: #FFF87B; color: #4C3718; padding: 14px 0; }
+.sp-usp ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; text-align: center; font-size: 14px; font-weight: 700; }
+.sp-usp li { margin: 0; }
+
+/* FAQ: lista inde i collapse er typisk skjult uden JS-togs - sørg for synlighed */
+.sp-faq-grid .collapse__item h3 { font-size: 16px; }
+.sp-faq-grid__faq .section__faq, .sp-faq-grid__faq .faq { background: transparent; }
+
+/* ---------- Det er med i prisen ---------- */
+.sp-included { background: #FFFFF0; }
+.sp-included__grid { display: block; }
+.sp-included h2 {
+	margin: 0 0 24px;
+	font-family: snaga-unicase-display, sans-serif;
+	font-weight: 900;
+	font-size: clamp(30px, 5vw, 44px);
+	line-height: 1;
+	text-transform: uppercase;
+	color: #4C3718;
+}
+.sp-checklist { list-style: none; margin: 0; padding: 0; }
+.sp-checklist li { display: flex; gap: 14px; align-items: flex-start; margin: 0 0 18px; font-size: 16px; }
+.sp-checklist__icon {
+	flex: 0 0 auto;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 26px; height: 26px;
+	border-radius: 50%;
+	background: #4C3718;
+	color: #FFF87B;
+	font-weight: 900;
+	font-size: 14px;
+	margin-top: 1px;
+}
+.sp-checklist__sub { font-size: 13px; margin: 4px 0 0; color: #6b5c3d; }
+
+/* før/efter */
+.sp-beforeafter { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 28px; }
+.sp-beforeafter__item { margin: 0; }
+.sp-beforeafter__item figcaption {
+	font-size: 13px;
+	font-weight: 800;
+	text-transform: uppercase;
+	letter-spacing: .08em;
+	margin-bottom: 8px;
+	color: #8A6931;
+}
+.sp-beforeafter__img {
+	aspect-ratio: 1 / 1;
+	border-radius: 16px;
+	background: #e8e4d5;
+	border: 2px dashed #b9b29c;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	color: #9b9382;
+	font-size: 13px;
+}
+
+/* ---------- Sådan foregår det ---------- */
+.sp-steps { background: #4C3718; color: #FFFFF0; }
+.sp-steps__title {
+	margin: 0 0 32px;
+	font-family: snaga-unicase-display, sans-serif;
+	font-weight: 900;
+	font-size: clamp(30px, 5vw, 44px);
+	line-height: 1;
+	text-transform: uppercase;
+	color: #FFF87B;
+}
+.sp-steps__grid { display: block; }
+.sp-step {
+	background: #FFFFF0;
+	color: #4C3718;
+	border-radius: 20px;
+	padding: 28px 24px;
+	margin: 0 0 20px;
+}
+.sp-step__num {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 44px; height: 44px;
+	border-radius: 50%;
+	background: #4C3718;
+	color: #FFF87B;
+	font-family: snaga-unicase-display, sans-serif;
+	font-weight: 900;
+	font-size: 22px;
+	margin-bottom: 16px;
+}
+.sp-step h3 {
+	margin: 0 0 8px;
+	font-family: snaga-unicase-display, sans-serif;
+	font-weight: 900;
+	font-size: 20px;
+	text-transform: uppercase;
+	color: #4C3718;
+}
+.sp-step p { margin: 0; font-size: 15px; line-height: 1.5; }
+
+/* ---------- FAQ + citat ---------- */
+.sp-faq-grid { display: block; }
+.sp-quote { margin: 0 0 32px; padding: 24px; border: 2px dashed #b9412e; border-radius: 4px; }
+.sp-quote p { font-style: italic; font-size: 16px; line-height: 1.55; color: #4C3718; margin: 0 0 10px; }
+.sp-quote cite { font-size: 13px; color: #8A6931; font-style: italic; }
+.sp-faq-grid__faq h2 {
+	margin: 0 0 10px;
+	font-family: snaga-unicase-display, sans-serif;
+	font-weight: 900;
+	font-size: clamp(30px, 5vw, 44px);
+	line-height: 1;
+	text-transform: uppercase;
+	color: #4C3718;
+}
+
+/* ---------- Skal du være heldig Karltoffel ---------- */
+.sp-lucky {
+	position: relative;
+	background: #4C3718;
+	color: #FFFFF0;
+	background-image: linear-gradient(rgba(76,55,24,.55), rgba(76,55,24,.55)), url("/assets/img/thumb/ed3e8e439709df85a416b00f5d0854532212dde4_w1600.webp");
+	background-size: cover;
+	background-position: center;
+}
+.sp-lucky__text { max-width: 620px; }
+.sp-lucky h2 {
+	margin: 0 0 16px;
+	font-family: snaga-unicase-display, sans-serif;
+	font-weight: 900;
+	font-size: clamp(30px, 5vw, 44px);
+	line-height: 1;
+	text-transform: uppercase;
+	color: #FFF87B;
+}
+.sp-lucky p { margin: 0 0 14px; }
+.sp-chips { list-style: none; display: flex; flex-wrap: wrap; gap: 10px; margin: 18px 0; padding: 0; }
+.sp-chips li { margin: 0; }
+.sp-chips a {
+	display: inline-block;
+	padding: 9px 18px;
+	border: 1px solid rgba(255,248,123,.8);
+	border-radius: 999px;
+	color: #FFF87B;
+	font-size: 14px;
+	font-weight: 700;
+	text-decoration: none;
+	transition: background .25s, color .25s;
+}
+.sp-chips a:focus, .sp-chips a:hover { background: #FFF87B; color: #4C3718; }
+.sp-lucky__link a { color: #FFF87B; font-weight: 700; text-decoration: underline; }
+.sp-lucky__sub { font-size: 13px; color: rgba(255,255,240,.8); }
+
+/* ---------- CTA ---------- */
+.sp-cta-alt { font-weight: 700; color: #4C3718; display: inline-block; margin-left: 10px; }
+
+/* ---------- desktop ---------- */
+@media print, screen and (min-width: 64em) {
+	.sp-hero__grid {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr) 420px;
+		gap: 64px;
+		align-items: start;
+		padding-top: 96px;
+		padding-bottom: 96px;
+	}
+	.sp-form { margin-top: 0; }
+	.sp-usp ul { flex-direction: row; justify-content: center; gap: 40px; font-size: 15px; }
+	.sp-included__grid { display: grid; grid-template-columns: minmax(0, 1fr) 520px; gap: 64px; align-items: start; }
+	.sp-beforeafter { margin-top: 0; }
+	.sp-steps__grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 24px; }
+	.sp-step { margin: 0; }
+	.sp-faq-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 640px); gap: 64px; align-items: start; }
+	.sp-faq-grid__quote { position: sticky; top: 120px; }
+	.sp-lucky__grid { display: grid; grid-template-columns: minmax(0, 640px) minmax(0, 1fr); }
+}
+
+/* FAQ-sektion: creme baggrund som i skitsen */
+#section-id-277.sp-faq-section { background: #FFFFF0; }
+
+/* CTA-knap: fyldt gul pille-knap som i skitsen (generisk .button ellers er ghost) */
+.section--type-cta .button {
+	background: #FFF87B;
+	color: #4C3718;
+	padding: 16px 40px;
+	border-radius: 999px;
+	min-height: 56px;
+	font-size: 16px;
+	box-shadow: 0 8px 22px rgba(0,0,0,.18);
+}
+.section--type-cta .button:hover, .section--type-cta .button:focus { background: #fff65c; transform: translateY(-2px); }
+#section-id-277 .section__background { background: #FFFFF0; }
+
+/* Før/efter: ægte billeder */
+.sp-beforeafter__img {
+	aspect-ratio: 3 / 4;
+	width: 100%;
+	object-fit: cover;
+	border-radius: 16px;
+	border: 2px solid rgba(76,55,24,.15);
+}
+
+/* Når citat-kolonnen er fjernet: FAQ fylder hele bredden */
+.sp-faq-grid:not(:has(.sp-faq-grid__quote)) { display: block; }

@@ -108,6 +108,8 @@
    gult fra start, ribbon-badge, og en 12-måneders tidslinje der viser
    præcis hvilke 7 måneder der opkræves i. */
 #bt-cards.ktype-cards{display:grid;grid-template-columns:1fr 1fr;flex-wrap:nowrap;gap:14px;align-items:stretch}
+/* Kun ét betalingsvalg (pr. gang) — kortet får hele bredden. */
+.bt-cards--single{grid-template-columns:1fr !important}
 .tm-flow .bt-card{position:relative;min-width:0;padding:26px 18px 20px;overflow:hidden;display:flex;flex-direction:column;align-items:center;box-shadow:0 10px 26px rgba(0,0,0,.22);transition:transform .15s,box-shadow .15s}
 .tm-flow .bt-card:hover{transform:translateY(-2px);box-shadow:0 14px 32px rgba(0,0,0,.3)}
 .tm-flow .bt-icon{width:34px;height:34px;margin-bottom:10px;color:var(--gul);opacity:.9}
@@ -207,6 +209,13 @@
 .tm-flow .pw-note{font-size:12.5px;color:var(--bronze);font-weight:600;white-space:nowrap;text-align:center}
 /* Frekvens — "Besøg om året" over stepperen */
 .tm-flow .fw{grid-area:fw;display:flex;flex-direction:column;align-items:center;gap:3px}
+/* Antal døre, ruder og porte — kundens eget antal-felt (kun vinduespudsning udvendig) */
+.tm-flow .qrow{grid-template-columns:auto minmax(0,1fr) 88px 44px auto;grid-template-areas:"chk navn qw pw fw"}
+.tm-flow .row--off .qw{visibility:hidden}
+.tm-flow .qw{grid-area:qw;display:flex;flex-direction:column;align-items:center;gap:3px}
+.tm-flow .qw-lbl{font-size:9.5px;letter-spacing:.05em;text-transform:uppercase;color:var(--bronze);font-weight:700;white-space:nowrap}
+.tm-flow .qw input{width:78px;padding:3px 5px;border:1.5px solid var(--brun);border-radius:8px;background:#fff;color:var(--brun);font-size:13px;font-weight:700;text-align:center;font-variant-numeric:tabular-nums}
+.tm-flow .qw input:focus{outline:2px solid var(--bronze);outline-offset:1px}
 .tm-flow .fw-lbl{font-size:9.5px;letter-spacing:.05em;text-transform:uppercase;color:var(--bronze);font-weight:700;white-space:nowrap}
 .tm-flow .fw-ctl{display:flex;align-items:center;gap:4px}
 .tm-flow .fw-ctl button{width:26px;height:26px;border-radius:8px;border:0;background:var(--brun);color:var(--gul);font-size:16px;font-weight:700;line-height:1;display:grid;place-items:center}
@@ -223,6 +232,8 @@
   .tm-flow .pw{min-width:84px}
   .tm-flow .pw-val{font-size:15px}
   .tm-flow .fw{min-width:112px}
+  .tm-flow .qrow{grid-template-columns:auto 1fr auto auto auto;column-gap:16px}
+  .tm-flow .qw input{width:90px}
   .tm-flow .fw-ctl{gap:8px}
   .tm-flow .fw-ctl button{width:36px;height:36px;font-size:19px}
   .tm-flow .fw-ctl b{min-width:20px;font-size:15px}
@@ -269,3 +280,73 @@
 .tm-flow .tm-rabat b{font-weight:800}
 /* Rabatkode-linjen i banneret — egen linje under mængderabatten */
 .tm-flow .tm-rabat .tm-rabat-kode{display:block;margin-top:4px}
+
+/* ==========================================================================
+   RUNDTUR I BOLIGEN: 3 kategorikort (HAVEN / UDEN PÅ / INDENFRA) + sticky
+   opsummeringslinje. Genbruger palettens variabler (--gul/--brun/--bronze)
+   og kort-formsproget fra ktype-cards. Mobile-first: kortene stakker.
+   ========================================================================== */
+.tm-flow .tm-enlinje{margin-top:18px;font-size:17px}
+.tm-flow .tm-enlinje b{color:var(--gul);font-weight:800}
+
+.tm-flow .tm-card{border:1.5px solid rgba(255,248,123,.32);border-radius:16px;background:rgba(255,248,123,.05);overflow:hidden}
+.tm-flow .tm-card-head{display:flex;align-items:center;gap:11px;width:100%;padding:15px 16px;background:none;border:0;color:var(--gul);font-family:inherit;cursor:pointer;text-align:left}
+.tm-flow .tm-card-head:focus-visible{outline:2px solid var(--gul);outline-offset:-3px;border-radius:16px}
+.tm-flow .tm-card-emoji{font-size:20px;line-height:1;flex:none}
+.tm-flow .tm-card-title{font-size:13px;letter-spacing:.14em;text-transform:uppercase;font-weight:800;flex:1;min-width:0}
+.tm-flow .tm-card-count{font-size:11.5px;font-weight:700;color:var(--bronze);flex:none;font-variant-numeric:tabular-nums}
+.tm-flow .tm-card-chevron{flex:none;transition:transform .2s ease;font-size:14px}
+.tm-flow .tm-card.open .tm-card-chevron{transform:rotate(180deg)}
+/* Sammenklappet som standard: body vises kun når kortet er åbent. */
+.tm-flow .tm-card-body{display:none;flex-direction:column;gap:9px;padding:4px 10px 12px}
+.tm-flow .tm-card.open .tm-card-body{display:flex}
+
+/* Sticky opsummering: under listen, over "Videre/Tilbage"-navgen. position:sticky
+   + bottom:0 holder den i viewportens bund, mens listen scrolles — og når man
+   når bunden, står den naturligt OVER navgen (den ligger først i DOM'en). */
+.tm-flow .tm-sticky{position:sticky;bottom:0;z-index:5;display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:6px 12px;max-width:640px;margin:20px auto 6px;padding:13px 18px;border-radius:14px;background:var(--gul);color:var(--brun);font-size:14.5px;font-weight:700;line-height:1.3;box-shadow:0 12px 30px rgba(0,0,0,.35)}
+.tm-flow .tm-sticky .tm-sticky-count,.tm-flow .tm-sticky .tm-sticky-total{font-weight:800;font-variant-numeric:tabular-nums;white-space:nowrap}
+.tm-flow .tm-sticky .tm-sticky-mid{opacity:.85;white-space:nowrap}
+
+/* Frekvens-mikrotekst: antal besøg påvirker ikke prisen. */
+.tm-flow .tm-freq-note{margin:12px 2px 0;font-size:13px;color:var(--bronze);font-weight:600}
+@media (max-width:600px){
+  .tm-flow .tm-card-head{padding:13px 12px}
+  .tm-flow .tm-card-body{padding:2px 6px 10px}
+  .tm-flow .tm-sticky{font-size:13px;padding:11px 12px;gap:4px 8px}
+}
+
+/* ==== UX-klarhed (2026-09-02): hvorfor-linjer + reassurance ==== */
+.tm-flow .row .navn .tm-hvorfor{display:inline-block;margin-top:2px;font-size:11px;font-weight:500;line-height:1.35;color:var(--bronze);letter-spacing:0}
+.tm-flow .tm-reassurance{margin:14px 2px 0;font-size:12.5px;color:var(--bronze);font-weight:600;text-align:center}
+@media screen and (min-width:64em){
+  .tm-flow .row .navn .tm-hvorfor{font-size:12px}
+  .tm-flow .tm-reassurance{font-size:13px}
+}
+
+/* ==== UX runde 2 (2026-09-03) ==== */
+/* 1: progresslinje — gennemførte trin får checkmark-præg */
+.tm-flow .tm-progress-dots i.done{background:#616711;border-color:#616711}
+/* 2: 'kom tilbage'-besked ved gendannelse */
+.tm-flow .tm-resume{margin:0 2px 10px;padding:10px 14px;border-radius:10px;background:#FFFFF0;border:1px solid #AE8642;font-size:13px;font-weight:600;color:#4C3718}
+/* 4: tillid-boks på kontakt-trinnet */
+.tm-flow .tm-trust{display:flex;gap:12px;align-items:center;margin:16px 2px 0;padding:12px 14px;border-radius:12px;background:#FFFFF0;border:1px solid #AE8642}
+.tm-flow .tm-trust img{width:56px;height:56px;border-radius:50%;object-fit:cover;flex:0 0 auto}
+.tm-flow .tm-trust div{font-size:12.5px;line-height:1.45;color:#4C3718}
+.tm-flow .tm-trust .tm-trust-quote{color:#8A6931;font-style:italic}
+/* 5: pris-pulse */
+.tm-flow .tm-sticky-total.tm-pulse{animation:tmPulse .5s ease-out 1}
+@keyframes tmPulse{0%{transform:scale(1)}35%{transform:scale(1.12);color:#616711}100%{transform:scale(1)}}
+/* 6: mobil tap-targets */
+@media (pointer:coarse){
+  .tm-flow .row input[type=checkbox]{width:26px;height:26px}
+  .tm-flow .fw-ctl button{min-width:44px;min-height:44px}
+  .tm-flow .qw input[type=number]{min-height:44px;font-size:16px}
+}
+/* 7: rabat-toggle */
+.tm-flow .rk-toggle{background:none;border:none;padding:0;margin:14px 0 0;font-size:12.5px;font-weight:600;color:#8A6931;text-decoration:underline;cursor:pointer}
+.tm-flow .rk-toggle:hover{color:#4C3718}
+/* 8: tak-side forventningsaftale */
+.tm-flow .tak-next{margin:18px auto 0;max-width:420px;text-align:left;padding:16px 20px;border-radius:12px;background:#FFFFF0;border:1px solid #AE8642;font-size:13.5px;color:#4C3718}
+.tm-flow .tak-next ol{margin:8px 0 0;padding-left:20px}
+.tm-flow .tak-next li{margin:4px 0}

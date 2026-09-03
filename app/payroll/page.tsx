@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import { getSessionUser } from "@/lib/api-auth";
 import { getPayroll } from "@/lib/payroll";
 
-export const metadata = { title: "Lønrapport · Karltoffel" };
+export const metadata = { title: "Lønrapport · Karltoffel Business Manager" };
 
 const kr = (n: number) => n.toLocaleString("da-DK") + " kr";
 

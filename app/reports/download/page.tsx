@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import { getSessionUser } from "@/lib/api-auth";
 import { todayCphISO } from "@/lib/calendar";
 
-export const metadata = { title: "Rapporter · Karltoffel" };
+export const metadata = { title: "Rapporter · Karltoffel Business Manager" };
 
 // Uden denne prerenderes siden ved BUILD (ingen request-time-API'er ⇒ statisk i
 // Next' default-model), og default-datoerne fryser på deploy-dagen — tre uger

@@ -234,6 +234,7 @@ export async function getContactSettings(id: number) {
     showDeliveryNameOnInvoice: c.showDeliveryNameOnInvoice,
     skipInvoiceOverSms: c.skipInvoiceOverSms,
     invoiceChoicePreselect: c.invoiceChoicePreselect,
+    invoiceFrequency: c.invoiceFrequency,
   };
 }
 
@@ -627,6 +628,12 @@ async function buildWeekPlan(weekMonday: string) {
       tasks: [...o.tasks].sort((a, b) => a.sort - b.sort).map(mapTask),
       comment: o.comment ?? "", addressNote: o.addressNote ?? "",
     });
+    // UDFØRTE/afgjorte ordrer (alt andet end "Afventer levering") er sket i
+    // virkeligheden — de pinnes til deres persisterede dag ligesom låste, så
+    // dagsbevidst planlægning aldrig "flytter fortiden". UNDTAGET "Skal
+    // genplanlægges": den ordre skal netop FLYTTES og er derfor flytbar (den
+    // kan stadig aldrig lande på en passeret dag — fromWeekday gælder stadig).
+    const decided = o.lockedFully || (o.status !== "Afventer levering" && o.status !== "Skal genplanlægges");
     return {
       id: o.id, contactId: o.contactId, customer: o.contact.name,
       address: o.deliveryAddress, postal: postalOf(o.deliveryAddress),
@@ -640,11 +647,8 @@ async function buildWeekPlan(weekMonday: string) {
         o.tasks.map((t) => t.weekdays),
       ),
       fixedEmployeeId: o.employeeId ?? undefined,
-      // UDFØRTE/afgjorte ordrer (alt andet end "Afventer levering") er sket i
-      // virkeligheden — de pinnes til deres persisterede dag ligesom låste,
-      // så dagsbevidst planlægning aldrig "flytter fortiden".
-      locked: o.lockedFully || o.status !== "Afventer levering",
-      lockedWeekday: o.lockedFully || o.status !== "Afventer levering" ? (o.plannedAt.getUTCDay() + 6) % 7 : undefined,
+      locked: decided,
+      lockedWeekday: decided ? (o.plannedAt.getUTCDay() + 6) % 7 : undefined,
     };
   });
   // Only jobs pinned to an ACTIVE employee go through the router — everything
@@ -665,15 +669,16 @@ async function buildWeekPlan(weekMonday: string) {
   // opgave hurtigere end planlagt — men KUN for dagens ugedag (i går/i morgen
   // giver "hurtigere end planlagt" ingen mening at fremrykke visuelt for).
   if (todayIdx != null) reflowEarlyCompletions(plan.days.filter((d) => d.weekday === todayIdx), completedAtById);
-  // Ærlige årsager: efter overarbejds-fallbacken er "overflow" reserveret til
-  // ordrer uden nogen mulig dag (fx uge slut / låst uden match); faste ugedage
-  // uden en tilbageværende arbejdsdag får deres egen forklaring.
-  const noRemainingFixedDay = (job: Job) =>
-    job.fixedWeekdays != null && !job.fixedWeekdays.some((w) => w >= (todayIdx ?? 0) && w <= 4);
+  // Ærlig årsag: efter planlægningen er resterende uplacerede ordrer "overflow"
+  // (ingen mulig dag tilbage i ugen). Faste ugedage er nu FORTRUKNE, ikke
+  // blokerende — planlæggeren placerer selv jobbet på den bedste tilbageværende
+  // dag, når den faste dag er passeret eller fuld, så "fixed_weekday_unavailable"
+  // opstår ikke længere som beregnet årsag (labelen i DAY_UNPLANNED_REASON og
+  // TeamCalendarClient beholdes for visningskompatibilitet).
   const unplanned: { job: Job; reason: "unassigned" | "inactive_employee" | "overflow" | "holiday" | "fixed_weekday_unavailable" }[] = holiday
     ? jobs.map((job) => ({ job, reason: "holiday" as const }))
     : [
-        ...plan.unplanned.map((job) => ({ job, reason: noRemainingFixedDay(job) ? ("fixed_weekday_unavailable" as const) : ("overflow" as const) })),
+        ...plan.unplanned.map((job) => ({ job, reason: "overflow" as const })),
         ...unassigned.map((job) => ({ job, reason: "unassigned" as const })),
         ...inactiveEmp.map((job) => ({ job, reason: "inactive_employee" as const })),
       ];
@@ -832,6 +837,15 @@ export async function getCalendarWeek(weekMonday: string, viewer?: { id: number;
         lock: (s.job.locked ? "fastlaast" : "frigjort") as LockState, employeeId: d.employeeId,
         contactId: s.job.contactId, subscriptionNo: meta?.subNo ?? null,
         phone: meta?.phone ?? null,
+        // Thomas (2026-09-03): kalenderkortene skal kunne vise ordenens opgaver,
+        // ikke kun kundenavn — samme data dagsprogrammet allerede viser.
+        tasks: (meta?.tasks ?? []).map((t) => ({
+          id: t.price, // TaskLine har intet id-felt; nøgle bruges kun til React-listen
+          category: t.category,
+          description: t.description,
+          intervalMultiplier: t.interval ?? null,
+          durationMin: t.durationMin,
+        })),
       };
     })
   );
@@ -867,7 +881,16 @@ export async function getCalendarWeek(weekMonday: string, viewer?: { id: number;
     return {
       id: job.id, postal: job.postal, customer: job.customer, category: job.category,
       status: calStatusOf(meta?.status ?? "Afventer levering"), contactId: job.contactId,
-      subscriptionNo: meta?.subNo ?? null, phone: meta?.phone ?? null, reason,
+      subscriptionNo: meta?.subNo ?? null, phone: meta?.phone ?? null,
+      // Thomas (2026-09-03): også ikke-planlagte kort kan folde opgaverne ud.
+      tasks: (meta?.tasks ?? []).map((t) => ({
+        id: t.price,
+        category: t.category,
+        description: t.description,
+        intervalMultiplier: t.interval ?? null,
+        durationMin: t.durationMin,
+      })),
+      reason,
     };
   });
 
@@ -1005,6 +1028,7 @@ export async function getCalendarMonth(monthParam: string, viewer?: { id: number
             postal: s.job.postal, category: s.job.category,
             status: calStatusOf(meta?.status ?? "Afventer levering"),
             contactId: s.job.contactId,
+            tasks: (meta?.tasks ?? []).map((t) => t.description).filter(Boolean),
           };
         }));
       // Ikke-planlagte ordrer vises på deres persisterede ugedag — måneds-
@@ -1018,6 +1042,7 @@ export async function getCalendarMonth(monthParam: string, viewer?: { id: number
           postal: job.postal, category: job.category,
           status: calStatusOf(wp.metaById.get(job.id)?.status ?? "Afventer levering"),
           contactId: job.contactId,
+          tasks: (wp.metaById.get(job.id)?.tasks ?? []).map((t) => t.description).filter(Boolean),
           unplanned: true, reason,
         })));
       return {

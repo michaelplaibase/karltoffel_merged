@@ -99,9 +99,13 @@ test("navForRole skjuler admin-punkter for ikke-admins og fjerner tomme menuer",
   for (const adminHref of ["/users", "/payroll", "/accounting", "/settings", "/templates", "/reports/graphs"]) {
     assert.ok(!medarbejder.includes(adminHref), `${adminHref} må ikke vises for ikke-admins`);
   }
-  // Fælles sider består for alle.
-  for (const fri of ["/calendar", "/customers", "/orders", "/guides", "/timesheet", "/discount-codes"]) {
+  // Fælles sider består for alle — og alt andet (timesheet, guides,
+  // discount-codes m.fl.) er nu adminOnly efter rollebegrænsningen.
+  for (const fri of ["/calendar", "/customers", "/orders", "/reports/day-pdf"]) {
     assert.ok(medarbejder.includes(fri), `${fri} skal vises for alle`);
+  }
+  for (const kunAdmin of ["/guides", "/timesheet", "/discount-codes", "/group-messages", "/holidays", "/optimization", "/price-adjustments", "/standard-tasks", "/partners", "/quiz", "/support", "/ai-receptionist"]) {
+    assert.ok(!medarbejder.includes(kunAdmin), `${kunAdmin} må ikke vises for ikke-admins`);
   }
   // Admin ser den fulde menu, og "Rapportering" forsvinder ikke for en
   // medarbejder (dagsprogram-PDF'en er ikke admin-gated).
@@ -150,8 +154,8 @@ test("login ekkoer brugernavn/'Husk mig' ved fejl og redirecter kun til interne 
   assert.match(form, /name="next"/);
 });
 
-test("middleware sender den oprindelige sti med som ?next=", async () => {
-  const mw = await source("middleware.ts");
+test("proxy sender den oprindelige sti med som ?next=", async () => {
+  const mw = await source("proxy.ts");
   assert.match(mw, /const next = req\.nextUrl\.pathname \+ req\.nextUrl\.search/);
   assert.match(mw, /"\?next=" \+ encodeURIComponent\(next\)/);
   assert.doesNotMatch(mw, /url\.search = "";/);

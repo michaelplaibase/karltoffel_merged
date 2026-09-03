@@ -36,6 +36,7 @@
 // draft→book→send→pay-cyklus på den rigtige organisation.
 import { prisma } from "./db";
 import type { DineroConnection } from "@prisma/client";
+import { effectiveInvoiceFrequency } from "./invoice-frequency";
 
 // ─── Endpoints ─────────────────────────────────────────────────────────────────
 const API_BASE = "https://api.dinero.dk";
@@ -472,7 +473,12 @@ export async function issueInvoiceForOrder(orderId: number): Promise<IssueResult
   //    og kvitteres pr. ordre nu; guid'en udelukker den derefter fra batchen,
   //    så samlefakturaen aldrig opkræver beløbet igen.
   const hasPerOrderDraft = order.dineroInvoiceGuid != null;
-  if (order.contact.isCompany && !perOrderBooked && !hasPerOrderDraft && decision !== D_SEND_CASH) {
+  // Thomas, 2026-09-03: værnet gælder nu efter kundens FAKTURERINGSREGEL, ikke
+  // kun efter erhvervs-flaget — alle kontakter med reglen maaned/kvartal skal
+  // samles (lib/business-invoicing.ts); ''/auto afledes (erhverv → maaned,
+  // privat → pr_gang). pr_gang (inkl. privat-auto) fortsætter som før.
+  const goesToBatch = effectiveInvoiceFrequency(order.contact) !== "pr_gang";
+  if (goesToBatch && !perOrderBooked && !hasPerOrderDraft && decision !== D_SEND_CASH) {
     await prisma.order.updateMany({
       where: { id: orderId, dineroInvoiceGuid: null, dineroInvoiceNumber: null },
       data: { dineroInvoiceStatus: "Samlefaktura", dineroError: null },

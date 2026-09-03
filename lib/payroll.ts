@@ -13,6 +13,7 @@ export type PayrollRow = {
   commissionPct: number | null;
   provision: number | null;  // akkord: omsætning EKSKL. moms × pct
   fastLoen: number | null;   // fast: manuelt månedsbeløb
+  fixedMonthlyCost: number | null; // faste udgifter pr. md (fx voucher, transport)
 };
 
 export type Payroll = { fromISO: string; toISO: string; rows: PayrollRow[] };
@@ -34,7 +35,7 @@ export async function getPayroll(fromISO?: string, toISO?: string): Promise<Payr
 
   const users = await prisma.user.findMany({
     orderBy: [{ isAdmin: "desc" }, { username: "asc" }],
-    select: { id: true, firstName: true, lastName: true, payModel: true, commissionPct: true, monthlySalary: true },
+    select: { id: true, firstName: true, lastName: true, payModel: true, commissionPct: true, monthlySalary: true, fixedMonthlyCost: true },
   });
 
   // Kun udførte ordrer med en tildelt medarbejder i perioden.
@@ -68,6 +69,7 @@ export async function getPayroll(fromISO?: string, toISO?: string): Promise<Payr
       commissionPct: model === "akkord" ? pct : null,
       provision: model === "akkord" ? Math.round((omsEx * pct) / 100) : null,
       fastLoen: model === "fast" ? u.monthlySalary : null,
+      fixedMonthlyCost: u.fixedMonthlyCost,
     };
   });
 

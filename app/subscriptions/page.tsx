@@ -8,7 +8,7 @@ import { CatChip, CustomerCell, MapLink, money } from "@/components/ui";
 import RowMenu from "@/components/RowMenu";
 import { SearchBar } from "@/components/ListControls";
 
-export const metadata = { title: "Abonnementer · Karltoffel" };
+export const metadata = { title: "Abonnementer · Karltoffel Business Manager" };
 
 export default async function SubscriptionsPage({ searchParams }: { searchParams: Promise<{ q?: string; page?: string }> }) {
   const sp = await searchParams;

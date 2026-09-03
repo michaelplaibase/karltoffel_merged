@@ -24,6 +24,9 @@ model Company {
   minutePriceOere Int     @default(860)   // øre pr. minut EKSKL. moms (8,60 kr/min) — prisberegner: varighed = (pris inkl. moms / 1,25) / (minutePriceOere/100)
   users         User[]
   contacts      Contact[]
+  vehicles      Vehicle[]
+  machines      Machine[]
+  budgets       Budget[]
   standardTasks StandardTask[]
   leads         Lead[]
   settings      String?   // JSON blob (SQLite has no native Json)
@@ -53,9 +56,67 @@ model User {
   payModel         String   @default("fast")  // lønmodel: "fast" | "akkord"
   commissionPct    Int?     // akkord: provisionssats i % (fx 40)
   monthlySalary    Int?     // fast løn: manuelt beløb (kr/md)
+  fixedMonthlyCost Int?     // faste udgifter pr. md (fx voucher, transport)
   orders           Order[]
   timeEntries      TimeEntry[]
+  vehicles         Vehicle[]
 
+  @@index([companyId])
+}
+
+// --- Business Manager 1.0 (Thomas, 2026-09-03) ------------------------------
+// Modulært, datadrevet økonomisystem: medarbejdere (User har allerede
+// payModel/monthlySalary/commissionPct/fixedMonthlyCost), biler + maskiner
+// (faste driftsomkostninger) og økonomiovervågning (budget vs. realiseret).
+// Regnemotoren bor i lib/business-manager.ts; API i app/api/business-manager.
+model Vehicle {
+  id            Int      @id @default(autoincrement())
+  company       Company  @relation(fields: [companyId], references: [id])
+  companyId     Int
+  name          String   // fx "Van 1 — Ford Transit"
+  active        Boolean  @default(true)
+  // Faste månedlige omkostninger (kr/md)
+  leaseMonthly  Int      @default(0)  // leasing/afskrivning
+  insuranceMonthly Int   @default(0)  // forsikring
+  fuelMonthly   Int      @default(0)  // brændstof (gns.)
+  serviceMonthly Int     @default(0)  // værksted/service/grøn afgift
+  otherMonthly  Int      @default(0)  // diverse (vask, afgifter, parkering)
+  assignedTo    User?    @relation(fields: [userId], references: [id])
+  userId        Int?     // bilens udgifter kommer på denne medarbejder; null = fordelt på alle
+  note          String?
+  createdAt     DateTime @default(now())
+
+  @@index([companyId])
+}
+
+model Machine {
+  id            Int      @id @default(autoincrement())
+  company       Company  @relation(fields: [companyId], references: [id])
+  companyId     Int
+  name          String   // fx "Vandrenser 2"
+  active        Boolean  @default(true)
+  purchasePrice Int      @default(0)  // indkøbspris (kr)
+  lifetimeYears Int      @default(0)  // forventet levetid i år (0 = ingen afskrivning)
+  serviceMonthly Int     @default(0)  // vedligehold/service (kr/md)
+  otherMonthly  Int      @default(0)  // diverse faste omkostninger (kr/md)
+  note          String?
+  createdAt     DateTime @default(now())
+
+  @@index([companyId])
+}
+
+model Budget {
+  id            Int      @id @default(autoincrement())
+  company       Company  @relation(fields: [companyId], references: [id])
+  companyId     Int
+  year          Int
+  month         Int      // 1-12
+  revenueBudget Int      @default(0)  // budgetteret omsætning inkl. moms (kr)
+  costBudget    Int      @default(0)  // budgetterede omkostninger ekskl. løn (kr)
+  note          String?
+  createdAt     DateTime @default(now())
+
+  @@unique([companyId, year, month])
   @@index([companyId])
 }
 
@@ -82,6 +143,9 @@ model Contact {
   showDeliveryNameOnInvoice    Boolean @default(false)
   skipInvoiceOverSms           Boolean @default(false)
   invoiceChoicePreselect       String  @default("default")
+  // Faktureringsregel pr. kunde (Thomas, 2026-09-03). ''/'auto' = afled af
+  // isCompany: privat → pr_gang, erhverv → maaned. Værdier: pr_gang, maaned, kvartal.
+  invoiceFrequency             String  @default("")
   // Dinero (Visma) kontakt-guid — sættes ved første fakturering af kunden, så
   // efterfølgende ordrer kan springe opslag/oprettelse over. @unique er et værn
   // mod at oprette den samme kontakt to gange i Dinero.
@@ -353,4 +417,34 @@ model DineroConnection {
   status         String    @default("connected") // connected | error
   connectedAt    DateTime  @default(now())
   updatedAt      DateTime  @updatedAt
+}
+
+// Digitalt gavekort bestilt fra gavekort-siden på det statiske site
+// (/c/det-vi-ordner/gavekort). Fase 0 (MobilePay, manuel): kunden bestiller
+// online, teamet sender en MobilePay-betalingsanmodning manuelt og markerer
+// betalingen i CRM (/giftcards) — FØRST da genereres gavekortskoden
+// (KT-XXXX-XXXX-XXXX) og teamet sender kortet pr. mail (status=sent).
+// Stripe-felterne er placeholder for en senere automatisk integration.
+model GiftCardOrder {
+  id                    String    @id @default(cuid())
+  stripeSessionId       String?   @unique            // placeholder — ikke brugt i fase 0
+  stripePaymentIntentId String?                      // placeholder — ikke brugt i fase 0
+  amountMinor           Int                            // beløb i øre
+  currency              String    @default("dkk")
+  design                String                         // kort-design (én af de 7 navne fra sitet)
+  occasion              String                         // anledningstekst vist på kortet
+  message               String                         // kundens personlige besked (max 300 tegn)
+  recipientName         String
+  recipientEmail        String
+  buyerName             String
+  buyerEmail            String
+  buyerPhone            String                         // kundens mobilnr. til MobilePay-betalingsanmodningen (8 cifre, +45 strippet)
+  status                String    @default("awaiting_payment") // awaiting_payment | paid | sent | cancelled
+  code                  String?   @unique             // KT-XXXX-XXXX-XXXX — genereres ved "Markér som betalt"
+  sentAt                DateTime?                      // hvornår teamet sendte mailen
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  @@index([status])
+  @@index([buyerEmail])
 }

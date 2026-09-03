@@ -9,8 +9,8 @@ import { telHref, telDisplay } from "@/components/ui";
 import { setOrderLock, moveOrderWeeks, replanWeek, deleteOrder } from "@/app/actions/orders";
 
 type Props =
-  | { mode: "week"; week: CalendarWeek; nav: { prevWeek: string; nextWeek: string; monthParam: string }; readOnly?: boolean; basePath?: string }
-  | { mode: "month"; month: CalendarMonth; nav: { prevWeek?: never }; readOnly?: boolean; basePath?: string };
+  | { mode: "week"; week: CalendarWeek; nav: { prevWeek: string; nextWeek: string; monthParam: string }; readOnly?: boolean; moveOnly?: boolean; basePath?: string }
+  | { mode: "month"; month: CalendarMonth; nav: { prevWeek?: never }; readOnly?: boolean; moveOnly?: boolean; basePath?: string };
 
 /** What the context menu needs to act on an order — both board events and unplanned jobs qualify. */
 type MenuTarget = { id: number; contactId: number; subscriptionNo: number | null; phone: string | null };
@@ -74,25 +74,22 @@ const catLetter = (category: string) => (category.charAt(0) || "?").toUpperCase(
 function PreviewTaskDetails({ tasks }: { tasks: CalendarTaskDetail[] }) {
   if (!tasks.length) return null;
   return (
-    <details onClick={(event) => event.stopPropagation()}
-      style={{ marginTop: 5, borderTop: "1px solid var(--tc-line-soft)", paddingTop: 4 }}>
-      <summary style={{ cursor: "pointer", fontSize: 11, fontWeight: 700 }}>
-        {tasks.length} {tasks.length === 1 ? "opgave" : "opgaver"} · vis detaljer
-      </summary>
-      <div style={{ display: "grid", gap: 5, marginTop: 5 }}>
-        {tasks.map((task) => (
-          <div key={task.id} style={{ fontSize: 11, lineHeight: 1.35 }}>
-            <strong>{task.category}</strong> · {task.description}<br />
-            <span>{task.intervalMultiplier ?? "Hver gang"} · {task.durationDefaulted ? "60 min. (standardtid)" : `${task.durationMin} min.`}</span>
-          </div>
-        ))}
-      </div>
-    </details>
+    <span className="ev-tasks" onClick={(event) => event.stopPropagation()}>
+      {tasks.map((task, i) => (
+        <span key={task.id !== undefined ? task.id : i} className="ev-task" style={{ fontSize: 11, lineHeight: 1.35, display: "block" }}>
+          <strong>{task.category}</strong> · {task.description}
+          <span className="num" style={{ opacity: 0.75 }}> · {task.durationMin} min.</span>
+        </span>
+      ))}
+    </span>
   );
 }
 
 export default function TeamCalendarClient(props: Props) {
   const readOnly = props.readOnly ?? false;
+  // moveOnly: brugeren må flytte/låse ordrer (flyt til anden uge), men IKKE
+  // genplanlægge hele ugen eller slette ordrer — bruges til medarbejdere.
+  const moveOnly = props.moveOnly ?? false;
   const basePath = props.basePath ?? "/calendar";
   // "Afslut ordre …" skal vende tilbage HERTIL (den viste uge), ikke til
   // /orders — complete-siden whitelister ?back og bruger den som backUrl.
@@ -201,7 +198,7 @@ export default function TeamCalendarClient(props: Props) {
       </span>
       <span className="sp" />
       {readOnly && <span className="badge">Arbejdsdag 08:00–16:00 (+1 time fleks) · man–fre</span>}
-      {props.mode === "week" && !readOnly && (
+      {props.mode === "week" && !readOnly && !moveOnly && (
         <button className="cbtn" type="button" disabled={pending} onClick={() => run(() => replanWeek(props.week.monday))}>
           {pending ? "Planlægger…" : "Genplanlæg uge"}
         </button>
@@ -285,7 +282,7 @@ export default function TeamCalendarClient(props: Props) {
                                 <i className="cat" style={{ "--cat": categoryColor(ev.category) } as React.CSSProperties}>{catLetter(ev.category)}</i>
                                 <span className="txt">{ev.customer}</span>
                               </span>
-                              {readOnly && <PreviewTaskDetails tasks={ev.tasks ?? []} />}
+                              {<PreviewTaskDetails tasks={ev.tasks ?? []} />}
                               {readOnly && ev.previewSuggestion && <span className="hint">{ev.previewSuggestion}</span>}
                             </div>
                           ))}
@@ -328,7 +325,7 @@ export default function TeamCalendarClient(props: Props) {
                     <span className="unplanned-reason-label">Årsag:</span>
                     {UNPLANNED_REASON_LABEL[job.reason] ?? "Ukendt årsag"}
                   </span>
-                  {readOnly && <PreviewTaskDetails tasks={job.tasks ?? []} />}
+                  <PreviewTaskDetails tasks={job.tasks ?? []} />
                 </div>
               ))}
             </div>
@@ -361,7 +358,7 @@ export default function TeamCalendarClient(props: Props) {
                       title="Åbn dagsprogrammet for dagen">{d.dateNum}</Link>
                     {chips.slice(0, 3).map((c) => (
                       <span key={c.id} className="chip"
-                        title={c.unplanned ? `Ikke planlagt: ${UNPLANNED_REASON_LABEL[c.reason ?? ""] ?? "Ukendt årsag"}` : undefined}
+                        title={[c.unplanned ? `Ikke planlagt: ${UNPLANNED_REASON_LABEL[c.reason ?? ""] ?? "Ukendt årsag"}` : null, ...(c.tasks ?? [])].filter(Boolean).join(" — ") || undefined}
                         style={{
                           ...empVar(empById.get(c.employeeId)?.color ?? "var(--muted)"),
                           ...(c.unplanned ? { outline: "1.5px dashed var(--danger, #C4183C)", outlineOffset: -1 } : {}),
@@ -463,7 +460,7 @@ export default function TeamCalendarClient(props: Props) {
         </div>
       </div>
 
-      {!readOnly && menu && (
+      {(!readOnly || moveOnly) && menu && (
         <div className="ctxmenu" ref={menuRef} style={{ left: menu.x, top: menu.y }}>
           {menuTel != null ? (
             <a href={menuTel} className="ctxmenu-item">Ring kunden op · {telDisplay(menu.ev.phone)}</a>
@@ -485,10 +482,13 @@ export default function TeamCalendarClient(props: Props) {
             <div className="ctxmenu-item" key={label} style={{ paddingLeft: 34 }}
               onClick={() => run(() => moveOrderWeeks(menu.ev.id, w, unlock))}>{label}</div>
           ))}
-          <div className="ctxmenu-item" onClick={() => setExpanded(expanded === "mere" ? null : "mere")}>
-            Mere … <i className="bi bi-caret-right-fill" />
-          </div>
-          {expanded === "mere" && (
+          {/* "Mere …"-undermenuen (slet ordre, notifikation m.m.) er kun til admins. */}
+          {!moveOnly && (
+            <div className="ctxmenu-item" onClick={() => setExpanded(expanded === "mere" ? null : "mere")}>
+              Mere … <i className="bi bi-caret-right-fill" />
+            </div>
+          )}
+          {expanded === "mere" && !moveOnly && (
             <>
               <Link href={`/customers/${menu.ev.contactId}`} className="ctxmenu-item" style={{ paddingLeft: 34 }}>Gå til kundedetaljer …</Link>
               {menu.ev.subscriptionNo != null && (
@@ -521,7 +521,7 @@ export default function TeamCalendarClient(props: Props) {
         </div>
       )}
 
-      {!readOnly && confirmDel && (
+      {!readOnly && !moveOnly && confirmDel && (
         <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,.4)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 3000 }}
           onClick={() => !pending && setConfirmDel(null)}>
           <div style={{ background: "#fff", borderRadius: 6, padding: "20px 22px", width: 440, maxWidth: "92vw", boxShadow: "0 10px 40px rgba(0,0,0,.25)" }} onClick={(e) => e.stopPropagation()}>

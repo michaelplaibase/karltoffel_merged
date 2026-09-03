@@ -25,7 +25,7 @@ export type Calendar2Day = { employeeId: number; weekday: number; stops: Calenda
 export type Calendar2Unplanned = { job: Calendar2Job; reason: Calendar2UnplannedReason };
 export type Calendar2Plan = {
   weekMonday: string; days: Calendar2Day[]; unplanned: Calendar2Unplanned[];
-  audit: { optimizationContract: "deterministic-nearest-feasible-not-global-optimum"; matrixProvider: string; matrixCapturedAt: string; matrixAddresses: string[]; matrixDurations: number[][] };
+  audit: { optimizationContract: "deterministic-nearest-feasible-2opt-or-opt"; matrixProvider: string; matrixCapturedAt: string; matrixAddresses: string[]; matrixDurations: number[][] };
 };
 export type Calendar2Series = {
   seriesId: number;
@@ -258,6 +258,70 @@ export function planCalendar2Week(jobs: Calendar2Job[], weekMonday: string, empl
   }, "unverified_address");
   const invalidSourceWeekday = new Set(remaining.filter((job) => Boolean(job.fixedWeekdays?.length) && !job.fixedWeekdays!.some((day) => employeeById.get(job.fixedEmployeeId!)!.workdays.includes(day))).map((job) => job.id));
 
+  // Deterministic 2-opt/or-opt local search on an already-feasible day sequence.
+  // Feasibility rule: workStartMin + totalDrive + totalService + returnHome(last) <= hardEnd.
+  // Accepts a candidate only on strict improvement (delta < 0) or an equal-cost
+  // sequence that is lexicographically smaller (canonical tie-break), so the same
+  // input always yields the same plan.
+  const makeImproveDayRoute = (employee: Calendar2Employee) => (stops: Calendar2Stop[], home: number, hardEnd: number): Calendar2Stop[] => {
+    const seqOf = (ordered: Calendar2Stop[]) => ordered.map((stop) => matrixIndex.get(normalized(stop.job.address))!);
+    const travelOf = (seq: number[]) => {
+      let total = 0;
+      let from = home;
+      for (const to of seq) {
+        const leg = matrix.durations[from]?.[to];
+        if (!Number.isFinite(leg)) return Infinity;
+        total += leg;
+        from = to;
+      }
+      const back = matrix.durations[from]?.[home];
+      return Number.isFinite(back) ? total + back : Infinity;
+    };
+    const feasible = (seq: number[], serviceMin: number) => employee.workStartMin + travelOf(seq) + serviceMin <= hardEnd;
+    const seqKey = (seq: number[]) => seq.join(",");
+    let bestStops = [...stops];
+    let bestSeq = seqOf(bestStops);
+    let bestCost = travelOf(bestSeq);
+    if (!Number.isFinite(bestCost)) return bestStops;
+    const serviceMin = stops.reduce((sum, stop) => sum + stop.job.durationMin, 0);
+    let improved = true;
+    while (improved) {
+      improved = false;
+      const tryCandidate = (candidate: Calendar2Stop[]) => {
+        const seq = seqOf(candidate);
+        const cost = travelOf(seq);
+        if (!Number.isFinite(cost) || !feasible(seq, serviceMin)) return;
+        const delta = cost - bestCost;
+        if (delta < 0 || (delta === 0 && seqKey(seq) < seqKey(bestSeq))) {
+          bestStops = candidate; bestSeq = seq; bestCost = cost; improved = true;
+        }
+      };
+      // Pass A: 2-opt — reverse stops[i..j] (index 0 stays: home anchor is fixed only
+      // in the travel loop; reversing including index 0 is fine since home is implicit).
+      for (let i = 0; i < bestStops.length - 1; i++) {
+        for (let j = i + 1; j < bestStops.length; j++) {
+          const candidate = [...bestStops];
+          let from = i, to = j;
+          while (from < to) { const swap = candidate[from]; candidate[from] = candidate[to]; candidate[to] = swap; from++; to--; }
+          tryCandidate(candidate);
+        }
+      }
+      // Pass B: or-opt — relocate blocks of 1..2 consecutive stops to every position.
+      for (let blockSize = 1; blockSize <= 2; blockSize++) {
+        for (let from = 0; from + blockSize <= bestStops.length; from++) {
+          const block = bestStops.slice(from, from + blockSize);
+          const rest = [...bestStops.slice(0, from), ...bestStops.slice(from + blockSize)];
+          for (let to = 0; to <= rest.length; to++) {
+            if (to === from) continue;
+            const candidate = [...rest.slice(0, to), ...block, ...rest.slice(to)];
+            tryCandidate(candidate);
+          }
+        }
+      }
+    }
+    return bestStops;
+  };
+
   for (const employee of [...employees].sort((a, b) => a.id - b.id)) {
     if (!employee.homeAddress) continue;
     const home = matrixIndex.get(normalized(employee.homeAddress));
@@ -291,9 +355,28 @@ export function planCalendar2Week(jobs: Calendar2Job[], weekMonday: string, empl
         cursor = startMin + candidate.durationMin;
         current = best.matrixIndex;
       }
-      if (stops.length) {
-        const returnHomeMin = matrix.durations[current][home];
-        travelLegs.push({ from: matrix.addresses[current], to: matrix.addresses[home], minutes: returnHomeMin, kind: "return_home" });
+      const improveDayRoute = makeImproveDayRoute(employee);
+      const ordered = improveDayRoute(stops, home, hardEnd);
+      if (ordered.length) {
+        let cursor2 = employee.workStartMin;
+        let current2 = home;
+        travelLegs.length = 0;
+        for (const stop of ordered) {
+          const next = matrixIndex.get(normalized(stop.job.address))!;
+          const drive = matrix.durations[current2][next];
+          stop.startMin = cursor2 + drive;
+          stop.endMin = stop.startMin + stop.job.durationMin;
+          stop.driveMin = drive;
+          stop.audit.matrixFromIndex = current2;
+          stop.audit.matrixToIndex = next;
+          travelLegs.push({ from: matrix.addresses[current2], to: matrix.addresses[next], minutes: drive, kind: current2 === home && stop === ordered[0] ? "home_to_stop" : "interstop" });
+          cursor2 = stop.endMin;
+          current2 = next;
+        }
+        stops.length = 0;
+        stops.push(...ordered);
+        const returnHomeMin = matrix.durations[current2][home];
+        travelLegs.push({ from: matrix.addresses[current2], to: matrix.addresses[home], minutes: returnHomeMin, kind: "return_home" });
         days.push({ employeeId: employee.id, weekday, stops, travelLegs, driveMin: travelLegs.reduce((sum, leg) => sum + leg.minutes, 0), serviceMin: stops.reduce((sum, stop) => sum + stop.job.durationMin, 0), returnHomeMin });
       }
     }
@@ -344,7 +427,7 @@ export function planCalendar2Week(jobs: Calendar2Job[], weekMonday: string, empl
     unplanned.push({ job, reason: matrix.provider === "unverified" || !routeVerified ? "unverified_route" : "overflow" });
   }
   unplanned.sort((a, b) => a.job.id - b.job.id);
-  return { weekMonday, days, unplanned, audit: { optimizationContract: "deterministic-nearest-feasible-not-global-optimum", matrixProvider: matrix.provider, matrixCapturedAt: matrix.capturedAt, matrixAddresses: matrix.addresses, matrixDurations: matrix.durations } };
+  return { weekMonday, days, unplanned, audit: { optimizationContract: "deterministic-nearest-feasible-2opt-or-opt", matrixProvider: matrix.provider, matrixCapturedAt: matrix.capturedAt, matrixAddresses: matrix.addresses, matrixDurations: matrix.durations } };
 }
 
 const weekTime = (week: string) => new Date(`${week}T00:00:00Z`).getTime();

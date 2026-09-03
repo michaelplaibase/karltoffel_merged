@@ -42,9 +42,48 @@ test("overarbejds-fallback vælger den bundne medarbejders dag med FÆRREST minu
   for (const x of ot) assert.ok(x.s.job.fixedEmployeeId === 1);
 });
 
-test("fast ugedag uden tilbageværende arbejdsdag forbliver ærligt uplaceret", () => {
+test("fast ugedag er FORTRUKEN ikke blokerende: passeret fast dag → bedste tilbageværende dag", () => {
+  // Nyt princip (Thomas, 2026-09-03): abonnementets faste ugedag er en anker-
+  // præference, aldrig en blokering. En fast mandag-ordrer i en uge, hvor
+  // mandag er passeret, planlægges på den bedste tilbageværende dag i stedet
+  // for ærligt at ende som "Ikke planlagt".
   const p = planWeek([job(1, 60, { fixedWeekdays: [0] })], "2026-08-24", [emp(1)], { fromWeekday: 2 });
-  assert.equal(p.unplanned.length, 1);
+  assert.equal(p.unplanned.length, 0);
+  assert.ok(p.days.find((d) => d.stops.length)?.weekday! >= 2);
+});
+
+test("uge-niveau fordeling: 5 ubeegrænsede job spredes over ugen (ikke pakket mandag først)", () => {
+  // Gamle adfærd: grådhed pakkede mandag først til kapacitetsgrænsen. Ny:
+  // hvert job vælger dagen hvor (dagsbelastning + marginal kørsel) er mindst,
+  // så opgaverne fordeler sig over hele ugen og daglig kørsel minimeres.
+  const jobs = Array.from({ length: 5 }, (_, i) => job(i + 1, 240));
+  const p = planWeek(jobs, "2026-08-24", [emp(1)]);
+  assert.equal(p.unplanned.length, 0);
+  const daysWithStops = p.days.filter((d) => d.stops.length);
+  assert.ok(daysWithStops.length >= 3, `skal spredes over mindst 3 dage, fik ${daysWithStops.length}`);
+});
+
+test("anker-dag: fast-ugedags-job ligger FAST på sin dag, andre fordeles omkring (og MÅ dele dagen ved plads)", () => {
+  // McDonald's-princippet: onsdags-ankreet fastlægges FØRST (hardt på onsdag);
+  // de andre job placeres derefter uge-niveau (billigste dag først) og må dele
+  // ankredagen, hvis der er plads — men pakkes ALDRIG på ankerdagen, hvis en
+  // anden dag er billigere, og aldrig ud over kapaciteten.
+  const anchor = job(1, 300, { fixedWeekdays: [2] });
+  const small = job(2, 120);
+  const big = job(3, 460);
+  const p = planWeek([anchor, small, big], "2026-08-24", [emp(1)]);
+  assert.equal(p.unplanned.length, 0);
+  const weekdayOf = (id: number) => p.days.find((d) => d.stops.some((s) => s.job.id === id))!.weekday;
+  assert.equal(weekdayOf(1), 2); // ankeret HARDT på sin faste dag
+  // Kapacitet: onsdag kan max rumme ankret + ét af de andre (480+d+300+120+d2 <= 1020).
+  const onWednesday = p.days.find((d) => d.weekday === 2)!.stops.length;
+  assert.ok(onWednesday >= 1 && onWednesday <= 2, "ankerdag: ankret evt. delt med ÉT ekstra job");
+});
+
+test("faste ugedage respekteres stadig som FORTRUKNE, når de er mulige", () => {
+  const p = planWeek([job(1, 60, { fixedWeekdays: [2, 3] })], "2026-08-24", [emp(1)]);
+  const wd = p.days.find((d) => d.stops.length)!.weekday;
+  assert.ok(wd === 2 || wd === 3);
 });
 
 test("ubunden ordre (ingen fixedEmployeeId) får aldrig overarbejds-fallback", () => {
@@ -69,6 +108,7 @@ test("buildWeekPlan er dagsbevidst og pinner udførte ordrer (kildetjek)", async
   const { readFile } = await import("node:fs/promises");
   const queries = await readFile(new URL("../lib/queries.ts", import.meta.url), "utf8");
   assert.match(queries, /planWeek\(placeable, weekMonday, plannerEmps, \{ fromWeekday: todayIdx \?\? 0 \}\)/);
-  assert.match(queries, /locked: o\.lockedFully \|\| o\.status !== "Afventer levering"/);
+  assert.match(queries, /locked: decided/);
+  assert.match(queries, /o\.status !== "Skal genplanlægges"/);
   assert.match(queries, /fixed_weekday_unavailable/);
 });

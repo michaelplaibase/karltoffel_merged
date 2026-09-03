@@ -12,6 +12,11 @@ import { CatChip, money, telHref, telDisplay } from "@/components/ui";
 import { deleteOrder } from "@/app/actions/orders";
 import type { DayStop, DayUnplannedStop } from "@/lib/calendar";
 
+// Ordrer der er lukket/faktureret (samme sæt som CLOSED_STATUSES i lib/queries
+// og lib/booking) — markeres med grønt flueben, så medarbejderen kan SE, at
+// lukningen gik igennem.
+const CLOSED_STATUSES = new Set(["Afsluttet", "Udført", "Sprunget over"]);
+
 export default function DayStopCard({ stop, weekMonday }: { stop: DayStop | DayUnplannedStop; weekMonday: string }) {
   // Afslut ordre-flowet skal vende TILBAGE til dagsprogrammet (inkl. valgt
   // dato), ikke til kontorets /orders — send den aktuelle relative sti med
@@ -68,7 +73,14 @@ export default function DayStopCard({ stop, weekMonday }: { stop: DayStop | DayU
             <i className="bi bi-telephone-fill" /> Intet telefonnummer
           </span>
         )}
-        <div style={{ fontWeight: 600, marginTop: 2 }}>{stop.customer} · <span className="num">{money(stop.price)}</span></div>
+        <div style={{ fontWeight: 600, marginTop: 2 }}>
+          {stop.customer} · <span className="num">{money(stop.price)}</span>
+          {CLOSED_STATUSES.has(stop.status) && (
+            <i className="bi bi-check-circle-fill" aria-label={`Ordren er ${stop.status.toLowerCase()}`}
+              title={`Ordren er ${stop.status.toLowerCase()}`}
+              style={{ color: "#1CBD6B", marginLeft: 8, fontSize: 16, verticalAlign: "-2px" }} />
+          )}
+        </div>
         {stop.tasks.length > 0 && (
           <div className="daycal-tasks">
             {stop.tasks.map((t, i) => (

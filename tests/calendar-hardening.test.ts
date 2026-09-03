@@ -53,10 +53,15 @@ test("guardAction afviser deaktiverede brugere (getSessionUser, ikke kun token-t
 
 // --- Kalenderens handlinger er nået frem til admin, og 'Genplanlæg uge' virker ---
 
-test("/calendar er redigerbar for admin og read-only for medarbejdere", async () => {
+test("/calendar er redigerbar for alle — medarbejdere får flytterettigheder (moveOnly)", async () => {
   const page = await source("app/calendar/page.tsx");
-  assert.match(page, /const readOnly = !me\.isAdmin/);
-  assert.match(page, /readOnly=\{readOnly\}/);
+  assert.match(page, /const moveOnly = !me\.isAdmin/);
+  assert.match(page, /moveOnly=\{moveOnly\}/);
+  // Flyt/lås-handlinger håndhæves server-side (guardAction); moveOnly skjuler
+  // kun admin-funktionerne (genplanlæg uge, slet ordre) i UI'en.
+  const client = await source("components/TeamCalendarClient.tsx");
+  assert.match(client, /!moveOnly && confirmDel/, "moveOnly skjuler slet-dialogen");
+  assert.match(client, /!readOnly && !moveOnly && \(/, "moveOnly skjuler 'Genplanlæg uge'");
 });
 
 test("'Genplanlæg uge' persisterer planen (ikke længere en no-op)", async () => {

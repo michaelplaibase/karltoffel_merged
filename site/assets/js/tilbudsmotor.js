@@ -16,37 +16,30 @@ const $ = (id) => ROOT.querySelector("#" + id);
    inkl. CSV'ens stavefejl: "Tagrenerens 2-plans hus", "Vindeuspudsning
    Indvendig pr glas", "Ukrudt bekæmpelse på belægningsarealer".
    wm = null ⇒ findes endnu ikke i WorkMaker; opret som 0-kr placeholder:
-   robot, husgarage, stub, drivhus, fliserens, sne.
+   drivhus, fliserens.
    alge → CSV "Algebehandling af tag"; algeflis → CSV "Algebehandling af
    belægning". beskaering er prissat fra CSV "Beskæring Små træer /
    Frugttræer" (500 kr). pris:null = "Indeholdt" (pakke:true) eller
    "Pris ved besøg" (pakke:false). */
 /*PRICING-START*/
 const PRODUCTS = [
-  /* ---- Villapakken (standard) ---- */
-  {id:"vinduer",  navn:"Vinduespudsning udvendig",       enhed:"glas",       pris:15.30, note:"Udvendige ruder",                 qty:14,  freq:8,  fmax:12, on:true,  pakke:true, kat:"pakke", wm:"Vinduespudsning udvendig pr glas"},
-  {id:"haek",     navn:"Hækklipning",                    enhed:"m hæk",      pris:27.50, note:"1 side, under 220 cm",            qty:65,  freq:1,  fmax:3,  on:true,  pakke:true, kat:"pakke", wm:"Hækklipning 1 side pr meter Under 220 cm"},
-  {id:"green",    navn:"Greenkeeper græspleje",          enhed:"m² plæne",   pris:2.30,  note:"Gødning og pleje af plænen",      qty:450, freq:3,  fmax:6,  on:true,  pakke:true, kat:"pakke", wm:"Greenkeeper græspleje"},
-  {id:"alge",     navn:"Algebehandling af tag",          enhed:"m² tag",     pris:4.20,  note:"Mos og alger, beregnet på skråt tagareal", qty:120, freq:1, fmax:2, on:true, pakke:true, kat:"pakke", wm:"Algebehandling af tag"},
-  {id:"tagrender",navn:"Tagrenderens",                   enhed:"m tagrende", pris:18.00, note:"Stueplan / 1-plans hus",          qty:24,  freq:1,  fmax:2,  on:true,  pakke:true, kat:"pakke", wm:"Tagrenderens Stueplan / 1-plans hus"},
-  {id:"robot",    navn:"Robotplæneklipper service",      enhed:"",           pris:null,  note:"Indeholdt i pakken",              qty:1,   freq:1,  fmax:4,  on:true,  pakke:true, kat:"pakke", wm:null},
+  /* ---- De mest valgte services (ikke forudvalgt — kunden vælger selv) ---- */
+  {id:"vinduer",  navn:"Udvendig vinduesvask",       enhed:"glas",       pris:15.30, note:"Udvendige døre, vinduer og porte",                 qty:0,   freq:8,  fmax:12, on:false, pakke:true, kat:"pakke", wm:"Udvendig vinduesvask pr glas"},
+  {id:"haek",     navn:"Hækklipning",                    enhed:"m hæk",      pris:27.50, note:"1 side, under 220 cm",            qty:65,  freq:1,  fmax:3,  on:false, pakke:true, kat:"pakke", wm:"Hækklipning 1 side pr meter Under 220 cm"},
+  {id:"green",    navn:"Greenkeeper græspleje",          enhed:"m² plæne",   pris:2.30,  note:"Gødning og pleje af plænen",      qty:450, freq:3,  fmax:6,  on:false, pakke:true, kat:"pakke", wm:"Greenkeeper græspleje"},
+  {id:"alge",     navn:"Algebehandling af tag",          enhed:"m² tag",     pris:9.80,  min:950,  note:"Mos og alger, beregnet på skråt tagareal", qty:120, freq:1, fmax:2, on:false, pakke:true, kat:"pakke", wm:"Algebehandling af tag"},
+  {id:"tagrender",navn:"Tagrenderens",                   enhed:"m tagrende", pris:18.00, note:"Stueplan / 1-plans hus",          qty:24,  freq:1,  fmax:2,  on:false, pakke:true, kat:"pakke", wm:"Tagrenderens Stueplan / 1-plans hus"},
 
   /* ---- Tilvalg: "Vi tilbyder også" (off som standard, gruppe = kat) ---- */
   {id:"ukrudt_sproejt", navn:"Sprøjtning af ukrudt mellem belægning", enhed:"m² fliser", pris:1.50, note:"Vi holder fugerne rene", qty:60, freq:5, fmax:8, on:false, pakke:false, kat:"groen", wm:"Ukrudt bekæmpelse på belægningsarealer"},
   {id:"ukrudt_fjern", navn:"Fjernelse af ukrudt mellem belægning", enhed:"m² fliser", pris:4.00, note:"Manuel fjernelse af ukrudt", qty:60, freq:5, fmax:8, on:false, pakke:false, kat:"groen", wm:null},
-  {id:"graes",     navn:"Græsslåning",                            enhed:"m² plæne",  pris:1.60,   note:"Klip i sæsonen",          qty:450, freq:1,  fmax:26, on:false, pakke:false, kat:"groen",   wm:"Græsslåning"},
   {id:"beskaering",navn:"Beskæring af buske, træer og planter",   enhed:"træer",     pris:500.00, note:"Små træer/frugttræer — større træer efter besøg", qty:3, freq:1, fmax:2, on:false, pakke:false, kat:"groen", prisEnh:"træ", wm:"Beskæring Små træer / Frugttræer"},
-  {id:"stub",      navn:"Stubfræsning",                           enhed:"",          pris:null,   note:"Pris ved besøg",          qty:1,   freq:1,  fmax:1,  on:false, pakke:false, kat:"groen",   wm:null},
-  {id:"vinduerind",navn:"Vinduesvask indvendigt",                 enhed:"glas",      pris:19.87,  note:"Indvendige ruder",        qty:14,  freq:1,  fmax:6,  on:false, pakke:false, kat:"vinduer", wm:"Vindeuspudsning Indvendig pr glas"},
-  {id:"ovenlys",   navn:"Ovenlysvinduesvask",                     enhed:"stk",       pris:25.00,  note:"Pr. ovenlysvindue",       qty:2,   freq:1,  fmax:4,  on:false, pakke:false, kat:"vinduer", wm:"Ovenlys vinduesvask pr stk"},
-  {id:"solcelle",  navn:"Solcellevask",                           enhed:"paneler",   pris:25.00,  note:"Pr. solcellepanel",       qty:0,   freq:1,  fmax:4,  on:false, pakke:false, kat:"vinduer", prisEnh:"panel", wm:"Solcellevask pr solcelle"},
-  {id:"drivhus",   navn:"Drivhusvask",                            enhed:"",          pris:null,   note:"Pris ved besøg",          qty:1,   freq:1,  fmax:2,  on:false, pakke:false, kat:"vinduer", wm:null},
-  {id:"algeflis",  navn:"Algebehandling af belægning",            enhed:"m² fliser", pris:3.30,   note:"Alger på fliser, terrasse og indkørsel", qty:60, freq:1, fmax:2, on:false, pakke:false, kat:"tag", wm:"Algebehandling af belægning"},
+  {id:"vinduerind",navn:"Vinduespudsning indeni huset",            enhed:"glas",      pris:19.87,  note:"Indvendige døre, vinduer og porte", qty:0,   freq:1,  fmax:6,  on:false, pakke:false, kat:"vinduer", wm:"Indendørs vinduespudsning pr glas"},
+  {id:"solcelle",  navn:"Solcellevask",                           enhed:"paneler",   pris:40.00,  note:"Solcellepaneler på taget",          qty:0,   freq:1,  fmax:4,  on:false, pakke:false, kat:"vinduer", prisEnh:"panel", wm:"Solcellevask pr panel"},
+  {id:"drivhus",   navn:"Drivhusvask",                            enhed:"gang",      pris:100.00, note:"Fast pris pr. gang — så er drivhuset vasket", qty:1, freq:1,  fmax:2,  on:false, pakke:false, kat:"vinduer", wm:"Drivhusvask — fast pris pr. gang"},
+  {id:"algeflis",  navn:"Algebehandling af belægning",            enhed:"m² fliser", pris:7.80,   min:850, note:"Alger på fliser, terrasse og indkørsel", qty:60, freq:1, fmax:2, on:false, pakke:false, kat:"tag", wm:"Algebehandling af belægning"},
   {id:"fliserens", navn:"Fliserens",                              enhed:"",          pris:null,   note:"Dybderens med maskine — pris ved besøg", qty:1, freq:1, fmax:2, on:false, pakke:false, kat:"tag", wm:null},
-  {id:"sedum",     navn:"Gødning af Sedumtag",                    enhed:"m² tag",    pris:21.00,  note:"Pr. m² sedumtag",         qty:0,   freq:1,  fmax:2,  on:false, pakke:false, kat:"tag",     wm:"Gødning af sedumtag"},
-  {id:"haveaffald",navn:"Haveaffald (genbrugsafgift)",           enhed:"gang",      pris:600.00, note:"Pr. bortskaffelse",       qty:1,   freq:1,  fmax:6,  on:false, pakke:false, kat:"affald",  wm:"Genbrugsafgift"},
   {id:"sammenriv", navn:"Sammenrivning & bortskaffelse af affald",enhed:"m² plæne",  pris:3.00,   note:"Åbne arealer / plæne",    qty:450, freq:1,  fmax:4,  on:false, pakke:false, kat:"affald",  wm:"Opsamling af løvfald til efteråret Åbne arealer / Græsplæne"},
-  {id:"sne",       navn:"Snerydning og saltning",                 enhed:"",          pris:null,   note:"Pris ved besøg",          qty:1,   freq:1,  fmax:20, on:false, pakke:false, kat:"vinter",  wm:null},
 
   /* ---- Skadedyr ---- */
   {id:"myre_ude",   navn:"Myrebekæmpelse, udvendig sokkelbehandling", enhed:"gang", pris:935.00,  note:"Standard parcelhus",              qty:1, freq:1, fmax:2, on:false, pakke:false, kat:"skadedyr", wm:"Myrebekæmpelse udvendig sokkelbehandling"},
@@ -56,29 +49,18 @@ const PRODUCTS = [
 /* Uberørt kopi til at nulstille pakken når en ny adresse vælges. */
 const DEFAULTS = PRODUCTS.map(function(p){ return Object.assign({}, p); });
 
-/* Mængderabat: "jo mere du vælger, jo mere sparer du" — 3% pr. valgt service,
-   loft på 15% (5+ services = fuld rabat). Rabatten lægges på den prissatte
-   årssum; uprisede "indeholdt/pris ved besøg"-linjer tæller med i antallet
-   men trækker naturligvis 0 kr. */
-var RABAT_PR_SERVICE = 3, RABAT_MAX = 15;
-function rabatPct(count){ return Math.min(RABAT_MAX, RABAT_PR_SERVICE * count); }
-
+/* Prisen er bare en sum: hver valgt service lægges til, og det er det.
+   Ingen regning pr. besøg, ingen snit — det tal kunderne spurgte til. */
 function beregn(products){
-  var brutto = 0, count = 0, visits = 0;
+  var total = 0, count = 0;
   for (var i=0;i<products.length;i++){
     var p = products[i];
     if(!p.on) continue;
     count += 1;                                   /* uprisede ("indeholdt") tæller også med */
-    if(p.freq > visits) visits = p.freq;          /* ydelser bundtes på samme besøg */
-    if(p.pris != null && p.qty > 0) brutto += p.pris * p.qty * p.freq;
+    if(p.pris != null && p.qty > 0) total += Math.max(p.pris * p.qty, p.min || 0);
   }
-  var pct = rabatPct(count);
-  var aar = brutto * (1 - pct/100);
-  return { aar: aar, aarBrutto: brutto, rabatPct: pct, rabatKr: brutto - aar,
-           md: aar/12, snit: visits>0 ? aar/visits : 0, count: count, visits: visits };
+  return { total: total, count: count };
 }
-
-function linjeMd(p){ return (p.pris == null || !p.qty) ? 0 : (p.pris * p.qty * p.freq) / 12; }
 /*PRICING-END*/
 
 const DKK0 = new Intl.NumberFormat("da-DK",{maximumFractionDigits:0});
@@ -108,7 +90,7 @@ function animateNumber(el, from, to, fmt){
 const state = {
   adresse: "",
   kundetype: null,   /* "privat" | "erhverv" — vælges på step 2 */
-  betaling: null,    /* "abonnement" | "pr_gang" — vælges på step 4 (løsning) */
+  betaling: "pr_gang",   /* fast: betaling pr. gang — abonnements-valg fjernet */
   rabatkode: { code:"", percent:0, valid:false },   /* valideret server-side via /api/rabatkode */
   ejendom: { type:"Villa, 1 fam.", grund:"827 m²", opfoert:"2007", haek:"65 m" }
 };
@@ -208,7 +190,7 @@ function applyMeasurements(m){
      det åbne areal — vi bruger 70 % som rundt standardtal, afrundet til 10 m². */
   const PLAENE_FAKTOR = 0.70;
   const plaeneAreal = m.haveAreal > 0 ? Math.max(10, Math.round(m.haveAreal * PLAENE_FAKTOR / 10) * 10) : 0;
-  put("graes", plaeneAreal); put("green", plaeneAreal); put("sammenriv", plaeneAreal);
+  put("green", plaeneAreal); put("sammenriv", plaeneAreal);
   put("haek", m.haekLangde); put("tagrender", m.tagrendeLangde);
   put("alge", m.tagArealSkraat || m.tagAreal);           /* skråt tagareal hvor muligt */
   /* Træantal kan ikke måles — skøn ~1 træ/busk pr. 150 m² have, clamp 2–8. */
@@ -224,45 +206,12 @@ function applyMeasurements(m){
     if(m.rygHojde > 5){ tr.pris = 28.00; tr.note = "2-plans hus"; tr.wm = "Tagrenerens 2-plans hus"; }
     else { tr.pris = 18.00; tr.note = "Stueplan / 1-plans hus"; tr.wm = "Tagrenderens Stueplan / 1-plans hus"; }
   }
-  /* Opdater priserne på stedet (ingen gen-render), så "Pris pr. gang" tæller
+  /* Opdater priserne på stedet (ingen gen-render), så priserne tæller
      blødt hen til de auto-målte mængder. */
   const active = ROOT.querySelector(".step.active");
   if(active && active.id === "step-losning") opdater();
 }
 
-/* AI-vinduestælling: send det renderede skråfoto til /api/windows (Anthropic-nøglen
-   bor på serveren) og brug estimatet som glasantal for udvendig vinduespudsning.
-   Alt er best-effort og fejler stille — uden svar (eller uden ANTHROPIC_API_KEY)
-   beholder motoren sit standard-glasantal. Respekterer kundens egne rettelser. */
-let windowsReq = 0;
-function taelVinduerAI(){
-  try{
-    const canvas = ROOT.querySelector("#sf-canvas");
-    if(!canvas || !canvas.width || typeof canvas.toDataURL !== "function") return;
-    let dataUrl;
-    try{ dataUrl = canvas.toDataURL("image/jpeg", 0.85); }
-    catch(e){ return; }   /* tainted canvas → kan ikke læses ud, drop */
-    if(!dataUrl || dataUrl.length < 800) return;
-    const req = ++windowsReq;
-    fetch("/api/windows", {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ imageBase64: dataUrl, address: state.adresse })
-    })
-    .then(r => r.ok ? r.json() : null)
-    .then(d => {
-      if(!d || !d.ok || req !== windowsReq) return;   /* forældet/tomt svar → ignorer */
-      const panes = Math.round(d.panes);
-      if(!(panes >= 1 && panes <= 300)) return;
-      ["vinduer", "vinduerind"].forEach(id => {
-        const p = PRODUCTS.find(x => x.id === id);
-        if(p && !p.touched) p.qty = panes;            /* rør ikke mængder kunden selv har rettet */
-      });
-      opdater();   /* på stedet: priserne tæller blødt til det nye glasantal */
-    })
-    .catch(()=>{});
-  }catch(e){}
-}
 
 let measureReq = 0;
 function resetProducts(){
@@ -312,6 +261,7 @@ function koerGravning(done){
 }
 
 const STEP_ORDER = ["step-adresse","step-kundetype","step-verify","step-losning","step-kontakt"];
+const STEP_NAMES = ["Hvor bor du?","Hvem gør vi det for?","Din ejendom","Hvad skal vi hjælpe med?","Hvem skal vi ringe til?"];
 
 /* skipScroll: ved stille gendannelse (persistens) må siden ikke hoppe til
    sektionen eller stjæle fokus — kunden er måske landet øverst på forsiden. */
@@ -327,9 +277,12 @@ function visStep(id, skipScroll){
     const idx = STEP_ORDER.indexOf(id);
     prog.classList.toggle("done", idx === -1);
     if(idx > -1){
-      $("tm-progress-txt").textContent = "Trin " + (idx+1) + " af " + STEP_ORDER.length;
+      const tilbage = STEP_ORDER.length - idx - 1;
+      $("tm-progress-txt").textContent = "Trin " + (idx+1) + " af " + STEP_ORDER.length + " — " + STEP_NAMES[idx] +
+        (tilbage > 0 ? " · kun " + tilbage + (tilbage === 1 ? " trin" : " trin") + " tilbage" : " · sidste trin!");
       const dots = $("tm-progress-dots").children;
       for(let i=0;i<dots.length;i++) dots[i].classList.toggle("on", i <= idx);
+      for(let i=0;i<dots.length;i++) dots[i].classList.toggle("done", i < idx);
     }
   }
   if(!skipScroll){
@@ -343,18 +296,21 @@ function visStep(id, skipScroll){
 /* sessionStorage (ikke localStorage): dør med fanen, ingen cookie-samtykke-
    problematik. 1 times udløb. Fejler stille i private-mode. */
 const PERSIST_KEY = "tm-state-v1";
+/* Runde 2: autosave i localStorage (ikke sessionStorage) — kunden kan lukke
+   fanen, skifte telefon eller komme tilbage i morgen og fortsætte, hvor hun
+   slap. 14 dages udløb i gendan-lytten. */
 function gemState(stepId){
   try {
     if(!state.adresse) return;
     const prod = {};
     PRODUCTS.forEach(p => { prod[p.id] = { on: p.on, qty: p.qty, freq: p.freq, touched: !!p.touched }; });
-    sessionStorage.setItem(PERSIST_KEY, JSON.stringify({
+    localStorage.setItem(PERSIST_KEY, JSON.stringify({
       t: Date.now(), adresse: state.adresse, kundetype: state.kundetype, betaling: state.betaling, step: stepId, prod,
       rabatkode: state.rabatkode
     }));
   } catch(e){ /* private mode / kvote — persistens er best-effort */ }
 }
-function rydState(){ try { sessionStorage.removeItem(PERSIST_KEY); } catch(e){} }
+function rydState(){ try { localStorage.removeItem(PERSIST_KEY); } catch(e){} }
 
 /* ============ KUNDETYPE (privat/erhverv) ============ */
 /* Sitedækkende præference — samme localStorage-nøgle som kundetype.js
@@ -394,48 +350,36 @@ ktErhverv.addEventListener("click", ()=> ktKlik("erhverv"));
 ktVidere.addEventListener("click", ()=>{ if(state.kundetype) ktFortsaet(); });
 $("kt-tilbage").addEventListener("click", ()=>{ clearTimeout(ktTimer); visStep("step-adresse"); });
 
-/* ============ BETALING (abonnement/pr. gang) — splittest på step-losning ============ */
-const btAbo = $("bt-abonnement"), btPrGang = $("bt-prgang"), btAboMd = $("bt-abo-md"),
-      btAboMdFuld = $("bt-abo-md-fuld"), btGangPris = $("bt-gang-pris"), lsVidere = $("ls-videre"),
-      btRabatDetail = $("bt-rabat-detail"), btGangSnit = $("bt-gang-snit");
-const HAVE_SAESON_MDR = 7;   /* 1. april – 31. oktober, inklusive begge måneder */
-const BT_ABO_RABAT = 0.10;   /* 10% rabat for at vælge fast abonnement (nudge væk fra pr. gang) */
+/* Runde 2: rabatkode vises kun, når kunden spørger efter den. */
+(function(){
+  const t = document.getElementById("rk-toggle"), w = document.getElementById("rk-wrap");
+  if(!t || !w) return;
+  t.addEventListener("click", ()=>{
+    const open = w.hidden;
+    w.hidden = !open;
+    t.setAttribute("aria-expanded", open ? "true" : "false");
+    if(open){
+      t.textContent = "Rabatkode";
+      const i = document.getElementById("k-rabat");
+      if(i) i.focus();
+    } else {
+      t.textContent = "Har du en rabatkode?";
+    }
+  });
+})();
+
+/* ============ BETALING — én samlet pris ============ */
+const btTotal = $("bt-total"), lsVidere = $("ls-videre");
 function vaelgBetaling(t){
   state.betaling = t;
-  btAbo.classList.toggle("selected", t === "abonnement");
-  btPrGang.classList.toggle("selected", t === "pr_gang");
-  btAbo.setAttribute("aria-checked", t === "abonnement" ? "true" : "false");
-  btPrGang.setAttribute("aria-checked", t === "pr_gang" ? "true" : "false");
   lsVidere.disabled = false;
 }
-btAbo.addEventListener("click", ()=> vaelgBetaling("abonnement"));
-btPrGang.addEventListener("click", ()=> vaelgBetaling("pr_gang"));
 
-/* Sæson-månedsprisen for abonnementet: årssummen (efter mængderabat) med
-   yderligere 10% abonnements-rabat, fordelt over KUN de 7 havesæson-måneder —
-   IKKE 12, så tallet der vises er det kunden faktisk betaler pr. opkrævning. */
+/* Pris-tekst på betalingskortet: summen af de valgte services, intet andet. */
 function opdaterBetaling(){
-  if(!btAboMd) return;
+  if(!btTotal) return;
   const r = beregn(PRODUCTS);
-  /* r.aar er allerede netto EFTER mængderabat (r.rabatPct) — det er den
-     retfærdige sammenligningsbund: pr.-gang-kunden får også mængderabatten,
-     bare ikke de ekstra 10% for at binde sig til abonnement. */
-  const mdFuldPris = r.aar / HAVE_SAESON_MDR;                 /* = pr.-gang-kundens månedssnit i sæsonen */
-  const mdISaeson = r.aar * (1 - BT_ABO_RABAT) / HAVE_SAESON_MDR;
-  btAboMd.textContent = DKK0.format(Math.round(mdISaeson));
-  if(btAboMdFuld) btAboMdFuld.textContent = mdFuldPris > mdISaeson ? DKK0.format(Math.round(mdFuldPris)) + " kr/md" : "";
-  if(btGangPris) btGangPris.textContent = DKK0.format(Math.round(r.snit));
-  if(btGangSnit) btGangSnit.textContent = r.aar > 0 ? "≈ " + DKK0.format(Math.round(mdFuldPris)) + " kr/md i snit i sæsonen" : "";
-
-  /* Rabat-detaljen på abonnement-kortet: de to rabatter stables synligt i
-     stedet for kun at vise slutprisen — mængderabatten (r.rabatPct, allerede
-     i r.aar) + de ekstra 10% for abonnementet. */
-  if(btRabatDetail){
-    const dele = [];
-    if(r.rabatPct > 0) dele.push(r.rabatPct + "% mængderabat");
-    dele.push(Math.round(BT_ABO_RABAT*100) + "% abonnementsrabat");
-    btRabatDetail.textContent = "10% billigere end pr. gang · " + dele.join(" + ");
-  }
+  btTotal.textContent = DKK0.format(Math.round(r.total));
 }
 
 /* ============ VIDERE/TILBAGE-NAVIGATION ============ */
@@ -459,7 +403,7 @@ $("ls-skift").addEventListener("click", ()=>{
   adrInput.focus();
 });
 
-$("btn-ja").addEventListener("click", ()=>{ visStep("step-losning"); taelVinduerAI(); });
+$("btn-ja").addEventListener("click", ()=>{ visStep("step-losning"); });
 btnNej.addEventListener("click", ()=>{
   verifyDir++;
   if(verifyDir < VERIFY_DIRS.length){
@@ -600,11 +544,9 @@ $("btn-send").addEventListener("click", ()=>{
   const r = beregn(PRODUCTS);
   const valgt = PRODUCTS.filter(p=>p.on);
   const ktLabel = state.kundetype === "erhverv" ? " · Erhverv" : (state.kundetype === "privat" ? " · Privat" : "");
-  /* Rabatkode: ekstra rabat oven i mængderabatten — trækkes fra årssummen
-     EFTER mængderabat. Gælder de viste totaler; estimat-felterne er uændrede. */
+  /* Rabatkode: ekstra procentrabat, trukket fra den samlede sum. */
   const kodePct = state.rabatkode.valid ? state.rabatkode.percent : 0;
-  const aarNet = r.aar * (1 - kodePct/100);
-  const snitNet = r.visits > 0 ? aarNet / r.visits : 0;
+  const totalNet = r.total * (1 - kodePct/100);
 
   /* Lead-payload til CRM'et: kontaktinfo + valgte services (med WorkMaker-
      nøgle under overgangen) + estimat + kundetype. Sendes via sitets relay
@@ -617,7 +559,7 @@ $("btn-send").addEventListener("click", ()=>{
     betaling: state.betaling,
     source: "tilbudsmotor",
     services: valgt.map(p=>({ id:p.id, navn:p.navn, wm:p.wm, qty:p.qty, enhed:p.enhed, freq:p.freq, pris:p.pris, erPakkevare:p.pakke })),
-    estimat: { md: Math.round(r.md), snit: Math.round(r.snit), aar: Math.round(r.aar), aarBrutto: Math.round(r.aarBrutto), rabatPct: r.rabatPct, rabatKr: Math.round(r.rabatKr), visits: r.visits, count: r.count }
+    estimat: { total: Math.round(totalNet), count: r.count }
   };
   /* KONTRAKT: feltnavn `rabatkode` (streng, trimmet + uppercased) — kun med når koden er valid. */
   if(state.rabatkode.valid) payload.rabatkode = state.rabatkode.code;
@@ -653,7 +595,7 @@ $("btn-send").addEventListener("click", ()=>{
   .then((data)=>{
     /* Leadet er oprettet — send konverteringen til GTM først, så den ikke kan
        gå tabt hvis noget i tak-siden nedenfor fejler. */
-    pushLeadEvent(valgt, r, aarNet, kodePct);
+    pushLeadEvent(valgt, r, totalNet, kodePct);
 
     /* CRM'et returnerer call:"booked 2026-07-06T15:15:00" når opkalds-slottet
        er lagt i kalenderen — vis det konkrete tidspunkt til kunden. */
@@ -672,18 +614,14 @@ $("btn-send").addEventListener("click", ()=>{
                      : (!p.qty ? " (angiv antal)" : " (" + p.freq + "x/år)");
         return esc(p.navn) + suffix;
       }).join(", ");
-      var rabatLinje = r.rabatPct > 0
-        ? 'Mængderabat: <b>−' + r.rabatPct + '%</b> (du sparer ca. <span id="tak-rabatkr" class="tm-anim-kr">' + kr(r.rabatKr) + '</span> om året)<br>'
-        : "";
       var kodeLinje = kodePct > 0 ? "Rabatkode anvendt: <b>−" + kodePct + "%</b><br>" : "";
       opsum.innerHTML =
         "<b>" + esc(state.adresse) + ktLabel + "</b><br>" +
         "Valgt: " + linjer + "<br>" +
-        rabatLinje + kodeLinje +
-        'Estimeret: <b><span id="tak-snit" class="tm-anim-kr">' + kr(snitNet) + '</span> pr. besøg</b> ved ' + r.visits + " besøg om året.";
+        kodeLinje +
+        'Samlet pris: <b><span id="tak-total" class="tm-anim-kr">' + kr(totalNet) + '</span></b>';
       /* Tak-totalerne tæller blødt op fra 0 (count-animationen). */
-      animateNumber(opsum.querySelector("#tak-rabatkr"), 0, r.rabatKr, kr);
-      animateNumber(opsum.querySelector("#tak-snit"), 0, snitNet, kr);
+      animateNumber(opsum.querySelector("#tak-total"), 0, totalNet, kr);
     }
     rydState();   /* leadet er sendt — intet at gendanne længere */
     visStep("step-tak");
@@ -709,24 +647,19 @@ function sendFejl(t){ const e = $("k-err"); e.textContent = t; e.classList.add("
    vælge hvad der skal bruges som konverteringsværdi.
 
    `items` følger GA4's semantik: `price` = enhedspris, `quantity` = antal
-   enheder (glas, m², træer) — altså værdien pr. besøg. GA4 kender ikke
-   besøgsfrekvensen, så den årlige linjeværdi ligger eksplicit i
-   `item_revenue_yearly`. Uprisede linjer ("indeholdt" / "pris ved besøg")
+   enheder (glas, m², træer) — altså den samlede værdi. Linjeværdien ligger
+   eksplicit i `item_revenue`. Uprisede linjer ("indeholdt" / "pris ved besøg")
    sendes med pris 0, men tæller i `lead_services_count`. */
-function pushLeadEvent(valgt, r, aarNet, kodePct){
+function pushLeadEvent(valgt, r, totalNet, kodePct){
   const dl = (window.dataLayer = window.dataLayer || []);
   const ev = {
     event: "generate_lead",
     currency: "DKK",
-    value: Math.round(aarNet),
+    value: Math.round(totalNet),
     lead_source: "tilbudsmotor",
     lead_kundetype: state.kundetype || "ukendt",
     lead_services_count: r.count,
-    lead_visits_per_year: r.visits,
-    lead_value_monthly: Math.round(aarNet / 12),
-    lead_value_yearly: Math.round(aarNet),
-    lead_value_yearly_gross: Math.round(r.aarBrutto),
-    lead_volume_discount_pct: r.rabatPct,
+    lead_value_total: Math.round(totalNet),
     lead_coupon_discount_pct: kodePct,
     items: valgt.map(function(p, i){
       const enhedspris = p.pris == null ? 0 : p.pris;
@@ -734,12 +667,12 @@ function pushLeadEvent(valgt, r, aarNet, kodePct){
         item_id: p.id,
         item_name: p.navn,
         item_category: p.kat,
-        item_list_name: p.pakke ? "Villapakken" : "Tilvalg",
+        item_list_name: p.pakke ? "Mest valgte services" : "Tilvalg",
         index: i,
         price: enhedspris,
         quantity: p.qty,
         frequency_per_year: p.freq,
-        item_revenue_yearly: Math.round(enhedspris * p.qty * p.freq)
+        item_revenue: Math.round(enhedspris * p.qty)
       };
     })
   };
@@ -766,7 +699,43 @@ function esc(s){ const d = document.createElement("div"); d.textContent = s; ret
 
 /* ============ RENDER ============ */
 const CAT_ORDER = ["pakke", "groen", "vinduer", "tag", "affald", "vinter", "skadedyr"];
-const CAT_LABELS = { pakke:"Fra Villapakken", groen:"Grøn have", vinduer:"Vinduer & glas", tag:"Tag & fliser", affald:"Affald", vinter:"Vinter", skadedyr:"Skadedyrsbekæmpelse" };
+
+/* Hvorfor spørger vi? Én kundevenlig linje pr. service — vises under navnet
+   i trin 4, så det er tydeligt hvad Karltoffel laver med hver ydelse. */
+const WM_HVORFOR = {
+  vinduer: "Vi vasker dem udvendigt — antallet afgør, hvor lang tid et besøg tager.",
+  haek: "Vi klipper hækken og fejer efter — højden og længden afgør, hvor lang tid det tager.",
+  green: "Vi gøder og plejer plænen, så den holder sig grøn hele sæsonen.",
+  alge: "Vi fjerner mos og alger på taget, så taget holder længere — arealet afgør prisen.",
+  tagrender: "Vi renser blade og mudder ud, så vandet løber fra huset — længden i meter er nok.",
+  ukrudt_sproejt: "Vi sprøjter ukrudtet mellem fliserne, så fugerne holder sig rene.",
+  ukrudt_fjern: "Vi trækker ukrudtet ud i hånden — skånsomt og uden sprøjtemidler.",
+  beskaering: "Vi beskærer buske og træer og fjerner grenaffaldet.",
+  vinduerind: "Vi pudser vinduerne indvendigt — antallet afgør, hvor lang tid det tager.",
+  solcelle: "Vi vasker panelerne, så de giver mest mulig strøm.",
+  drivhus: "Vi vasker drivhuset ind og ud — fast pris pr. gang.",
+  algeflis: "Vi fjerner alger på fliser og terrasse, så de bliver pæne og skridsikre.",
+  fliserens: "Vi dybderenser fliserne med maskine — vi ser på det og giver pris, når vi er forbi.",
+  sammenriv: "Vi fjerner det gamle lølag og efterlader en ren og jævn plæne.",
+  myre_ude: "Vi behandler soklen udvendigt, så myrerne bliver udenfor.",
+  myre_inde: "Vi behandler de steder inde, hvor myrerne kommer.",
+  myre_saeson: "Tre behandlinger i løbet af sæsonen — så holder myrerne væk."
+};
+const CAT_LABELS = { pakke:"Mest valgt", groen:"Grøn have", vinduer:"Vinduer & glas", tag:"Tag & fliser", affald:"Affald", vinter:"Vinter", skadedyr:"Skadedyrsbekæmpelse" };
+
+/* ============ RUNDTUR I BOLIGEN: 3 kategorikort ============ */
+/* Services grupperes efter hvor arbejdet foregår: i haven, uden på huset
+   eller indendørs. Hvert produkt-id står i præcis ét kort. p.kat beholdes
+   uændret (bruges af GTM item_category + tak-sidens logik) — kortene er kun
+   en visnings-gruppering ovenpå den samme liste. */
+const SERVICE_CARDS = [
+  { key:"haven", emoji:"🌳", title:"I haven",
+    ids:["green","haek","beskaering","ukrudt_sproejt","ukrudt_fjern","sammenriv"] },
+  { key:"ude", emoji:"🏠", title:"På huset",
+    ids:["vinduer","solcelle","drivhus","alge","tagrender","algeflis","fliserens","myre_ude","myre_saeson"] },
+  { key:"inde", emoji:"🛋️", title:"Indeni huset",
+    ids:["vinduerind","myre_inde"] }
+];
 function enhKort(p){ return p.enhed ? p.enhed.split(" ")[0] : "enhed"; }
 function prisEnh(p){ return p.prisEnh || enhKort(p); }   /* ental til "kr pr. X" */
 
@@ -789,17 +758,70 @@ function knap(tegn, label){
    grupperet efter kategori. Til-/fravalg flipper kun checkboxen + .row--off
    (CSS skjuler pris-/frekvens-kontrollerne på stedet) — ingen kolonne-flytning,
    intet farveskift, intet flash. */
+/* Rundtur-kortene: 3 klikbare kategorikort (HAVEN / UDEN PÅ / INDENFRA),
+   sammenklappede som standard. Et klik på kortet folder dets services ud
+   under kortet (accordion) — flere kort kan være åbne samtidig. Checkbox-
+   adfærden i rækkerne er uændret (byggRaekke). */
 function renderRows(){
   const wrap = $("rows");
   wrap.innerHTML = "";
-  CAT_ORDER.forEach(katKey => {
-    const items = PRODUCTS.filter(p => p.kat === katKey);
+  SERVICE_CARDS.forEach(card => {
+    const items = card.ids.map(id => PRODUCTS.find(p => p.id === id)).filter(Boolean);
     if(!items.length) return;
-    const grp = document.createElement("div"); grp.className = "row-grp";
-    const lbl = document.createElement("div"); lbl.className = "row-cat"; lbl.textContent = CAT_LABELS[katKey];
-    grp.appendChild(lbl);
-    items.forEach(p => grp.appendChild(byggRaekke(p)));
-    wrap.appendChild(grp);
+    const box = document.createElement("div");
+    box.className = "tm-card";
+    box.dataset.card = card.key;
+
+    const head = document.createElement("button");
+    head.type = "button";
+    head.className = "tm-card-head";
+    head.setAttribute("aria-expanded", "false");
+    head.setAttribute("aria-controls", "tm-card-body-" + card.key);
+    const emo = document.createElement("span"); emo.className = "tm-card-emoji"; emo.setAttribute("aria-hidden","true"); emo.textContent = card.emoji;
+    const ttl = document.createElement("span"); ttl.className = "tm-card-title"; ttl.textContent = card.title;
+    const cnt = document.createElement("span"); cnt.className = "tm-card-count"; cnt.dataset.cardCount = card.key; cnt.textContent = "0 valgt";
+    const chev = document.createElement("span"); chev.className = "tm-card-chevron"; chev.setAttribute("aria-hidden","true"); chev.textContent = "▾";
+    head.appendChild(emo); head.appendChild(ttl); head.appendChild(cnt); head.appendChild(chev);
+    head.addEventListener("click", ()=>{
+      const open = box.classList.toggle("open");
+      head.setAttribute("aria-expanded", open ? "true" : "false");
+      /* Ikke-brydende måling af kort-fold (best effort — må aldrig stoppe flowet). */
+      try { (window.dataLayer = window.dataLayer || []).push({ event:"tm_card_expand", tm_card: card.key }); } catch(e){}
+    });
+
+    const body = document.createElement("div");
+    body.className = "tm-card-body";
+    body.id = "tm-card-body-" + card.key;
+    items.forEach(p => body.appendChild(byggRaekke(p)));
+
+    box.appendChild(head); box.appendChild(body);
+    wrap.appendChild(box);
+  });
+}
+
+/* Sticky opsummeringslinje: "X ting valgt · Ét besøg klarer det hele · Y kr i alt".
+   Samme sum-beregning som overalt ellers (beregn) — live opdateret via opdater(). */
+function opdaterSticky(){
+  const r = beregn(PRODUCTS);
+  const cnt = $("tm-sticky-count"), tot = $("tm-sticky-total");
+  if(cnt) cnt.textContent = r.count + " ting valgt";
+  if(tot){
+    const old = tot.dataset.v;
+    tot.textContent = kr(r.total) + " i alt";
+    /* Runde 2: kort pulse på beløbet når det ændrer sig — prisen skal mærkes. */
+    if(old !== undefined && old !== String(r.total)){
+      tot.classList.remove("tm-pulse");
+      void tot.offsetWidth;                       /* reflow → animation genstarter */
+      tot.classList.add("tm-pulse");
+    }
+    tot.dataset.v = String(r.total);
+  }
+  /* Pr. kort: antal valgte i hvert kort. */
+  SERVICE_CARDS.forEach(card => {
+    const el = ROOT.querySelector('[data-card-count="' + card.key + '"]');
+    if(!el) return;
+    const n = PRODUCTS.filter(p => p.on && card.ids.indexOf(p.id) > -1).length;
+    el.textContent = n + " valgt";
   });
 }
 
@@ -824,8 +846,46 @@ function byggRaekke(p){
   navn.className = "navn";
   navn.htmlFor = chk.id;
   navn.textContent = p.navn;
+  if(WM_HVORFOR[p.id]){
+    navn.appendChild(document.createElement("br"));
+    const hint = document.createElement("small");
+    hint.className = "tm-hvorfor";
+    hint.textContent = WM_HVORFOR[p.id];
+    navn.appendChild(hint);
+  }
 
-  /* Pris pr. gang — label over tallet (indhold sættes/animeres af opdater()). */
+  /* Antal døre, vinduer og porte — til udvendig OG indendørs vinduespudsning tæller
+     vi IKKE selv ruderne. Kunden skriver selv, hvor mange der skal pudses, og prisen
+     er bare enhedsprisen ganget med det indtastede antal. Tomt felt = ingen pris endnu. */
+  let qw = null;
+  if(p.id === "vinduer" || p.id === "vinduerind" || p.id === "solcelle"){
+    qw = document.createElement("div");
+    qw.className = "qw";
+    const qlbl = document.createElement("span"); qlbl.className = "qw-lbl";
+    qlbl.textContent = (p.id === "solcelle" ? "Antal paneler" : "Antal døre, vinduer og porte");
+    const qin = document.createElement("input");
+    qin.type = "number"; qin.id = "qty-" + p.id; qin.inputMode = "numeric";
+    qin.min = "1"; qin.max = "300"; qin.step = "1";
+    qin.placeholder = "f.eks. 12";
+    qin.value = p.qty > 0 ? p.qty : "";
+    qin.setAttribute("aria-label", p.id === "solcelle"
+      ? "Antal paneler til solcellevask"
+      : "Antal døre, vinduer og porte til " + (p.id === "vinduerind" ? "vinduerne indeni huset" : "vinduerne på huset"));
+    qin.addEventListener("input", ()=>{
+      const raw = qin.value.trim();
+      if(raw === ""){ p.qty = 0; opdater(); return; }   /* tomt felt = vent på kunden */
+      let v = Math.round(Number(raw));
+      if(!isFinite(v) || v < 1) v = 1;
+      if(v > 300) v = 300;
+      if(String(v) !== raw) qin.value = v;              /* korriger minusser/komma/tal med decimaler */
+      p.qty = v; p.touched = true;
+      opdater();
+    });
+    qw.appendChild(qlbl); qw.appendChild(qin);
+    row.classList.add("qrow");
+  }
+
+  /* Pris for ydelen — label over tallet (indhold sættes/animeres af opdater()). */
   const pw = document.createElement("div");
   pw.className = "pw"; pw.dataset.id = p.id;
 
@@ -844,39 +904,27 @@ function byggRaekke(p){
   ctl.appendChild(minus); ctl.appendChild(fv); ctl.appendChild(plus);
   fw.appendChild(flbl); fw.appendChild(ctl);
 
-  row.appendChild(chk); row.appendChild(navn); row.appendChild(pw); row.appendChild(fw);
+  row.appendChild(chk); row.appendChild(navn);
+  if(qw) row.appendChild(qw);
+  row.appendChild(pw); row.appendChild(fw);
   return row;
 }
 
-/* Live mængderabat-banner på løsnings-trinnet — svar på "hvor fremgår det?".
-   Kr-beløbet tæller blødt op/ned (animateNumber), når rabatten ændrer sig. */
+/* Rabatkode-banner på løsnings-trinnet. Mængderabatten er fjernet — prisen
+   er bare summen af de valgte services. Kr-beløbet tæller blødt op/ned. */
 function opdaterRabat(){
   var el = $("tm-rabat");
   if(!el) return;
   var r = beregn(PRODUCTS);
   /* Rabatkode (fra kontakt-trinnet): vis den også her, så kunden ser koden
-     ramme prisen med det samme. Trækkes fra årssummen EFTER mængderabat —
-     samme regnestykke som ved indsendelsen. */
+     ramme prisen med det samme — samme regnestykke som ved indsendelsen. */
   var kodePct = state.rabatkode.valid ? state.rabatkode.percent : 0;
-  var kodeKr = r.aar * kodePct / 100;
+  var kodeKr = r.total * kodePct / 100;
   var kodeHtml = kodePct > 0
     ? '<span class="tm-rabat-kode">Rabatkode <b>' + esc(state.rabatkode.code) + '</b>: ekstra <b>−' + kodePct + '%</b>' +
-      (kodeKr > 0 ? ' (ca. <span class="tm-kode-kr tm-anim-kr">' + kr(kodeKr) + '</span> om året)' : '') + ' oveni.</span>'
+      (kodeKr > 0 ? ' (ca. <span class="tm-kode-kr tm-anim-kr">' + kr(kodeKr) + '</span>)' : '') + '</span>'
     : '';
-  if(r.rabatPct > 0 && r.rabatKr > 0){
-    var prev = parseFloat(el.dataset.kr);
-    el.innerHTML = 'Du har valgt <b>' + r.count + ' services</b> og sparer <b>' + r.rabatPct +
-      '%</b> (ca. <span class="tm-rabat-kr tm-anim-kr">' + kr(r.rabatKr) + '</span> om året). Jo flere du vælger, jo mere sparer du' +
-      (r.rabatPct < RABAT_MAX ? ' — helt op til ' + RABAT_MAX + '%.' : '.') + kodeHtml;
-    if(isFinite(prev) && prev !== r.rabatKr) animateNumber(el.querySelector(".tm-rabat-kr"), prev, r.rabatKr, kr);
-    el.dataset.kr = r.rabatKr;
-    el.hidden = false;
-  } else if(r.rabatPct > 0){
-    el.innerHTML = 'Jo flere services du vælger, jo mere sparer du — <b>' + RABAT_PR_SERVICE +
-      '% pr. service</b>, op til ' + RABAT_MAX + '%.' + kodeHtml;
-    delete el.dataset.kr;
-    el.hidden = false;
-  } else if(kodePct > 0){
+  if(kodePct > 0){
     el.innerHTML = kodeHtml;
     delete el.dataset.kr;
     el.hidden = false;
@@ -899,17 +947,18 @@ function opdater(){
     const el = ROOT.querySelector('.pw[data-id="' + p.id + '"]');
     if(!el) return;
     if(p.pris == null){
-      el.innerHTML = '<span class="pw-note">' + (p.pakke ? "Indeholdt i pakken" : "Pris ved besøg") + '</span>';
+      el.innerHTML = '<span class="pw-note">' + (p.pakke ? "Inkluderet — aftales ved opkald" : "Pris ved besøg") + '</span>';
       delete el.dataset.val;
     } else if(!p.qty){
       el.innerHTML = '<span class="pw-note">Pris efter antal</span>';
       delete el.dataset.val;
     } else {
-      const val = p.pris * p.qty;
+      const raw = p.pris * p.qty;
+      const val = p.min ? Math.max(raw, p.min) : raw;
       const prev = parseFloat(el.dataset.val);
       const b = el.querySelector(".pw-val");
       if(!b){   /* første visning: skriv direkte (ingen animation fra ingenting) */
-        el.innerHTML = '<b class="pw-val">' + kr(val) + '</b><span class="pw-unit">pr. gang</span>';
+        el.innerHTML = '<b class="pw-val">' + kr(val) + '</b><span class="pw-unit">i alt</span>';
       } else if(isFinite(prev) && prev !== val){
         animateNumber(b, prev, val, kr);   /* mængde ændret → tæl blødt derhen */
       } else {
@@ -920,6 +969,7 @@ function opdater(){
   });
   opdaterRabat();
   opdaterBetaling();
+  opdaterSticky();
   gemState("step-losning");   /* hver frekvens-/til-fravalgs-ændring overlever refresh */
 }
 
@@ -936,14 +986,14 @@ function opdater(){
 })();
 (function gendan(){
   let s = null;
-  try { s = JSON.parse(sessionStorage.getItem(PERSIST_KEY) || "null"); } catch(e){ return; }
-  if(!s || !s.adresse || Date.now() - (s.t || 0) > 3600e3) return;
+  try { s = JSON.parse(localStorage.getItem(PERSIST_KEY) || "null"); } catch(e){ return; }
+  if(!s || !s.adresse || Date.now() - (s.t || 0) > 14 * 86400e3) return;
   if(["step-kundetype","step-verify","step-losning","step-kontakt"].indexOf(s.step) === -1) return;
 
   state.adresse = s.adresse;
   adrInput.value = s.adresse;
   if(s.kundetype === "privat" || s.kundetype === "erhverv") vaelgKundetype(s.kundetype);
-  if(s.betaling === "abonnement" || s.betaling === "pr_gang") vaelgBetaling(s.betaling);
+  if(s.betaling === "pr_gang") vaelgBetaling(s.betaling);
   if(s.prod) PRODUCTS.forEach(p => {
     const d = s.prod[p.id];
     if(d){ p.on = !!d.on; if(typeof d.qty === "number") p.qty = d.qty; if(typeof d.freq === "number") p.freq = d.freq; p.touched = !!d.touched; }
@@ -965,6 +1015,13 @@ function opdater(){
   if(window.KARLTOFFEL && window.KARLTOFFEL.measureProperty){
     window.KARLTOFFEL.measureProperty(s.adresse).then(function(m){ if(req === measureReq) applyMeasurements(m); });
   }
+  /* Runde 2: fortæl kunden, at hendes valg overlevede — ingen forvirring. */
+  const resume = document.createElement("p");
+  resume.className = "tm-resume";
+  resume.textContent = "Dine valg er gemt — fortsæt, hvor du slap.";
+  const akt = $(s.step);
+  if(akt && akt.querySelector(".topbar")) akt.querySelector(".topbar").after(resume);
+  else if(akt) akt.prepend(resume);
   visStep(s.step, true);   /* stille: intet scroll-hop, ingen fokus-tyveri */
 })();
 
