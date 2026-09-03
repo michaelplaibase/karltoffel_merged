@@ -28,7 +28,11 @@ export default function MinuteRateForm({ rate }: { rate: number }) {
               <button className="btn btn-primary" type="submit" disabled={pending}>
                 {pending ? "Gemmer…" : "Gem"}
               </button>
-              {state.saved ? <span style={{ color: "var(--success)", fontSize: 13 }}>✓ Gemt</span> : null}
+              {state.saved ? (
+                <span style={{ color: "var(--success)", fontSize: 13 }}>
+                  ✓ Gemt{typeof state.recalculated === "number" ? ` · ${state.recalculated} varigheder genberegnet` : ""}
+                </span>
+              ) : null}
               {state.error ? <span style={{ color: "#c0392b", fontSize: 13 }}>{state.error}</span> : null}
             </div>
           </form>
