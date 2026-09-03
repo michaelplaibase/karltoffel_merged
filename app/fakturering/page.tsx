@@ -14,8 +14,6 @@ import VerifyInvoicingButton from "@/components/VerifyInvoicingButton";
 import CleanupDescriptionsButton from "@/components/CleanupDescriptionsButton";
 import InvoiceAllButton from "@/components/InvoiceAllButton";
 import InvoiceNowButton from "@/components/InvoiceNowButton";
-import RevenuePanel from "@/components/RevenuePanel";
-import { getSubscriptionRevenue } from "@/lib/subscription-revenue";
 
 export const metadata = { title: "Faktureringsoverblik · Karltoffel" };
 
@@ -114,8 +112,7 @@ function Table({ rows, empty, showInvoiceNow = false }: { rows: Row[]; empty: st
 export default async function InvoicingOverviewPage() {
   const user = await getSessionUser();
   if (!user) redirect("/login");
-  // Omsætningsoverblik (Thomas, 2026-09-03: flyttet fra regnskab til fakturering) — kun administratorer.
-  const [rows, revenue] = await Promise.all([loadRows(), user.isAdmin ? getSubscriptionRevenue() : Promise.resolve(null)]);
+  const rows = await loadRows();
 
   // 1) Færdigmeldt (Udført) og stadig uden faktura → klar til at blive faktureret.
   const ready = rows.filter((o) => o.status === "Udført" && !o.invoice);
@@ -135,10 +132,7 @@ export default async function InvoicingOverviewPage() {
         og alt der endnu ikke er meldt færdigt. Åbn en ordre for at rykke dens dato.
       </p>
 
-      <div className="subs-layout">
-        {revenue ? <RevenuePanel revenue={revenue} /> : null}
-
-        <div>
+      <div>
           <VerifyInvoicingButton />
 
 <CleanupDescriptionsButton />
@@ -161,7 +155,6 @@ export default async function InvoicingOverviewPage() {
             <div className="card-header"><h4 className="section-title">Faktureret / lukket ({done.length}) — {money(sum(done))}</h4></div>
             <div className="card-body tight"><Table rows={done} empty="Ingenting er faktureret endnu." /></div>
           </div>
-        </div>
       </div>
     </div>
   );

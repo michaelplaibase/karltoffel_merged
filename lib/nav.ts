@@ -71,6 +71,7 @@ export const TOP_NAV: NavMenu[] = [
     label: "Fakturering", en: "Invoicing",
     items: [
       { label: "Faktureringsoverblik", en: "Invoicing overview", href: "/fakturering" },
+      { label: "Omsætningsoverblik", en: "Revenue overview", href: "/omsaetningsoverblik", adminOnly: true },
     ],
   },
   {
