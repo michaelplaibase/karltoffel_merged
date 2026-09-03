@@ -56,9 +56,10 @@ export default async function EmployeeCalcPage() {
         <div className="card-body tight">
           <p className="page-desc" style={{ marginBottom: 8 }}>
             Abonnementsomsætning er forventet pr. rytme over 52 uger ("På anmodning" og pauser er
-            fratrukket). Kostpris = løn + faste udgifter + andel af biler og maskiner (en tildelt bil
-            lægges ind i sin medarbejders tal; resten fordeles ligeligt). Dækning = realiseret
-            omsætning ekskl. moms af udførte ordrer i den aktuelle måned minus kostprisen.
+            fratrukket). Løn hentes fra Lønrapporten, og Realiseret/md gælder LØNPERIODEN 21. i
+            forrige måned → 20. i denne — samme periode som lønnen. Kostpris = løn + faste udgifter
+            + andel af biler og maskiner (en tildelt bil lægges ind i sin medarbejders tal; resten
+            fordeles ligeligt). Dækning = realiseret omsætning ekskl. moms i perioden minus kostprisen.
           </p>
           <div className="table-wrap">
             <table className="data-table">
