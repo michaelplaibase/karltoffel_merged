@@ -128,34 +128,113 @@ export function planWeek(
         if (!best) break;
         place(best.idx, best.drive);
       }
-
-      // Pass 2: greedily add the nearest feasible unlocked job that still fits.
-      // Kun på dage fra og med fromWeekday — fortidige dage modtager intet nyt.
-      if (weekday < fromWeekday) continue;
-      // eslint-disable-next-line no-constant-condition
-      while (true) {
-        let best: { idx: number; drive: number } | null = null;
-        for (let i = 0; i < remaining.length; i++) {
-          const j = remaining[i];
-          if (j.locked) continue; // only placed on their pinned day (pass 1)
-          if (j.fixedEmployeeId && j.fixedEmployeeId !== emp.id) continue;
-          if (j.fixedWeekdays && !j.fixedWeekdays.includes(weekday)) continue;
-          const d = drive(j);
-          if (st.cursor + d + j.durationMin > hardEnd) continue; // won't fit today
-          if (!best || d < best.drive) best = { idx: i, drive: d };
-        }
-        if (!best) break;
-        place(best.idx, best.drive);
-      }
     }
   }
 
+  // Fælles hjælpere til uge-niveau placering (pass 2+3).
+  const driveTo = (s: (typeof states)[number], j: Job) =>
+    s.st.curAddr === null ? driveFromHomeMinutes(j.address, s.emp.home) : driveMinutes(s.st.curAddr, j.address);
+  const fitsCapacity = (s: (typeof states)[number], j: Job, d: number) =>
+    s.day.weekday >= fromWeekday && s.st.cursor + d + j.durationMin <= s.hardEnd;
+  const placeOnState = (idx: number, s: (typeof states)[number], d: number) => {
+    const j = remaining.splice(idx, 1)[0];
+    const start = s.st.cursor + d;
+    const end = start + j.durationMin;
+    s.day.stops.push({ job: j, startMin: start, endMin: end, driveMin: d });
+    s.day.driveMin += d;
+    s.day.serviceMin += j.durationMin;
+    s.st.cursor = end;
+    s.st.curAddr = j.address;
+  };
+  /** Billigste mulige dag for jobbet blandt `weekdays` (undefined = alle
+   *  tilbageværende dage): minimal (dagsbelastning + marginal kørsel), ved
+   *  lighed laveste ugedag. Deterministisk. */
+  const bestStateFor = (j: Job, weekdays?: number[]) => {
+    let best: { s: (typeof states)[number]; d: number; cost: number } | null = null;
+    for (const s of states) {
+      if (j.fixedEmployeeId != null && j.fixedEmployeeId !== s.emp.id) continue;
+      if (s.day.weekday < fromWeekday) continue;
+      if (weekdays && !weekdays.includes(s.day.weekday)) continue;
+      const d = driveTo(s, j);
+      if (!fitsCapacity(s, j, d)) continue;
+      const cost = s.day.driveMin + s.day.serviceMin + d;
+      if (!best || cost < best.cost || (cost === best.cost && s.day.weekday < best.s.day.weekday)) {
+        best = { s, d, cost };
+      }
+    }
+    return best;
+  };
+  const deferredAnchors = new Set<number>();
+  const anchorIdx = () =>
+    remaining.findIndex((j) => !j.locked && !deferredAnchors.has(j.id) && j.fixedWeekdays && j.fixedWeekdays.length > 0);
+
+  // Pass 2a — FASTE UGEDAGE ER ANKRE (McDonald's-princippet): abonnementer med
+  // faste ugedage placeres FØRST på den billigste af deres faste dage, så alt
+  // andet planlægges omkring dem. Andre job MÅ dele ankredagen, hvis der er
+  // plads (kapacitetstjekket inkl. kørsel i bestStateFor). Ankre hvis faste
+  // dage alle er passeret/fulde udskydes til 2b (fortrukne, ikke blokerende).
+  for (let idx = anchorIdx(); idx !== -1; idx = anchorIdx()) {
+    const j = remaining[idx];
+    const best = bestStateFor(j, j.fixedWeekdays);
+    if (best) placeOnState(idx, best.s, best.d);
+    else deferredAnchors.add(j.id);
+  }
+
+  // Pass 2b — UGE-NIVEAU FORDDELING: hvert resterende job lægges på den
+  // tilbageværende dag (>= fromWeekday, respektér medarbejder-binding og
+  // kapacitet inkl. kørsel), hvor (dagsbelastning + marginal kørsel) er
+  // mindst — i stedet for den gamle grådhed "pak mandag først". Faste ugedage
+  // er FORTRUKNE, ikke blokerende: et job, hvis faste dag er passeret/fuld,
+  // lander her på den bedste tilbageværende dag — aldrig "Ikke planlagt".
+  for (let i = 0; i < remaining.length; ) {
+    const j = remaining[i];
+    if (j.locked) { i++; continue; } // kun pass 1-placerede (ingen dag matchede)
+    const best = bestStateFor(j); // fixedWeekdays er allerede prøvet i 2a — fortrukne, ikke krav
+    if (best) placeOnState(i, best.s, best.d);
+    else i++; // ingen dag har plads → overarbejds-fallback nedenfor
+  }
+
+  // Ruteoptimering pr. dag: kør hver dags stop i deterministisk
+  // nærmeste-nabo-rækkefølge fra hjemmet og genberegn tider/kørsel —
+  // uge-niveau placeringen vælger DAGENE, denne passer RÆKKEFØLGEN.
+  const resequenceDay = (s: (typeof states)[number]) => {
+    if (s.day.stops.length < 2) return;
+    let cur: string | null = null;
+    let cursor = s.emp.workStartMin;
+    let driveMin = 0;
+    let serviceMin = 0;
+    const pool = [...s.day.stops];
+    const out: Stop[] = [];
+    while (pool.length) {
+      let bi = 0, bd = Infinity;
+      for (let i = 0; i < pool.length; i++) {
+        const d = cur === null ? driveFromHomeMinutes(pool[i].job.address, s.emp.home) : driveMinutes(cur, pool[i].job.address);
+        if (d < bd) { bd = d; bi = i; }
+      }
+      const stop = pool.splice(bi, 1)[0];
+      const start = cursor + bd;
+      const end = start + stop.job.durationMin;
+      out.push({ job: stop.job, startMin: start, endMin: end, driveMin: bd, overtime: stop.overtime });
+      driveMin += bd;
+      serviceMin += stop.job.durationMin;
+      cursor = end;
+      cur = stop.job.address;
+    }
+    s.day.stops = out;
+    s.day.driveMin = driveMin;
+    s.day.serviceMin = serviceMin;
+    s.st.cursor = cursor;
+    s.st.curAddr = cur;
+  };
+  for (const s of states) resequenceDay(s);
+
   // Pass 3 — OVERARBEJDS-FALLBACK (Michaels beslutning efter uge 35-hændelsen):
-  // en ordre, hvis bundne medarbejder ikke har plads inden for arbejdstiden,
-  // må ikke ende som "Ikke planlagt" — den lægges som overarbejde sidst på
-  // medarbejderens tilladte dag med FÆRREST samlede minutter (kørsel+service).
-  // Kun ordrer med en gyldig dag tilbage: låste ordrer og ordrer, hvis faste
-  // ugedage ikke findes blandt de resterende dage, forbliver ærligt uplacerede.
+  // en ordre, hvis bundne medarbejder ikke har plads inden for arbejdstiden på
+  // NOGEN tilbageværende dag, må ikke ende som "Ikke planlagt" — den lægges som
+  // overarbejde på medarbejderens tilladte dag med FÆRREST samlede minutter
+  // (kørsel+service). Faste ugedage er fortrukne, ikke blokerende (et job hvis
+  // faste dag er passeret skal stadig planlægges), og låste ordrer uden match
+  // eller ubundne ordrer forbliver ærligt uplacerede.
   // eslint-disable-next-line no-constant-condition
   while (true) {
     let placedAny = false;
@@ -163,10 +242,7 @@ export function planWeek(
       const j = remaining[i];
       if (j.locked || j.fixedEmployeeId == null) continue;
       const candidates = states.filter(
-        (s) =>
-          s.emp.id === j.fixedEmployeeId &&
-          s.day.weekday >= fromWeekday &&
-          (!j.fixedWeekdays || j.fixedWeekdays.includes(s.day.weekday))
+        (s) => s.emp.id === j.fixedEmployeeId && s.day.weekday >= fromWeekday
       );
       if (!candidates.length) continue;
       const target = candidates.reduce((best, s) => {
@@ -174,7 +250,7 @@ export function planWeek(
         const bestLoad = best.day.driveMin + best.day.serviceMin;
         return load < bestLoad || (load === bestLoad && s.day.weekday < best.day.weekday) ? s : best;
       });
-      const d = target.st.curAddr === null ? driveFromHomeMinutes(j.address, target.emp.home) : driveMinutes(target.st.curAddr, j.address);
+      const d = driveTo(target, j);
       remaining.splice(i, 1);
       const start = target.st.cursor + d;
       const end = start + j.durationMin;
@@ -188,6 +264,7 @@ export function planWeek(
     }
     if (!placedAny) break;
   }
+  for (const s of states) resequenceDay(s);
 
   return { weekMonday, days: states.map((s) => s.day).filter((d) => d.stops.length), unplanned: remaining };
 }
