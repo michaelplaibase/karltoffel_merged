@@ -8,6 +8,7 @@
 import { useState } from "react";
 import { CATEGORIES, categoryColor } from "@/lib/categories";
 import { MOMS } from "@/lib/data";
+import { WEEKDAYS_DA_SHORT, weekdayDigits } from "@/lib/task-weekdays";
 
 export type TaskRow = {
   description: string; price: string; duration: string; category: string;
@@ -15,6 +16,9 @@ export type TaskRow = {
   // "Måneder på pause" (kun abonnementer) — strengform til form-submit:
   // pauseActive/pauseYearly er '1'/'0', datoerne ISO 'YYYY-MM-DD'.
   pauseActive?: string; pauseStart?: string; pauseEnd?: string; pauseYearly?: string;
+  // Ugedage (kun abonnementer): digit-streng "0"-"6", 0=mandag … 6=søndag,
+  // fx "0" = kun mandag. Tom/undefined = alle ugedage.
+  weekdays?: string;
 };
 
 const CAT_NAMES = Object.keys(CATEGORIES);
@@ -74,6 +78,7 @@ export default function TaskLineEditor({
               <th style={{ width: 120 }}>Varighed (min.)</th>
               {sub && <th style={{ width: 190 }}>Interval</th>}
               {sub && <th style={{ width: 110 }}>Næste gang</th>}
+              {sub && <th style={{ width: 210 }} title="Opgaven køres kun på de valgte ugedage">Ugedage</th>}
               <th style={{ width: 40 }} />
             </tr>
           </thead>
@@ -163,6 +168,35 @@ export default function TaskLineEditor({
                       onChange={(e) => update(i, { nextWeek: e.target.value })} className="form-control form-control-sm" />
                   </td>
                 )}
+                {sub && (
+                  // Ugedage: små checkbokse (mandag–søndag). De synlige bokse er
+                  // UGYLDIGE til submit (checkboxes med samme name forskubber
+                  // formData.getAll-zippet med taskDescription når nogle er tomme) —
+                  // i stedet submittes digit-strengen via et skjult felt der ALTID
+                  // sendes for hver række, som ved "Måneder på pause".
+                  <td data-label="Ugedage">
+                    <div role="group" aria-label={`Ugedage for ${r.description || "opgaven"}`} style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                      {WEEKDAYS_DA_SHORT.map((name, day) => {
+                        const selected = (r.weekdays ?? "").includes(String(day));
+                        return (
+                          <label key={day} title={name} style={{ display: "inline-flex", alignItems: "center", gap: 2, fontSize: 12, cursor: "pointer" }}>
+                            <input
+                              type="checkbox"
+                              checked={selected}
+                              onChange={(e) => {
+                                const cur = new Set([...(r.weekdays ?? "")].map(Number).filter((d) => d >= 0 && d <= 6));
+                                if (e.target.checked) cur.add(day); else cur.delete(day);
+                                update(i, { weekdays: weekdayDigits([...cur]) ?? "" });
+                              }}
+                            />
+                            {name}
+                          </label>
+                        );
+                      })}
+                    </div>
+                    <input type="hidden" name="taskWeekdays" value={r.weekdays ?? ""} />
+                  </td>
+                )}
                 <td data-label="" className="td-remove">
                   <button type="button" onClick={() => remove(i)} className="btn btn-light btn-sm" title="Fjern opgave">
                     <i className="bi bi-trash" />
@@ -175,6 +209,7 @@ export default function TaskLineEditor({
               <td />
               <td className="num" data-label="Pris i alt" style={{ fontWeight: 600 }}>{sum.toLocaleString("da-DK")} kr</td>
               <td className="num" data-label="Minutter i alt" style={{ fontWeight: 600 }}>{dur}</td>
+              {sub && <td />}
               {sub && <td />}
               {sub && <td />}
               <td />

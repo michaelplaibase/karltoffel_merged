@@ -32,6 +32,14 @@ export default async function EmployeeCalcPage() {
           <span className="revenue-kpi-value">{krOre(subYearlyTotal)}</span>
         </div>
         <div className="revenue-kpi">
+          <span className="revenue-kpi-label">Realiseret i månedens ordrer (inkl. moms)</span>
+          <span className="revenue-kpi-value">{kr(data.realised.revenueInclVat)}</span>
+        </div>
+        <div className="revenue-kpi">
+          <span className="revenue-kpi-label">Realiseret år til dato (inkl. moms)</span>
+          <span className="revenue-kpi-value">{kr(data.realised.revenueInclVatYear)}</span>
+        </div>
+        <div className="revenue-kpi">
           <span className="revenue-kpi-label">Selskabets omkostninger / md</span>
           <span className="revenue-kpi-value">{kr(data.companyMonthlyCost)}</span>
         </div>
@@ -65,14 +73,15 @@ export default async function EmployeeCalcPage() {
                   <th data-label="Biler/maskiner">Biler/maskiner</th>
                   <th data-label="Kostpris/md">Kostpris/md</th>
                   <th data-label="Kostpris/time">Kostpris/time</th>
-                  <th data-label="Realiseret (ekskl. moms)">Realiseret</th>
+                  <th data-label="Realiseret/md (ekskl. moms)">Realiseret/md</th>
+                  <th data-label="Realiseret/år (inkl. moms)">Realiseret/år</th>
                   <th data-label="Dækning">Dækning</th>
                   <th data-label="Break-even">Break-even</th>
                 </tr>
               </thead>
               <tbody>
                 {data.employees.length === 0 ? (
-                  <tr><td colSpan={12}><div className="table-empty">Ingen aktive medarbejdere.</div></td></tr>
+                  <tr><td colSpan={13}><div className="table-empty">Ingen aktive medarbejdere.</div></td></tr>
                 ) : data.employees.map((e) => (
                   <tr key={e.id}>
                     <td data-label="Medarbejder">{e.navn}</td>
@@ -84,7 +93,8 @@ export default async function EmployeeCalcPage() {
                     <td data-label="Biler/maskiner" className="num">{kr(e.shareOfFleetMonthly)}</td>
                     <td data-label="Kostpris/md" className="num"><b>{kr(e.totalCostMonthly)}</b></td>
                     <td data-label="Kostpris/time" className="num">{kr(e.costPerHour)}</td>
-                    <td data-label="Realiseret (ekskl. moms)" className="num">{kr(e.realisedRevenueExMoms)}</td>
+                    <td data-label="Realiseret/md (ekskl. moms)" className="num">{kr(e.realisedRevenueExMoms)}</td>
+                    <td data-label="Realiseret/år (inkl. moms)" className="num">{kr(e.realisedRevenueYear)}</td>
                     <td data-label="Dækning" className="num" style={{ color: e.coverage != null && e.coverage < 0 ? "var(--danger, #C4183C)" : undefined }}>
                       {e.coverage != null ? <><b>{kr(e.coverage)}</b>{e.coveragePct != null ? ` (${e.coveragePct} %)` : ""}</> : "—"}
                     </td>

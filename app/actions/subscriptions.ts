@@ -9,6 +9,7 @@ import { generateForSubscriptionId, generateAllSubscriptionOrders, regenerateFut
 import { isoWeek } from "@/lib/planner";
 import { isoWeekYear, weekLabel } from "@/lib/weeks";
 import { weekMondayToday } from "@/lib/calendar";
+import { weekdayDigits, parseWeekdayDigits } from "@/lib/task-weekdays";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
@@ -51,12 +52,16 @@ function readTaskLines(formData: FormData) {
   const pauseStarts = formData.getAll("taskPauseStart").map(String);
   const pauseEnds = formData.getAll("taskPauseEnd").map(String);
   const pauseYearlies = formData.getAll("taskPauseYearly").map(String);
+  // Ugedage-begrænsning pr. opgave — skjult felt der ALTID submittes pr. række
+  // (digit-streng "0"-"6", 0=mandag … 6=søndag; tom = alle dage).
+  const weekdaySets = formData.getAll("taskWeekdays").map(String);
   return descs
     .map((d, i) => ({
       description: d.trim(), price: prices[i] || 0, durationMin: durs[i] || 0,
       category: cats[i] || "Andet", interval: intervals[i] || "Hver gang", nextWeek: (nextWeeks[i] || "").trim(),
       pauseActive: pauseActives[i] || "0", pauseStart: (pauseStarts[i] || "").trim(),
       pauseEnd: (pauseEnds[i] || "").trim(), pauseYearly: pauseYearlies[i] || "1",
+      weekdays: (weekdaySets[i] || "").trim(),
     }))
     .filter((l) => l.description);
 }
@@ -73,6 +78,7 @@ function taskCreate(lines: ReturnType<typeof readTaskLines>) {
       intervalMultiplier: l.interval, startWeek: l.nextWeek || null, isStandardTask: false, sort: i,
       pauseActive: paused, pauseStart: paused ? l.pauseStart : null, pauseEnd: paused ? l.pauseEnd : null,
       pauseYearly: l.pauseYearly !== "0",
+      weekdays: weekdayDigits(parseWeekdayDigits(l.weekdays)) || null, // normaliseret "013"-form; tom/ugyldig → null (alle dage)
     };
   });
 }

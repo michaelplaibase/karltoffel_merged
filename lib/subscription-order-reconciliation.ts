@@ -7,7 +7,7 @@ type TemplateTask = {
   id: number; category: string; letter: string; color: string; description: string; price: number;
   durationMin: number; customerPresenceRequired: boolean; isStandardTask: boolean;
   intervalMultiplier: string | null; startWeek: string | null; pauseActive: boolean;
-  pauseStart: string | null; pauseEnd: string | null; pauseYearly: boolean; sort: number;
+  pauseStart: string | null; pauseEnd: string | null; pauseYearly: boolean; weekdays?: string | null; sort: number;
 };
 type Subscription = {
   id: number; displayNo: number; contactId: number; customer: string; phone: string | null;

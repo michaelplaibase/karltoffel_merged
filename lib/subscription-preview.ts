@@ -1,4 +1,5 @@
 import { effectiveCalendarTaskDuration } from "./calendar-duration";
+import { effectiveVisitWeekdays } from "./task-weekdays";
 
 const WEEK_MS = 7 * 864e5;
 
@@ -15,6 +16,7 @@ export type PreviewTask = {
   pauseStart: string | null;
   pauseEnd: string | null;
   pauseYearly: boolean;
+  weekdays?: string | null;
 };
 
 export type PreviewSubscription = {
@@ -125,12 +127,6 @@ function isTaskPaused(task: PreviewTask, week: number): boolean {
     : value >= startValue || value <= endValue;
 }
 
-function fixedWeekdays(value: string | null): number[] | undefined {
-  if (!value) return undefined;
-  const days = [...value].map(Number).filter((day) => Number.isInteger(day) && day >= 0 && day <= 6);
-  return days.length ? days : undefined;
-}
-
 /**
  * Pure, read-only projection of subscription visits. It mirrors recurrence.ts,
  * but deliberately knows nothing about Prisma or persistence.
@@ -186,7 +182,12 @@ export function projectSubscriptionVisits(
         customer: subscription.customer,
         phone: subscription.phone,
         deliveryAddress: subscription.deliveryAddress,
-        fixedWeekdays: fixedWeekdays(subscription.fixedWeekdays),
+        // Visitens planlægningsdage: subscriptionens faste ugedage skæres med
+        // enkelte opgavers ugedage-begrænsning (fx én opgave = kun mandag).
+        fixedWeekdays: effectiveVisitWeekdays(
+          subscription.fixedWeekdays,
+          due.map((t) => t.weekdays),
+        ),
         fixedEmployeeId: subscription.fixedEmployeeId,
         week: ymd(new Date(visitWeek)),
         tasks: due,
