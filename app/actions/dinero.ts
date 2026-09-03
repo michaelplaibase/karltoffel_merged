@@ -68,6 +68,36 @@ export async function runDineroTest(_prev: TestResult, _formData: FormData): Pro
   return res;
 }
 
+/** "Fakturer nu" (Thomas, 2026-09-03) — fakturér ÉN ordre fra Klar til
+ *  fakturering-listen på /fakturering med det samme. Genbruger den EKSISTERENDE
+ *  pr.-ordre-Dinero-flow (issueInvoiceForOrder — samme kode som "Fakturér igen"
+ *  på ordresiden og natautomatikken): idempotent, genoptager fra det nåede trin
+ *  og KASTER ALDRIG — fejl returneres, så UI'et kan vise dem inline (aldrig
+ *  stille). Kun administratorer (samme gate som RevenuePanel). */
+export type InvoiceNowResult = { ok: boolean; message?: string; error?: string };
+
+export async function invoiceNow(orderId: number): Promise<InvoiceNowResult> {
+  await guardAction();
+  const user = await getSessionUser();
+  if (!user?.isAdmin) return { ok: false, error: "Kun administratorer kan fakturere herfra." };
+  try {
+    const res = await issueInvoiceForOrder(orderId);
+    if (!res.ok) return { ok: false, error: res.error ?? "Fakturering fejlede — intet blev sendt." };
+    revalidatePath("/fakturering");
+    const message =
+      res.status === "Samlefaktura" ? "Ordet ligger på kundens samlefaktura (køres d. 20.)."
+      : res.status === "none" ? "Ordet har valget \"Send ikke faktura\" — intet at fakturere."
+      : res.status === "later" ? "Ordet er sat til \"Registreres senere\" — intet at fakturere."
+      : res.status === "simulated" ? "Dinero er ikke konfigureret — faktureringen blev kun SIMULERET (dry-run)."
+      : res.status === "Draft" ? "Kladde oprettet i Dinero (ikke bogført endnu)."
+      : res.status === "Booked" ? "Faktura bogført i Dinero."
+      : "Faktura sendt til kunden.";
+    return { ok: true, message };
+  } catch (e) {
+    return { ok: false, error: e instanceof Error ? e.message : "Fakturering fejlede — intet blev sendt." };
+  }
+}
+
 /** "Fakturér igen" — re-run invoicing for an order using its stored decision,
  *  resuming from the furthest Dinero state already reached. */
 export async function retryInvoice(orderId: number): Promise<void> {

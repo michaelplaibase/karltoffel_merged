@@ -4,18 +4,16 @@ import { mondayOf, weekLabel } from "@/lib/weeks";
 import { getSubscriptions, getContacts } from "@/lib/queries";
 import { stopSubscription, approveSubscription } from "@/app/actions/subscriptions";
 import GenerateOrdersButton from "@/components/GenerateOrdersButton";
-import RevenuePanel from "@/components/RevenuePanel";
 import { CatChip, CustomerCell, MapLink, money } from "@/components/ui";
 import RowMenu from "@/components/RowMenu";
 import { SearchBar } from "@/components/ListControls";
-import { getSubscriptionRevenue } from "@/lib/subscription-revenue";
 
 export const metadata = { title: "Abonnementer · Karltoffel" };
 
 export default async function SubscriptionsPage({ searchParams }: { searchParams: Promise<{ q?: string; page?: string }> }) {
   const sp = await searchParams;
   const q = sp.q?.trim() || undefined;
-  const [subscriptions, contacts, revenue] = await Promise.all([getSubscriptions(q), getContacts(), getSubscriptionRevenue()]);
+  const [subscriptions, contacts] = await Promise.all([getSubscriptions(q), getContacts()]);
   const contactById = (id: number) => contacts.find((c) => c.id === id);
 
   // "Fremtidige ordrer": den FAKTISKE næste ikke-afsluttede ordres uge — ikke
@@ -41,9 +39,8 @@ export default async function SubscriptionsPage({ searchParams }: { searchParams
       <h1 className="page-title">Oversigt over abonnementer</h1>
       <p className="page-desc">Oversigten viser alle aktive abonnementer.</p>
 
-      <div className="subs-layout">
-        <div className="card subs-table">
-          <div className="card-body">
+      <div className="card">
+        <div className="card-body">
           <div className="toolbar">
             <Link href="/subscriptions/new" className="btn btn-outline-primary">Opret nyt abonnement</Link>
             <GenerateOrdersButton />
@@ -96,10 +93,7 @@ export default async function SubscriptionsPage({ searchParams }: { searchParams
               </tbody>
             </table>
           </div>
-          </div>
         </div>
-
-        <RevenuePanel revenue={revenue} />
       </div>
     </div>
   );
