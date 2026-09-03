@@ -1,0 +1,64 @@
+/* Floating circular CTA — "Bliv en heldig kartoffel"
+   Yellow #FFF87B bg, dark brown #4C3718 text. Rotating ring keeps text static. */
+.floating-cta {
+  position: fixed;
+  right: 24px;
+  bottom: 24px;
+  width: 120px;
+  height: 120px;
+  z-index: 9000; /* above content; below cookie modal (9999) */
+  display: block;
+  text-decoration: none;
+}
+.floating-cta__disc {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: #FFF87B;
+  color: #4C3718;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 14px;
+  box-shadow: 0 4px 14px rgba(76, 55, 24, 0.25);
+  transition: transform 0.2s ease;
+}
+.floating-cta:hover .floating-cta__disc {
+  transform: scale(1.06);
+}
+.floating-cta__text {
+  font-size: 13px;
+  line-height: 1.25;
+  font-weight: 700;
+  color: #4C3718;
+}
+.floating-cta__ring {
+  position: absolute;
+  inset: -4px;
+  border-radius: 50%;
+  border: 3px dashed #4C3718;
+  opacity: 0.55;
+  animation: floating-cta-spin 24s linear infinite;
+  pointer-events: none;
+}
+@keyframes floating-cta-spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+@media (max-width: 640px) {
+  .floating-cta {
+    right: 14px;
+    bottom: 14px;
+    width: 92px;
+    height: 92px;
+  }
+  .floating-cta__text {
+    font-size: 11px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .floating-cta__ring {
+    animation: none;
+  }
+}
