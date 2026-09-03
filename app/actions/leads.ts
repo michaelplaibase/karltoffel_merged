@@ -283,6 +283,19 @@ export async function convertLeadCore(id: number): Promise<ConvertLeadResult> {
     return { ok: false, error: `Kunden er oprettet, men pakkevalget kunne ikke materialiseres (midlertidig fejl) — prøv at konvertere emnet igen. Kunde: /customers/${contactId}` };
   }
 
+  // Lead-beregner (Thomas, 2026-09-03): konverteres emnet til kunde, registreres
+  // erhvervelsen AUTOMATISK — kategori ud fra pakkevalg/betaling + kundetype,
+  // kanal = emnets kilde. Så ryger kunden ind i Lead-beregneren med alt data.
+  try {
+    const category = spec.kind === "order" ? "privat" : (payload.kundetype === "erhverv" ? "virksomhed" : "privat");
+    await prisma.leadAcquisition.upsert({
+      where: { contactId_category: { contactId, category } },
+      create: { companyId: lead.companyId, contactId, category, source: lead.source || "Direkte" },
+      update: {},
+    });
+    revalidatePath("/business-manager/leads");
+  } catch { /* best effort — konverteringen må aldrig fejle pga. Lead-beregneren */ }
+
   revalidatePath("/leads");
   revalidatePath("/customers");
   revalidatePath("/subscriptions");

@@ -24,6 +24,7 @@
   },
   "dependencies": {
     "@prisma/client": "^6.19.3",
+    "@vercel/blob": "^2.8.0",
     "bootstrap-icons": "^1.11.3",
     "next": "16.2.10",
     "prisma": "^6.19.3",
