@@ -17,13 +17,34 @@ test("completeOrder ekkoer de indsendte felter i state.values ved fejl", async (
   assert.match(actions, /return \{ error: "Ordren findes ikke længere — den kan være slettet\.", values \}/);
 });
 
-test("CompleteOrderForm prefiller fra state.values og kræver leveringsstatus", async () => {
+// --- Færdigmeld-siden er simplificeret (Thomas 2026-09-03): tre valg i stedet ---
+// for radioknapper: Færdigmeld (ét tryk), Flyt til anden dag (datovælger),
+// Aflys (obligatorisk begrundelse). Formularen prefiller stadig kommentar fra
+// state.values, og færdigmeld bruger kundens/global betalings-forudindstilling.
+
+test("CompleteOrderForm viser tre enkle valg: færdigmeld, flyt, aflys", async () => {
   const form = await source("components/CompleteOrderForm.tsx");
-  // Radios: required + genskabt valg; textareas: genskabt tekst med fallback til hidtidig værdi.
-  assert.match(form, /name="leveringsstatus" value=\{value\} required defaultChecked=\{v\?\.leveringsstatus === value\}/);
-  assert.match(form, /name="betaling" value=\{label\} defaultChecked=\{\(v \? v\.betaling : paymentPreselect\) === label\}/);
-  assert.match(form, /name="comment" defaultValue=\{v\?\.comment \?\? initialComment\}/);
-  assert.match(form, /name="addressNote" defaultValue=\{v\?\.addressNote \?\? initialAddressNote\}/);
+  assert.match(form, /Færdigmeld opgave/);
+  assert.match(form, /Flyt opgave til anden dag/);
+  assert.match(form, /Aflys opgave/);
+  // Ét tryk færdigmeld: leveringsstatus sendes som skjult felt, betaling via
+  // kundens/global forudindstilling (paymentPreselect).
+  assert.match(form, /name="leveringsstatus" value=\{mode === "aflys" \? "skip" : "udfoert"\}/);
+  assert.match(form, /name="betaling" value=\{paymentPreselect\}/);
+  // Aflys kræver altid en begrundelse (comment) — required felt.
+  assert.match(form, /Hvorfor aflyses opgaven\?/);
+  assert.match(form, /name="comment"[\s\S]{0,200}required/);
+  // Flyt: egen server action med datovælger.
+  assert.match(form, /type="date" required/);
+  const page = await source("app/orders/[id]/complete/page.tsx");
+  assert.match(page, /moveAction=\{moveOrderToDate\.bind/);
+});
+
+test("moveOrderToDate flytter ordren til valgt dato og revaliderer", async () => {
+  const actions = await source("app/actions/orders.ts");
+  assert.match(actions, /export async function moveOrderToDate\(/);
+  assert.match(actions, /\/\^\\d\{4\}-\\d\{2\}-\\d\{2\}\$\/\.test\(raw\)/);
+  assert.match(actions, /plannedAt: new Date\(`\$\{raw\}T10:00:00Z`\)/);
 });
 
 test("Opret ordre: uge- og medarbejdervalg overlever en valideringsfejl", async () => {
