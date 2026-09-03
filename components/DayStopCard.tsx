@@ -136,7 +136,12 @@ export default function DayStopCard({ stop, weekMonday }: { stop: DayStop | DayU
             title={`Send SMS: ${SMS_TEMPLATES[0][0]}`}>
             <i className="bi bi-chat-dots" /> Send SMS
           </a>
-        ) : null}
+        ) : (
+          <button className="btn btn-outline-primary btn-sm" disabled
+            title="Kunden har intet telefonnummer — der kan ikke sendes SMS">
+            <i className="bi bi-chat-dots" /> Send SMS
+          </button>
+        )}
 
         {more && (
           <div className="dropdown-menu" style={{ display: "block", right: 0, left: "auto", top: "calc(100% + 2px)" }} onMouseLeave={() => setMore(false)}>
