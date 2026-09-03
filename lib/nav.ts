@@ -55,7 +55,7 @@ export const TOP_NAV: NavMenu[] = [
       { label: "Omsætning & medarbejdere", en: "Revenue & employees", href: "/business-manager/medarbejdere", adminOnly: true },
       { label: "Biler", en: "Vehicles", href: "/business-manager/biler", adminOnly: true },
       { label: "Maskiner", en: "Machines", href: "/business-manager/maskiner", adminOnly: true },
-      { label: "Økonomiovervågning", en: "Economy monitor", href: "/business-manager/oekonomi", adminOnly: true },
+      { label: "Lead-beregner", en: "Lead calculator", href: "/business-manager/leads", adminOnly: true },
     ],
   },
   {

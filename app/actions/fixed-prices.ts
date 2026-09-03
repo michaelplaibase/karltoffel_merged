@@ -75,6 +75,16 @@ export async function createFixedPrice(_prev: FixedPriceState, formData: FormDat
       throw e;
     }
   }
+  // Lead-beregner (Thomas, 2026-09-03): fastpris-kunder registreres som kategori
+  // 'fastpris' (best effort).
+  try {
+    await prisma.leadAcquisition.upsert({
+      where: { contactId_category: { contactId: p.contactId, category: "fastpris" } },
+      create: { companyId: 1, contactId: p.contactId, category: "fastpris", source: "Direkte" },
+      update: {},
+    });
+    revalidatePath("/business-manager/leads");
+  } catch { /* best effort */ }
   revalidatePath("/fixed-prices");
   revalidatePath(`/customers/${p.contactId}`);
   redirect(`/fixed-prices/${displayNo}`);

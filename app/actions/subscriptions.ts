@@ -237,6 +237,19 @@ export async function createSubscription(_prev: SubscriptionState, formData: For
       throw e;
     }
   }
+  // Lead-beregner (Thomas, 2026-09-03): sikr at kunden er registreret som
+  // erhvervelse (privat/virksomhed), hvis ikke allerede — best effort.
+  try {
+    const contact = await prisma.contact.findUnique({ where: { id: p.contactId }, select: { isCompany: true } });
+    if (contact) {
+      await prisma.leadAcquisition.upsert({
+        where: { contactId_category: { contactId: p.contactId, category: contact.isCompany ? "virksomhed" : "privat" } },
+        create: { companyId: 1, contactId: p.contactId, category: contact.isCompany ? "virksomhed" : "privat", source: "Direkte" },
+        update: {},
+      });
+      revalidatePath("/business-manager/leads");
+    }
+  } catch { /* best effort */ }
   await generateForSubscriptionId(subId); // materialise its upcoming orders
   revalidatePath("/subscriptions");
   revalidatePath("/orders");
