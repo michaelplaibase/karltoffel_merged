@@ -293,6 +293,14 @@ textarea.task-desc { resize: none; overflow: hidden; min-height: 34px; height: a
 .revenue-emps-row .num { color: var(--heading); font-variant-numeric: tabular-nums; white-space: nowrap; }
 .revenue-emps-total { border-top: 1px solid var(--light); font-weight: 600; }
 .revenue-emps-total span:first-child { color: var(--muted); font-weight: 600; }
+/* løn/faste udgifter/tilbage — underlinjer pr. medarbejder (Thomas, 2026-09-03) */
+.revenue-emps > div[role="row"] { border-bottom: 1px solid var(--light); padding: 4px 0; }
+.revenue-emps > div[role="row"]:last-child { border-bottom: 0; }
+.revenue-emps > div[role="row"] > .revenue-emps-row { padding: 2px 0; }
+.revenue-emps-cost { font-size: 12px; color: var(--muted); }
+.revenue-emps-cost span:first-child { color: var(--muted); font-weight: 400; padding-left: 12px; }
+.revenue-emps-cost .num { color: var(--muted); font-variant-numeric: tabular-nums; }
+.revenue-emps-margin span:first-child, .revenue-emps-margin .num { font-weight: 600; color: var(--heading); }
 @media (max-width: 575.98px) { .revenue-emps-header, .revenue-emps-row { font-size: 12px; gap: 8px; } .revenue-emps-header { font-size: 10px; } }
 @media (max-width: 1199.98px) { .subs-layout { grid-template-columns: minmax(0, 1fr); } .revenue-panel { position: static; } }
 /* faktureringsoverblik: panelet først i DOM (mobil = øverst), men i højre kolonne på desktop */
