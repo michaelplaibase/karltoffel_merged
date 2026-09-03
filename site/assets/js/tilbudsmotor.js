@@ -369,10 +369,15 @@ $("kt-tilbage").addEventListener("click", ()=>{ clearTimeout(ktTimer); visStep("
 })();
 
 /* ============ BETALING — én samlet pris ============ */
+/* Betalingsvalget er fjernet (fast pr. gang) — kortet er kun information,
+   ikke et klik-mål. "Videre" skal derfor altid være aktiv på dette trin;
+   tidligere stod knappen disabled, indtil et kort blev klikket, hvilket
+   ingen længere kunne — dermed frøs flowet her. */
 const btTotal = $("bt-total"), lsVidere = $("ls-videre");
+if(lsVidere) lsVidere.disabled = false;
 function vaelgBetaling(t){
   state.betaling = t;
-  lsVidere.disabled = false;
+  if(lsVidere) lsVidere.disabled = false;
 }
 
 /* Pris-tekst på betalingskortet: summen af de valgte services, intet andet. */
