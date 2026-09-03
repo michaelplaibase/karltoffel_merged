@@ -49,6 +49,16 @@ export const TOP_NAV: NavMenu[] = [
     ],
   },
   {
+    label: "Business Manager", en: "Business Manager",
+    items: [
+      { label: "Dashboard", en: "Dashboard", href: "/business-manager", adminOnly: true },
+      { label: "Medarbejderkalkulator", en: "Employee calculator", href: "/business-manager/medarbejdere", adminOnly: true },
+      { label: "Biler", en: "Vehicles", href: "/business-manager/biler", adminOnly: true },
+      { label: "Maskiner", en: "Machines", href: "/business-manager/maskiner", adminOnly: true },
+      { label: "Økonomiovervågning", en: "Economy monitor", href: "/business-manager/oekonomi", adminOnly: true },
+    ],
+  },
+  {
     label: "Kartotek", en: "Register",
     items: [
       { label: "Emner", en: "Leads", href: "/leads" },
