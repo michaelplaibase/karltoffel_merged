@@ -32,7 +32,7 @@ export type EmployeeCalc = {
   payModel: "fast" | "akkord";
   salaryMonthly: number;      // fast løn ELLER akkord-provision på normtid (estimat)
   fixedMonthlyCost: number;   // faste udgifter (voucher, transport osv.)
-  shareOfFleetMonthly: number; // biler+maskiner fordelt ligeligt på aktive medarbejdere
+  shareOfFleetMonthly: number; // biler (tildelt + fordelt) + maskiner fordelt ligeligt
   totalCostMonthly: number;   // samlede månedlige omkostninger
   costPerHour: number;        // kostpris pr. time (total / normtid)
   realisedRevenueMonth: number; // realiseret omsætning inkl. moms (udførte ordrer, periode)
@@ -96,9 +96,23 @@ export async function getBusinessManager(opts?: { fromISO?: string; toISO?: stri
   ]);
 
   const nEmployees = Math.max(1, users.length);
-  const fleetMonthly = vehicles.reduce((a, v) => a + vehicleMonthlyCost(v), 0)
-    + machines.reduce((a, m) => a + machineMonthlyCost(m), 0);
-  const fleetPerEmployee = Math.round(fleetMonthly / nEmployees);
+  const machinesMonthly = machines.reduce((a, m) => a + machineMonthlyCost(m), 0);
+  const machinesPerEmployee = Math.round(machinesMonthly / nEmployees);
+
+  // Biler: en bil med tildelt medarbejder myntes på DEN medarbejder; ellers
+  // fordeles den ligeligt på alle aktive (samme som maskiner).
+  const unassignedVehicleMonthly = vehicles
+    .filter((v) => v.userId == null)
+    .reduce((a, v) => a + vehicleMonthlyCost(v), 0);
+  const unassignedPerEmployee = Math.round(unassignedVehicleMonthly / nEmployees);
+  const assignedVehicleByUser = new Map<number, number>();
+  for (const v of vehicles) {
+    if (v.userId == null) continue;
+    assignedVehicleByUser.set(v.userId, (assignedVehicleByUser.get(v.userId) ?? 0) + vehicleMonthlyCost(v));
+  }
+  const fleetFor = (userId: number) =>
+    (assignedVehicleByUser.get(userId) ?? 0) + unassignedPerEmployee + machinesPerEmployee;
+  const fleetMonthly = vehicles.reduce((a, v) => a + vehicleMonthlyCost(v), 0) + machinesMonthly;
 
   // Realiseret pr. medarbejder (udførte ordrer i perioden) + timer.
   const realByEmp = new Map<number, { revenue: number; minutes: number; orders: number }>();
@@ -121,7 +135,8 @@ export async function getBusinessManager(opts?: { fromISO?: string; toISO?: stri
       ? (u.monthlySalary ?? 0)
       : Math.round((HOURS_PER_MONTH * 300 * (u.commissionPct ?? 43)) / 100); // akkord-estimat: 300 kr/time ekskl. moms × sats på normtid
     const fixedMonthlyCost = u.fixedMonthlyCost ?? 0;
-    const totalCostMonthly = salaryMonthly + fixedMonthlyCost + fleetPerEmployee;
+    const shareOfFleetMonthly = fleetFor(u.id);
+    const totalCostMonthly = salaryMonthly + fixedMonthlyCost + shareOfFleetMonthly;
     const r = realByEmp.get(u.id);
     const realisedEx = r ? Math.round(r.revenue / (1 + MOMS)) : 0;
     const coverage = r ? realisedEx - totalCostMonthly : null;
@@ -131,7 +146,7 @@ export async function getBusinessManager(opts?: { fromISO?: string; toISO?: stri
       payModel,
       salaryMonthly,
       fixedMonthlyCost,
-      shareOfFleetMonthly: fleetPerEmployee,
+      shareOfFleetMonthly,
       totalCostMonthly,
       costPerHour: Math.round(totalCostMonthly / HOURS_PER_MONTH),
       realisedRevenueMonth: r?.revenue ?? 0,

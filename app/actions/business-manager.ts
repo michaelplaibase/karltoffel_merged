@@ -19,6 +19,7 @@ const str = (v: FormDataEntryValue | null) => String(v ?? "").trim();
 // ---------- Biler ----------
 export async function saveVehicle(formData: FormData): Promise<void> {
   if (!(await requireAdmin())) return;
+  const assignedRaw = String(formData.get("userId") ?? "").trim();
   const data = {
     name: str(formData.get("name")) || "Uden navn",
     active: formData.get("active") !== null,
@@ -28,12 +29,14 @@ export async function saveVehicle(formData: FormData): Promise<void> {
     serviceMonthly: int(formData.get("serviceMonthly")),
     otherMonthly: int(formData.get("otherMonthly")),
     note: str(formData.get("note")) || null,
+    userId: assignedRaw !== "" ? Number(assignedRaw) : null,
   };
   const id = int(formData.get("id"));
   if (id > 0) await prisma.vehicle.update({ where: { id }, data });
   else await prisma.vehicle.create({ data: { ...data, companyId: 1 } });
-  revalidatePath("/business-manager/koeretoejer");
+  revalidatePath("/business-manager/biler");
   revalidatePath("/business-manager");
+  revalidatePath("/business-manager/medarbejdere");
 }
 
 export async function deleteVehicle(id: number): Promise<void> {
