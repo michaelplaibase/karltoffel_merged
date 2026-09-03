@@ -92,3 +92,9 @@ form button.g-recaptcha:hover{filter:brightness(1.15)}
 #section-id-socialproof .card--service .card__content p,
 #section-id-socialproof .card--service .card__content b{color:#4C3718 !important}
 #section-id-socialproof .card--service .card__content b{color:#8A6931 !important}
+
+/* social proof: ens højde via flex, ingen foundation-equalizer */
+.tm-sp-grid{display:flex;flex-wrap:wrap}
+.tm-sp-grid .cell{display:flex}
+.tm-sp-grid .cell .card{display:flex;flex-direction:column;width:100%}
+.tm-sp-grid .card__content{flex:1}
