@@ -82,6 +82,9 @@ model Contact {
   showDeliveryNameOnInvoice    Boolean @default(false)
   skipInvoiceOverSms           Boolean @default(false)
   invoiceChoicePreselect       String  @default("default")
+  // Faktureringsregel pr. kunde (Thomas, 2026-09-03). ''/'auto' = afled af
+  // isCompany: privat → pr_gang, erhverv → maaned. Værdier: pr_gang, maaned, kvartal.
+  invoiceFrequency             String  @default("")
   // Dinero (Visma) kontakt-guid — sættes ved første fakturering af kunden, så
   // efterfølgende ordrer kan springe opslag/oprettelse over. @unique er et værn
   // mod at oprette den samme kontakt to gange i Dinero.

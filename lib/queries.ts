@@ -233,6 +233,7 @@ export async function getContactSettings(id: number) {
     showDeliveryNameOnInvoice: c.showDeliveryNameOnInvoice,
     skipInvoiceOverSms: c.skipInvoiceOverSms,
     invoiceChoicePreselect: c.invoiceChoicePreselect,
+    invoiceFrequency: c.invoiceFrequency,
   };
 }
 

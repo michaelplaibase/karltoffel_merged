@@ -6,12 +6,16 @@
 //
 // - Trigger: en ordre står med status "Udført" (samme statusværdi som
 //   completeOrder sætter — se app/actions/orders.ts, STATUS.udfoert).
-// - Kontakt: KUN erhvervskunder (Contact.isCompany = true). Privatkunder
-//   forbliver på den eksisterende pr.-ordre-fakturering (lib/dinero.ts,
-//   issueInvoiceForOrder), uændret.
+// - Kontakt: oprindeligt KUN erhvervskunder (Contact.isCompany = true). Fra
+//   2026-09-03 (Thomas) styres sporet af kundens FAKTURERINGSREGEL
+//   (Contact.invoiceFrequency, lib/invoice-frequency.ts): maaned/kvartal går i
+//   batch-sporet (privat ELLER erhverv), pr_gang forbliver på pr.-ordre-
+//   fakturering (lib/dinero.ts, issueInvoiceForOrder), ''/'auto' afledes af
+//   isCompany (erhverv → maaned, privat → pr_gang).
 // - Periode: d. 20. i en måned til d. 19. i den NÆSTE måned (begge inkl.),
 //   ikke kalendermåneden. Kørslen d. 20. samler den periode der lige er
-//   afsluttet dagen før (i går var d. 19.).
+//   afsluttet dagen før (i går var d. 19.). KVARTAL: d. 20. i jan/apr/jul/okt
+//   samles hele det kvartal der lige er slut.
 // - Ingen godkendelse: der er INTET manuelt "godkend og send"-trin her —
 //   automatisk draft → book → send, ligesom issueInvoiceForOrder gør for
 //   private ordrer, blot med linjer fra FLERE ordrer på én faktura.
@@ -25,6 +29,7 @@ import {
   loadActiveConfig, getAccessToken, ensureDineroContact, createDraftInvoice,
   bookInvoice, emailInvoice, getInvoice, findInvoiceByExternalRef, DineroApiError,
 } from "./dinero";
+import { quarterlyPeriodEndingBefore } from "./invoice-frequency";
 
 /** [start, end) for "d. 20. i forrige måned til d. 20. i denne måned" (UTC-dato,
  *  ingen klokkeslæt-afhængighed — ordrer er dato-baserede). `now` er typisk
@@ -52,35 +57,82 @@ export type BatchResult = {
   errors: { contactId: number; error: string }[];
 };
 
+/** Kontakt-filter for batch-sporet med en given frekvens. ''/'auto' tælles med
+ *  i MÅNEDS-sporet kun for erhverv (privat-auto er pr_gang); eksplicitte regler
+ *  vinder over isCompany. */
+function contactFrequencyFilter(freq: "maaned" | "kvartal") {
+  return freq === "maaned"
+    ? { OR: [{ invoiceFrequency: "maaned" }, { AND: [{ invoiceFrequency: "" }, { isCompany: true }] }] }
+    : { invoiceFrequency: "kvartal" };
+}
+
 /**
- * Kør erhvervs-samlefakturering for perioden der sluttede i går. Grupperer
- * "Udført"-ordrer pr. erhvervskontakt, opretter/bogfører/afsender ÉN Dinero-
- * faktura pr. kontakt, helt automatisk. Kaldes fra app/api/business-invoicing/
- * route.ts (cron, d. 20. hver måned) — se vercel.json.
+ * Kør samlefakturering for perioderne der sluttede i går. To spor i én kørsel:
+ * MÅNED (d. 20. hver måned) og KVARTAL (d. 20. i jan/apr/jul/okt). Grupperer
+ * "Udført"-ordrer pr. kontakt, opretter/bogfører/afsender ÉN Dinero-faktura pr.
+ * kontakt, helt automatisk. Kaldes fra app/api/business-invoicing/route.ts
+ * (cron, d. 20. hver måned) — se vercel.json.
  */
 export async function runBusinessBatchInvoicing(now: Date = new Date()): Promise<BatchResult> {
-  const { start, end } = billingPeriodEndingYesterday(now);
-  const periodStartISO = start.toISOString().slice(0, 10);
+  const result: BatchResult = { companies: 0, invoiced: 0, simulated: 0, failed: 0, skippedNoOrders: 0, errors: [] };
+  const cfg = await loadActiveConfig();
 
-  // Kun erhvervskontakter, kun "Udført", kun ordrer der endnu ikke er lagt ind
-  // i en samlefaktura (idempotens-værn ved gentaget kørsel/crash-recovery).
+  // KVARTALS-spor (Thomas, 2026-09-03): kunder med reglen "Faktura pr. kvartal"
+  // samles på én faktura pr. kvartal, sendes automatisk d. 20. i måneden EFTER
+  // kvartalets udløb. Udenfor de fire kørselsdage er kvartals-ordrer bevidst
+  // USYNLIGE for månedssporet (filteret udelukker kvartal-reglen), så de bliver
+  // bare liggende til kvartals-kørslen.
+  const quarterly = quarterlyPeriodEndingBefore(now);
+  if (quarterly) {
+    await runBatchForPeriod({
+      cfg, result,
+      start: quarterly.start, end: quarterly.end, periodStartISO: quarterly.start.toISOString().slice(0, 10),
+      contactFilter: contactFrequencyFilter("kvartal"),
+      dryTag: "kvartal",
+    });
+  }
+
+  // MÅNEDS-spor: perioden d. 20. i forrige måned til d. 19. i denne.
+  const monthly = billingPeriodEndingYesterday(now);
+  await runBatchForPeriod({
+    cfg, result,
+    start: monthly.start, end: monthly.end, periodStartISO: monthly.start.toISOString().slice(0, 10),
+    contactFilter: contactFrequencyFilter("maaned"),
+    dryTag: "maaned",
+  });
+
+  return result;
+}
+
+/** Fælles batch-maskine for ét spor (måned eller kvartal): find ordrer i
+ *  perioden for kontakter der matcher sporreglen, og fakturér pr. kontakt.
+ *  Skriver i den delte `result`, så cron-rapporten dækker begge spor. */
+async function runBatchForPeriod(args: {
+  cfg: Awaited<ReturnType<typeof loadActiveConfig>>;
+  result: BatchResult;
+  start: Date; end: Date; periodStartISO: string;
+  contactFilter: Record<string, unknown>;
+  dryTag: string;
+}): Promise<void> {
+  const { cfg, result, start, end, periodStartISO, contactFilter, dryTag } = args;
+
+  // Kun "Udført", kun ordrer der endnu ikke er lagt ind i en samlefaktura
+  // (idempotens-værn ved gentaget kørsel/crash-recovery).
   // dineroInvoiceGuid: null er andet ben af værnet mod dobbeltfakturering: en
   // (legacy-)ordre der allerede bærer en pr.-ordre-Dinero-faktura må ALDRIG også
-  // ende på samlefakturaen. (Første ben: issueInvoiceForOrder afviser erhverv —
-  // se lib/dinero.ts, status "Samlefaktura".)
+  // ende på samlefakturaen. (Første ben: issueInvoiceForOrder afviser kontakter
+  // der ikke er pr_gang — se lib/dinero.ts, status "Samlefaktura".)
   const orders = await prisma.order.findMany({
     where: {
       status: "Udført",
       businessBatchInvoiceGuid: null,
       dineroInvoiceGuid: null,
       plannedAt: { gte: start, lt: end },
-      contact: { isCompany: true },
+      contact: contactFilter,
     },
     include: { contact: true, tasks: true },
   });
-
-  const result: BatchResult = { companies: 0, invoiced: 0, simulated: 0, failed: 0, skippedNoOrders: 0, errors: [] };
-  if (!orders.length) return result;
+  if (!orders.length) return;
 
   const byContact = new Map<number, typeof orders>();
   for (const o of orders) {
@@ -88,9 +140,7 @@ export async function runBusinessBatchInvoicing(now: Date = new Date()): Promise
     list.push(o);
     byContact.set(o.contactId, list);
   }
-  result.companies = byContact.size;
-
-  const cfg = await loadActiveConfig();
+  result.companies += byContact.size;
 
   for (const [contactId, contactOrders] of byContact) {
     const sumInclVat = contactOrders.reduce((a, o) => a + o.tasks.reduce((b, t) => b + t.price, 0), 0);
@@ -101,7 +151,7 @@ export async function runBusinessBatchInvoicing(now: Date = new Date()): Promise
       // Dry-run: log + marker ordrerne som "simulated", men lad IKKE-null guid
       // fra en tidligere rigtig kørsel blive overskrevet (samme værn som
       // issueInvoiceForOrder for pr.-ordre-fakturering).
-      console.log(`[business-invoicing:dry-run] kontakt #${contactId} periode=${periodStartISO} ordrer=${orderIds.join(",")} sum=${sumInclVat}kr`);
+      console.log(`[business-invoicing:dry-run:${dryTag}] kontakt #${contactId} periode=${periodStartISO} ordrer=${orderIds.join(",")} sum=${sumInclVat}kr`);
       await prisma.order.updateMany({
         where: { id: { in: orderIds }, businessBatchInvoiceGuid: null },
         data: { businessBatchInvoiceStatus: "simulated", businessBatchInvoicedAt: new Date(), businessBatchError: null },
@@ -184,8 +234,6 @@ export async function runBusinessBatchInvoicing(now: Date = new Date()): Promise
       }).catch(() => {});
     }
   }
-
-  return result;
 }
 
 /** Dinero har ingen "update ExternalReference" på en oprettet faktura via det

@@ -10,8 +10,11 @@ const source = (path: string) => readFile(new URL(path, root), "utf8");
 
 test("issueInvoiceForOrder afviser pr.-ordre-fakturering for erhvervskontakter", async () => {
   const dinero = await source("lib/dinero.ts");
-  // Autoritativt værn: isCompany (uden allerede bogført pr.-ordre-faktura) → status "Samlefaktura", intet Dinero-kald.
-  assert.match(dinero, /order\.contact\.isCompany && !perOrderBooked/);
+  // Autoritativt værn (2026-09-03): kunder med faktureringsreglen maaned/kvartal
+  // (og erhverv via auto-afledning, se goesToBatch/effectiveInvoiceFrequency)
+  // uden allerede bogført pr.-ordre-faktura → status "Samlefaktura", intet Dinero-kald.
+  assert.match(dinero, /goesToBatch = effectiveInvoiceFrequency\(order\.contact\) !== "pr_gang"/);
+  assert.match(dinero, /goesToBatch && !perOrderBooked/);
   assert.match(dinero, /dineroInvoiceStatus: "Samlefaktura"/);
   assert.match(dinero, /return \{ ok: true, status: "Samlefaktura" \}/);
   // Undtagelsen gælder kun ordrer der ALLEREDE bærer en bogført pr.-ordre-faktura.

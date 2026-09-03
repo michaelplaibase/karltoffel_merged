@@ -20,7 +20,7 @@ test("godkendelse af afventende abonnement normaliserer en reelt passeret startu
 test("dinero-værnet undtager påbegyndte pr.-ordre-kladder og kontant betaling", async () => {
   const dinero = await source("lib/dinero.ts");
   assert.match(dinero, /const hasPerOrderDraft = order\.dineroInvoiceGuid != null/);
-  assert.match(dinero, /isCompany && !perOrderBooked && !hasPerOrderDraft && decision !== D_SEND_CASH/);
+  assert.match(dinero, /goesToBatch && !perOrderBooked && !hasPerOrderDraft && decision !== D_SEND_CASH/);
 });
 
 test("Samlefaktura-status har en dansk label på ordresiden", async () => {

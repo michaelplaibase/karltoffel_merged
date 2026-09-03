@@ -117,6 +117,9 @@ export async function updateContactSettings(id: number, _prev: ContactFormState,
       showDeliveryNameOnInvoice: formData.get("showDeliveryNameOnInvoice") === "on",
       skipInvoiceOverSms: formData.get("skipInvoiceOverSms") === "on",
       invoiceChoicePreselect: String(formData.get("invoiceChoicePreselect") ?? "Anvend standardindstilling"),
+      // Faktureringsregel (Thomas, 2026-09-03). Kun kendte værdier accepteres —
+      // ukendt/udeladt = '' (automatisk: privat → pr. gang, erhverv → pr. måned).
+      invoiceFrequency: /^(pr_gang|maaned|kvartal)$/.test(String(formData.get("invoiceFrequency") ?? "")) ? String(formData.get("invoiceFrequency")) : "",
     },
   });
   revalidatePath(`/customers/${id}`);
