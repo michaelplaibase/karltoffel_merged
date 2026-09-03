@@ -125,6 +125,7 @@ export async function getBusinessManager(opts?: { fromISO?: string; toISO?: stri
   const subMonthlyByName = new Map(subRev.byEmployee.map((e) => [e.employee, e.monthlyKr]));
   const subYearlyByName = new Map(subRev.byEmployee.map((e) => [e.employee, e.yearlyKr]));
 
+  const monthsElapsed = monthsElapsedIn(year);
   const nEmployees = Math.max(1, users.length);
   const machinesMonthly = machines.reduce((a, m) => a + machineMonthlyCost(m), 0);
   const machinesPerEmployee = Math.round(machinesMonthly / nEmployees);
@@ -214,7 +215,6 @@ export async function getBusinessManager(opts?: { fromISO?: string; toISO?: stri
   };
 
   const companyMonthlyCost = employees.reduce((a, e) => a + e.totalCostMonthly, 0);
-  const monthsElapsed = monthsElapsedIn(year);
   const companyResultatMd = realised.revenueExVat - companyMonthlyCost;
   const companyResultatYear = Math.round(realised.revenueInclVatYear / (1 + MOMS)) - companyMonthlyCost * monthsElapsed;
 
