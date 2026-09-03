@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { getOrderDetail } from "@/lib/queries";
 import { prisma } from "@/lib/db";
 import { routeId } from "@/lib/route-ids";
-import { completeOrder } from "@/app/actions/orders";
+import { completeOrder, moveOrderToDate } from "@/app/actions/orders";
 import { isInvoiceDecision } from "@/lib/dinero";
 import { getSettingsValues } from "@/lib/settings-store";
 import { MapLink } from "@/components/ui";
@@ -95,9 +95,8 @@ export default async function CompleteOrderPage({
       </div>
 
       <CompleteOrderForm
-        action={completeOrder.bind(null, orderId)}
-        initialComment={o.comment}
-        initialAddressNote={o.addressNote}
+        completeAction={completeOrder.bind(null, orderId)}
+        moveAction={moveOrderToDate.bind(null, orderId, backUrl)}
         backUrl={backUrl}
         paymentPreselect={paymentPreselect}
       />

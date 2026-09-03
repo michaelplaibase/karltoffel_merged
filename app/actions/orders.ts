@@ -257,3 +257,21 @@ export async function completeOrder(orderId: number, _prev: CompleteOrderState, 
   // On invoicing failure, land on the order so the error + retry are front and centre.
   redirect(invoiceFailed ? `/orders/${orderId}` : backUrl);
 }
+
+/** Simpel "Flyt opgave til anden dag" fra Afslut ordre-siden: sæt en ny
+ *  leveringsdato (Europe/Copenhagen, kl. 10 UTC som createOrder) og lad
+ *  planlæggeren sortere resten. Ingen statusændring. */
+export async function moveOrderToDate(orderId: number, backUrl: string, formData: FormData): Promise<void> {
+  await guardAction();
+  const raw = String(formData.get("newDate") ?? "").trim();
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(raw)) return;
+  await prisma.order.update({
+    where: { id: orderId },
+    data: { plannedAt: new Date(`${raw}T10:00:00Z`) },
+  });
+  revalidatePath("/orders");
+  revalidatePath("/calendar");
+  revalidatePath("/daycalendar");
+  revalidatePath(`/orders/${orderId}`);
+  redirect(backUrl.startsWith("/") && !backUrl.startsWith("//") ? backUrl : "/orders");
+}
