@@ -7,6 +7,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { getSessionUser } from "@/lib/api-auth";
+import { invoiceLabel, invoiceTone, CLOSED_STATUSES as CLOSED } from "@/lib/invoice-status";
 import { todayCphISO } from "@/lib/calendar";
 import { CatChip, money } from "@/components/ui";
 import VerifyInvoicingButton from "@/components/VerifyInvoicingButton";
@@ -14,8 +15,8 @@ import CleanupDescriptionsButton from "@/components/CleanupDescriptionsButton";
 
 export const metadata = { title: "Faktureringsoverblik · Karltoffel" };
 
-/** Lukkede leveringsstatusser — spejler CLOSED_STATUSES i app/orders/page.tsx. */
-const CLOSED = new Set(["Afsluttet", "Udført", "Sprunget over"]);
+// Lukkede statusser, invoiceLabel og invoiceTone er flyttet til
+// lib/invoice-status.ts, så den daglige faktura-rapport deler samme logik.
 
 /** UTC-dato som "YYYY-MM-DD" (samme konvention som lib/queries.ts ymd). */
 function ymd(d: Date): string {
@@ -30,55 +31,8 @@ type Row = {
   tasks: { category: string; letter: string; description: string }[];
 };
 
-/** Faktura-kolonnen (Michael 2026-09-02): rød = ikke afsendt, gul = afsendt,
- *  grøn = betalt. null = intet at vise (fx "ingen faktura valgt"). */
-function invoiceTone(o: {
-  dineroInvoiceGuid: string | null; dineroInvoiceStatus: string | null;
-  businessBatchInvoiceGuid: string | null; businessBatchInvoiceStatus: string | null;
-  invoiceDecision: string | null;
-}): "red" | "yellow" | "green" | null {
-  if (o.businessBatchInvoiceGuid) {
-    const s = o.businessBatchInvoiceStatus ?? "";
-    if (s === "Sent" || s === "Booked") return "yellow";
-    if (s === "Draft") return "red";
-    if (s === "Failed") return "red";
-    return "yellow";
-  }
-  if (o.dineroInvoiceGuid) {
-    const s = o.dineroInvoiceStatus ?? "";
-    if (s === "Paid") return "green";
-    if (s === "Sent" || s === "Booked") return "yellow";
-    if (s === "Draft" || s === "Failed" || s === "simulated") return "red";
-    return "yellow";
-  }
-  return null;
-}
-
-/** Kort dansk faktura-status for tabellen. */
-function invoiceLabel(o: {
-  dineroInvoiceGuid: string | null; dineroInvoiceStatus: string | null; dineroInvoiceNumber: number | null;
-  businessBatchInvoiceGuid: string | null; businessBatchInvoiceStatus: string | null;
-  invoiceDecision: string | null;
-}): string | null {
-  if (o.businessBatchInvoiceGuid) {
-    const s = o.businessBatchInvoiceStatus ?? "";
-    if (s === "Sent" || s === "Booked") return "Samlefaktura sendt";
-    if (s === "Draft") return "Samlefaktura-kladde";
-    if (s === "Failed") return "Samlefaktura fejlede";
-    return "På samlefaktura";
-  }
-  if (o.dineroInvoiceGuid) {
-    const s = o.dineroInvoiceStatus ?? "";
-    if (s === "Paid") return "Betalt (kontant)";
-    if (s === "Sent" || s === "Booked") return `Faktura sendt${o.dineroInvoiceNumber ? ` (#${o.dineroInvoiceNumber})` : ""}`;
-    if (s === "Draft") return "Kladde i Dinero";
-    if (s === "Failed") return "Fakturering fejlede";
-    if (s === "simulated") return "Simuleret (dry-run)";
-  }
-  if (o.invoiceDecision === "Send ikke faktura fra Karltoffel") return "Ingen faktura (valgt)";
-  if (o.invoiceDecision === "Registrer på et senere tidspunkt") return "Registreres senere";
-  return null;
-}
+// invoiceTone og invoiceLabel: se lib/invoice-status.ts (delt med den daglige
+// faktura-rapport).
 
 async function loadRows(): Promise<Row[]> {
   // Fortids-ordrer er det der interesserer faktureringen; fremtidige ordrer er
