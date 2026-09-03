@@ -295,6 +295,10 @@ select.form-control-sm { background-position: right 10px center; padding-right: 
   .subs-layout > .revenue-panel { grid-column: 2; grid-row: 1; }
   .subs-layout > div:not(.revenue-panel) { grid-column: 1; grid-row: 1; }
 }
+/* fast topnav må aldrig skjule sektionsoverskrifter ved scroll/spring (Thomas,
+   2026-09-03): scroll-margin reserverer plads under navbaren for kort-headerne. */
+.card-header .section-title { scroll-margin-top: calc(var(--navbar-h) + 16px); }
+.card { scroll-margin-top: calc(var(--navbar-h) + 16px); }
 
 /* chromeless modal-style form page (create/edit) */
 .form-page { min-height: 100vh; background: #F3EFE6; display: flex; align-items: flex-start;

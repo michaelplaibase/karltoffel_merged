@@ -11,6 +11,7 @@ import { todayCphISO } from "@/lib/calendar";
 import { CatChip, money } from "@/components/ui";
 import VerifyInvoicingButton from "@/components/VerifyInvoicingButton";
 import CleanupDescriptionsButton from "@/components/CleanupDescriptionsButton";
+import InvoiceNowButton from "@/components/InvoiceNowButton";
 import RevenuePanel from "@/components/RevenuePanel";
 import { getSubscriptionRevenue } from "@/lib/subscription-revenue";
 
@@ -114,7 +115,7 @@ async function loadRows(): Promise<Row[]> {
   });
 }
 
-function Table({ rows, empty }: { rows: Row[]; empty: string }) {
+function Table({ rows, empty, showInvoiceNow = false }: { rows: Row[]; empty: string; showInvoiceNow?: boolean }) {
   if (rows.length === 0) return <div className="table-empty">{empty}</div>;
   return (
     <div className="table-wrap">
@@ -123,6 +124,7 @@ function Table({ rows, empty }: { rows: Row[]; empty: string }) {
           <tr>
             <th>Ordre nr.</th><th>Kunde</th><th>Leverings-dato</th><th>Opgaver</th>
             <th>Pris</th><th>Medarbejder</th><th>Status</th><th>Faktura</th>
+            {showInvoiceNow ? <th>Fakturer</th> : null}
           </tr>
         </thead>
         <tbody>
@@ -143,6 +145,9 @@ function Table({ rows, empty }: { rows: Row[]; empty: string }) {
                 : o.invoiceTone === "yellow" ? <span className="badge badge-soft-warning">{o.invoice}</span>
                 : o.invoiceTone === "red" ? <span className="badge badge-soft-danger">{o.invoice}</span>
                 : <span className="badge badge-soft-danger">Faktura ikke afsendt</span>}</td>
+              {showInvoiceNow ? (
+                <td><InvoiceNowButton orderId={o.id} /></td>
+              ) : null}
             </tr>
           ))}
         </tbody>
@@ -168,7 +173,7 @@ export default async function InvoicingOverviewPage() {
   const sum = (rs: Row[]) => rs.reduce((a, o) => a + o.price, 0);
 
   return (
-    <div className="container-1140">
+    <div className="container-1140 container-wide">
       <h1 className="page-title">Faktureringsoverblik</h1>
       <p className="page-desc">
         Alt der er meldt færdigt og venter på faktura, alt der allerede er faktureret,
@@ -185,7 +190,7 @@ export default async function InvoicingOverviewPage() {
 
           <div className="card" style={{ marginBottom: 16 }}>
             <div className="card-header"><h4 className="section-title">Klar til fakturering ({ready.length}) — {money(sum(ready))}</h4></div>
-            <div className="card-body tight"><Table rows={ready} empty="Intet venter på fakturering 🎉" /></div>
+            <div className="card-body tight"><Table rows={ready} empty="Intet venter på fakturering 🎉" showInvoiceNow={user.isAdmin} /></div>
           </div>
 
           <div className="card" style={{ marginBottom: 16 }}>
