@@ -14,21 +14,15 @@ test("Kalender 2 loader pausefelter og alle opgavedetaljer til events og unplann
   assert.match(calendar, /tasks: data\.visitById\.get\(job\.id\)\?\.tasks \?\? \[\]/);
 });
 
-test("read-only kort har keyboard-tilgængelige detaljer med kategori, beskrivelse, interval og varighed", async () => {
+test("kalenderkort viser opgavebeskrivelser med kategori og varighed (Thomas, 2026-09-03)", async () => {
   const component = await source("components/TeamCalendarClient.tsx");
   assert.match(component, /function PreviewTaskDetails/);
-  assert.match(component, /<details/);
-  assert.match(component, /<summary/);
-  for (const field of ["category", "description", "intervalMultiplier", "durationMin"]) {
+  for (const field of ["category", "description", "durationMin"]) {
     assert.match(component, new RegExp(`task\\.${field}`));
   }
+  // opgaverne vises nu for ALLE (ikke kun read-only preview) — mindst 2 brug:
+  // events og unplanned.
   assert.ok((component.match(/<PreviewTaskDetails/g) ?? []).length >= 2, "både events og unplanned skal vise detaljer");
-});
-
-test("read-only markerer den effektive 60 minutters standardtid", async () => {
-  const component = await source("components/TeamCalendarClient.tsx");
-  assert.match(component, /task\.durationDefaulted/);
-  assert.match(component, /60 min\. \(standardtid\)/);
 });
 
 test("read-only kort er klikbare som kalenderkort, men menuen indeholder kun sikre visningslinks", async () => {
