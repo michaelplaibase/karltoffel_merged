@@ -13,6 +13,9 @@ import { CatChip, money } from "@/components/ui";
 import VerifyInvoicingButton from "@/components/VerifyInvoicingButton";
 import CleanupDescriptionsButton from "@/components/CleanupDescriptionsButton";
 import InvoiceAllButton from "@/components/InvoiceAllButton";
+import InvoiceNowButton from "@/components/InvoiceNowButton";
+import RevenuePanel from "@/components/RevenuePanel";
+import { getSubscriptionRevenue } from "@/lib/subscription-revenue";
 
 export const metadata = { title: "Faktureringsoverblik · Karltoffel" };
 
@@ -67,7 +70,7 @@ async function loadRows(): Promise<Row[]> {
   });
 }
 
-function Table({ rows, empty }: { rows: Row[]; empty: string }) {
+function Table({ rows, empty, showInvoiceNow = false }: { rows: Row[]; empty: string; showInvoiceNow?: boolean }) {
   if (rows.length === 0) return <div className="table-empty">{empty}</div>;
   return (
     <div className="table-wrap">
@@ -76,6 +79,7 @@ function Table({ rows, empty }: { rows: Row[]; empty: string }) {
           <tr>
             <th>Ordre nr.</th><th>Kunde</th><th>Leverings-dato</th><th>Opgaver</th>
             <th>Pris</th><th>Medarbejder</th><th>Status</th><th>Faktura</th>
+            {showInvoiceNow ? <th>Fakturer</th> : null}
           </tr>
         </thead>
         <tbody>
@@ -96,6 +100,9 @@ function Table({ rows, empty }: { rows: Row[]; empty: string }) {
                 : o.invoiceTone === "yellow" ? <span className="badge badge-soft-warning">{o.invoice}</span>
                 : o.invoiceTone === "red" ? <span className="badge badge-soft-danger">{o.invoice}</span>
                 : <span className="badge badge-soft-danger">Faktura ikke afsendt</span>}</td>
+              {showInvoiceNow ? (
+                <td><InvoiceNowButton orderId={o.id} /></td>
+              ) : null}
             </tr>
           ))}
         </tbody>
@@ -107,7 +114,8 @@ function Table({ rows, empty }: { rows: Row[]; empty: string }) {
 export default async function InvoicingOverviewPage() {
   const user = await getSessionUser();
   if (!user) redirect("/login");
-  const rows = await loadRows();
+  // Omsætningsoverblik (Thomas, 2026-09-03: flyttet fra regnskab til fakturering) — kun administratorer.
+  const [rows, revenue] = await Promise.all([loadRows(), user.isAdmin ? getSubscriptionRevenue() : Promise.resolve(null)]);
 
   // 1) Færdigmeldt (Udført) og stadig uden faktura → klar til at blive faktureret.
   const ready = rows.filter((o) => o.status === "Udført" && !o.invoice);
@@ -120,34 +128,40 @@ export default async function InvoicingOverviewPage() {
   const sum = (rs: Row[]) => rs.reduce((a, o) => a + o.price, 0);
 
   return (
-    <div className="container-1140">
+    <div className="container-1140 container-wide">
       <h1 className="page-title">Faktureringsoverblik</h1>
       <p className="page-desc">
         Alt der er meldt færdigt og venter på faktura, alt der allerede er faktureret,
         og alt der endnu ikke er meldt færdigt. Åbn en ordre for at rykke dens dato.
       </p>
 
-      <VerifyInvoicingButton />
+      <div className="subs-layout">
+        {revenue ? <RevenuePanel revenue={revenue} /> : null}
 
-      <CleanupDescriptionsButton />
+        <div>
+          <VerifyInvoicingButton />
+
+<CleanupDescriptionsButton />
 
       {/* "Fakturér alle" (Michael, 2026-09-03): sender alle klar-til-faktura
           ordrer med det samme, med "Er du sikker?"-bekræftelse. */}
       <InvoiceAllButton />
 
-      <div className="card" style={{ marginBottom: 16 }}>
-        <div className="card-header"><h4 className="section-title">Klar til fakturering ({ready.length}) — {money(sum(ready))}</h4></div>
-        <div className="card-body tight"><Table rows={ready} empty="Intet venter på fakturering 🎉" /></div>
-      </div>
+          <div className="card" style={{ marginBottom: 16 }}>
+            <div className="card-header"><h4 className="section-title">Klar til fakturering ({ready.length}) — {money(sum(ready))}</h4></div>
+            <div className="card-body tight"><Table rows={ready} empty="Intet venter på fakturering 🎉" showInvoiceNow={user.isAdmin} /></div>
+          </div>
 
-      <div className="card" style={{ marginBottom: 16 }}>
-        <div className="card-header"><h4 className="section-title">Ikke meldt færdigt ({notDone.length}) — {money(sum(notDone))}</h4></div>
-        <div className="card-body tight"><Table rows={notDone} empty="Ingen uafsluttede fortidsordrer." /></div>
-      </div>
+          <div className="card" style={{ marginBottom: 16 }}>
+            <div className="card-header"><h4 className="section-title">Ikke meldt færdigt ({notDone.length}) — {money(sum(notDone))}</h4></div>
+            <div className="card-body tight"><Table rows={notDone} empty="Ingen uafsluttede fortidsordrer." /></div>
+          </div>
 
-      <div className="card">
-        <div className="card-header"><h4 className="section-title">Faktureret / lukket ({done.length}) — {money(sum(done))}</h4></div>
-        <div className="card-body tight"><Table rows={done} empty="Ingenting er faktureret endnu." /></div>
+          <div className="card">
+            <div className="card-header"><h4 className="section-title">Faktureret / lukket ({done.length}) — {money(sum(done))}</h4></div>
+            <div className="card-body tight"><Table rows={done} empty="Ingenting er faktureret endnu." /></div>
+          </div>
+        </div>
       </div>
     </div>
   );
