@@ -6,6 +6,8 @@ import { getSessionUser } from "@/lib/api-auth";
 import { getDineroStatus } from "@/lib/dinero";
 import DineroAccountsForm from "@/components/DineroAccountsForm";
 import DineroTestButton from "@/components/DineroTestButton";
+import RevenuePanel from "@/components/RevenuePanel";
+import { getSubscriptionRevenue } from "@/lib/subscription-revenue";
 import { redirect } from "next/navigation";
 
 export const metadata = { title: "Regnskab · Karltoffel" };
@@ -25,7 +27,8 @@ export default async function AccountingPage() {
     );
   }
 
-  const { envReady, dryRunForced, orgId, connection } = await getDineroStatus();
+  // Omsætningsoverblik (flyttet fra abonnementsoversigten) — kun for administratorer.
+  const [{ envReady, dryRunForced, orgId, connection }, revenue] = await Promise.all([getDineroStatus(), getSubscriptionRevenue()]);
 
   return (
     <div className="container-1140" style={{ maxWidth: 900 }}>
@@ -83,6 +86,9 @@ export default async function AccountingPage() {
           </div>
         </div>
       ) : null}
+
+      {/* Omsætningsoverblik — kun for administratorer (siden er allerede admin-gated). */}
+      {user.isAdmin ? <RevenuePanel revenue={revenue} /> : null}
     </div>
   );
 }
