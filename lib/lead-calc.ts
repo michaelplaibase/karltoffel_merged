@@ -161,6 +161,24 @@ export async function getLeadCalc(fromISO: string, toISO: string): Promise<LeadC
 /** Kanaler (Thomas, 2026-09-03): fritekst muligt, disse er standardvalgene. */
 export const LEAD_SOURCES = ["SEO", "Meta", "Sociale medier", "Anbefaling", "Direkte", "Andet"] as const;
 
+/** Lead → Lead-beregner-kanal: mapper emnets utm-data (gemt af /api/leads)
+ *  til en af standardkanalerne, med fornuftig fald-tilbage. Bruges ved
+ *  konvertering (app/actions/leads.ts), så CAC pr. kanal bliver rigtig.
+ *  intet utm / ukendt → fald tilbage til "Direkte" hhv. "Andet". */
+export function leadTilKanal(lead: { source: string | null; utm: string | null }): string {
+  let utm: Record<string, string> | null = null;
+  try { utm = lead.utm ? JSON.parse(lead.utm) : null; } catch { utm = null; }
+  const src = String(utm?.source || "").toLowerCase();
+  const med = String(utm?.medium || "").toLowerCase();
+  if (src === "meta" || src === "facebook" || src === "fb" || src === "instagram" || med === "social-paid") return "Meta";
+  if (med === "cpc" || med === "ppc" || med === "paidsearch" || med === "paid") return "Andet";   /* betalt søgning */
+  if (src === "google" || src === "seo" || med === "organic") return "SEO";
+  if (src === "newsletter" || src === "email" || med === "email") return "Sociale medier";
+  if (src === "referral" || src === "anbefaling") return "Anbefaling";
+  if (!src && !med) return "Direkte";
+  return "Andet";
+}
+
 /** Valg af kategori for en ny kunde (auto-forslag ud fra CRM-data). */
 export function suggestCategory(hasSubscription: boolean, hasFixedPrice: boolean, isCompany: boolean): "privat" | "virksomhed" | "fastpris" {
   if (hasFixedPrice) return "fastpris";

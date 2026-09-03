@@ -10,6 +10,7 @@ import { categoryColor } from "@/lib/categories";
 import { weekLabel } from "@/lib/weeks";
 import { weekMondayToday } from "@/lib/calendar";
 import { parseLeadPayload, beregn, medRabatkode, type LeadPayload, type PricedService } from "@/lib/tilbudsmotor-pricing";
+import { leadTilKanal } from "@/lib/lead-calc";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
@@ -285,12 +286,13 @@ export async function convertLeadCore(id: number): Promise<ConvertLeadResult> {
 
   // Lead-beregner (Thomas, 2026-09-03): konverteres emnet til kunde, registreres
   // erhvervelsen AUTOMATISK — kategori ud fra pakkevalg/betaling + kundetype,
-  // kanal = emnets kilde. Så ryger kunden ind i Lead-beregneren med alt data.
+  // kanal = emnets utm-source mappet til standardkanalerne (leadTilKanal;
+  // ingen utm = "Direkte"). Så ryger kunden ind i Lead-beregneren med alt data.
   try {
     const category = spec.kind === "order" ? "privat" : (payload.kundetype === "erhverv" ? "virksomhed" : "privat");
     await prisma.leadAcquisition.upsert({
       where: { contactId_category: { contactId, category } },
-      create: { companyId: lead.companyId, contactId, category, source: lead.source || "Direkte" },
+      create: { companyId: lead.companyId, contactId, category, source: leadTilKanal(lead) },
       update: {},
     });
     revalidatePath("/business-manager/leads");

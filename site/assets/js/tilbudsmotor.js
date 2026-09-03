@@ -95,6 +95,41 @@ const state = {
   ejendom: { type:"Villa, 1 fam.", grund:"827 m²", opfoert:"2007", haek:"65 m" }
 };
 
+/* ============ MARKETING-KANAL (UTM) ============ */
+/* Lead-beregneren (Business Manager) regner CAC pr. kanal — SEO, Meta osv.
+   Kilden fanges ÉN gang ved landing (utm-parametre i URL'en), gemmes i
+   localStorage i 30 dage (cookie-frit — ingen samtykke-problematik; samme
+   mønster som PERSIST_KEY), og sendes med leadet. Første landing vinder —
+   et senere besøg uden utm overskriver ikke kilden. */
+const UTM_KEY = "tm-utm-v1";
+function fangUtm(){
+  try {
+    const p = new URLSearchParams(location.search);
+    const utm = {};
+    ["source","medium","campaign","term","content"].forEach(k=>{
+      const v = (p.get("utm_" + k) || "").trim().slice(0, 100);
+      if(v) utm[k] = v;
+    });
+    if(!Object.keys(utm).length) return;               /* ingen utm — behold evt. gemt landing */
+    const gemt = JSON.parse(localStorage.getItem(UTM_KEY) || "null");
+    if(gemt && gemt.t && Date.now() - gemt.t < 30*24*3600*1000 && gemt.utm && gemt.utm.source){
+      /* gyldig gemt landing — forny tidsstempel, overskriv ikke kilden */
+      gemt.t = Date.now();
+      localStorage.setItem(UTM_KEY, JSON.stringify(gemt));
+      return;
+    }
+    localStorage.setItem(UTM_KEY, JSON.stringify({ t: Date.now(), utm }));
+  } catch(e){ /* best-effort — sporingen må aldrig vælte flowet */ }
+}
+function laesUtm(){
+  try {
+    const g = JSON.parse(localStorage.getItem(UTM_KEY) || "null");
+    if(g && g.utm && Object.keys(g.utm).length) return g.utm;
+  } catch(e){}
+  return null;
+}
+fangUtm();
+
 /* ============ ADRESSEOPSLAG: Adressevælgeren (DAWAs officielle afløser) ============ */
 const ADR_API = "https://adressevaelger.dk/husnumre/soeg?token=adressevaelger123&maksimum=6&tekst=";
 const DEMO_ADR = ["Sundvej 8, 8700 Horsens","Strandkærvej 30, 8700 Horsens","Bygholm Parkvej 1, 8700 Horsens"];
@@ -563,6 +598,10 @@ $("btn-send").addEventListener("click", ()=>{
   };
   /* KONTRAKT: feltnavn `rabatkode` (streng, trimmet + uppercased) — kun med når koden er valid. */
   if(state.rabatkode.valid) payload.rabatkode = state.rabatkode.code;
+  /* Marketing-kanal (utm) — Lead-beregnerens CAC pr. kanal. CRM'et validerer
+     og gemmer felterne; fravær = null = "Direkte" i Lead-beregneren. */
+  const utm = laesUtm();
+  if(utm) payload.utm = utm;
   /* Erhverv: CVR + firmaoplysninger er valgfrie ekstra felter på leadet —
      blot informative for CRM'et, blokerer aldrig indsendelsen (se tjekCvr). */
   if(state.kundetype === "erhverv"){
