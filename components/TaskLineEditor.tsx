@@ -80,11 +80,22 @@ export default function TaskLineEditor({
           <tbody>
             {rows.map((r, i) => (
               <tr key={i}>
-                <td>
-                  <input
-                    name="taskDescription" value={r.description}
-                    onChange={(e) => update(i, { description: e.target.value })}
-                    className="form-control form-control-sm" placeholder="Opgavebeskrivelse"
+                <td data-label="Opgavebeskrivelse">
+                  {/* Auto-voksende textarea i stedet for input: hele teksten
+                      er altid synlig (ombryder + linjen bliver højere), også
+                      når teksten er hentet fra databasen. Samme felt-
+                      navn/taskDescription → server action uændret. */}
+                  <textarea
+                    name="taskDescription" value={r.description} rows={1}
+                    onChange={(e) => {
+                      update(i, { description: e.target.value });
+                      e.target.style.height = "auto";
+                      e.target.style.height = `${e.target.scrollHeight}px`;
+                    }}
+                    ref={(el) => {
+                      if (el) { el.style.height = "auto"; el.style.height = `${el.scrollHeight}px`; }
+                    }}
+                    className="form-control form-control-sm task-desc" placeholder="Opgavebeskrivelse"
                   />
                   {sub && (
                     // "Måneder på pause": skjulte felter (IKKE checkbokse) der ALTID
