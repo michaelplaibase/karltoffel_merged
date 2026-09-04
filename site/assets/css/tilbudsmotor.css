@@ -370,3 +370,77 @@
 
 /* Servicefradrag-tekst under prisen: lille, dæmpet, ikke-med-pulsen. */
 .tm-flow .pw-fradrag{display:block;font-size:0.72em;opacity:0.75;margin-top:2px}
+
+/* ==========================================================================
+   UX/UI-REWORK (2026-09-04, branch feat/tilbudsmotor-ux-desktop)
+   Problem: på desktop kollapsede 1fr-navne-kolonnen, når qty-label + prisblok
+   + stepper fyldte mere end rækkebredden — navnet løb ind under antal-feltet.
+   Løsning: faste, ikke-kollapsende kolonner (navn | antal | pris | stepper),
+   prisen som dominerende tal, fradrag som diskret Spire-grøn sekundærlinje,
+   hover/fravalgt-adskillelse så kortene ikke flyder sammen.
+   ========================================================================== */
+
+/* Fradrag: lille grøn (Spire) tilbehørslinje — fuld kontrast, ingen opacity,
+   så den aldrig tåges over gul. Basegælder alle breddegrader (mobil nedarver). */
+.tm-flow .pw-fradrag{font-size:11px;line-height:1.35;color:#616711;opacity:1;font-weight:600}
+
+/* Række-adskillelse: valgte rækker løftes let ved hover, fravalgte er dæmpede
+   (men læsbare) og vågner ved hover/fokus. Ingen layout-spring. */
+.tm-flow .row{transition:opacity .15s ease,filter .15s ease,box-shadow .15s ease}
+.tm-flow .row--off{opacity:.8}
+.tm-flow .row--off:hover,.tm-flow .row--off:focus-within{opacity:1}
+.tm-flow .row:not(.row--off):hover{filter:brightness(1.035);box-shadow:0 6px 18px rgba(28,20,11,.12)}
+
+/* TABLET (701–1023px): samme robuste stacking som mobil — den horisontale
+   44px pris-kolonne kan aldrig rumme '204 kr' + fradrag, så rækken stackes
+   i stedet (navn → antal → pris → stepper). qw-label beholdes (den er
+   selvforklarende og ombryder). */
+@media (min-width:701px) and (max-width:1023px){
+  .tm-flow .row{grid-template-columns:auto minmax(0,1fr);grid-template-areas:"chk navn" ". pw" ". fw";row-gap:9px;column-gap:10px;align-items:start}
+  .tm-flow .qrow{grid-template-areas:"chk navn" ". qw" ". pw" ". fw"}
+  .tm-flow .qw,.tm-flow .pw,.tm-flow .fw{align-items:flex-start}
+  .tm-flow .pw-note{text-align:left}
+  .tm-flow .qw-lbl{white-space:normal;text-align:left}
+  .tm-flow .row--off .qw,.tm-flow .row--off .pw,.tm-flow .row--off .fw{display:none}
+}
+
+/* DESKTOP (≥1024px): fem faste kolonner — checkbox | navn (1fr) | antal (150px)
+   | prisblok (250px, højrejusteret) | stepper (132px). Pris- og stepper-kolonnen
+   står præcis over hinanden i ALLE rækker, også dem uden antal-felt (tomt
+   område i grid-areas). 1fr med minmax(0,·) kan aldrig længere kollapse ind
+   i nabofelterne. */
+@media (min-width:1024px){
+  .tm-flow .rows{max-width:920px;gap:20px}
+  .tm-flow .row{
+    grid-template-columns:auto minmax(0,1fr) 150px 250px 132px;
+    grid-template-areas:"chk navn qw pw fw";
+    column-gap:22px;
+    padding:14px 22px;
+    align-items:center;
+  }
+  .tm-flow .row:not(.qrow){grid-template-areas:"chk navn . pw fw"}
+  .tm-flow .row .navn{font-size:15.5px}
+  /* Antal-felt: kompakt fast kolonne; label må ombryde på to linjer i stedet
+     for at presse navnet væk. */
+  .tm-flow .qw{width:150px}
+  .tm-flow .qw-lbl{white-space:normal;max-width:150px;line-height:1.3;font-size:10px}
+  .tm-flow .qw input{width:100%;max-width:120px}
+  /* Prisblok: PRISEN dominerer (24px), 'pr. besøg · X kr/år ved N besøg' på
+     ÉN linje, fradrag som sidste diskrete linje. Alt højrejusteret i blokken. */
+  .tm-flow .pw{width:250px;min-width:0;align-items:flex-end;text-align:right}
+  .tm-flow .pw-val{font-size:24px}
+  .tm-flow .pw-unit{font-size:11.5px;white-space:nowrap;margin-top:2px}
+  .tm-flow .pw-fradrag{max-width:250px}
+  /* Stepper: kompakt, centreret i egen kolonne. */
+  .tm-flow .fw{width:132px}
+  .tm-flow .fw-lbl{font-size:10px}
+}
+
+/* MOBIL-finslibning (<700px): fradragsteksten ombryder roligt, pris og stepper
+   får fast, ens afstand; intet trykkes sammen. (Layoutet var i forvejen OK —
+   dette låser bare mellemrummene.) */
+@media (max-width:700px){
+  .tm-flow .pw-fradrag{margin-top:3px}
+  .tm-flow .pw{max-width:100%}
+  .tm-flow .fw{padding-top:2px}
+}
