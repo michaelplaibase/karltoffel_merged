@@ -49,6 +49,24 @@ const PRODUCTS = [
 /* Uberørt kopi til at nulstille pakken når en ny adresse vælges. */
 const DEFAULTS = PRODUCTS.map(function(p){ return Object.assign({}, p); });
 
+/* ============ Serviceside-kontekst (tilbudsmotoren indlejret på ydelsessider) ============
+   Sider der indlejrer motoren sætter window.KARLTOFFEL.tilbudsmotorPage =
+   { service: "<produkt-id eller null>", source: "<slug>" } FØR tilbudsmotor.js loades.
+   Konsekvens: produktet forudvælges (on=true) første gang løsning-trinnet nås
+   (medmindre kunden selv har rørt det), payload.source blir 'tilbudsmotor-<slug>'
+   og Meta content_name blir '<slug>-motor' i stedet for 'tilbudsmotor-forside'.
+   På forsiden er config ikke sat — alt opfører sig præcis som før. */
+const TM_PAGE = (window.KARLTOFFEL && window.KARLTOFFEL.tilbudsmotorPage) || null;
+const TM_PAGE_PRODUCT = (TM_PAGE && TM_PAGE.service) ? PRODUCTS.find(p => p.id === TM_PAGE.service) || null : null;
+const TM_PAGE_SOURCE = TM_PAGE && TM_PAGE.source ? "tilbudsmotor-" + TM_PAGE.source : "tilbudsmotor";
+const TM_CONTENT_NAME = TM_PAGE && TM_PAGE.source ? TM_PAGE.source + "-motor" : "tilbudsmotor-forside";
+let tmPagePreselectDone = false;
+function tmPagePreselect(){
+  if(tmPagePreselectDone || !TM_PAGE_PRODUCT || TM_PAGE_PRODUCT.touched) return;
+  tmPagePreselectDone = true;
+  TM_PAGE_PRODUCT.on = true;
+}
+
 /* Prisen er bare en sum: hver valgt service lægges til, og det er det.
    Ingen regning pr. besøg, ingen snit — det tal kunderne spurgte til. */
 function beregn(products){
@@ -216,6 +234,7 @@ function applyMeasurements(m){
 let measureReq = 0;
 function resetProducts(){
   PRODUCTS.forEach(function(p,i){ Object.assign(p, DEFAULTS[i]); p.touched = false; });
+  tmPagePreselectDone = false;   /* ny adresse → forudvælg servicesidens ydelse igen */
   state.maal = null;
 }
 
@@ -270,7 +289,7 @@ function visStep(id, skipScroll){
   $(id).classList.add("active");
   if(!skipScroll) ROOT.scrollIntoView({ block:"start", behavior:"auto" });
   if(id === "step-verify") $("verify-adr").textContent = state.adresse;
-  if(id === "step-losning") renderTop();
+  if(id === "step-losning"){ tmPagePreselect(); renderTop(); }
   /* Fremdrift: "Trin N af 5" + dots (skjules på tak-trinnet). */
   const prog = $("tm-progress");
   if(prog){
@@ -586,7 +605,7 @@ $("btn-send").addEventListener("click", ()=>{
     address: state.adresse,
     kundetype: state.kundetype,
     betaling: state.betaling,
-    source: "tilbudsmotor",
+    source: TM_PAGE_SOURCE,
     services: valgt.map(p=>({ id:p.id, navn:p.navn, wm:p.wm, qty:p.qty, enhed:p.enhed, freq:p.freq, pris:p.pris, erPakkevare:p.pakke })),
     estimat: { total: Math.round(totalNet), count: r.count }
   };
@@ -596,7 +615,7 @@ $("btn-send").addEventListener("click", ()=>{
   const metaEventId = (window.crypto && typeof window.crypto.randomUUID === "function")
     ? window.crypto.randomUUID()
     : "tm-" + Date.now().toString(36) + "-" + Math.random().toString(36).slice(2, 12);
-  payload.meta_capi = { event_id: metaEventId, content_name: "tilbudsmotor-forside" };
+  payload.meta_capi = { event_id: metaEventId, content_name: TM_CONTENT_NAME };
   /* Hero-/landingformularer (servicesider) gemte deres eget Lead-event i
      sessionStorage — fragt det med som meta_capi_prior, så CAPI-eventet får
      samme content_name ('<slug>-hero' osv.) som browser-eventet. Ryddes
@@ -646,7 +665,7 @@ $("btn-send").addEventListener("click", ()=>{
        CAPI-kaldet (payload.meta_capi.event_id) — dedup i Meta. */
     try {
       if (typeof fbq === "function") {
-        fbq("track", "Lead", { content_name: "tilbudsmotor-forside", content_type: "form", value: Math.round(totalNet), currency: "DKK" }, { eventID: metaEventId });
+        fbq("track", "Lead", { content_name: TM_CONTENT_NAME, content_type: "form", value: Math.round(totalNet), currency: "DKK" }, { eventID: metaEventId });
       }
     } catch (e) {}
     /* Prior-hero-eventet er nu fragtet sikkert til CRM'et — ryd det, så en
@@ -712,7 +731,7 @@ function pushLeadEvent(valgt, r, totalNet, kodePct){
     event: "generate_lead",
     currency: "DKK",
     value: Math.round(totalNet),
-    lead_source: "tilbudsmotor",
+    lead_source: TM_PAGE_SOURCE,
     lead_kundetype: state.kundetype || "ukendt",
     lead_services_count: r.count,
     lead_value_total: Math.round(totalNet),
