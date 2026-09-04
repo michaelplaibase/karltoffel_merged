@@ -31,7 +31,7 @@ const PRODUCTS = [
   {id:"tagrender",navn:"Tagrenderens",                   enhed:"m tagrende", pris:18.00, note:"Stueplan / 1-plans hus",          qty:24,  freq:1,  fmax:2,  on:false, pakke:true, kat:"pakke", wm:"Tagrenderens Stueplan / 1-plans hus"},
 
   /* ---- Tilvalg: "Vi tilbyder også" (off som standard, gruppe = kat) ---- */
-  {id:"ukrudt_sproejt", navn:"Sprøjtning af ukrudt mellem belægning", enhed:"m² fliser", pris:1.50, note:"Vi holder fugerne rene", qty:60, freq:5, fmax:8, on:false, pakke:false, kat:"groen", wm:"Ukrudt bekæmpelse på belægningsarealer"},
+  {id:"ukrudt_sproejt", navn:"Sprøjtning af ukrudt mellem belægning", enhed:"m² fliser", pris:1.50, min:150, note:"Vi holder fugerne rene", qty:75, freq:5, fmax:8, on:false, pakke:false, kat:"groen", wm:"Ukrudt bekæmpelse på belægningsarealer"},
   {id:"ukrudt_fjern", navn:"Fjernelse af ukrudt mellem belægning", enhed:"m² fliser", pris:4.00, note:"Manuel fjernelse af ukrudt — hvis det er fjernet indenfor den sidste måned", qty:60, freq:5, fmax:8, on:false, pakke:false, kat:"groen", wm:null},
   {id:"beskaering",navn:"Beskæring af buske, træer og planter",   enhed:"træer",     pris:250.00, note:"Små træer/frugttræer — større træer efter besøg", qty:3, freq:1, fmax:2, on:false, pakke:false, kat:"groen", prisEnh:"træ", wm:"Beskæring Små træer / Frugttræer"},
   {id:"vinduerind",navn:"Vinduespudsning indeni huset",            enhed:"glas",      pris:24.87,  note:"Indvendige døre, vinduer og porte", qty:0,   freq:1,  fmax:6,  on:false, pakke:false, kat:"vinduer", wm:"Indendørs vinduespudsning pr glas"},
@@ -704,6 +704,7 @@ $("btn-send").addEventListener("click", ()=>{
         kodeLinje +
         'Pr. besøg: <b><span id="tak-total" class="tm-anim-kr">' + kr(totalNet) + '</span></b>' +
         ' · <b><span id="tak-aar" class="tm-anim-kr">' + kr(yearNet) + '</span>/år</b><br>' +
+        'Ca. ' + kr(Math.min(yearNet * 0.26, 18300)) + '/år i skattefradrag (servicefradraget, 2026)<br>' +
         'Estimat — endelig pris aftaler vi ved opkaldet';
       /* Tak-totalerne tæller blødt op fra 0 (count-animationen). */
       animateNumber(opsum.querySelector("#tak-total"), 0, totalNet, kr);
@@ -921,7 +922,7 @@ const QTY_META = {
   sammenriv:      { lbl:"Ca. antal m² plæne",           ph:"f.eks. 450", max:5000 },
   alge:           { lbl:"Ca. antal m² tag",             ph:"f.eks. 120", max:2000 },
   tagrender:      { lbl:"Ca. antal meter tagrende",     ph:"f.eks. 24",  max:500 },
-  ukrudt_sproejt: { lbl:"Ca. antal m² belægning",       ph:"f.eks. 60",  max:2000 },
+  ukrudt_sproejt: { lbl:"Ca. antal m² belægning",       ph:"f.eks. 75",  max:2000 },
   ukrudt_fjern:   { lbl:"Ca. antal m² belægning",       ph:"f.eks. 60",  max:2000 },
   algeflis:       { lbl:"Ca. antal m² belægning",       ph:"f.eks. 60",  max:2000 },
   beskaering:     { lbl:"Antal træer",                  ph:"f.eks. 3",   max:50 },
@@ -1059,17 +1060,21 @@ function opdater(){
       const raw = p.pris * p.qty;
       const val = p.min ? Math.max(raw, p.min) : raw;    /* min-beløb gælder pr. besøg */
       const unitTxt = "pr. besøg · " + kr(val * p.freq) + "/år ved " + p.freq + " besøg";
+      /* Servicefradrag 2026: 26% af arbejdsløn (inkl. moms), maks 18.300 kr/år pr. person. */
+      const fradr = Math.min(val * p.freq * 0.26, 18300);
+      const fradrTxt = "Ca. " + kr(fradr) + "/år i skattefradrag";
       const prev = parseFloat(el.dataset.val);
       const b = el.querySelector(".pw-val");
       const u = el.querySelector(".pw-unit");
+      let fEl = el.querySelector(".pw-fradrag");
       if(!b){   /* første visning: skriv direkte (ingen animation fra ingenting) */
-        el.innerHTML = '<b class="pw-val">' + kr(val) + '</b><span class="pw-unit">' + unitTxt + '</span>';
-      } else if(isFinite(prev) && prev !== val){
-        animateNumber(b, prev, val, kr);   /* mængde ændret → tæl blødt derhen */
-        if(u) u.textContent = unitTxt;
+        el.innerHTML = '<b class="pw-val">' + kr(val) + '</b><span class="pw-unit">' + unitTxt + '</span><small class="pw-fradrag">' + fradrTxt + '</small>';
       } else {
-        b.textContent = kr(val);
+        if(isFinite(prev) && prev !== val) animateNumber(b, prev, val, kr);
+        else b.textContent = kr(val);
         if(u) u.textContent = unitTxt;
+        if(!fEl){ fEl = document.createElement("small"); fEl.className = "pw-fradrag"; el.appendChild(fEl); }
+        fEl.textContent = fradrTxt;
       }
       el.dataset.val = val;
     }

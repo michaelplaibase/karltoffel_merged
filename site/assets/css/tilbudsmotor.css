@@ -312,7 +312,7 @@
 .tm-flow .tm-card-chevron{flex:none;transition:transform .2s ease;font-size:14px}
 .tm-flow .tm-card.open .tm-card-chevron{transform:rotate(180deg)}
 /* Sammenklappet som standard: body vises kun når kortet er åbent. */
-.tm-flow .tm-card-body{display:none;flex-direction:column;gap:9px;padding:4px 10px 12px}
+.tm-flow .tm-card-body{display:flex;flex-direction:column;gap:9px;padding:4px 10px 12px}
 .tm-flow .tm-card.open .tm-card-body{display:flex}
 
 /* Sticky opsummering: under listen, over "Videre/Tilbage"-navgen. position:sticky
@@ -364,3 +364,9 @@
 .tm-flow .tak-next{margin:18px auto 0;max-width:420px;text-align:left;padding:16px 20px;border-radius:12px;background:#FFFFF0;border:1px solid #AE8642;font-size:13.5px;color:#4C3718}
 .tm-flow .tak-next ol{margin:8px 0 0;padding-left:20px}
 .tm-flow .tak-next li{margin:4px 0}
+
+/* Alle 3 kort er ALTID åbne (Kristian 2026-09-04) — chevron fjernet, fold er væk. */
+.tm-flow .tm-card-chevron{display:none}
+
+/* Servicefradrag-tekst under prisen: lille, dæmpet, ikke-med-pulsen. */
+.tm-flow .pw-fradrag{display:block;font-size:0.72em;opacity:0.75;margin-top:2px}
