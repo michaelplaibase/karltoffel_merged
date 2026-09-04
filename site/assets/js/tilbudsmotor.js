@@ -24,7 +24,7 @@ const $ = (id) => ROOT.querySelector("#" + id);
 /*PRICING-START*/
 const PRODUCTS = [
   /* ---- De mest valgte services (ikke forudvalgt — kunden vælger selv) ---- */
-  {id:"vinduer",  navn:"Udvendig vinduesvask",       enhed:"glas",       pris:20.00, note:"Udvendige døre, vinduer og porte",                 qty:0,   freq:8,  fmax:12, on:false, pakke:true, kat:"pakke", wm:"Udvendig vinduesvask pr glas"},
+  {id:"vinduer",  navn:"Udvendig vinduesvask",       enhed:"glas",       pris:17.00, note:"Udvendige døre, vinduer og porte",                 qty:0,   freq:8,  fmax:12, on:false, pakke:true, kat:"pakke", wm:"Udvendig vinduesvask pr glas"},
   {id:"haek",     navn:"Hækklipning",                    enhed:"m hæk",      pris:27.50, note:"1 side, under 220 cm",            qty:65,  freq:1,  fmax:3,  on:false, pakke:true, kat:"pakke", wm:"Hækklipning 1 side pr meter Under 220 cm"},
   {id:"green",    navn:"Greenkeeper græspleje",          enhed:"m² plæne",   pris:2.30,  note:"Gødning og pleje af plænen",      qty:450, freq:3,  fmax:6,  on:false, pakke:true, kat:"pakke", wm:"Greenkeeper græspleje"},
   {id:"alge",     navn:"Algebehandling af tag",          enhed:"m² tag",     pris:9.80,  min:950,  note:"Mos og alger, beregnet på skråt tagareal", qty:120, freq:1, fmax:2, on:false, pakke:true, kat:"pakke", wm:"Algebehandling af tag"},
@@ -32,9 +32,9 @@ const PRODUCTS = [
 
   /* ---- Tilvalg: "Vi tilbyder også" (off som standard, gruppe = kat) ---- */
   {id:"ukrudt_sproejt", navn:"Sprøjtning af ukrudt mellem belægning", enhed:"m² fliser", pris:1.50, note:"Vi holder fugerne rene", qty:60, freq:5, fmax:8, on:false, pakke:false, kat:"groen", wm:"Ukrudt bekæmpelse på belægningsarealer"},
-  {id:"ukrudt_fjern", navn:"Fjernelse af ukrudt mellem belægning", enhed:"m² fliser", pris:4.00, note:"Manuel fjernelse af ukrudt", qty:60, freq:5, fmax:8, on:false, pakke:false, kat:"groen", wm:null},
-  {id:"beskaering",navn:"Beskæring af buske, træer og planter",   enhed:"træer",     pris:500.00, note:"Små træer/frugttræer — større træer efter besøg", qty:3, freq:1, fmax:2, on:false, pakke:false, kat:"groen", prisEnh:"træ", wm:"Beskæring Små træer / Frugttræer"},
-  {id:"vinduerind",navn:"Vinduespudsning indeni huset",            enhed:"glas",      pris:19.87,  note:"Indvendige døre, vinduer og porte", qty:0,   freq:1,  fmax:6,  on:false, pakke:false, kat:"vinduer", wm:"Indendørs vinduespudsning pr glas"},
+  {id:"ukrudt_fjern", navn:"Fjernelse af ukrudt mellem belægning", enhed:"m² fliser", pris:4.00, note:"Manuel fjernelse af ukrudt — hvis det er fjernet indenfor den sidste måned", qty:60, freq:5, fmax:8, on:false, pakke:false, kat:"groen", wm:null},
+  {id:"beskaering",navn:"Beskæring af buske, træer og planter",   enhed:"træer",     pris:250.00, note:"Små træer/frugttræer — større træer efter besøg", qty:3, freq:1, fmax:2, on:false, pakke:false, kat:"groen", prisEnh:"træ", wm:"Beskæring Små træer / Frugttræer"},
+  {id:"vinduerind",navn:"Vinduespudsning indeni huset",            enhed:"glas",      pris:24.87,  note:"Indvendige døre, vinduer og porte", qty:0,   freq:1,  fmax:6,  on:false, pakke:false, kat:"vinduer", wm:"Indendørs vinduespudsning pr glas"},
   {id:"solcelle",  navn:"Solcellevask",                           enhed:"paneler",   pris:40.00,  note:"Solcellepaneler på taget",          qty:0,   freq:1,  fmax:4,  on:false, pakke:false, kat:"vinduer", prisEnh:"panel", wm:"Solcellevask pr panel"},
   {id:"drivhus",   navn:"Drivhusvask",                            enhed:"gang",      pris:100.00, note:"Fast pris pr. gang — så er drivhuset vasket", qty:1, freq:1,  fmax:2,  on:false, pakke:false, kat:"vinduer", wm:"Drivhusvask — fast pris pr. gang"},
   {id:"algeflis",  navn:"Algebehandling af belægning",            enhed:"m² fliser", pris:7.80,   min:850, note:"Alger på fliser, terrasse og indkørsel", qty:60, freq:1, fmax:2, on:false, pakke:false, kat:"tag", wm:"Algebehandling af belægning"},
@@ -43,8 +43,7 @@ const PRODUCTS = [
 
   /* ---- Skadedyr ---- */
   {id:"myre_ude",   navn:"Myrebekæmpelse, udvendig sokkelbehandling", enhed:"gang", pris:935.00,  note:"Standard parcelhus",              qty:1, freq:1, fmax:2, on:false, pakke:false, kat:"skadedyr", wm:"Myrebekæmpelse udvendig sokkelbehandling"},
-  {id:"myre_inde",  navn:"Myrebekæmpelse, indvendig behandling",      enhed:"gang", pris:650.00,  note:"Standard parcelhus",              qty:1, freq:1, fmax:2, on:false, pakke:false, kat:"skadedyr", wm:"Myrebekæmpelse indvendig behandling"},
-  {id:"myre_saeson",navn:"Myrebekæmpelse, sæsonpakke",                enhed:"gang", pris:2650.00, note:"3x udvendig behandling i sæsonen", qty:1, freq:1, fmax:1, on:false, pakke:false, kat:"skadedyr", wm:"Myrebekæmpelse sæsonpakke 3x udvendig"}
+  {id:"myre_inde",  navn:"Myrebekæmpelse, indvendig behandling",      enhed:"gang", pris:650.00,  note:"Standard parcelhus",              qty:1, freq:1, fmax:2, on:false, pakke:false, kat:"skadedyr", wm:"Myrebekæmpelse indvendig behandling"}
 ];
 /* Uberørt kopi til at nulstille pakken når en ny adresse vælges. */
 const DEFAULTS = PRODUCTS.map(function(p){ return Object.assign({}, p); });
@@ -778,7 +777,7 @@ const WM_HVORFOR = {
   alge: "Vi fjerner mos og alger på taget, så taget holder længere — arealet afgør prisen.",
   tagrender: "Vi renser blade og mudder ud, så vandet løber fra huset — længden i meter er nok.",
   ukrudt_sproejt: "Vi sprøjter ukrudtet mellem fliserne, så fugerne holder sig rene.",
-  ukrudt_fjern: "Vi trækker ukrudtet ud i hånden — skånsomt og uden sprøjtemidler.",
+  ukrudt_fjern: "Vi trækker ukrudtet ud i hånden — skånsomt og uden sprøjtemidler. Gælder hvis ukrudtet er fjernet indenfor den sidste måned.",
   beskaering: "Vi beskærer buske og træer og fjerner grenaffaldet.",
   vinduerind: "Vi pudser vinduerne indvendigt — antallet afgør, hvor lang tid det tager.",
   solcelle: "Vi vasker panelerne, så de giver mest mulig strøm.",
@@ -788,7 +787,6 @@ const WM_HVORFOR = {
   sammenriv: "Vi fjerner det gamle lølag og efterlader en ren og jævn plæne.",
   myre_ude: "Vi behandler soklen udvendigt, så myrerne bliver udenfor.",
   myre_inde: "Vi behandler de steder inde, hvor myrerne kommer.",
-  myre_saeson: "Tre behandlinger i løbet af sæsonen — så holder myrerne væk."
 };
 const CAT_LABELS = { pakke:"Mest valgt", groen:"Grøn have", vinduer:"Vinduer & glas", tag:"Tag & fliser", affald:"Affald", vinter:"Vinter", skadedyr:"Skadedyrsbekæmpelse" };
 
@@ -798,10 +796,10 @@ const CAT_LABELS = { pakke:"Mest valgt", groen:"Grøn have", vinduer:"Vinduer & 
    uændret (bruges af GTM item_category + tak-sidens logik) — kortene er kun
    en visnings-gruppering ovenpå den samme liste. */
 const SERVICE_CARDS = [
+  { key:"ude", emoji:"🏠", title:"På huset",
+    ids:["vinduer","solcelle","drivhus","alge","tagrender","algeflis","fliserens","myre_ude"] },
   { key:"haven", emoji:"🌳", title:"I haven",
     ids:["green","haek","beskaering","ukrudt_sproejt","ukrudt_fjern","sammenriv"] },
-  { key:"ude", emoji:"🏠", title:"På huset",
-    ids:["vinduer","solcelle","drivhus","alge","tagrender","algeflis","fliserens","myre_ude","myre_saeson"] },
   { key:"inde", emoji:"🛋️", title:"Indeni huset",
     ids:["vinduerind","myre_inde"] }
 ];
@@ -838,7 +836,7 @@ function renderRows(){
     const items = card.ids.map(id => PRODUCTS.find(p => p.id === id)).filter(Boolean);
     if(!items.length) return;
     const box = document.createElement("div");
-    box.className = "tm-card";
+    box.className = "tm-card open";
     box.dataset.card = card.key;
 
     const head = document.createElement("button");
@@ -851,12 +849,7 @@ function renderRows(){
     const cnt = document.createElement("span"); cnt.className = "tm-card-count"; cnt.dataset.cardCount = card.key; cnt.textContent = "0 valgt";
     const chev = document.createElement("span"); chev.className = "tm-card-chevron"; chev.setAttribute("aria-hidden","true"); chev.textContent = "▾";
     head.appendChild(emo); head.appendChild(ttl); head.appendChild(cnt); head.appendChild(chev);
-    head.addEventListener("click", ()=>{
-      const open = box.classList.toggle("open");
-      head.setAttribute("aria-expanded", open ? "true" : "false");
-      /* Ikke-brydende måling af kort-fold (best effort — må aldrig stoppe flowet). */
-      try { (window.dataLayer = window.dataLayer || []).push({ event:"tm_card_expand", tm_card: card.key }); } catch(e){}
-    });
+    /* Alle 3 kort er altid åbne (Kristian 2026-09-04) — head er kun overskrift. */
 
     const body = document.createElement("div");
     body.className = "tm-card-body";
@@ -916,7 +909,6 @@ const QTY_META = {
   drivhus:        { lbl:"Antal drivhuse",               ph:"f.eks. 1",   max:10 },
   myre_ude:       { lbl:"Antal behandlinger",           ph:"f.eks. 1",   max:5 },
   myre_inde:      { lbl:"Antal behandlinger",           ph:"f.eks. 1",   max:5 },
-  myre_saeson:    { lbl:"Antal behandlinger",           ph:"f.eks. 1",   max:5 }
 };
 
 function byggRaekke(p){
