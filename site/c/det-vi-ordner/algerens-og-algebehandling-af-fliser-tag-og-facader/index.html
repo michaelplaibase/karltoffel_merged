@@ -57,6 +57,7 @@ src="https://www.facebook.com/tr?id=1574687980856727&amp;ev=PageView&amp;noscrip
 /></noscript>
 <!-- End Meta Pixel Code -->
 <script src="/assets/js/meta-events.js?v=2" defer data-forms='[{"selector": ".sp-form__fields", "content_name": "algerens-og-algebehandling-af-fliser-tag-og-facader-hero"}]'></script>
+	<link rel="stylesheet" href="/assets/css/tilbudsmotor.css?v=30">
 </head>
 
 
@@ -125,7 +126,7 @@ src="https://www.facebook.com/tr?id=1574687980856727&amp;ev=PageView&amp;noscrip
 			<div class="header__buttons">
 
 	<div class="buttons">
-	   <a href="/#tilbudsmotor" class="button in-view in-view--slide-up"><span>Få et tilbud på mindre bøvl</span></a>
+	   <a href="#tilbudsmotor" class="button in-view in-view--slide-up"><span>Få et tilbud på mindre bøvl</span></a>
 		    </div>
 </div>		</div>
 
@@ -188,7 +189,7 @@ src="https://www.facebook.com/tr?id=1574687980856727&amp;ev=PageView&amp;noscrip
 						
 
 	<div class="buttons">
-	   <a href="/#tilbudsmotor" class="button in-view in-view--slide-up"><span>Få et tilbud på mindre bøvl</span></a>
+	   <a href="#tilbudsmotor" class="button in-view in-view--slide-up"><span>Få et tilbud på mindre bøvl</span></a>
 		    </div>
 
 					</div>
@@ -226,7 +227,7 @@ src="https://www.facebook.com/tr?id=1574687980856727&amp;ev=PageView&amp;noscrip
 			<aside class="sp-form" aria-label="Få prisen på din algerens">
 				<h2 class="sp-form__title">Få prisen på din algerens</h2>
 				<p class="sp-form__lead">Vi ringer dig op i åbningstiden, giver dig prisen og aftaler en dag.</p>
-				<form class="sp-form__fields" action="/#tilbudsmotor" method="get">
+				<form class="sp-form__fields" action="#tilbudsmotor" method="get">
 					<label for="sp-navn">Navn</label>
 					<input id="sp-navn" name="navn" type="text" autocomplete="name">
 					<label for="sp-telefon">Telefon</label>
@@ -505,6 +506,197 @@ src="https://www.facebook.com/tr?id=1574687980856727&amp;ev=PageView&amp;noscrip
 
 					
 		
+	<!-- ============ TILBUDSMOTOR (lead flow) ============ -->
+	<section class="tm-flow" id="tilbudsmotor" aria-label="Tilbudsmotor – få din pris">
+	<div class="tm-main">
+	  <div class="tm-progress" id="tm-progress">
+	    <span class="tm-progress-txt" id="tm-progress-txt">Trin 1 af 5</span>
+	    <span class="tm-progress-dots" id="tm-progress-dots" aria-hidden="true"><i class="on"></i><i></i><i></i><i></i><i></i></span>
+	  </div>
+	  <!-- STEP 1 -->
+	  <section class="step active hero" id="step-adresse" aria-labelledby="tm-h1">
+	    <h2 id="tm-h1">Hvad koster din have?</h2>
+	    <p class="sub">Tast din adresse. Så graver vi tallene frem og giver dig en fast månedspris, mens du venter.</p>
+	    <div class="adr-wrap">
+	      <label class="adr-label" for="adr-input">Din adresse</label>
+	      <input id="adr-input" type="text" autocomplete="off" placeholder="F.eks. Sundvej 8, 8700 Horsens" aria-describedby="adr-note">
+	      <div class="adr-list" id="adr-list" role="listbox" aria-label="Adresseforslag"></div>
+	      <p class="adr-note" id="adr-note">Adresseopslaget svarer ikke lige nu — prøv med husnummer og postnummer, eller <a href="tel:+4522223833">ring 22 22 38 33</a>, så klarer vi det på 2 min.</p>
+	    </div>
+	    <p class="tm-reassurance">Ingen binding. Vi ringer og bekræfter tallene, før noget koster dig en krone.</p>
+	    <div class="tm-nav">
+	      <button class="btn btn-ja" id="adr-videre">Videre</button>
+	    </div>
+	  </section>
+
+	  <!-- STEP 2: PRIVAT / ERHVERV -->
+	  <section class="step ktype" id="step-kundetype" aria-labelledby="tm-h2p">
+	    <h2 id="tm-h2p">Hvem gør vi det for?</h2>
+	    <p class="ktype-sub">Vælg om adressen er privat eller erhverv — så rammer vi rigtigt fra start.</p>
+	    <div class="ktype-cards" role="radiogroup" aria-label="Privat eller erhverv">
+	      <button type="button" class="ktype-card" id="kt-privat" role="radio" aria-checked="false">
+	        <svg viewBox="0 0 48 48" fill="none" aria-hidden="true"><path d="M8 22 24 8l16 14" stroke="#FFF87B" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/><path d="M12 20v20h24V20" stroke="#FFF87B" stroke-width="3" stroke-linejoin="round"/><path d="M20 40V28h8v12" stroke="#FFF87B" stroke-width="3" stroke-linejoin="round"/></svg>
+	        <b>Privat</b>
+	        <small>Villa, rækkehus eller sommerhus</small>
+	      </button>
+	      <button type="button" class="ktype-card" id="kt-erhverv" role="radio" aria-checked="false">
+	        <svg viewBox="0 0 48 48" fill="none" aria-hidden="true"><rect x="10" y="8" width="20" height="32" stroke="#FFF87B" stroke-width="3" stroke-linejoin="round"/><path d="M30 18h8v22H10" stroke="#FFF87B" stroke-width="3" stroke-linejoin="round"/><path d="M16 15h3M21 15h3M16 21h3M21 21h3M16 27h3M21 27h3" stroke="#FFF87B" stroke-width="3" stroke-linecap="round"/></svg>
+	        <b>Erhverv</b>
+	        <small>Virksomhed, udlejning eller forening</small>
+	      </button>
+	    </div>
+	    <p class="ktype-note" id="kt-note">Erhverv: prisen her er vejledende — vi skræddersyr tilbuddet, når vi ringer.</p>
+	    <p class="tm-reassurance">Ingen binding. Vi ringer og bekræfter tallene, før noget koster dig en krone.</p>
+	    <div class="tm-nav">
+	      <button class="btn btn-nej" id="kt-tilbage">Tilbage</button>
+	      <button class="btn btn-ja" id="kt-videre" disabled>Videre</button>
+	    </div>
+	  </section>
+
+	  <!-- STEP 3 -->
+	  <section class="step verify" id="step-verify" aria-labelledby="tm-h2v">
+	    <h2 id="tm-h2v">Er det her din ejendom?</h2>
+	    <div class="adr" id="verify-adr"></div>
+	    <div class="foto-card">
+	      <span class="foto-badge" id="sf-badge">Luftfoto</span>
+      <canvas id="sf-canvas" class="sf-canvas" role="img" aria-label="Skråfoto af ejendommen"></canvas>
+	      <svg id="sf-fallback" viewBox="0 0 640 380" role="img" aria-label="Luftfoto af ejendom, demo-illustration">
+	        <rect width="640" height="380" fill="#FFFFF0"/>
+	        <rect x="0" y="0" width="640" height="380" fill="#e9e4c6"/>
+	        <path d="M0 300 Q160 260 320 300 T640 290 V380 H0 Z" fill="#d8d2ad"/>
+	        <rect x="70" y="60" width="500" height="270" fill="none" stroke="#86612A" stroke-width="3" stroke-dasharray="10 8"/>
+	        <rect x="120" y="120" width="180" height="120" fill="#4C3718"/>
+	        <polygon points="120,120 210,80 300,120" fill="#5a4322"/>
+	        <rect x="230" y="150" width="30" height="30" fill="#FFF87B"/>
+	        <rect x="150" y="150" width="30" height="30" fill="#FFF87B"/>
+	        <rect x="330" y="140" width="90" height="70" fill="#6b5227"/>
+	        <circle cx="480" cy="140" r="34" fill="#9aa06b"/>
+	        <circle cx="520" cy="200" r="24" fill="#9aa06b"/>
+	        <circle cx="450" cy="230" r="20" fill="#9aa06b"/>
+	        <rect x="120" y="270" width="300" height="26" fill="#c9c39f"/>
+	        <text x="88" y="52" font-family="DM Sans, sans-serif" font-size="15" fill="#86612A">Matrikelgrænse (demo)</text>
+	      </svg>
+	    </div>
+	    <div class="verify-btns">
+	      <button class="btn btn-ja" id="btn-ja">Ja, det er min</button>
+	      <button class="btn btn-nej" id="btn-nej">Nej, prøv igen</button>
+	    </div>
+	    <small id="sf-note">Fotoet er kun til genkendelse — det påvirker ikke din pris.</small>
+	    <p class="tm-reassurance">Ingen binding. Vi ringer og bekræfter tallene, før noget koster dig en krone.</p>
+	    <div class="tm-nav">
+	      <button class="btn btn-nej" id="vf-tilbage">Tilbage</button>
+	    </div>
+	  </section>
+
+	  <!-- STEP 4 -->
+	  <section class="step losning" id="step-losning" aria-labelledby="tm-h2l">
+	    <h2 id="tm-h2l" style="position:absolute;left:-9999px">Hvad skal vi hjælpe med?</h2>
+	    <div class="topbar">
+	      <div class="adr-line">
+	        <svg class="pin" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 21s-7-6.1-7-11a7 7 0 1 1 14 0c0 4.9-7 11-7 11Z" stroke="#4C3718" stroke-width="2"/><circle cx="12" cy="10" r="2.6" fill="#4C3718"/></svg>
+	        <span class="adr-txt"><span class="lbl">Din adresse</span><span id="t-adr"></span></span>
+	      </div>
+	      <button type="button" class="ls-skift" id="ls-skift">Skift adresse</button>
+	    </div>
+
+	    <p class="socio tm-enlinje"><b>Én bil. Én dag. Alt det her.</b></p>
+	    <p class="socio">Sæt flueben ved det, du vil have, og vælg hvor tit vi kommer. Ved du det ikke, så gætter vi — vi tjekker alt sammen, når vi ringer.</p>
+	    <div class="rows" id="rows"></div>
+	    <p class="tm-freq-note">Flere eller færre besøg om året ændrer ikke prisen — den du ser, er den du betaler.</p>
+	    <div class="tm-sticky" id="tm-sticky" role="status" aria-live="polite">
+	      <span class="tm-sticky-count" id="tm-sticky-count">0 ting valgt</span>
+	      <span class="tm-sticky-mid">Ét besøg klarer det hele</span>
+	      <span class="tm-sticky-total" id="tm-sticky-total">0 kr i alt</span>
+	    </div>
+	    <p class="gaps">Services markeret "Inkluderet — aftales ved opkald" eller "Pris ved besøg" aftaler vi, når vi ringer — uden det koster dig noget.</p>
+	    <div class="tm-rabat" id="tm-rabat" hidden></div>
+
+	    <p class="socio"><b>Betaling</b> – ingen binding.</p>
+	    <div class="ktype-cards bt-cards bt-cards--single">
+	      <div class="ktype-card bt-card bt-card--engang">
+	        <svg class="bt-icon" viewBox="0 0 48 48" fill="none" aria-hidden="true"><rect x="8" y="14" width="32" height="26" rx="3" stroke="currentColor" stroke-width="3"/><path d="M8 21h32" stroke="currentColor" stroke-width="3"/><path d="M16 8v10M32 8v10" stroke="currentColor" stroke-width="3" stroke-linecap="round"/></svg>
+	        <span class="bt-pris"><span class="bt-pris-num"><b id="bt-total">–</b><small>kr i alt</small></span></span>
+	        <small class="bt-saeson bt-saeson--neutral">Ingen binding — du betaler først, når vi rent faktisk har været forbi.</small>
+	      </div>
+	    </div>
+
+	    <p class="tm-reassurance">Ingen binding. Vi ringer og bekræfter tallene, før noget koster dig en krone.</p>
+	    <div class="tm-nav">
+	      <button class="btn btn-nej" id="ls-tilbage">Tilbage</button>
+	      <button class="btn btn-ja" id="ls-videre" disabled>Videre</button>
+	    </div>
+	  </section>
+
+	  <!-- STEP 5 -->
+	  <section class="step kontakt" id="step-kontakt" aria-labelledby="tm-h2k">
+	    <h2 id="tm-h2k">Næsten i mål</h2>
+	    <p>Vi ringer og bekræfter tallene, før noget koster dig en krone.</p>
+	    <div id="k-cvr-wrap" class="k-cvr-wrap" hidden>
+	      <label for="k-cvr">CVR-nummer (valgfrit — udfylder firmaoplysninger automatisk)</label>
+	      <input id="k-cvr" type="text" inputmode="numeric" autocomplete="off" maxlength="8" placeholder="8 cifre">
+	      <div class="rk-note" id="k-cvr-status" role="status" aria-live="polite" hidden></div>
+	      <label for="k-firma">Firmanavn</label>
+	      <input id="k-firma" type="text" autocomplete="organization" maxlength="200">
+	      <label for="k-firma-adr">Firmaadresse</label>
+	      <input id="k-firma-adr" type="text" autocomplete="street-address" maxlength="200" placeholder="Vejnavn og nr., postnr. og by">
+	    </div>
+	    <label for="k-navn">Fulde navn</label>
+	    <input id="k-navn" type="text" autocomplete="name" maxlength="120">
+	    <label for="k-tlf">Telefon</label>
+	    <input id="k-tlf" type="tel" autocomplete="tel" inputmode="tel" maxlength="40">
+	    <label for="k-mail">E-mail (valgfri)</label>
+	    <input id="k-mail" type="email" autocomplete="email" maxlength="200">
+	    <label for="k-note">Noget vi skal vide? (valgfrit)</label>
+	    <textarea id="k-note" rows="3" maxlength="2000"></textarea>
+	    <button type="button" class="rk-toggle" id="rk-toggle" aria-expanded="false" aria-controls="rk-wrap">Har du en rabatkode?</button>
+	    <div id="rk-wrap" hidden>
+	    <label for="k-rabat">Rabatkode</label>
+	    <input id="k-rabat" type="text" autocomplete="off" autocapitalize="characters" spellcheck="false" maxlength="40">
+	    <div class="rk-note" id="k-rabat-status" role="status" aria-live="polite" hidden></div>
+	    </div>
+	    <div class="tm-trust">
+	      <img src="/assets/img/kristian.webp" alt="Kristian, medstifter af Karltoffel" width="56" height="56" loading="lazy">
+	      <div><b>Kristian ringer dig op</b> — medstifter og den, der holder styr på de heldige kartofler.<br>
+	      <span class="tm-trust-quote">"De ringede præcis som lovet. Alt det kedelige bare forsvandt."</span></div>
+	    </div>
+	    <div class="err" id="k-err">Udfyld navn og telefonnummer, så vi kan ringe dig op.</div>
+	    <div class="verify-btns" style="justify-content:flex-start">
+	      <button class="btn btn-ja" id="btn-send">Send og bliv kontaktet</button>
+	      <button class="btn btn-nej" id="btn-tilbage">Tilbage</button>
+	    </div>
+	  </section>
+
+	  <!-- STEP 6 -->
+	  <section class="step tak" id="step-tak" aria-labelledby="tm-h2t">
+	    <h2 id="tm-h2t">Tak, heldige kartoffel</h2>
+	    <p>Vi har lagt dit opkald i kalenderen og ringer hurtigst muligt — typisk inden for et kvarter i åbningstiden. Naboen bliver grøn af misundelse.</p>
+	    <div class="tak-ring" id="tak-ring" role="status"></div>
+	    <div class="tak-next">
+	      <b>Sådan går det videre:</b>
+	      <ol>
+	        <li>Vi ringer dig op og bekræfter tallene sammen.</li>
+	        <li>Vi aftaler den første dag — én bil, én dag, alt det valgte.</li>
+	        <li>Du læner dig tilbage. Du betaler først, når arbejdet er gjort.</li>
+	      </ol>
+	    </div>
+	    <div class="opsum" id="tak-opsum"></div>
+	  </section>
+	</div>
+
+	<div id="dig" role="status" aria-live="polite">
+	  <div class="dig-inner">
+	    <svg class="spade" viewBox="0 0 64 64" aria-hidden="true">
+	      <rect x="29" y="4" width="6" height="30" rx="3" fill="#FFF87B"/>
+	      <rect x="22" y="2" width="20" height="7" rx="3.5" fill="#FFF87B"/>
+	      <path d="M20 34 h24 v10 a12 12 0 0 1 -24 0 Z" fill="#FFF87B"/>
+	    </svg>
+	    <div id="dig-msg">Graver din matrikel frem...</div>
+	    <div class="dig-adr" id="dig-adr"></div>
+	    <div class="dig-bar"><div class="dig-fill" id="dig-fill"></div></div>
+	  </div>
+	</div>
+	</section>
+	<!-- ============ /TILBUDSMOTOR ============ -->
 <footer class="site-footer section--theme-secondary">
 	<div class="section__anchor" id="footer"></div>
 	<div class="grid-container">
@@ -554,7 +746,7 @@ src="https://www.facebook.com/tr?id=1574687980856727&amp;ev=PageView&amp;noscrip
 <li><a href="/p/handelsbetingelser">Handelsbetingelser</a></li>
 <li><a href="/p/cookiepolitik">Privatlivspolitik</a></li>
 <li><a href="/p/cookiepolitik">Cookiepolitik</a></li>
-<li><a href="/#tilbudsmotor">Få et tilbud</a></li>
+<li><a href="#tilbudsmotor">Få et tilbud</a></li>
 </ul>
 
 
@@ -590,7 +782,38 @@ src="https://www.facebook.com/tr?id=1574687980856727&amp;ev=PageView&amp;noscrip
 	
 
 
-			<a class="floating-cta" href="/#tilbudsmotor" aria-label="Bliv en heldig kartoffel">
+			<script>window.KARLTOFFEL=window.KARLTOFFEL||{};window.KARLTOFFEL.tilbudsmotorPage={service:"alge",source:"algerens-og-algebehandling-af-fliser-tag-og-facader"};</script>
+		<script src="/assets/js/tilbudsmotor.config.js?v=9"></script>
+		<script src="/assets/js/vendor/geotiff.min.js"></script>
+		<script src="/assets/js/skraafoto.js?v=12"></script>
+		<script src="/assets/js/tilbudsmotor.js?v=47"></script>
+		<script>
+/* Hero-formularen maa IKKE navigere vaek fra siden (Anton): submit forudfyller
+   tilbudsmotoren samme sted og starter flowet. meta-events.js fyrer stadig sit
+   '<slug>-hero' Lead-event paa submit (lytter uafhaengigt) -> CAPI-handoff virker. */
+(function(){
+  var f = document.querySelector("form.sp-form__fields");
+  if(!f || f.__ktHeroBound) return;
+  f.__ktHeroBound = true;
+  f.addEventListener("submit", function(e){
+    e.preventDefault();
+    function g(n){ var el = f.querySelector('[name="'+n+'"]'); return el ? el.value.trim() : ""; }
+    try {
+      var samlet = [g("adresse"), g("postnummer")].filter(Boolean).join(", ");
+      var adr = document.getElementById("adr-input");
+      if(samlet && adr){ adr.value = samlet; adr.dispatchEvent(new Event("input", {bubbles:true})); }
+      var n = document.getElementById("k-navn"), t = document.getElementById("k-tlf");
+      if(g("navn") && n && !n.value) n.value = g("navn");
+      if(g("telefon") && t && !t.value) t.value = g("telefon");
+    } catch(err) {}
+    var tm = document.getElementById("tilbudsmotor");
+    if(tm) tm.scrollIntoView({ behavior:"smooth", block:"start" });
+    var videre = document.getElementById("adr-videre");
+    if(videre) videre.click();
+  });
+})();
+		</script>
+		<a class="floating-cta" href="#tilbudsmotor" aria-label="Bliv en heldig kartoffel">
 		<span class="floating-cta__ring" aria-hidden="true"></span>
 		<span class="floating-cta__disc"><span class="floating-cta__text">Bliv en heldig kartoffel</span></span>
 	</a>
