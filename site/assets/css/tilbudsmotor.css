@@ -246,6 +246,20 @@
   .tm-flow .pw-lbl,.tm-flow .fw-lbl{display:none}
   .tm-flow .pw-note{white-space:normal;font-size:10.5px;line-height:1.12;text-align:center}
 }
+/* Mobil (<700px): de horisontale grid-kolonner (navn | antal | pris | stepper)
+   bliver for smalle og overlapper hinanden — stack dem i stedet lodret:
+   navn+beskrivelse → antal-felt → pris → besøg-stepper. Eksplicit row-gap så
+   intet lægger OvenI hinanden. Checkbox + navn deler første linje. Fravalgte
+   felter (visibility:hidden) fjernes helt fra flowet med display:none, så de
+   ikke efterlader tomme linjer i den stakkede layout. Desktop (>=1024px)
+   og melleombreaket (700-1023px) påvirkes ikke. */
+@media (max-width:700px){
+  .tm-flow .row{grid-template-columns:auto minmax(0,1fr);grid-template-areas:"chk navn" ". pw" ". fw";row-gap:9px;column-gap:10px;align-items:start}
+  .tm-flow .qrow{grid-template-areas:"chk navn" ". qw" ". pw" ". fw"}
+  .tm-flow .qw,.tm-flow .pw,.tm-flow .fw{align-items:flex-start}
+  .tm-flow .pw-note{text-align:left}
+  .tm-flow .row--off .qw,.tm-flow .row--off .pw,.tm-flow .row--off .fw{display:none}
+}
 
 /* Kundetype-kortene (trin 2) skal have ENS bredde, når de stakker */
 @media (max-width:720px){ .tm-flow .ktype-card{width:100%} }
