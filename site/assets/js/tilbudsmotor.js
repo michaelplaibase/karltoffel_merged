@@ -590,6 +590,21 @@ $("btn-send").addEventListener("click", ()=>{
     services: valgt.map(p=>({ id:p.id, navn:p.navn, wm:p.wm, qty:p.qty, enhed:p.enhed, freq:p.freq, pris:p.pris, erPakkevare:p.pakke })),
     estimat: { total: Math.round(totalNet), count: r.count }
   };
+  /* Meta CAPI-dedup: tilfældig event_id deles mellem browser-pixelens
+     fbq('track') og CRM'ets server-side Conversions API-kald, så Meta tæller
+     konverteringen én gang. Se lib/meta-capi.ts i CRM'et. */
+  const metaEventId = (window.crypto && typeof window.crypto.randomUUID === "function")
+    ? window.crypto.randomUUID()
+    : "tm-" + Date.now().toString(36) + "-" + Math.random().toString(36).slice(2, 12);
+  payload.meta_capi = { event_id: metaEventId, content_name: "tilbudsmotor-forside" };
+  /* Hero-/landingformularer (servicesider) gemte deres eget Lead-event i
+     sessionStorage — fragt det med som meta_capi_prior, så CAPI-eventet får
+     samme content_name ('<slug>-hero' osv.) som browser-eventet. Ryddes
+     først når leadet ER sendt (fejler forsøget, skal det overleve retry). */
+  try {
+    const pending = JSON.parse(window.sessionStorage.getItem("ktMetaPendingLead") || "null");
+    if (pending && pending.event_id && pending.content_name) payload.meta_capi_prior = pending;
+  } catch (e) {}
   /* KONTRAKT: feltnavn `rabatkode` (streng, trimmet + uppercased) — kun med når koden er valid. */
   if(state.rabatkode.valid) payload.rabatkode = state.rabatkode.code;
   /* Erhverv: CVR + firmaoplysninger er valgfrie ekstra felter på leadet —
@@ -627,12 +642,16 @@ $("btn-send").addEventListener("click", ()=>{
     pushLeadEvent(valgt, r, totalNet, kodePct);
 
     /* Meta Pixel: Lead-konvertering med unikt content_name, saa der kan
-       oprettes custom conversions pr. formular i Meta. */
+       oprettes custom conversions pr. formular i Meta. eventID matcher
+       CAPI-kaldet (payload.meta_capi.event_id) — dedup i Meta. */
     try {
       if (typeof fbq === "function") {
-        fbq("track", "Lead", { content_name: "tilbudsmotor-forside", content_type: "form", value: Math.round(totalNet), currency: "DKK" });
+        fbq("track", "Lead", { content_name: "tilbudsmotor-forside", content_type: "form", value: Math.round(totalNet), currency: "DKK" }, { eventID: metaEventId });
       }
     } catch (e) {}
+    /* Prior-hero-eventet er nu fragtet sikkert til CRM'et — ryd det, så en
+       senere tilbudsmotor-indsendelse ikke sender det samme event_id igen. */
+    try { window.sessionStorage.removeItem("ktMetaPendingLead"); } catch (e) {}
 
     /* CRM'et returnerer call:"booked 2026-07-06T15:15:00" når opkalds-slottet
        er lagt i kalenderen — vis det konkrete tidspunkt til kunden. */

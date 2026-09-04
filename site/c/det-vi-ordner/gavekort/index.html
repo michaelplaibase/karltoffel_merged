@@ -181,7 +181,6 @@ fbq('track', 'PageView');
 src="https://www.facebook.com/tr?id=1574687980856727&amp;ev=PageView&amp;noscript=1"
 /></noscript>
 <!-- End Meta Pixel Code -->
-<script src="/assets/js/meta-events.js?v=1" defer data-forms='[{"selector": "#gk-form", "content_name": "gavekort-bestilling"}]'></script>
 </head>
 
 
@@ -767,6 +766,17 @@ src="https://www.facebook.com/tr?id=1574687980856727&amp;ev=PageView&amp;noscrip
 			btn.disabled = true;
 			btn.textContent = 'Sender …';
 
+			/* Meta CAPI-dedup: samme event_id til fbq (browser) og CRM'ets
+			   server-side Conversions API-kald (via body.meta_capi). */
+			var metaEventId;
+			try {
+				metaEventId = (window.crypto && typeof window.crypto.randomUUID === 'function')
+					? window.crypto.randomUUID()
+					: 'gk-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 12);
+			} catch (e) {
+				metaEventId = 'gk-' + Date.now().toString(36);
+			}
+
 			fetch(CRM + '/api/giftcards/checkout', {
 				method: 'POST',
 				headers: { 'content-type': 'application/json' },
@@ -778,7 +788,8 @@ src="https://www.facebook.com/tr?id=1574687980856727&amp;ev=PageView&amp;noscrip
 					recipientEmail: field('gk-recipientEmail').toLowerCase(),
 					buyerName: field('gk-buyerName'),
 					buyerEmail: field('gk-buyerEmail').toLowerCase(),
-					buyerPhone: field('gk-buyerPhone')
+					buyerPhone: field('gk-buyerPhone'),
+					meta_capi: { event_id: metaEventId, content_name: 'gavekort-bestilling' }
 				})
 			}).then(function (res) {
 				return res.json().catch(function () { return {}; }).then(function (data) { return { ok: res.ok, data: data }; });
@@ -786,7 +797,7 @@ src="https://www.facebook.com/tr?id=1574687980856727&amp;ev=PageView&amp;noscrip
 				if (r.ok && r.data.ok) {
 					try {
 						if (typeof window.fbq === 'function') {
-							window.fbq('track', 'Lead', { content_name: 'gavekort-bestilling', content_type: 'form', value: amt / 100, currency: 'DKK' });
+							window.fbq('track', 'Lead', { content_name: 'gavekort-bestilling', content_type: 'form', value: amt / 100, currency: 'DKK' }, { eventID: metaEventId });
 						}
 					} catch (e) {}
 					form.style.display = 'none';

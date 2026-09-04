@@ -5,6 +5,7 @@ import { bookCallEvent } from "@/lib/gcal";
 import { postMessage } from "@/lib/slack";
 import { buildLeadBlocks, leadFallbackText } from "@/lib/slack-lead";
 import { parseLeadPayload } from "@/lib/tilbudsmotor-pricing";
+import { parseMetaLead, sendMetaLead } from "@/lib/meta-capi";
 import type { NextRequest } from "next/server";
 
 // Inbound lead webhook for the public website form. No session cookie —
@@ -175,6 +176,21 @@ export async function POST(req: NextRequest) {
 
   const tm = parseTmPayload(body, rabat);
 
+  // Meta CAPI (server-side Lead-event med dedup: browserens fbq('track') og
+  // dette kald deler event_id via payload.meta_capi — se lib/meta-capi.ts).
+  // Må ALDRIG vælte lead-indtagelsen: sendMetaLead kaster aldrig, og vi venter
+  // blot på resultatet til logging (3s AbortController indeni).
+  const meta = parseMetaLead(body);
+  // Hero-/landingformularer (GET → /#tilbudsmotor) skød deres browser-Lead på
+  // servicesiden; deres event_id fragtes i meta_capi_prior, så CAPI-eventet
+  // får samme content_name som browser-eventet ('<slug>-hero' osv.).
+  const metaPrior = parseMetaLead(body, "meta_capi_prior");
+  const fireCapi = async (m: { eventId: string; contentName: string } | null) => {
+    if (!m) return;
+    const capi = await sendMetaLead({ eventId: m.eventId, contentName: m.contentName, sourceUrl: req.url, clientIp: ip, clientUserAgent: req.headers.get("user-agent") });
+    console.log(`[leads] meta-capi: ${capi} (${m.contentName})`);
+  };
+
   // Dedup: merge into an OPEN lead (<=30 days) with the same normalised email/phone.
   const since = new Date(Date.now() - 30 * 86_400_000);
   const dupOr: object[] = [];
@@ -199,6 +215,10 @@ export async function POST(req: NextRequest) {
     // Slack pinges dog alligevel: kunden har rørt tilbudsmotoren igen, og det
     // nye pakkevalg kan ændre prisen på et lead Kristian allerede har set.
     const slack = await pingSlack(merged, merged.payload, "Opfølgning på et eksisterende emne — mængder/pakkevalg kan være ændret.");
+    // Samme kontrakt som browser-pixelen: fbq('track') fyres ved HVER
+    // indsendelse (også dedup-merges), så CAPI fyres også her.
+    await fireCapi(meta);
+    await fireCapi(metaPrior);
     return json({ id: existing.id, deduplicated: true, slack }, 200);
   }
 
@@ -249,6 +269,10 @@ export async function POST(req: NextRequest) {
   }
 
   const slack = await pingSlack(lead, lead.payload);
+
+  // Meta CAPI — efter at leadet er gemt; fejler stille (lib/meta-capi.ts).
+  await fireCapi(meta);
+  await fireCapi(metaPrior);
 
   return json({ id: lead.id, deduplicated: false, call, slack }, 201);
 }

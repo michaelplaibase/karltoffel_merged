@@ -33,6 +33,17 @@
 		button.textContent = "Sender...";
 		status.hidden = true;
 
+		/* Meta CAPI-dedup: samme event_id til fbq (browser) og CRM'ets
+		   server-side Conversions API-kald (via payload.meta_capi). */
+		var metaEventId;
+		try {
+			metaEventId = (window.crypto && typeof window.crypto.randomUUID === "function")
+				? window.crypto.randomUUID()
+				: "erh-" + Date.now().toString(36) + "-" + Math.random().toString(36).slice(2, 12);
+		} catch (e) {
+			metaEventId = "erh-" + Date.now().toString(36);
+		}
+
 		fetch("/api/lead", {
 			method: "POST",
 			headers: { "content-type": "application/json" },
@@ -43,7 +54,8 @@
 				address: address,
 				kundetype: "erhverv",
 				source: "erhverv-tilbagekald",
-				message: "Ønsker opkald om erhvervsservice. Adresse: " + address
+				message: "Ønsker opkald om erhvervsservice. Adresse: " + address,
+				meta_capi: { event_id: metaEventId, content_name: "erhverv-tilbagekald" }
 			})
 		})
 		.then(function(response){
@@ -59,7 +71,7 @@
 			} catch(e){}
 			try {
 				if (typeof window.fbq === "function") {
-					window.fbq("track", "Lead", { content_name: "erhverv-tilbagekald", content_type: "form" });
+					window.fbq("track", "Lead", { content_name: "erhverv-tilbagekald", content_type: "form" }, { eventID: metaEventId });
 				}
 			} catch(e){}
 		})
