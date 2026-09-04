@@ -424,6 +424,30 @@ btnNej.addEventListener("click", ()=>{
 });
 $("btn-tilbage").addEventListener("click", ()=> visStep("step-losning"));
 
+
+/* ============ URLPrefill: navn/telefon/adresse/postnummer fra simple formularer ============ */
+/* Simple hero-formularer paa servicesider + landingsider er GET-forms med
+   action="/#tilbudsmotor". Parameterne laeses her og forudfylder kontakt-
+   trinnet + adressefeltet, saa kunden ikke skal skrive det hele to gange.
+   Fejler stille — prefill maa aldrig blokere motoren. */
+(function URLPrefill(){
+  try {
+    var q = new URLSearchParams(window.location.search);
+    var navn = (q.get("navn") || "").trim();
+    var tlf  = (q.get("telefon") || "").trim();
+    var adr  = (q.get("adresse") || "").trim();
+    var pnr  = (q.get("postnummer") || "").trim();
+    if(!navn && !tlf && !adr && !pnr) return;
+    if(!/^[a-zA-ZæøåÆØÅ .\-]{2,80}$/.test(navn)) navn = "";
+    if(tlf.replace(/\D/g, "").length < 8) tlf = "";
+    var samlet = [adr, pnr].filter(Boolean).join(", ");
+    if(samlet && adrInput){ adrInput.value = samlet; state.adresse = samlet; }
+    var nIn = $("k-navn"), tIn = $("k-tlf");
+    if(navn && nIn && !nIn.value) nIn.value = navn;
+    if(tlf && tIn && !tIn.value) tIn.value = tlf;
+  } catch(e) {}
+})();
+
 /* ============ RABATKODE (valgfri, kontakt-trinnet) ============ */
 /* Valideres server-side via sitets read-only relay (/api/rabatkode?code=X →
    {valid, percent}). Valid kode = EKSTRA procent-rabat oven i mængderabatten.
@@ -601,6 +625,14 @@ $("btn-send").addEventListener("click", ()=>{
     /* Leadet er oprettet — send konverteringen til GTM først, så den ikke kan
        gå tabt hvis noget i tak-siden nedenfor fejler. */
     pushLeadEvent(valgt, r, totalNet, kodePct);
+
+    /* Meta Pixel: Lead-konvertering med unikt content_name, saa der kan
+       oprettes custom conversions pr. formular i Meta. */
+    try {
+      if (typeof fbq === "function") {
+        fbq("track", "Lead", { content_name: "tilbudsmotor-forside", content_type: "form", value: Math.round(totalNet), currency: "DKK" });
+      }
+    } catch (e) {}
 
     /* CRM'et returnerer call:"booked 2026-07-06T15:15:00" når opkalds-slottet
        er lagt i kalenderen — vis det konkrete tidspunkt til kunden. */

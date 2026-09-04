@@ -57,6 +57,11 @@
 					lead_kundetype: "erhverv"
 				});
 			} catch(e){}
+			try {
+				if (typeof window.fbq === "function") {
+					window.fbq("track", "Lead", { content_name: "erhverv-tilbagekald", content_type: "form" });
+				}
+			} catch(e){}
 		})
 		.catch(function(){
 			showStatus("Vi kunne ikke sende din forespørgsel lige nu. Prøv igen om et øjeblik, eller ring til os.", true);
