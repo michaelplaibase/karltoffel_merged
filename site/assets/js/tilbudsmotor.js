@@ -704,7 +704,7 @@ $("btn-send").addEventListener("click", ()=>{
         kodeLinje +
         'Pr. besøg: <b><span id="tak-total" class="tm-anim-kr">' + kr(totalNet) + '</span></b>' +
         ' · <b><span id="tak-aar" class="tm-anim-kr">' + kr(yearNet) + '</span>/år</b><br>' +
-        'Ca. ' + kr(Math.min(yearNet * 0.26, 18300)) + '/år i skattefradrag (servicefradraget, 2026)<br>' +
+        'Ca. ' + kr(Math.min(yearNet * 0.26, 18300)) + '/år i skattefradrag (servicefradraget, 2026) — ≈ <b>' + kr(yearNet - Math.min(yearNet * 0.26, 18300)) + '/år efter fradrag</b><br>' +
         'Estimat — endelig pris aftaler vi ved opkaldet';
       /* Tak-totalerne tæller blødt op fra 0 (count-animationen). */
       animateNumber(opsum.querySelector("#tak-total"), 0, totalNet, kr);
@@ -892,7 +892,7 @@ function opdaterSticky(){
   if(cnt) cnt.textContent = r.count + " ting valgt";
   if(tot){
     const old = tot.dataset.v;
-    tot.textContent = kr(r.yearTotal) + "/år i alt · " + kr(r.total) + " pr. besøg · ca. " + kr(fradrTotal) + "/år i skattefradrag";
+    tot.textContent = kr(r.yearTotal) + "/år i alt · " + kr(r.total) + " pr. besøg · ca. " + kr(fradrTotal) + "/år i skattefradrag (≈ " + kr(r.yearTotal - fradrTotal) + "/år efter fradrag)";
     /* Runde 2: kort pulse på beløbet når det ændrer sig — prisen skal mærkes. */
     if(old !== undefined && old !== String(r.yearTotal)){
       tot.classList.remove("tm-pulse");
@@ -1064,7 +1064,7 @@ function opdater(){
       const unitTxt = "pr. besøg · " + kr(val * p.freq) + "/år ved " + p.freq + " besøg";
       /* Servicefradrag 2026: 26% af arbejdsløn (inkl. moms), maks 18.300 kr/år pr. person. */
       const fradr = Math.min(val * p.freq * 0.26, 18300);
-      const fradrTxt = "Ca. " + kr(fradr) + "/år i skattefradrag";
+      const fradrTxt = "Ca. " + kr(fradr) + "/år i skattefradrag (≈ " + kr(val * p.freq - fradr) + "/år efter fradrag)";
       const prev = parseFloat(el.dataset.val);
       const b = el.querySelector(".pw-val");
       const u = el.querySelector(".pw-unit");
