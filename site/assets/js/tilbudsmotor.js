@@ -24,7 +24,7 @@ const $ = (id) => ROOT.querySelector("#" + id);
 /*PRICING-START*/
 const PRODUCTS = [
   /* ---- De mest valgte services (ikke forudvalgt — kunden vælger selv) ---- */
-  {id:"vinduer",  navn:"Udvendig vinduesvask",       enhed:"glas",       pris:15.30, note:"Udvendige døre, vinduer og porte",                 qty:0,   freq:8,  fmax:12, on:false, pakke:true, kat:"pakke", wm:"Udvendig vinduesvask pr glas"},
+  {id:"vinduer",  navn:"Udvendig vinduesvask",       enhed:"glas",       pris:20.00, note:"Udvendige døre, vinduer og porte",                 qty:0,   freq:8,  fmax:12, on:false, pakke:true, kat:"pakke", wm:"Udvendig vinduesvask pr glas"},
   {id:"haek",     navn:"Hækklipning",                    enhed:"m hæk",      pris:27.50, note:"1 side, under 220 cm",            qty:65,  freq:1,  fmax:3,  on:false, pakke:true, kat:"pakke", wm:"Hækklipning 1 side pr meter Under 220 cm"},
   {id:"green",    navn:"Greenkeeper græspleje",          enhed:"m² plæne",   pris:2.30,  note:"Gødning og pleje af plænen",      qty:450, freq:3,  fmax:6,  on:false, pakke:true, kat:"pakke", wm:"Greenkeeper græspleje"},
   {id:"alge",     navn:"Algebehandling af tag",          enhed:"m² tag",     pris:9.80,  min:950,  note:"Mos og alger, beregnet på skråt tagareal", qty:120, freq:1, fmax:2, on:false, pakke:true, kat:"pakke", wm:"Algebehandling af tag"},
@@ -50,16 +50,23 @@ const PRODUCTS = [
 const DEFAULTS = PRODUCTS.map(function(p){ return Object.assign({}, p); });
 
 /* Prisen er bare en sum: hver valgt service lægges til, og det er det.
-   Ingen regning pr. besøg, ingen snit — det tal kunderne spurgte til. */
+   Ingen regning pr. besøg, ingen snit — det tal kunderne spurgte til.
+   total    = én besøgs-runde (sum af max(pris*qty, min))
+   yearTotal= samme linjer ganget med freq (besøg/år) — det ÅRLIGTE estimat,
+              der vises i sticky/linjer/tak-side og sendes til GTM/leadet. */
 function beregn(products){
-  var total = 0, count = 0;
+  var total = 0, yearTotal = 0, count = 0;
   for (var i=0;i<products.length;i++){
     var p = products[i];
     if(!p.on) continue;
     count += 1;                                   /* uprisede ("indeholdt") tæller også med */
-    if(p.pris != null && p.qty > 0) total += Math.max(p.pris * p.qty, p.min || 0);
+    if(p.pris != null && p.qty > 0){
+      var linje = Math.max(p.pris * p.qty, p.min || 0);
+      total += linje;
+      yearTotal += linje * p.freq;
+    }
   }
-  return { total: total, count: count };
+  return { total: total, yearTotal: yearTotal, count: count };
 }
 /*PRICING-END*/
 
@@ -380,11 +387,12 @@ function vaelgBetaling(t){
   if(lsVidere) lsVidere.disabled = false;
 }
 
-/* Pris-tekst på betalingskortet: summen af de valgte services, intet andet. */
+/* Pris-tekst på betalingskortet: det ÅRLIGTE estimat (freq ganget ind) —
+   samme tal som sticky-totalens første del. */
 function opdaterBetaling(){
   if(!btTotal) return;
   const r = beregn(PRODUCTS);
-  btTotal.textContent = DKK0.format(Math.round(r.total));
+  btTotal.textContent = DKK0.format(Math.round(r.yearTotal));
 }
 
 /* ============ VIDERE/TILBAGE-NAVIGATION ============ */
@@ -575,7 +583,8 @@ $("btn-send").addEventListener("click", ()=>{
   const ktLabel = state.kundetype === "erhverv" ? " · Erhverv" : (state.kundetype === "privat" ? " · Privat" : "");
   /* Rabatkode: ekstra procentrabat, trukket fra den samlede sum. */
   const kodePct = state.rabatkode.valid ? state.rabatkode.percent : 0;
-  const totalNet = r.total * (1 - kodePct/100);
+  const totalNet = r.total * (1 - kodePct/100);        /* pr. besøg, netto */
+  const yearNet = r.yearTotal * (1 - kodePct/100);     /* ÅRLIGT netto estimat (freq ganget ind) */
 
   /* Lead-payload til CRM'et: kontaktinfo + valgte services (med WorkMaker-
      nøgle under overgangen) + estimat + kundetype. Sendes via sitets relay
@@ -588,7 +597,7 @@ $("btn-send").addEventListener("click", ()=>{
     betaling: state.betaling,
     source: "tilbudsmotor",
     services: valgt.map(p=>({ id:p.id, navn:p.navn, wm:p.wm, qty:p.qty, enhed:p.enhed, freq:p.freq, pris:p.pris, erPakkevare:p.pakke })),
-    estimat: { total: Math.round(totalNet), count: r.count }
+    estimat: { total: Math.round(yearNet), count: r.count }   /* årligt netto estimat */
   };
   /* Meta CAPI-dedup: tilfældig event_id deles mellem browser-pixelens
      fbq('track') og CRM'ets server-side Conversions API-kald, så Meta tæller
@@ -639,14 +648,14 @@ $("btn-send").addEventListener("click", ()=>{
   .then((data)=>{
     /* Leadet er oprettet — send konverteringen til GTM først, så den ikke kan
        gå tabt hvis noget i tak-siden nedenfor fejler. */
-    pushLeadEvent(valgt, r, totalNet, kodePct);
+    pushLeadEvent(valgt, r, yearNet, kodePct);
 
     /* Meta Pixel: Lead-konvertering med unikt content_name, saa der kan
        oprettes custom conversions pr. formular i Meta. eventID matcher
        CAPI-kaldet (payload.meta_capi.event_id) — dedup i Meta. */
     try {
       if (typeof fbq === "function") {
-        fbq("track", "Lead", { content_name: "tilbudsmotor-forside", content_type: "form", value: Math.round(totalNet), currency: "DKK" }, { eventID: metaEventId });
+        fbq("track", "Lead", { content_name: "tilbudsmotor-forside", content_type: "form", value: Math.round(yearNet), currency: "DKK" }, { eventID: metaEventId });
       }
     } catch (e) {}
     /* Prior-hero-eventet er nu fragtet sikkert til CRM'et — ryd det, så en
@@ -675,9 +684,12 @@ $("btn-send").addEventListener("click", ()=>{
         "<b>" + esc(state.adresse) + ktLabel + "</b><br>" +
         "Valgt: " + linjer + "<br>" +
         kodeLinje +
-        'Samlet pris: <b><span id="tak-total" class="tm-anim-kr">' + kr(totalNet) + '</span></b>';
+        'Pr. besøg: <b><span id="tak-total" class="tm-anim-kr">' + kr(totalNet) + '</span></b>' +
+        ' · <b><span id="tak-aar" class="tm-anim-kr">' + kr(yearNet) + '</span>/år</b><br>' +
+        'Estimat — endelig pris aftaler vi ved opkaldet';
       /* Tak-totalerne tæller blødt op fra 0 (count-animationen). */
       animateNumber(opsum.querySelector("#tak-total"), 0, totalNet, kr);
+      animateNumber(opsum.querySelector("#tak-aar"), 0, yearNet, kr);
     }
     rydState();   /* leadet er sendt — intet at gendanne længere */
     visStep("step-tak");
@@ -719,6 +731,7 @@ function pushLeadEvent(valgt, r, totalNet, kodePct){
     lead_coupon_discount_pct: kodePct,
     items: valgt.map(function(p, i){
       const enhedspris = p.pris == null ? 0 : p.pris;
+      const linje = (p.pris == null || !(p.qty > 0)) ? 0 : Math.max(enhedspris * p.qty, p.min || 0);
       return {
         item_id: p.id,
         item_name: p.navn,
@@ -728,7 +741,7 @@ function pushLeadEvent(valgt, r, totalNet, kodePct){
         price: enhedspris,
         quantity: p.qty,
         frequency_per_year: p.freq,
-        item_revenue: Math.round(enhedspris * p.qty)
+        item_revenue: Math.round(linje * p.freq)   /* årligt — summer op til lead_value_total */
       };
     })
   };
@@ -855,22 +868,23 @@ function renderRows(){
   });
 }
 
-/* Sticky opsummeringslinje: "X ting valgt · Ét besøg klarer det hele · Y kr i alt".
-   Samme sum-beregning som overalt ellers (beregn) — live opdateret via opdater(). */
+/* Sticky opsummeringslinje: "X ting valgt · Ét besøg klarer det hele · Y kr/år i alt · Z kr pr. besøg".
+   Samme sum-beregning som overalt ellers (beregn) — live opdateret via opdater().
+   Y = yearTotal (freq ganget ind), Z = total pr. besøgs-runde. */
 function opdaterSticky(){
   const r = beregn(PRODUCTS);
   const cnt = $("tm-sticky-count"), tot = $("tm-sticky-total");
   if(cnt) cnt.textContent = r.count + " ting valgt";
   if(tot){
     const old = tot.dataset.v;
-    tot.textContent = kr(r.total) + " i alt";
+    tot.textContent = kr(r.yearTotal) + "/år i alt · " + kr(r.total) + " pr. besøg";
     /* Runde 2: kort pulse på beløbet når det ændrer sig — prisen skal mærkes. */
-    if(old !== undefined && old !== String(r.total)){
+    if(old !== undefined && old !== String(r.yearTotal)){
       tot.classList.remove("tm-pulse");
       void tot.offsetWidth;                       /* reflow → animation genstarter */
       tot.classList.add("tm-pulse");
     }
-    tot.dataset.v = String(r.total);
+    tot.dataset.v = String(r.yearTotal);
   }
   /* Pr. kort: antal valgte i hvert kort. */
   SERVICE_CARDS.forEach(card => {
@@ -880,6 +894,30 @@ function opdaterSticky(){
     el.textContent = n + " valgt";
   });
 }
+
+/* Ca.-mængde pr. ydelse: kunden taster selv antal på ALLE ydelser med konkret
+   mængdeenhed (qw-input-mønsteret: numeric, min/max-klemme, p.touched).
+   lbl = label + placeholder-tekst, max = øvre klemme pr. enhedstype.
+   fliserens (pris:null, ingen enhed) får ikke felt. Auto-målet (skråfoto)
+   forudfylder stadig felter kunden ikke selv har rørt — se applyMeasurements. */
+const QTY_META = {
+  vinduer:        { lbl:"Antal døre, vinduer og porte", ph:"f.eks. 12",  max:300 },
+  vinduerind:     { lbl:"Antal døre, vinduer og porte", ph:"f.eks. 12",  max:300 },
+  solcelle:       { lbl:"Antal paneler",                ph:"f.eks. 20",  max:300 },
+  haek:           { lbl:"Ca. antal meter hæk",          ph:"f.eks. 65",  max:1000 },
+  green:          { lbl:"Ca. antal m² plæne",           ph:"f.eks. 450", max:5000 },
+  sammenriv:      { lbl:"Ca. antal m² plæne",           ph:"f.eks. 450", max:5000 },
+  alge:           { lbl:"Ca. antal m² tag",             ph:"f.eks. 120", max:2000 },
+  tagrender:      { lbl:"Ca. antal meter tagrende",     ph:"f.eks. 24",  max:500 },
+  ukrudt_sproejt: { lbl:"Ca. antal m² belægning",       ph:"f.eks. 60",  max:2000 },
+  ukrudt_fjern:   { lbl:"Ca. antal m² belægning",       ph:"f.eks. 60",  max:2000 },
+  algeflis:       { lbl:"Ca. antal m² belægning",       ph:"f.eks. 60",  max:2000 },
+  beskaering:     { lbl:"Antal træer",                  ph:"f.eks. 3",   max:50 },
+  drivhus:        { lbl:"Antal drivhuse",               ph:"f.eks. 1",   max:10 },
+  myre_ude:       { lbl:"Antal behandlinger",           ph:"f.eks. 1",   max:5 },
+  myre_inde:      { lbl:"Antal behandlinger",           ph:"f.eks. 1",   max:5 },
+  myre_saeson:    { lbl:"Antal behandlinger",           ph:"f.eks. 1",   max:5 }
+};
 
 function byggRaekke(p){
   const row = document.createElement("div");
@@ -910,29 +948,27 @@ function byggRaekke(p){
     navn.appendChild(hint);
   }
 
-  /* Antal døre, vinduer og porte — til udvendig OG indendørs vinduespudsning tæller
-     vi IKKE selv ruderne. Kunden skriver selv, hvor mange der skal pudses, og prisen
-     er bare enhedsprisen ganget med det indtastede antal. Tomt felt = ingen pris endnu. */
+  /* Ca.-mængde — kunden taster selv antal (QTY_META). Prisen er enhedsprisen
+     ganget med det indtastede antal. Tomt felt = ingen pris endnu. */
   let qw = null;
-  if(p.id === "vinduer" || p.id === "vinduerind" || p.id === "solcelle"){
+  const qmeta = QTY_META[p.id];
+  if(qmeta){
     qw = document.createElement("div");
     qw.className = "qw";
     const qlbl = document.createElement("span"); qlbl.className = "qw-lbl";
-    qlbl.textContent = (p.id === "solcelle" ? "Antal paneler" : "Antal døre, vinduer og porte");
+    qlbl.textContent = qmeta.lbl;
     const qin = document.createElement("input");
     qin.type = "number"; qin.id = "qty-" + p.id; qin.inputMode = "numeric";
-    qin.min = "1"; qin.max = "300"; qin.step = "1";
-    qin.placeholder = "f.eks. 12";
+    qin.min = "1"; qin.max = String(qmeta.max); qin.step = "1";
+    qin.placeholder = qmeta.ph;
     qin.value = p.qty > 0 ? p.qty : "";
-    qin.setAttribute("aria-label", p.id === "solcelle"
-      ? "Antal paneler til solcellevask"
-      : "Antal døre, vinduer og porte til " + (p.id === "vinduerind" ? "vinduerne indeni huset" : "vinduerne på huset"));
+    qin.setAttribute("aria-label", qmeta.lbl + " til " + p.navn);
     qin.addEventListener("input", ()=>{
       const raw = qin.value.trim();
       if(raw === ""){ p.qty = 0; opdater(); return; }   /* tomt felt = vent på kunden */
       let v = Math.round(Number(raw));
       if(!isFinite(v) || v < 1) v = 1;
-      if(v > 300) v = 300;
+      if(v > qmeta.max) v = qmeta.max;
       if(String(v) !== raw) qin.value = v;              /* korriger minusser/komma/tal med decimaler */
       p.qty = v; p.touched = true;
       opdater();
@@ -975,7 +1011,7 @@ function opdaterRabat(){
   /* Rabatkode (fra kontakt-trinnet): vis den også her, så kunden ser koden
      ramme prisen med det samme — samme regnestykke som ved indsendelsen. */
   var kodePct = state.rabatkode.valid ? state.rabatkode.percent : 0;
-  var kodeKr = r.total * kodePct / 100;
+  var kodeKr = r.yearTotal * kodePct / 100;   /* årligt — samme grundlag som de viste beløb */
   var kodeHtml = kodePct > 0
     ? '<span class="tm-rabat-kode">Rabatkode <b>' + esc(state.rabatkode.code) + '</b>: ekstra <b>−' + kodePct + '%</b>' +
       (kodeKr > 0 ? ' (ca. <span class="tm-kode-kr tm-anim-kr">' + kr(kodeKr) + '</span>)' : '') + '</span>'
@@ -1010,15 +1046,19 @@ function opdater(){
       delete el.dataset.val;
     } else {
       const raw = p.pris * p.qty;
-      const val = p.min ? Math.max(raw, p.min) : raw;
+      const val = p.min ? Math.max(raw, p.min) : raw;    /* min-beløb gælder pr. besøg */
+      const unitTxt = "pr. besøg · " + kr(val * p.freq) + "/år ved " + p.freq + " besøg";
       const prev = parseFloat(el.dataset.val);
       const b = el.querySelector(".pw-val");
+      const u = el.querySelector(".pw-unit");
       if(!b){   /* første visning: skriv direkte (ingen animation fra ingenting) */
-        el.innerHTML = '<b class="pw-val">' + kr(val) + '</b><span class="pw-unit">i alt</span>';
+        el.innerHTML = '<b class="pw-val">' + kr(val) + '</b><span class="pw-unit">' + unitTxt + '</span>';
       } else if(isFinite(prev) && prev !== val){
         animateNumber(b, prev, val, kr);   /* mængde ændret → tæl blødt derhen */
+        if(u) u.textContent = unitTxt;
       } else {
         b.textContent = kr(val);
+        if(u) u.textContent = unitTxt;
       }
       el.dataset.val = val;
     }
