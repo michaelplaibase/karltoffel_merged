@@ -886,11 +886,13 @@ function renderRows(){
    Y = yearTotal (freq ganget ind), Z = total pr. besøgs-runde. */
 function opdaterSticky(){
   const r = beregn(PRODUCTS);
+  /* Servicefradrag 2026: 26% af arbejdsløn (inkl. moms), maks 18.300 kr/år pr. person. */
+  const fradrTotal = Math.min(r.yearTotal * 0.26, 18300);
   const cnt = $("tm-sticky-count"), tot = $("tm-sticky-total");
   if(cnt) cnt.textContent = r.count + " ting valgt";
   if(tot){
     const old = tot.dataset.v;
-    tot.textContent = kr(r.yearTotal) + "/år i alt · " + kr(r.total) + " pr. besøg";
+    tot.textContent = kr(r.yearTotal) + "/år i alt · " + kr(r.total) + " pr. besøg · ca. " + kr(fradrTotal) + "/år i skattefradrag";
     /* Runde 2: kort pulse på beløbet når det ændrer sig — prisen skal mærkes. */
     if(old !== undefined && old !== String(r.yearTotal)){
       tot.classList.remove("tm-pulse");
