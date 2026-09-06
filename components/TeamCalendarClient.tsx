@@ -6,7 +6,7 @@ import { Fragment, useEffect, useRef, useState, useSyncExternalStore, useTransit
 import type { CalendarMonth, CalendarTaskDetail, CalendarWeek, CalStatus } from "@/lib/calendar";
 import { categoryColor } from "@/lib/categories";
 import { telHref, telDisplay } from "@/components/ui";
-import { setOrderLock, moveOrderWeeks, replanWeek, deleteOrder } from "@/app/actions/orders";
+import { setOrderLock, moveOrderWeeks, replanWeek, deleteOrder, moveOrderManual } from "@/app/actions/orders";
 
 type Props =
   | { mode: "week"; week: CalendarWeek; nav: { prevWeek: string; nextWeek: string; monthParam: string }; readOnly?: boolean; moveOnly?: boolean; basePath?: string }
@@ -109,6 +109,13 @@ export default function TeamCalendarClient(props: Props) {
   const [monthView, setMonthView] = useState<"dato" | "oversigt">("dato"); // month sub-toggle [Dato | Oversigt]
   const [notice, setNotice] = useState<string | null>(null);
   const [confirmDel, setConfirmDel] = useState<MenuTarget | null>(null);
+  // Rediger-tilstand (ugevisning): når den er slået til, kan opgavekort trækkes
+  // rundt mellem kollegaer og dage. Et slip flytter ordren og låser den, så
+  // planlæggeren overholder placeringen (human approved overrule-all).
+  const [dragEdit, setDragEdit] = useState(false);
+  const [dragOver, setDragOver] = useState<string | null>(null); // `${empId}:${day}` highlight
+  const dragIdRef = useRef<number | null>(null);
+  const canDrag = props.mode === "week" && !readOnly && dragEdit;
   const todayISO = useSyncExternalStore(noopSubscribe, localTodayISO, () => null); // null during SSR → no hydration drift
   const menuRef = useRef<HTMLDivElement>(null);
   const usersRef = useRef<HTMLSpanElement>(null);
@@ -199,6 +206,16 @@ export default function TeamCalendarClient(props: Props) {
       <span className="sp" />
       {readOnly && <span className="badge">Arbejdsdag 08:00–16:00 (+1 time fleks) · man–fre</span>}
       {props.mode === "week" && !readOnly && !moveOnly && (
+        <button
+          className={`cbtn${dragEdit ? " on" : ""}`}
+          type="button"
+          title={dragEdit ? "Sluk redigering — kortene kan ikke længere trækkes" : "Slå redigering til — træk opgaver rundt mellem kollegaer og dage"}
+          onClick={() => { setDragEdit((v) => !v); setDragOver(null); }}
+        >
+          {dragEdit ? "Færdig med redigering" : "Rediger"}
+        </button>
+      )}
+      {props.mode === "week" && !readOnly && !moveOnly && (
         <button className="cbtn" type="button" disabled={pending} onClick={() => run(() => replanWeek(props.week.monday))}>
           {pending ? "Planlægger…" : "Genplanlæg uge"}
         </button>
@@ -262,9 +279,24 @@ export default function TeamCalendarClient(props: Props) {
                 </div>
                 {[0, 1, 2, 3, 4, 5, 6].map((day) => {
                   const evs = empEvents.filter((e) => e.day === day).sort((a, b) => a.start - b.start);
+                  const dropKey = `${emp.id}:${day}`;
+                  const dropHandlers = canDrag ? {
+                    onDragOver: (e: React.DragEvent) => { e.preventDefault(); e.dataTransfer.dropEffect = "move"; if (dragOver !== dropKey) setDragOver(dropKey); },
+                    onDragLeave: () => { if (dragOver === dropKey) setDragOver(null); },
+                    onDrop: (e: React.DragEvent) => {
+                      e.preventDefault();
+                      setDragOver(null);
+                      const id = dragIdRef.current ?? Number(e.dataTransfer.getData("text/plain"));
+                      dragIdRef.current = null;
+                      if (!Number.isFinite(id)) return;
+                      const dateISO = isoAddDays(week.monday, day);
+                      run(() => moveOrderManual(id, emp.id, dateISO));
+                      setNotice(`Opgave flyttet til ${emp.name}, ${DAY_HEADS[day]} — placeringen er låst og overholder alle planlægningsregler.`);
+                    },
+                  } : {};
                   return (
-                    <div key={day} style={empVar(emp.color)}
-                      className={`cell${day >= 5 ? " wknd" : ""}${isoAddDays(week.monday, day) === todayISO ? " today" : ""}`}>
+                    <div key={day} style={empVar(emp.color)} {...dropHandlers}
+                      className={`cell${day >= 5 ? " wknd" : ""}${isoAddDays(week.monday, day) === todayISO ? " today" : ""}${dragOver === dropKey ? " drop-target" : ""}`}>
                       {evs.length > 0 ? (
                         <div className="stack">
                           {evs.map((ev) => (
@@ -275,7 +307,12 @@ export default function TeamCalendarClient(props: Props) {
                               onKeyDown={readOnly ? (e) => {
                                 if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openReadOnlyMenu(e, ev); }
                               } : undefined}
-                              onClick={readOnly ? (e) => openReadOnlyMenu(e, ev) : (e) => openMenu(e, ev)}>
+                              onClick={readOnly ? (e) => openReadOnlyMenu(e, ev) : (e) => openMenu(e, ev)}
+                              {...(canDrag ? {
+                                draggable: true,
+                                onDragStart: (e: React.DragEvent) => { dragIdRef.current = ev.id; e.dataTransfer.effectAllowed = "move"; e.dataTransfer.setData("text/plain", String(ev.id)); },
+                                onDragEnd: () => { dragIdRef.current = null; setDragOver(null); },
+                              } : {})}>
                               <span className="t num">{fmtHM(ev.start)}–{fmtHM(ev.end)}</span>
                               <span className="h">{ev.postal}</span>
                               <span className="s">

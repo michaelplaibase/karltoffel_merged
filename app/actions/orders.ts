@@ -148,6 +148,38 @@ export async function setOrderLock(orderId: number, locked: boolean): Promise<vo
   revalidateSchedule();
 }
 
+/** Manuelt træk/slip fra ugekalenderen ("Rediger"-tilstand): flyt ordren til
+ *  en konkret kollega + dag og LÅS den (lockedFully) så planlæggeren holder
+ *  den præcis her — human approved overrule-all. Overrider bevidst faste
+ *  ugedage, kapacitet og medarbejder-binding: et manuelt træk er en
+ *  menneskelig godkendelse af placeringen. */
+export async function moveOrderManual(orderId: number, employeeId: number, dateISO: string): Promise<void> {
+  await guardAction();
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(dateISO) || !Number.isInteger(employeeId)) return;
+  const o = await prisma.order.findUnique({
+    where: { id: orderId },
+    select: { plannedAt: true, subscriptionId: true, sourceWeek: true },
+  });
+  if (!o) return;
+  // Samme tombstone-beskyttelse som moveOrderWeeks: fasthold rytme-ugen for
+  // abonnements-rækker, så natte-genereringen ikke genopretter den i den nye uge.
+  const newAt = new Date(`${dateISO}T10:00:00Z`);
+  let sourceWeekFix: { sourceWeek: Date } | undefined;
+  if (o.subscriptionId != null && o.sourceWeek == null) {
+    const candidate = mondayOfUTC(o.plannedAt);
+    const clash = await prisma.order.findFirst({
+      where: { subscriptionId: o.subscriptionId, sourceWeek: candidate, NOT: { id: orderId } },
+      select: { id: true },
+    });
+    if (!clash) sourceWeekFix = { sourceWeek: candidate };
+  }
+  await prisma.order.update({
+    where: { id: orderId },
+    data: { plannedAt: newAt, employeeId, lockedFully: true, ...sourceWeekFix },
+  });
+  revalidateSchedule(orderId);
+}
+
 /** Calendar "Flyt til anden uge …" — shift the order ±N weeks. When `unlock`,
  *  also fully release it so the planner may re-slot it in the target week. */
 export async function moveOrderWeeks(orderId: number, weeks: number, unlock = false): Promise<void> {

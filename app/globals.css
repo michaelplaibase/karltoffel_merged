@@ -539,6 +539,8 @@ textarea.task-desc { resize: none; overflow: hidden; min-height: 34px; height: a
   min-height: 86px; padding: 6px 6px 8px; }
 .teamcal .cell.wknd { background: var(--tc-weekend); }
 .teamcal .cell.today { background: var(--tc-today); }
+/* Træk/slip i "Rediger"-tilstand: fremhæv den celle kortet holdes over. */
+.teamcal .cell.drop-target { outline: 2px dashed var(--primary, #4C3718); outline-offset: -2px; background: var(--tc-today); }
 .teamcal .corner { position: sticky; left: 0; z-index: 6; background: var(--tc-panel-2);
   border-bottom: 1px solid var(--tc-line); border-right: 1px solid var(--tc-line);
   display: flex; align-items: flex-end; padding: 8px 12px; font-size: 12px; color: var(--tc-muted); }
