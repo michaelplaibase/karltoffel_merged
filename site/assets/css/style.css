@@ -102,3 +102,8 @@ form button.g-recaptcha:hover{filter:brightness(1.15)}
 /* social proof-kort: ingen absolut positionering (kortene har intet billede) */
 #section-id-socialproof .card--service{height:auto !important;overflow:visible !important}
 #section-id-socialproof .card__content{position:static !important}
+
+/* HERO-UNDERTEKST (Kristian, 2026-09-07): mindre skrift på mobil — kun heroen */
+.hero-slider__content .rte--larger p{font-size:16px}
+@media print,screen and (min-width:40em){.hero-slider__content .rte--larger p{font-size:20px}}
+@media screen and (min-width:81.25em){.hero-slider__content .rte--larger p{font-size:24px}}
