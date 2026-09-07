@@ -48,6 +48,16 @@ const PRODUCTS = [
 /* Uberørt kopi til at nulstille pakken når en ny adresse vælges. */
 const DEFAULTS = PRODUCTS.map(function(p){ return Object.assign({}, p); });
 
+/* ============ Geografi: vi kører KUN i Jylland (Kristian 2026-09-07) ============
+   Officielle DAWA-postnumre for Fyn (73 stk.) og Sjælland (697 stk.,
+   ekskl. Bornholm 3700-3799 — Bornholm er ikke Sjælland for vores vedkommende).
+   Adresse med postnummer fra disse lister → venteliste-trinnet i stedet for
+   tilbud-flowet (se vaelgAdresse / visVenteliste). Statisk liste — ingen
+   server-opslag. */
+const VENTELISTE_FYN = new Set([5000,5200,5210,5220,5230,5240,5250,5260,5270,5290,5300,5320,5330,5350,5370,5380,5390,5400,5450,5462,5463,5464,5466,5471,5474,5485,5491,5492,5500,5540,5550,5560,5580,5591,5592,5600,5601,5602,5603,5610,5620,5631,5642,5672,5683,5690,5700,5750,5762,5771,5772,5792,5800,5853,5854,5856,5863,5871,5874,5881,5882,5883,5884,5892,5900,5932,5935,5943,5953,5960,5965,5970,5985].map(Number));
+const VENTELISTE_SJAELLAND = new Set([1050,1051,1052,1053,1054,1055,1056,1057,1058,1059,1060,1061,1062,1063,1064,1065,1066,1067,1068,1069,1070,1071,1072,1073,1074,1100,1101,1102,1103,1104,1105,1106,1107,1110,1111,1112,1113,1114,1115,1116,1117,1118,1119,1120,1121,1122,1123,1124,1125,1126,1127,1128,1129,1130,1131,1150,1151,1152,1153,1154,1155,1156,1157,1158,1159,1160,1161,1162,1164,1165,1166,1167,1168,1169,1170,1171,1172,1173,1174,1175,1200,1201,1202,1203,1204,1205,1206,1207,1208,1209,1210,1211,1212,1213,1214,1215,1216,1218,1219,1220,1221,1250,1251,1252,1253,1254,1255,1256,1257,1259,1260,1261,1263,1264,1265,1266,1267,1268,1270,1271,1300,1301,1302,1303,1304,1306,1307,1308,1309,1310,1311,1312,1313,1314,1315,1316,1317,1318,1319,1320,1321,1322,1323,1324,1325,1326,1327,1328,1329,1350,1352,1353,1354,1355,1356,1357,1358,1359,1360,1361,1362,1363,1364,1365,1366,1367,1368,1369,1370,1371,1400,1401,1402,1403,1406,1407,1408,1409,1410,1411,1412,1413,1414,1415,1416,1417,1418,1419,1420,1421,1422,1423,1424,1425,1426,1427,1428,1429,1430,1432,1433,1434,1435,1436,1437,1438,1439,1440,1441,1450,1451,1452,1453,1454,1455,1456,1457,1458,1459,1460,1461,1462,1463,1464,1465,1466,1467,1468,1470,1471,1472,1473,1550,1551,1552,1553,1554,1555,1556,1557,1558,1559,1560,1561,1562,1563,1564,1567,1568,1569,1570,1571,1572,1573,1574,1575,1576,1577,1600,1601,1602,1603,1604,1605,1606,1607,1608,1609,1610,1611,1612,1613,1614,1615,1616,1617,1618,1619,1620,1621,1622,1623,1624,1631,1632,1633,1634,1635,1650,1651,1652,1653,1654,1655,1656,1657,1658,1659,1660,1661,1662,1663,1664,1665,1666,1667,1668,1669,1670,1671,1672,1673,1674,1675,1676,1677,1699,1700,1701,1702,1703,1704,1705,1706,1707,1708,1709,1710,1711,1712,1714,1715,1716,1717,1718,1719,1720,1721,1722,1723,1724,1725,1726,1727,1728,1729,1730,1731,1732,1733,1734,1735,1736,1737,1738,1739,1749,1750,1751,1752,1753,1754,1755,1756,1757,1758,1759,1760,1761,1762,1763,1764,1765,1766,1770,1771,1772,1773,1774,1775,1777,1799,1800,1801,1802,1803,1804,1805,1806,1807,1808,1809,1810,1811,1812,1813,1814,1815,1816,1817,1818,1819,1820,1822,1823,1824,1825,1826,1827,1828,1829,1850,1851,1852,1853,1854,1855,1856,1857,1860,1861,1862,1863,1864,1865,1866,1867,1868,1870,1871,1872,1873,1874,1875,1876,1877,1878,1879,1900,1901,1902,1903,1904,1905,1906,1908,1909,1910,1911,1912,1913,1914,1915,1916,1917,1920,1921,1922,1923,1924,1925,1926,1927,1928,1950,1951,1952,1953,1954,1955,1956,1957,1958,1959,1960,1961,1962,1963,1964,1965,1966,1967,1970,1971,1972,1973,1974,2000,2100,2150,2200,2300,2400,2450,2500,2600,2605,2610,2620,2625,2630,2635,2640,2650,2660,2665,2670,2680,2690,2700,2720,2730,2740,2750,2760,2765,2770,2791,2800,2820,2830,2840,2850,2860,2870,2880,2900,2920,2930,2942,2950,2960,2970,2980,2990,3000,3050,3060,3070,3080,3100,3120,3140,3150,3200,3210,3220,3230,3250,3300,3310,3320,3330,3360,3370,3390,3400,3450,3460,3480,3490,3500,3520,3540,3550,3600,3630,3650,3660,3670,4000,4030,4040,4050,4060,4070,4100,4130,4140,4160,4171,4173,4174,4180,4190,4200,4220,4230,4241,4242,4243,4244,4245,4250,4261,4262,4270,4281,4291,4293,4295,4296,4300,4305,4320,4330,4340,4350,4360,4370,4390,4400,4420,4440,4450,4460,4470,4480,4490,4500,4520,4532,4534,4540,4550,4560,4571,4572,4573,4581,4583,4591,4592,4593,4600,4621,4622,4623,4632,4640,4652,4653,4654,4660,4671,4672,4673,4681,4682,4683,4684,4690,4700,4720,4733,4735,4736,4750,4760,4771,4772,4773,4780,4791,4792,4793,4800,4840,4850,4862,4863,4871,4872,4873,4874,4880,4891,4892,4894,4895,4900,4912,4913,4920,4930,4941,4942,4943,4944,4945,4951,4952,4953,4960,4970,4983,4990].map(Number));
+const VENTELISTE_POSTNR = new Set([...VENTELISTE_FYN, ...VENTELISTE_SJAELLAND]);
+
 /* ============ Serviceside-kontekst (tilbudsmotoren indlejret på ydelsessider) ============
    Sider der indlejrer motoren sætter window.KARLTOFFEL.tilbudsmotorPage =
    { service: "<produkt-id eller null>", source: "<slug>" } FØR tilbudsmotor.js loades.
@@ -248,6 +258,15 @@ function vaelgAdresse(titel){
   state.adresse = titel;
   lukListe();
   adrInput.value = titel;
+  /* Geografi-tjek (Kristian 2026-09-07): vi kører KUN i Jylland endnu.
+     Sjælland + Fyn-postnummer → venteliste i stedet for tilbud-flowet. */
+  const pnr = udtraekPostnr(titel);
+  if(pnr !== null && VENTELISTE_POSTNR.has(pnr)){
+    resetProducts();
+    verifyDir = 0; setVerifyHint("");
+    visVenteliste(titel, pnr);
+    return;
+  }
   resetProducts();                       /* ny adresse → nulstil pakke + mængder */
   verifyDir = 0; setVerifyHint("");
   if(btnNej) btnNej.textContent = "Nej, prøv igen";
@@ -449,6 +468,70 @@ btnNej.addEventListener("click", ()=>{
   }
 });
 $("btn-tilbage").addEventListener("click", ()=> visStep("step-losning"));
+
+/* ============ VENTELISTE (Sjælland/Fyn — vi kører der endnu ikke) ============ */
+/* Kristian 2026-09-07: Karltoffel dækker kun Jylland. Kunde med Sjælland-/
+   Fyn-adresse får venteliste-trinnet i stedet for tilbud-flowet og skrives op
+   med navn + e-mail ELLER telefon (samme regel som lead-ruten kræver). */
+function udtraekPostnr(t){
+  const m = String(t).match(/\b(\d{4})\b/g);
+  return m ? parseInt(m[m.length - 1], 10) : null;
+}
+/* "Sundvej 8, Gl Kalvehave, 4771 Kalvehave" → "4771 Kalvehave" (sidste postnr + by). */
+function udtraekPostnrBy(t){
+  const m = String(t).match(/(\d{4}(?:\s+[^,]+)?)\s*$/);
+  return m ? m[1].trim() : String(t);
+}
+function visVenteliste(titel, pnr){
+  measureReq++;                                   /* afbryd evt. påbegyndt auto-måling */
+  const pnrTxt = udtraekPostnrBy(titel);
+  $("v-postnr").textContent = "Dit postnummer: " + pnrTxt;
+  $("v-postnr").hidden = false;
+  $("v-form").hidden = false;
+  $("v-ok").classList.remove("show");
+  visStep("step-venteliste");
+}
+$("v-tilbage").addEventListener("click", ()=> visStep("step-adresse"));
+$("v-send").addEventListener("click", ()=>{
+  const navn = $("v-navn").value.trim(), mail = $("v-mail").value.trim(), tlf = $("v-tlf").value.trim();
+  /* Samme regel som lead-ruten: navn + (e-mail ELLER telefon). */
+  if(!navn || tlf.replace(/\D/g,"").length < 8 && (mail.indexOf("@") < 1)){
+    sendFejlVenteliste("Udfyld dit navn — og din e-mail eller dit telefonnummer, så vi kan give dig besked.");
+    return;
+  }
+  if(mail && mail.indexOf("@") < 1){
+    sendFejlVenteliste("Tjek lige e-mailen — den ser ikke rigtig ud.");
+    return;
+  }
+  $("v-err").classList.remove("show");
+  const pnrTxt = udtraekPostnrBy(state.adresse);
+  const payload = {
+    name: navn, email: mail, phone: tlf,
+    message: "Venteliste: postnummer " + pnrTxt,
+    address: state.adresse,
+    source: "venteliste"
+  };
+  const btn = $("v-send");
+  btn.disabled = true;
+  const btnTekst = btn.textContent;
+  btn.textContent = "Sender...";
+  fetch("/api/lead", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify(payload)
+  })
+  .then(res => { if(!res.ok) throw new Error("HTTP " + res.status); return res.json().catch(()=>({})); })
+  .then(()=>{
+    $("v-form").hidden = true;
+    $("v-ok").classList.add("show");
+    rydState();                                   /* intet tilbud-flow at gendanne */
+  })
+  .catch(()=>{
+    sendFejlVenteliste("Vi kunne ikke opskrive dig lige nu. Prøv igen om et øjeblik — eller ring til os.");
+  })
+  .finally(()=>{ btn.disabled = false; btn.textContent = btnTekst; });
+});
+function sendFejlVenteliste(t){ const e = $("v-err"); e.textContent = t; e.classList.add("show"); }
 
 
 /* ============ URLPrefill: navn/telefon/adresse/postnummer fra simple formularer ============ */

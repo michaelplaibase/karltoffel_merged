@@ -444,3 +444,9 @@
   .tm-flow .pw{max-width:100%}
   .tm-flow .fw{padding-top:2px}
 }
+
+/* ===== Venteliste-trinnet (Sjælland/Fyn — vi kører der endnu ikke) ===== */
+/* Genbruger .kontakt-form-styling; kun postnr-linjen + bekræftelsen er nye. */
+.tm-flow .venteliste .v-postnr{margin:14px 0 0;font-size:15px;font-weight:700;color:var(--gul)}
+.tm-flow .venteliste .v-ok{display:none;background:var(--ivory);color:var(--brun);border-radius:12px;padding:20px 22px;font-size:17px;font-weight:700;margin-top:20px}
+.tm-flow .venteliste .v-ok.show{display:block}

@@ -57,7 +57,7 @@ src="https://www.facebook.com/tr?id=1574687980856727&amp;ev=PageView&amp;noscrip
 /></noscript>
 <!-- End Meta Pixel Code -->
 <script src="/assets/js/meta-events.js?v=2" defer data-forms='[{"selector": ".sp-form__fields", "content_name": "algerens-og-algebehandling-af-fliser-tag-og-facader-hero"}]'></script>
-	<link rel="stylesheet" href="/assets/css/tilbudsmotor.css?v=33">
+	<link rel="stylesheet" href="/assets/css/tilbudsmotor.css?v=34">
 </head>
 
 
@@ -257,6 +257,28 @@ src="https://www.facebook.com/tr?id=1574687980856727&amp;ev=PageView&amp;noscrip
 	    <div class="tm-nav">
 	      <button class="btn btn-ja" id="adr-videre">Videre</button>
 	    </div>
+	  </section>
+
+
+	  <!-- VENTELISTE: Sjælland/Fyn — vi kører der endnu ikke -->
+	  <section class="step kontakt venteliste" id="step-venteliste" aria-labelledby="tm-h2vl">
+	    <h2 id="tm-h2vl">Vi kører desværre ikke i dit område — endnu</h2>
+	    <p>Vi dækker i øjeblikket kun Jylland. Skriv dig op på ventelisten, så giver vi dig besked, så snart vi åbner op i dit område. Vi åbner desværre først næste år.</p>
+	    <div class="v-postnr" id="v-postnr" hidden></div>
+	    <div id="v-form">
+	      <label for="v-navn">Fulde navn</label>
+	      <input id="v-navn" type="text" autocomplete="name" maxlength="120">
+	      <label for="v-mail">E-mail</label>
+	      <input id="v-mail" type="email" autocomplete="email" maxlength="200">
+	      <label for="v-tlf">Telefon</label>
+	      <input id="v-tlf" type="tel" autocomplete="tel" inputmode="tel" maxlength="40">
+	      <div class="err" id="v-err">Udfyld dit navn — og din e-mail eller dit telefonnummer.</div>
+	      <div class="verify-btns" style="justify-content:flex-start">
+	        <button class="btn btn-ja" id="v-send">Skriv mig op</button>
+	        <button class="btn btn-nej" id="v-tilbage">Tilbage</button>
+	      </div>
+	    </div>
+	    <div class="v-ok" id="v-ok" role="status">Tak! Du er skrevet op. Vi giver dig besked, når vi åbner i dit område.</div>
 	  </section>
 
 	  <!-- STEP 2: PRIVAT / ERHVERV -->
@@ -770,7 +792,7 @@ src="https://www.facebook.com/tr?id=1574687980856727&amp;ev=PageView&amp;noscrip
 		<script src="/assets/js/tilbudsmotor.config.js?v=9"></script>
 		<script src="/assets/js/vendor/geotiff.min.js"></script>
 		<script src="/assets/js/skraafoto.js?v=12"></script>
-		<script src="/assets/js/tilbudsmotor.js?v=51"></script>
+		<script src="/assets/js/tilbudsmotor.js?v=52"></script>
 		<script>
 /* Hero-formularen maa IKKE navigere vaek fra siden (Anton): submit forudfyller
    tilbudsmotoren samme sted og starter flowet. meta-events.js fyrer stadig sit
