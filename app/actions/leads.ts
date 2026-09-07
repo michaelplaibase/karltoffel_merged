@@ -288,9 +288,12 @@ export async function convertLeadCore(id: number): Promise<ConvertLeadResult> {
   // kanal = emnets kilde. Så ryger kunden ind i Lead-beregneren med alt data.
   try {
     const category = spec.kind === "order" ? "privat" : (payload.kundetype === "erhverv" ? "virksomhed" : "privat");
+    // Venteliste-leads (Sjælland/Fyn-venteliste, 2026-09-07) vises som deres
+    // egen kanal "Venteliste" i Lead-beregneren — ikke som rå site-kilden.
+    const acquisitionSource = lead.source === "venteliste" ? "Venteliste" : lead.source || "Direkte";
     await prisma.leadAcquisition.upsert({
       where: { contactId_category: { contactId, category } },
-      create: { companyId: lead.companyId, contactId, category, source: lead.source || "Direkte" },
+      create: { companyId: lead.companyId, contactId, category, source: acquisitionSource },
       update: {},
     });
     revalidatePath("/business-manager/leads");
