@@ -855,7 +855,7 @@ $("btn-send").addEventListener("click", ()=>{
       /* Udkørsels-linjen vises også på tak-siden (regnet med i totalen). */
       if(valgt.some(p=>p.id === "haek")){
         const hae = valgt.find(p=>p.id === "haek");
-        linjer.push("Udkørsel og fjernelse af klip (500 kr — udkørsel + renovationsgebyr, " + hae.freq + "x/år)");
+        linjer.push("Udkørsel og fjernelse af klip (500 kr — vi kører det grønne på lossepladsen, firma-gebyr m. gule nummerplader, " + hae.freq + "x/år)");
       }
       var kodeLinje = kodePct > 0 ? "Rabatkode anvendt: <b>−" + kodePct + "%</b><br>" : "";
       opsum.innerHTML =
@@ -1242,7 +1242,7 @@ function byggHaekInfo(){
   const udk = document.createElement("div");
   udk.className = "tm-haekinfo-udkoersel";
   udk.id = "tm-haekinfo-udkoersel";
-  udk.innerHTML = "<b>Udkørsel og fjernelse af klip</b><span>500 kr — udkørsel + renovationsgebyr. Følger automatisk med hækklipningen.</span>";
+  udk.innerHTML = "<b>Udkørsel og fjernelse af klip</b><span>500 kr — alt det grønne kører vi af sted til lossepladsen — du skal ikk' røre en finger. Turen koster 500 kr i gebyr, fordi vi som firma betaler for at aflevere (deraf de gule nummerplader).</span>";
   sec.appendChild(udk);
   return sec;
 }
