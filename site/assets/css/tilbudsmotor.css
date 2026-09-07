@@ -450,3 +450,22 @@
 .tm-flow .venteliste .v-postnr{margin:14px 0 0;font-size:15px;font-weight:700;color:var(--gul)}
 .tm-flow .venteliste .v-ok{display:none;background:var(--ivory);color:var(--brun);border-radius:12px;padding:20px 22px;font-size:17px;font-weight:700;margin-top:20px}
 .tm-flow .venteliste .v-ok.show{display:block}
+
+/* ===== Hæk-spørgsmål (trin 4): 4 spørgsmål + udkørsels-linje under hæk-rækken ===== */
+.tm-flow .tm-haekinfo{border-top:1.5px dashed var(--bronze);margin-top:2px;padding-top:9px;display:flex;flex-direction:column;gap:10px}
+.tm-flow .tm-haekinfo.row--off{display:none}
+.tm-flow .tm-haekinfo-q{display:flex;flex-direction:column;gap:5px}
+.tm-flow .tm-haekinfo-lbl{font-size:12px;font-weight:700;color:var(--brun)}
+.tm-flow .tm-haekinfo-opts{display:flex;flex-wrap:wrap;gap:6px}
+.tm-flow .tm-haekinfo-opt{appearance:none;border:1.5px solid var(--brun);background:#fff;color:var(--brun);border-radius:999px;padding:5px 12px;font-size:12px;font-weight:700;font-family:inherit;cursor:pointer;line-height:1.3}
+.tm-flow .tm-haekinfo-opt:hover{border-color:var(--bronze);color:var(--bronze)}
+.tm-flow .tm-haekinfo-opt.selected{background:var(--gul,var(--bronze));border-color:var(--brun);color:var(--brun);box-shadow:inset 0 0 0 1.5px var(--brun)}
+.tm-flow .tm-haekinfo-opt:focus-visible{outline:2px solid var(--bronze);outline-offset:1px}
+.tm-flow .tm-haekinfo-udkoersel{display:flex;flex-direction:column;gap:2px;background:var(--ivory,rgba(0,0,0,.04));border-radius:10px;padding:8px 12px;font-size:13px}
+.tm-flow .tm-haekinfo-udkoersel b{color:var(--brun)}
+.tm-flow .tm-haekinfo-udkoersel span{font-size:11.5px;color:var(--bronze);font-weight:500}
+@media (max-width:700px){
+  .tm-flow .tm-haekinfo{padding-top:7px;gap:8px}
+  .tm-flow .tm-haekinfo-opt{padding:5px 10px;font-size:11.5px}
+}
+

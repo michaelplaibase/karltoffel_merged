@@ -25,7 +25,11 @@ const $ = (id) => ROOT.querySelector("#" + id);
 const PRODUCTS = [
   /* ---- De mest valgte services (ikke forudvalgt — kunden vælger selv) ---- */
   {id:"vinduer",  navn:"Udvendig vinduesvask",       enhed:"glas",       pris:17.00, note:"Udvendige døre, vinduer og porte",                 qty:0,   freq:8,  fmax:12, on:false, pakke:true, kat:"pakke", wm:"Udvendig vinduesvask pr glas"},
-  {id:"haek",     navn:"Hækklipning",                    enhed:"m hæk",      pris:27.50, note:"1 side, under 220 cm",            qty:65,  freq:1,  fmax:3,  on:false, pakke:true, kat:"pakke", wm:"Hækklipning 1 side pr meter Under 220 cm"},
+  /* Hæk: TRIMNING 27,00 kr/m (hæk under 220 cm) — BESKÆRING (skære ind,
+     vokset sig for stor) 33,50 kr/m. Prisen afledes af hæk-spørgsmålene
+     (state.haekInfo, se syncHaekPris). wm-navnene er UÆNDREDE (samme
+     WorkMaker-produkt for begge priser indtil nyt produkt findes i CSV). */
+  {id:"haek",     navn:"Hækklipning",                    enhed:"m hæk",      pris:27.00, note:"Trimning — hæk under 220 cm",            qty:65,  freq:1,  fmax:3,  on:false, pakke:true, kat:"pakke", wm:"Hækklipning 1 side pr meter Under 220 cm"},
   {id:"green",    navn:"Greenkeeper græspleje",          enhed:"m² plæne",   pris:2.30,  note:"Gødning og pleje af plænen",      qty:450, freq:3,  fmax:6,  on:false, pakke:true, kat:"pakke", wm:"Greenkeeper græspleje"},
   {id:"alge",     navn:"Algebehandling af tag",          enhed:"m² tag",     pris:9.80,  min:950,  note:"Mos og alger, beregnet på skråt tagareal", qty:120, freq:1, fmax:2, on:false, pakke:true, kat:"pakke", wm:"Algebehandling af tag"},
   {id:"tagrender",navn:"Tagrenderens",                   enhed:"m tagrende", pris:18.00, note:"Stueplan / 1-plans hus",          qty:24,  freq:1,  fmax:2,  on:false, pakke:true, kat:"pakke", wm:"Tagrenderens Stueplan / 1-plans hus"},
@@ -93,8 +97,19 @@ function beregn(products){
       yearTotal += linje * p.freq;
     }
   }
+  /* Hækkens faste udkørsels-linje (Kristian 2026-09-09): når hækklipning
+     er valgt følger "Udkørsel og fjernelse af klip" automatisk med —
+     500 kr pr. hæk-besøg (udkørsel + renovationsgebyr). Gælder også når
+     hækken er over 2,2 m (pris:null) — udkørslen afholdes uanset. */
+  const haek = products.find(p => p.id === "haek");
+  if(haek && haek.on){
+    total += HAEK_UDKOERSEL;
+    yearTotal += HAEK_UDKOERSEL * haek.freq;
+  }
   return { total: total, yearTotal: yearTotal, count: count };
 }
+/* Fastede hæk-beløb (kr). */
+const HAEK_UDKOERSEL = 500;
 /*PRICING-END*/
 
 const DKK0 = new Intl.NumberFormat("da-DK",{maximumFractionDigits:0});
@@ -126,8 +141,47 @@ const state = {
   kundetype: null,   /* "privat" | "erhverv" — vælges på step 2 */
   betaling: "pr_gang",   /* fast: betaling pr. gang — abonnements-valg fjernet */
   rabatkode: { code:"", percent:0, valid:false },   /* valideret server-side via /api/rabatkode */
+  /* Hæk-spørgsmålene (trin 4): kundens egne svar uden forvalg.
+     sidstKlippet + hoejde + sider + arbejde — styrer hækkens pris (syncHaekPris). */
+  haekInfo: { sidstKlippet:"", hoejde:"", sider:"", arbejde:"" },
   ejendom: { type:"Villa, 1 fam.", grund:"827 m²", opfoert:"2007", haek:"65 m" }
 };
+
+/* ============ HÆK-SPØRGSMÅL + PRISAFLEDNING ============ */
+/* Kundevenlige spørgsmål på hæk-rækken (ingen forvalg). Priser:
+   TRIMNING 27,00 kr/m · BESKÆRING (skære ind, vokset sig for stor) 33,50 kr/m.
+   "Inden for det seneste år" → forudvælg trimning; "Mere end et år siden" →
+   beskæring; "Ved ikke" → følg arbejdes-svaret. Arbejde-svaret vinder ALTID
+   over forudvalget. Over 2,2 m → pris:null-mønsteret (tæller 0 kr): vi vender
+   tilbage med et personligt tilbud. Udkørsel (500 kr) ligger i beregn(). */
+const HAEK_SP = {
+  sidstKlippet: { q:"Hvornår blev hækken klippet sidst?", opts:["Inden for det seneste år","Mere end et år siden","Ved ikke"] },
+  hoejde:       { q:"Hvor høj er hækken?",               opts:["Under 1,5 m","1,5–2,2 m","Over 2,2 m","Ved ikke"] },
+  sider:        { q:"Hvad skal der klippes?",            opts:["Kun begge sider","Siderne OG toppen"] },
+  arbejde:      { q:"Skal hækken bare trimmes, eller skal den skæres ind?", opts:["Bare en trimning — den skal se pæn ud","Den er vokset sig for stor og skal skæres ind"] }
+};
+const HAEK_HOEJDE_UKENDT_TXT = "Kræver mere udstyr — vi vender tilbage med et personligt tilbud";
+function syncHaekPris(){
+  const h = PRODUCTS.find(p => p.id === "haek");
+  if(!h) return;
+  const info = state.haekInfo || {};
+  if(info.hoejde === "Over 2,2 m"){
+    /* Over 2,2 m: ingen automatisk sum — pris:null-mønsteret, tæller 0 kr. */
+    h.pris = null;
+    h.prisNote = HAEK_HOEJDE_UKENDT_TXT;
+    h.haekBeskaering = false;
+  } else {
+    let beskaering = false;   /* svar (d) vinder ALTID over forudvalget */
+    if(info.arbejde) beskaering = (info.arbejde === HAEK_SP.arbejde.opts[1]);
+    else if(info.sidstKlippet === HAEK_SP.sidstKlippet.opts[1]) beskaering = true;
+    else if(info.sidstKlippet === HAEK_SP.sidstKlippet.opts[0]) beskaering = false;
+    h.pris = beskaering ? 33.50 : 27.00;
+    h.note = beskaering ? "Beskæring — skæres ind (vokset sig for stor)" : "Trimning — hæk under 220 cm";
+    h.haekBeskaering = beskaering;
+    delete h.prisNote;
+  }
+}
+
 
 /* ============ ADRESSEOPSLAG: Adressevælgeren (DAWAs officielle afløser) ============ */
 const ADR_API = "https://adressevaelger.dk/husnumre/soeg?token=adressevaelger123&maksimum=6&tekst=";
@@ -229,12 +283,9 @@ function applyMeasurements(m){
   put("alge", m.tagArealSkraat || m.tagAreal);           /* skråt tagareal hvor muligt */
   /* Træantal kan ikke måles — skøn ~1 træ/busk pr. 150 m² have, clamp 2–8. */
   if(m.haveAreal) put("beskaering", Math.min(8, Math.max(2, Math.round(m.haveAreal / 150))));
-  /* Højde-baserede pris-tiers ud fra målingen (skifter også WorkMaker-produkt, wm). */
-  const haek = PRODUCTS.find(x=>x.id==="haek");
-  if(haek && m.haekHojde != null){
-    if(m.haekHojde > 2.2){ haek.pris = 38.50; haek.note = "1 side, over 220 cm"; haek.wm = "Hækklipning 1 side pr meter Over 220 cm"; }
-    else { haek.pris = 27.50; haek.note = "1 side, under 220 cm"; haek.wm = "Hækklipning 1 side pr meter Under 220 cm"; }
-  }
+  /* Hæk-tiers (27,50/38,50) er UDGAET: hækkens pris styres nu af
+     kundens egne svar i hæk-spørgsmålene (syncHaekPris) — auto-målingen
+     forudfylder kun meter-antallet ovenfor. */
   const tr = PRODUCTS.find(x=>x.id==="tagrender");
   if(tr && m.rygHojde != null){
     if(m.rygHojde > 5){ tr.pris = 28.00; tr.note = "2-plans hus"; tr.wm = "Tagrenerens 2-plans hus"; }
@@ -252,6 +303,8 @@ function resetProducts(){
   PRODUCTS.forEach(function(p,i){ Object.assign(p, DEFAULTS[i]); p.touched = false; });
   tmPagePreselectDone = false;   /* ny adresse → forudvælg servicesidens ydelse igen */
   state.maal = null;
+  state.haekInfo = { sidstKlippet:"", hoejde:"", sider:"", arbejde:"" };
+  syncHaekPris();                /* tilbage til standard: trimning 27,00 kr/m */
 }
 
 function vaelgAdresse(titel){
@@ -690,6 +743,25 @@ $("btn-send").addEventListener("click", ()=>{
   /* Lead-payload til CRM'et: kontaktinfo + valgte services (med WorkMaker-
      nøgle under overgangen) + estimat + kundetype. Sendes via sitets relay
      (/api/lead) — secret'en bor på serveren, aldrig i browseren. */
+  const servicesArr = [];
+  valgt.forEach(p=>{
+    const s = { id:p.id, navn:p.navn, wm:p.wm, qty:p.qty, enhed:p.enhed, freq:p.freq, pris:p.pris, erPakkevare:p.pakke };
+    if(p.id === "haek"){
+      /* Beskæring sendes midlertidigt med samme wm (nyt produkt afventes i
+         CSV) — note i leadet så teamet kan se, at 33,50 kr/m gælder. */
+      s.haekInfo = {
+        sidstKlippet: state.haekInfo.sidstKlippet || "Ikke besvaret",
+        hoejde: state.haekInfo.hoejde || "Ikke besvaret",
+        sider: state.haekInfo.sider || "Ikke besvaret",
+        arbejde: state.haekInfo.arbejde || "Ikke besvaret"
+      };
+      if(state.haekInfo.hoejde === "Over 2,2 m") s.note = HAEK_HOEJDE_UKENDT_TXT;
+      else if(p.haekBeskaering) s.note = "Beskæring (skæres ind) — 33,50 kr/m, sendes med samme WM-produkt indtil videre";
+      /* Den faste udkørsels-linje som egen services[]-post. */
+      servicesArr.push({ id:"haek_udkoersel", navn:"Udkørsel og fjernelse af klip", wm:null, qty:1, enhed:"", freq:p.freq, pris:HAEK_UDKOERSEL, erPakkevare:false });
+    }
+    servicesArr.push(s);
+  });
   const payload = {
     name: navn, email: mail, phone: tlf,
     message: $("k-note").value.trim().slice(0, 2000),   /* server-cap er 2000 — klip lokalt så relayets 9 KB-grænse aldrig rammes */
@@ -697,7 +769,7 @@ $("btn-send").addEventListener("click", ()=>{
     kundetype: state.kundetype,
     betaling: state.betaling,
     source: TM_PAGE_SOURCE,
-    services: valgt.map(p=>({ id:p.id, navn:p.navn, wm:p.wm, qty:p.qty, enhed:p.enhed, freq:p.freq, pris:p.pris, erPakkevare:p.pakke })),
+    services: servicesArr,
     estimat: { total: Math.round(yearNet), count: r.count }   /* årligt netto estimat */
   };
   /* Meta CAPI-dedup: tilfældig event_id deles mellem browser-pixelens
@@ -776,14 +848,19 @@ $("btn-send").addEventListener("click", ()=>{
       opsum.innerHTML = "<b>" + esc(state.adresse) + ktLabel + "</b><br>Du har ikke valgt nogen services endnu — vi ringer og sammensætter løsningen med dig.";
     } else {
       const linjer = valgt.map(p=>{
-        const suffix = (p.pris == null) ? (p.pakke ? " (indeholdt)" : " (pris ved besøg)")
+        const suffix = (p.pris == null) ? (p.prisNote ? " (personligt tilbud)" : (p.pakke ? " (indeholdt)" : " (pris ved besøg)"))
                      : (!p.qty ? " (angiv antal)" : " (" + p.freq + "x/år)");
         return esc(p.navn) + suffix;
-      }).join(", ");
+      });
+      /* Udkørsels-linjen vises også på tak-siden (regnet med i totalen). */
+      if(valgt.some(p=>p.id === "haek")){
+        const hae = valgt.find(p=>p.id === "haek");
+        linjer.push("Udkørsel og fjernelse af klip (500 kr — udkørsel + renovationsgebyr, " + hae.freq + "x/år)");
+      }
       var kodeLinje = kodePct > 0 ? "Rabatkode anvendt: <b>−" + kodePct + "%</b><br>" : "";
       opsum.innerHTML =
         "<b>" + esc(state.adresse) + ktLabel + "</b><br>" +
-        "Valgt: " + linjer + "<br>" +
+        "Valgt: " + linjer.join(", ") + "<br>" +
         kodeLinje +
         'Pr. besøg: <b><span id="tak-total" class="tm-anim-kr">' + kr(totalNet) + '</span></b>' +
         ' · <b><span id="tak-aar" class="tm-anim-kr">' + kr(yearNet) + '</span>/år</b><br>' +
@@ -847,6 +924,22 @@ function pushLeadEvent(valgt, r, totalNet, kodePct){
       };
     })
   };
+  /* Udkørsels-linjen (500 kr) følger med som eget item, så items' sum
+     matcher lead_value_total (beregn() tæller 500'eren med i totalen). */
+  const hae = valgt.find(p => p.id === "haek");
+  if(hae){
+    ev.items.push({
+      item_id: "haek_udkoersel",
+      item_name: "Udkørsel og fjernelse af klip",
+      item_category: hae.kat,
+      item_list_name: "Mest valgte services",
+      index: valgt.length,
+      price: HAEK_UDKOERSEL,
+      quantity: 1,
+      frequency_per_year: hae.freq,
+      item_revenue: Math.round(HAEK_UDKOERSEL * hae.freq)
+    });
+  }
   /* Kun med når koden faktisk er valideret server-side. */
   if(state.rabatkode.valid) ev.coupon = state.rabatkode.code;
   /* Måling må aldrig vælte tak-siden. */
@@ -875,7 +968,7 @@ const CAT_ORDER = ["pakke", "groen", "vinduer", "tag", "affald", "vinter", "skad
    i trin 4, så det er tydeligt hvad Karltoffel laver med hver ydelse. */
 const WM_HVORFOR = {
   vinduer: "Vi vasker dem udvendigt — antallet afgør, hvor lang tid et besøg tager.",
-  haek: "Vi klipper hækken og fejer efter — højden og længden afgør, hvor lang tid det tager.",
+  haek: "Vi klipper hækken og fejer efter — svar spørgsmålene under rækken, så prisen rammer rigtigt.",
   green: "Vi gøder og plejer plænen, så den holder sig grøn hele sæsonen.",
   alge: "Vi fjerner mos og alger på taget, så taget holder længere — arealet afgør prisen.",
   tagrender: "Vi renser blade og mudder ud, så vandet løber fra huset — længden i meter er nok.",
@@ -957,7 +1050,11 @@ function renderRows(){
     const body = document.createElement("div");
     body.className = "tm-card-body";
     body.id = "tm-card-body-" + card.key;
-    items.forEach(p => body.appendChild(byggRaekke(p)));
+    items.forEach(p => {
+      body.appendChild(byggRaekke(p));
+      /* Hæk-spørgsmålene + udkørsels-linjen: egen lille sektion under hæk-rækken. */
+      if(p.id === "haek") body.appendChild(byggHaekInfo());
+    });
 
     box.appendChild(head); box.appendChild(body);
     wrap.appendChild(box);
@@ -1099,6 +1196,57 @@ function byggRaekke(p){
   return row;
 }
 
+/* Hæk-sektionen under hæk-rækken: 4 kundevenlige spørgsmål (radio-mønster)
+   + den faste udkørsels-linje (500 kr). Gen-bygges ved renderRows (trin-/
+   adresse-skift) — valg markeres ud fra state.haekInfo. Klik → svar gemmes,
+   prisen afledes (syncHaekPris) og tallene opdateres (opdater()). */
+function byggHaekInfo(){
+  const sec = document.createElement("div");
+  sec.className = "tm-haekinfo" + (PRODUCTS.find(p=>p.id==="haek").on ? "" : " row--off");
+  sec.id = "tm-haekinfo";
+  Object.keys(HAEK_SP).forEach(key => {
+    const sp = HAEK_SP[key];
+    const blk = document.createElement("div");
+    blk.className = "tm-haekinfo-q";
+    const lbl = document.createElement("span");
+    lbl.className = "tm-haekinfo-lbl";
+    lbl.textContent = sp.q;
+    blk.appendChild(lbl);
+    const opts = document.createElement("div");
+    opts.className = "tm-haekinfo-opts";
+    opts.setAttribute("role", "radiogroup");
+    opts.setAttribute("aria-label", sp.q);
+    sp.opts.forEach(o => {
+      const b = document.createElement("button");
+      b.type = "button";
+      b.className = "tm-haekinfo-opt" + (state.haekInfo[key] === o ? " selected" : "");
+      b.setAttribute("role", "radio");
+      b.setAttribute("aria-checked", state.haekInfo[key] === o ? "true" : "false");
+      b.textContent = o;
+      b.addEventListener("click", ()=>{
+        state.haekInfo[key] = o;
+        opts.querySelectorAll(".tm-haekinfo-opt").forEach(x=>{
+          x.classList.toggle("selected", x === b);
+          x.setAttribute("aria-checked", x === b ? "true" : "false");
+        });
+        syncHaekPris();
+        opdater();
+      });
+      opts.appendChild(b);
+    });
+    blk.appendChild(opts);
+    sec.appendChild(blk);
+  });
+  /* Den faste linje: udkørsel og fjernelse af klip — følger automatisk med
+     når hækklipning vælges (regnes med i totalen via beregn()). */
+  const udk = document.createElement("div");
+  udk.className = "tm-haekinfo-udkoersel";
+  udk.id = "tm-haekinfo-udkoersel";
+  udk.innerHTML = "<b>Udkørsel og fjernelse af klip</b><span>500 kr — udkørsel + renovationsgebyr. Følger automatisk med hækklipningen.</span>";
+  sec.appendChild(udk);
+  return sec;
+}
+
 /* Rabatkode-banner på løsnings-trinnet. Mængderabatten er fjernet — prisen
    er bare summen af de valgte services. Kr-beløbet tæller blødt op/ned. */
 function opdaterRabat(){
@@ -1132,11 +1280,14 @@ function opdaterRabat(){
 }
 
 function opdater(){
+  /* Hæk-sektionen (spørgsmål + udkørselslinje) følger hæk-tilvalget. */
+  const hsec = $("tm-haekinfo"), hp = PRODUCTS.find(p=>p.id==="haek");
+  if(hsec && hp) hsec.classList.toggle("row--off", !hp.on);
   PRODUCTS.forEach(p => {
     const el = ROOT.querySelector('.pw[data-id="' + p.id + '"]');
     if(!el) return;
     if(p.pris == null){
-      el.innerHTML = '<span class="pw-note">' + (p.pakke ? "Inkluderet — aftales ved opkald" : "Pris ved besøg") + '</span>';
+      el.innerHTML = '<span class="pw-note">' + (p.prisNote || (p.pakke ? "Inkluderet — aftales ved opkald" : "Pris ved besøg")) + '</span>';
       delete el.dataset.val;
     } else if(!p.qty){
       el.innerHTML = '<span class="pw-note">Pris efter antal</span>';
