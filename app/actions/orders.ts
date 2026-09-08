@@ -148,6 +148,21 @@ export async function setOrderLock(orderId: number, locked: boolean): Promise<vo
   revalidateSchedule();
 }
 
+/** Skift medarbejder direkte fra ordresiden (/orders/[id] via EmployeePicker).
+ *  Sætter kun employeeId — rører ikke plannedAt eller lockedFully, så planlæg-
+ *  ningens dato/lås bevares; natteplanlæggeren binder joblet til den nye
+ *  medarbejder (medmindre ordren er helt fastlåst). null = "Ikke tildelt". */
+export async function changeOrderEmployee(orderId: number, employeeId: number | null): Promise<void> {
+  await guardAction();
+  if (employeeId != null && !Number.isInteger(employeeId)) return;
+  if (employeeId != null) {
+    const u = await prisma.user.findUnique({ where: { id: employeeId }, select: { active: true } });
+    if (!u?.active) return; // kun aktive medarbejdere kan vælges
+  }
+  await prisma.order.update({ where: { id: orderId }, data: { employeeId } });
+  revalidateSchedule(orderId);
+}
+
 /** Manuelt træk/slip fra ugekalenderen ("Rediger"-tilstand): flyt ordren til
  *  en konkret kollega + dag og LÅS den (lockedFully) så planlæggeren holder
  *  den præcis her — human approved overrule-all. Overrider bevidst faste

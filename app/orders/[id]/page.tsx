@@ -7,6 +7,8 @@ import { deleteOrder } from "@/app/actions/orders";
 import { retryInvoice } from "@/app/actions/dinero";
 import { CatChip, MapLink, StatusPill, money } from "@/components/ui";
 import ConfirmButton from "@/components/ConfirmButton";
+import EmployeePicker from "@/components/EmployeePicker";
+import { getEmployeeOptions } from "@/lib/queries";
 
 export const metadata = { title: "Rediger ordre · Karltoffel Business Manager" };
 
@@ -49,6 +51,7 @@ export default async function OrderDetail({ params }: { params: Promise<{ id: st
   });
   const showBatch = !!batch?.contact.isCompany
     && !!(batch.businessBatchInvoiceStatus || batch.businessBatchInvoiceNumber || batch.businessBatchError);
+  const employees = await getEmployeeOptions();
 
   return (
     <div className="container-1140">
@@ -84,7 +87,8 @@ export default async function OrderDetail({ params }: { params: Promise<{ id: st
             <div style={{ margin: "2px 0 10px" }}><StatusPill status={o.status} /></div>
             <div className="form-static">
               <b>Kilde</b>{"\n"}{o.source}{"\n\n"}
-              <b>Medarbejder</b>{"\n"}{o.employee}
+              <b>Medarbejder</b>
+              <EmployeePicker orderId={o.id} currentId={o.employeeId} employees={employees} />
               {o.comment ? `\n\nOrdrekommentar\n${o.comment}` : ""}
             </div>
           </div>

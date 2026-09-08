@@ -467,6 +467,7 @@ function plannedLabel(d: Date): string {
 export type OrderDetail = {
   id: number; status: string; comment: string; addressNote: string; lockedFully: boolean;
   deliveryAddress: string; plannedLabel: string; source: string; employee: string;
+  employeeId: number | null;
   contact: { name: string; street: string; city: string; att: string; phone: string; email: string; cvr: string };
   tasks: TaskLine[]; sumPrice: number; sumDuration: number;
   invoiceDecision: string; dineroInvoiceStatus: string; dineroInvoiceNumber: number | null; dineroError: string;
@@ -490,6 +491,7 @@ export async function getOrderDetail(id: number): Promise<OrderDetail | null> {
     plannedLabel: plannedLabel(o.plannedAt),
     source: o.subscription ? `${src} (${o.subscription.baseInterval})` : src,
     employee: o.employee ? `${o.employee.firstName} ${o.employee.lastName}` : "Ingen",
+    employeeId: o.employeeId ?? null,
     contact: {
       name: o.contact.name, street: o.contact.street, city: o.contact.city,
       att: o.contact.att ?? "", phone: o.contact.phone ?? "", email: o.contact.email ?? "", cvr: o.contact.cvr ?? "",
