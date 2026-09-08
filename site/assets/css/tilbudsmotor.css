@@ -327,10 +327,16 @@
 
 /* Frekvens-mikrotekst: antal besøg påvirker ikke prisen. */
 .tm-flow .tm-freq-note{margin:12px 2px 0;font-size:13px;color:var(--bronze);font-weight:600}
+/* Mobil-fix (Kristian-screenshot 2026-09-09): sticky-linjen med fradrag
+   løb ud over skærmen — nowrap på tværs af dele er fjernet på mobil, så
+   teksten Wrappes i stedet for at stikke ud. */
 @media (max-width:600px){
   .tm-flow .tm-card-head{padding:13px 12px}
   .tm-flow .tm-card-body{padding:2px 6px 10px}
-  .tm-flow .tm-sticky{font-size:13px;padding:11px 12px;gap:4px 8px}
+  .tm-flow .tm-sticky{font-size:13px;padding:11px 12px;gap:4px 8px;flex-wrap:wrap;text-align:left}
+  .tm-flow .tm-sticky .tm-sticky-count,.tm-flow .tm-sticky .tm-sticky-total,.tm-flow .tm-sticky .tm-sticky-mid{white-space:normal}
+  .tm-flow .tm-sticky .tm-sticky-total{min-width:0;max-width:100%}
+  .tm-flow .tm-sticky small{white-space:normal;display:block;width:100%}
 }
 
 /* ==== UX-klarhed (2026-09-02): hvorfor-linjer + reassurance ==== */
