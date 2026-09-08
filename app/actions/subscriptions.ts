@@ -55,6 +55,9 @@ function readTaskLines(formData: FormData) {
   // Ugedage-begrænsning pr. opgave — skjult felt der ALTID submittes pr. række
   // (digit-streng "0"-"6", 0=mandag … 6=søndag; tom = alle dage).
   const weekdaySets = formData.getAll("taskWeekdays").map(String);
+  // Per-opgave medarbejder (Thomas, 2026-09-07): synlig select pr. række, tom
+  // streng = vælges automatisk (null). Valideres i parse() som aktiv bruger.
+  const employeeSets = formData.getAll("taskEmployee").map(String);
   return descs
     .map((d, i) => ({
       description: d.trim(), price: prices[i] || 0, durationMin: durs[i] || 0,
@@ -62,6 +65,7 @@ function readTaskLines(formData: FormData) {
       pauseActive: pauseActives[i] || "0", pauseStart: (pauseStarts[i] || "").trim(),
       pauseEnd: (pauseEnds[i] || "").trim(), pauseYearly: pauseYearlies[i] || "1",
       weekdays: (weekdaySets[i] || "").trim(),
+      employeeId: Number(employeeSets[i]) || null,
     }))
     .filter((l) => l.description);
 }
@@ -95,12 +99,21 @@ function normalizeWeekLabel(raw: string): string | null {
   if (!parts) return null;
   if (parts.year != null) return `Uge ${parts.week}, ${parts.year}`;
   const nowMonday = weekMondayToday();
-  const year = isoWeekYear(nowMonday) + (parts.week < isoWeek(nowMonday) ? 1 : 0);
-  return `Uge ${parts.week}, ${year}`;
+  // BUG 2026-09-07 (McDonald's/Purhus, "Næste gang: Uge 33, 2027"): en PASSERET
+  // årløs uge blev her skubbet til NÆSTE ÅR ved gem. Det knækkede både
+  // startugen (anchor i 2027 → nul ordrer i et år) og opgave-linjernes
+  // "Næste gang" (j0-offset 52 uger frem). Korrekt semantik (Michaels
+  // beslutning, "passeret uge = skulle allerede køre"): en passeret årløs uge
+  // betyder START NU — anchor lander i fortiden, og genereringens
+  // fasejustering (catch-up) rykker første besøg til indeværende uge. En
+  // bevidst sæsonstart i fremtiden skrives med eksplicit år ("Uge 20, 2027").
+  // fremtidig uge i år: uændret (med eksplicit år for entydighed).
+  if (parts.week >= isoWeek(nowMonday)) return `Uge ${parts.week}, ${isoWeekYear(nowMonday)}`;
+  return weekLabel(nowMonday); // passeret årløs uge → start nu (indeværende uge)
 }
 
 type Fields = { contactId: number; baseInterval: string; startWeek: string; fixedEmployee: string; lines: ReturnType<typeof readTaskLines> };
-function parse(formData: FormData): Fields | ({ error: string } & Pick<SubscriptionState, "values">) {
+async function parse(formData: FormData): Promise<Fields | ({ error: string } & Pick<SubscriptionState, "values">)> {
   // Felterne læses FØR valideringen, så alle fejl-returer kan ekko dem tilbage
   // (React 19 form-reset: uden values mister brugeren sin indtastning).
   const baseInterval = String(formData.get("baseInterval") ?? "").trim();
@@ -117,7 +130,15 @@ function parse(formData: FormData): Fields | ({ error: string } & Pick<Subscript
   if (!startWeek) return { error: "Angiv startuge som fx 'Uge 29' eller 'Uge 29, 2026'.", values };
   const lines = readTaskLines(formData);
   if (!lines.length) return { error: "Tilføj mindst én opgave.", values };
+  // Per-opgave medarbejder: et sat id SKAL være en aktiv bruger — et stave-/
+  // manipuleret id må aldrig gemmes stille (FK-fejl eller død binding).
+  const activeIds = new Set(
+    (await prisma.user.findMany({ where: { active: true }, select: { id: true } })).map((u) => u.id),
+  );
   for (const l of lines) {
+    if (l.employeeId != null && !activeIds.has(l.employeeId)) {
+      return { error: `Vælg en gyldig medarbejder på opgaven '${l.description}' (eller lad feltet stå tomt).`, values };
+    }
     // "Næste gang" er valgfri, men en udfyldt værdi skal være i et format
     // genereringen forstår — ellers ignoreres den stille.
     if (l.nextWeek) {
@@ -207,7 +228,7 @@ function mondayOfUTCNow(): Date {
 
 export async function createSubscription(_prev: SubscriptionState, formData: FormData): Promise<SubscriptionState> {
   await guardAction();
-  const p = parse(formData);
+  const p = await parse(formData);
   if ("error" in p) return p;
   const values = { startWeek: p.startWeek, baseInterval: p.baseInterval, fixedEmployee: p.fixedEmployee };
   const contact = await prisma.contact.findUnique({ where: { id: p.contactId } });
@@ -261,7 +282,7 @@ export async function createSubscription(_prev: SubscriptionState, formData: For
 
 export async function updateSubscription(pk: number, _prev: SubscriptionState, formData: FormData): Promise<SubscriptionState> {
   await guardAction();
-  const p = parse(formData);
+  const p = await parse(formData);
   if ("error" in p) return p;
   const values = { startWeek: p.startWeek, baseInterval: p.baseInterval, fixedEmployee: p.fixedEmployee };
   const contact = await prisma.contact.findUnique({ where: { id: p.contactId } });

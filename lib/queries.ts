@@ -29,7 +29,7 @@ function sourceLabel(type: string, subDisplayNo?: number | null): string {
 
 // ---- row → view-type mappers ----------------------------------------------
 
-type TaskRow = Prisma.TaskLineGetPayload<object>;
+type TaskRow = Prisma.TaskLineGetPayload<{ include: { employee: true } }>;
 function mapTask(t: TaskRow): TaskLine {
   return {
     category: t.category,
@@ -41,6 +41,9 @@ function mapTask(t: TaskRow): TaskLine {
     nextWeek: t.startWeek ?? undefined,
     fromSubscription: t.fromSubscription,
     isStandardTask: t.isStandardTask,
+    // Per-opgave medarbejder (Thomas, 2026-09-07): navnet følger linjen ud på
+    // kalender-/dagsprogramkortene. Deaktiveret navn vises stadig (historik).
+    employeeName: t.employee ? `${t.employee.firstName} ${t.employee.lastName}` : undefined,
   };
 }
 
@@ -62,7 +65,7 @@ function mapContact(c: ContactRow): Contact {
   };
 }
 
-type SubRow = Prisma.SubscriptionGetPayload<{ include: { tasks: true } }>;
+type SubRow = Prisma.SubscriptionGetPayload<{ include: { tasks: { include: { employee: true } } } }>;
 function mapSubscription(s: SubRow, generationWarning: string | null = null): Subscription {
   return {
     id: s.displayNo,
@@ -101,7 +104,7 @@ async function generationWarningsByPk(rows: SubRow[]): Promise<Map<number, strin
   return out;
 }
 
-type OrderRow = Prisma.OrderGetPayload<{ include: { tasks: true; subscription: true; employee: true } }>;
+type OrderRow = Prisma.OrderGetPayload<{ include: { tasks: { include: { employee: true } }; subscription: true; employee: true } }>;
 function mapOrder(o: OrderRow): Order {
   const source = sourceLabel(o.sourceType, o.subscription?.displayNo);
   const employee = o.employee ? `${o.employee.firstName} ${o.employee.lastName}` : "Ingen";
@@ -259,7 +262,7 @@ export async function getSubscriptions(q?: string): Promise<Subscription[]> {
   const visible: Prisma.SubscriptionWhereInput = { OR: [{ active: true }, { pending: true }] };
   const rows = await prisma.subscription.findMany({
     where: search ? { AND: [visible, search] } : visible,
-    include: { tasks: true },
+    include: { tasks: { include: { employee: true } } },
     orderBy: { displayNo: "desc" },
   });
   const warnings = await generationWarningsByPk(rows);
@@ -269,7 +272,7 @@ export async function getSubscriptions(q?: string): Promise<Subscription[]> {
 export async function getSubscriptionsForContact(contactId: number): Promise<Subscription[]> {
   const rows = await prisma.subscription.findMany({
     where: { contactId, OR: [{ active: true }, { pending: true }] },
-    include: { tasks: true },
+    include: { tasks: { include: { employee: true } } },
     orderBy: { displayNo: "desc" },
   });
   const warnings = await generationWarningsByPk(rows);
@@ -278,7 +281,7 @@ export async function getSubscriptionsForContact(contactId: number): Promise<Sub
 
 /** Editor data for a subscription, keyed by its display no ("Abo. nr."). */
 export async function getSubscriptionEditData(displayNo: number) {
-  const s = await prisma.subscription.findUnique({ where: { displayNo }, include: { tasks: true } });
+  const s = await prisma.subscription.findUnique({ where: { displayNo }, include: { tasks: { include: { employee: true } } } });
   if (!s) return null;
   return {
     pk: s.id,
@@ -298,6 +301,8 @@ export async function getSubscriptionEditData(displayNo: number) {
       pauseEnd: t.pauseEnd ?? "", pauseYearly: t.pauseYearly ? "1" : "0",
       // Ugedage: digit-streng runder turen til formularen (checkbokse prefilles).
       weekdays: t.weekdays ?? "",
+      // Per-opgave medarbejder: id som streng ("" = vælges automatisk).
+      employee: t.employeeId != null ? String(t.employeeId) : "",
     })),
   };
 }
@@ -334,7 +339,7 @@ export type FixedPrice = {
   tasks: TaskLine[];
 };
 
-type FixedRow = Prisma.FixedPriceAgreementGetPayload<{ include: { tasks: true; contact: true } }>;
+type FixedRow = Prisma.FixedPriceAgreementGetPayload<{ include: { tasks: { include: { employee: true } }; contact: true } }>;
 function mapFixedPrice(f: FixedRow): FixedPrice {
   return {
     id: f.displayNo,
@@ -357,7 +362,7 @@ export async function getFixedPrices(q?: string): Promise<FixedPrice[]> {
   ] } : undefined;
   const rows = await prisma.fixedPriceAgreement.findMany({
     where,
-    include: { tasks: true, contact: true },
+    include: { tasks: { include: { employee: true } }, contact: true },
     orderBy: { displayNo: "desc" },
   });
   return rows.map(mapFixedPrice);
@@ -366,7 +371,7 @@ export async function getFixedPrices(q?: string): Promise<FixedPrice[]> {
 export async function getFixedPricesForContact(contactId: number): Promise<FixedPrice[]> {
   const rows = await prisma.fixedPriceAgreement.findMany({
     where: { contactId },
-    include: { tasks: true, contact: true },
+    include: { tasks: { include: { employee: true } }, contact: true },
     orderBy: { displayNo: "desc" },
   });
   return rows.map(mapFixedPrice);
@@ -374,7 +379,7 @@ export async function getFixedPricesForContact(contactId: number): Promise<Fixed
 
 /** Editor data for a fixed-price agreement, keyed by its display no ("Aftale nr."). */
 export async function getFixedPriceEditData(displayNo: number) {
-  const f = await prisma.fixedPriceAgreement.findUnique({ where: { displayNo }, include: { tasks: true } });
+  const f = await prisma.fixedPriceAgreement.findUnique({ where: { displayNo }, include: { tasks: { include: { employee: true } } } });
   if (!f) return null;
   return {
     pk: f.id,
@@ -389,7 +394,7 @@ export async function getFixedPriceEditData(displayNo: number) {
 
 // ---- Orders ----------------------------------------------------------------
 
-const orderInclude = { tasks: true, subscription: true, employee: true } as const;
+const orderInclude = { tasks: { include: { employee: true } }, subscription: true, employee: true } as const;
 
 /** Parse et søgeterm som dato: "2026-07-13", "13/7-2026", "13/7-26", "13-07-2026". */
 function parseSearchDate(term: string): Date | null {
@@ -462,6 +467,7 @@ function plannedLabel(d: Date): string {
 export type OrderDetail = {
   id: number; status: string; comment: string; addressNote: string; lockedFully: boolean;
   deliveryAddress: string; plannedLabel: string; source: string; employee: string;
+  employeeId: number | null;
   contact: { name: string; street: string; city: string; att: string; phone: string; email: string; cvr: string };
   tasks: TaskLine[]; sumPrice: number; sumDuration: number;
   invoiceDecision: string; dineroInvoiceStatus: string; dineroInvoiceNumber: number | null; dineroError: string;
@@ -470,7 +476,7 @@ export type OrderDetail = {
 export async function getOrderDetail(id: number): Promise<OrderDetail | null> {
   const o = await prisma.order.findUnique({
     where: { id },
-    include: { tasks: true, subscription: true, employee: true, contact: true },
+    include: { tasks: { include: { employee: true } }, subscription: true, employee: true, contact: true },
   });
   if (!o) return null;
   const tasks = [...o.tasks].sort((a, b) => a.sort - b.sort);
@@ -485,6 +491,7 @@ export async function getOrderDetail(id: number): Promise<OrderDetail | null> {
     plannedLabel: plannedLabel(o.plannedAt),
     source: o.subscription ? `${src} (${o.subscription.baseInterval})` : src,
     employee: o.employee ? `${o.employee.firstName} ${o.employee.lastName}` : "Ingen",
+    employeeId: o.employeeId ?? null,
     contact: {
       name: o.contact.name, street: o.contact.street, city: o.contact.city,
       att: o.contact.att ?? "", phone: o.contact.phone ?? "", email: o.contact.email ?? "", cvr: o.contact.cvr ?? "",
@@ -545,7 +552,7 @@ export async function getPlannerJobs(weekMonday: string): Promise<Job[]> {
   const end = new Date(start.getTime() + 7 * 864e5);
   const rows = await prisma.order.findMany({
     where: { plannedAt: { gte: start, lt: end } },
-    include: { tasks: true, subscription: true, contact: true },
+    include: { tasks: { include: { employee: true } }, subscription: true, contact: true },
     orderBy: { id: "asc" },
   });
   return rows.map((o) => ({
@@ -601,7 +608,7 @@ async function buildWeekPlan(weekMonday: string) {
   const [orders, users] = await Promise.all([
     prisma.order.findMany({
       where: { plannedAt: { gte: start, lt: end } },
-      include: { tasks: true, subscription: true, contact: true },
+      include: { tasks: { include: { employee: true } }, subscription: true, contact: true },
       orderBy: { id: "asc" },
     }),
     // active:true OGSÅ: en deaktiveret bruger med gammelt activeCalendar-flag
@@ -803,7 +810,7 @@ async function monthRevenue(year: number, monthIdx0: number, employeeId?: number
   const to = new Date(Date.UTC(year, monthIdx0 + 1, 1));
   const orders = await prisma.order.findMany({
     where: { plannedAt: { gte: from, lt: to }, ...(employeeId != null ? { employeeId } : {}) },
-    include: { tasks: true },
+    include: { tasks: { include: { employee: true } } },
   });
   return orders.reduce((sum, o) => sum + o.tasks.reduce((a, t) => a + t.price, 0), 0);
 }
@@ -845,6 +852,7 @@ export async function getCalendarWeek(weekMonday: string, viewer?: { id: number;
           description: t.description,
           intervalMultiplier: t.interval ?? null,
           durationMin: t.durationMin,
+          employeeName: t.employeeName,
         })),
       };
     })
@@ -889,6 +897,7 @@ export async function getCalendarWeek(weekMonday: string, viewer?: { id: number;
         description: t.description,
         intervalMultiplier: t.interval ?? null,
         durationMin: t.durationMin,
+        employeeName: t.employeeName,
       })),
       reason,
     };
@@ -934,7 +943,7 @@ export async function getDayProgram(dateISO: string, viewer?: { id: number; isAd
         source: s.job.source,
         orderId: s.job.id, contactId: s.job.contactId,
         subscriptionNo: meta?.subNo ?? null, phone: meta?.phone ?? null, status: meta?.status ?? "Afventer levering",
-        tasks: (meta?.tasks ?? []).map((t) => ({ category: t.category, letter: t.letter, description: t.description, price: t.price, durationMin: t.durationMin })),
+        tasks: (meta?.tasks ?? []).map((t) => ({ category: t.category, letter: t.letter, description: t.description, price: t.price, durationMin: t.durationMin, employeeName: t.employeeName })),
         comment: meta?.comment ?? "", addressNote: meta?.addressNote ?? "",
       };
     });
@@ -956,7 +965,7 @@ export async function getDayProgram(dateISO: string, viewer?: { id: number; isAd
         source: job.source,
         orderId: job.id, contactId: job.contactId,
         subscriptionNo: meta?.subNo ?? null, phone: meta?.phone ?? null, status: meta?.status ?? "Afventer levering",
-        tasks: (meta?.tasks ?? []).map((t) => ({ category: t.category, letter: t.letter, description: t.description, price: t.price, durationMin: t.durationMin })),
+        tasks: (meta?.tasks ?? []).map((t) => ({ category: t.category, letter: t.letter, description: t.description, price: t.price, durationMin: t.durationMin, employeeName: t.employeeName })),
         comment: meta?.comment ?? "", addressNote: meta?.addressNote ?? "",
         reason: DAY_UNPLANNED_REASON[reason] ?? "Ukendt årsag",
       };

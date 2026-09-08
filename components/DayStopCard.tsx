@@ -100,7 +100,10 @@ export default function DayStopCard({ stop, weekMonday }: { stop: DayStop | DayU
         {stop.tasks.length > 0 && (
           <div className="daycal-tasks">
             {stop.tasks.map((t, i) => (
-              <div key={i}><CatChip category={t.category} letter={t.letter} /> {t.description} · <span className="num">{t.durationMin} min</span></div>
+              <div key={i}>
+                <CatChip category={t.category} letter={t.letter} /> {t.description} · <span className="num">{t.durationMin} min</span>
+                {t.employeeName && <> · <span style={{ opacity: 0.85 }}>👤 {t.employeeName}</span></>}
+              </div>
             ))}
           </div>
         )}

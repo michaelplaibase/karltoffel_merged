@@ -148,6 +148,53 @@ export async function setOrderLock(orderId: number, locked: boolean): Promise<vo
   revalidateSchedule();
 }
 
+/** Skift medarbejder direkte fra ordresiden (/orders/[id] via EmployeePicker).
+ *  Sætter kun employeeId — rører ikke plannedAt eller lockedFully, så planlæg-
+ *  ningens dato/lås bevares; natteplanlæggeren binder joblet til den nye
+ *  medarbejder (medmindre ordren er helt fastlåst). null = "Ikke tildelt". */
+export async function changeOrderEmployee(orderId: number, employeeId: number | null): Promise<void> {
+  await guardAction();
+  if (employeeId != null && !Number.isInteger(employeeId)) return;
+  if (employeeId != null) {
+    const u = await prisma.user.findUnique({ where: { id: employeeId }, select: { active: true } });
+    if (!u?.active) return; // kun aktive medarbejdere kan vælges
+  }
+  await prisma.order.update({ where: { id: orderId }, data: { employeeId } });
+  revalidateSchedule(orderId);
+}
+
+/** Manuelt træk/slip fra ugekalenderen ("Rediger"-tilstand): flyt ordren til
+ *  en konkret kollega + dag og LÅS den (lockedFully) så planlæggeren holder
+ *  den præcis her — human approved overrule-all. Overrider bevidst faste
+ *  ugedage, kapacitet og medarbejder-binding: et manuelt træk er en
+ *  menneskelig godkendelse af placeringen. */
+export async function moveOrderManual(orderId: number, employeeId: number, dateISO: string): Promise<void> {
+  await guardAction();
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(dateISO) || !Number.isInteger(employeeId)) return;
+  const o = await prisma.order.findUnique({
+    where: { id: orderId },
+    select: { plannedAt: true, subscriptionId: true, sourceWeek: true },
+  });
+  if (!o) return;
+  // Samme tombstone-beskyttelse som moveOrderWeeks: fasthold rytme-ugen for
+  // abonnements-rækker, så natte-genereringen ikke genopretter den i den nye uge.
+  const newAt = new Date(`${dateISO}T10:00:00Z`);
+  let sourceWeekFix: { sourceWeek: Date } | undefined;
+  if (o.subscriptionId != null && o.sourceWeek == null) {
+    const candidate = mondayOfUTC(o.plannedAt);
+    const clash = await prisma.order.findFirst({
+      where: { subscriptionId: o.subscriptionId, sourceWeek: candidate, NOT: { id: orderId } },
+      select: { id: true },
+    });
+    if (!clash) sourceWeekFix = { sourceWeek: candidate };
+  }
+  await prisma.order.update({
+    where: { id: orderId },
+    data: { plannedAt: newAt, employeeId, lockedFully: true, ...sourceWeekFix },
+  });
+  revalidateSchedule(orderId);
+}
+
 /** Calendar "Flyt til anden uge …" — shift the order ±N weeks. When `unlock`,
  *  also fully release it so the planner may re-slot it in the target week. */
 export async function moveOrderWeeks(orderId: number, weeks: number, unlock = false): Promise<void> {
@@ -158,6 +205,33 @@ export async function moveOrderWeeks(orderId: number, weeks: number, unlock = fa
   });
   if (!o) return;
   const plannedAt = new Date(o.plannedAt.getTime() + weeks * 7 * 864e5);
+  await applyOrderMove(o, orderId, plannedAt, unlock);
+}
+
+/** Kalendermenuen "Flyt til specifik dato": sæt ordrens leveringsdato til en
+ *  valgt dato (kl. 10 UTC som createOrder/moveOrderToDate) med samme
+ *  tombstone/lås-logik som moveOrderWeeks. */
+export async function moveOrderToExactDate(orderId: number, dateISO: string, unlock = false): Promise<void> {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(dateISO)) return;
+  await guardAction();
+  const o = await prisma.order.findUnique({
+    where: { id: orderId },
+    select: { plannedAt: true, subscriptionId: true, sourceWeek: true },
+  });
+  if (!o) return;
+  const plannedAt = new Date(`${dateISO}T10:00:00Z`);
+  if (Number.isNaN(plannedAt.getTime())) return;
+  await applyOrderMove(o, orderId, plannedAt, unlock);
+}
+
+/** Fælles maskine for moveOrderWeeks/moveOrderToExactDate: sourceWeek-backfill
+ *  (rytmeugen = ugen FØR flytningen), lås-håndtering og revalidering. */
+async function applyOrderMove(
+  o: { plannedAt: Date; subscriptionId: number | null; sourceWeek: Date | null },
+  orderId: number,
+  plannedAt: Date,
+  unlock: boolean,
+): Promise<void> {
   // Backfill sourceWeek for abonnements-rækker fra før sourceWeek-migrationen:
   // uden den ville deleteOrders tombstone-fallback (mondayOf(plannedAt)) efter
   // en flytning ramme den FLYTTEDE uge, så natte-genereringen genopretter
@@ -256,6 +330,30 @@ export async function completeOrder(orderId: number, _prev: CompleteOrderState, 
   revalidatePath(`/customers/${order.contactId}`);
   // On invoicing failure, land on the order so the error + retry are front and centre.
   redirect(invoiceFailed ? `/orders/${orderId}` : backUrl);
+}
+
+/** Simpel "Meld færdig"-knap i Faktureringsoverblikkets "Ikke meldt færdigt"-
+ *  tabel (Thomas, 2026-09-08): sæt status til "Udført" uden at gå via
+ *  Afslut ordre-formularen. Ingen kommentar/fakturavalg — ordren ryger ind i
+ *  "Klar til fakturering" og kan faktureres derfra (eller medInvoiceDecision
+ *  sættes senere på ordresiden). completedAt sættes som ved udførelse. */
+export async function markOrderDone(orderId: number): Promise<void> {
+  await guardAction();
+  const o = await prisma.order.findUnique({
+    where: { id: orderId },
+    select: { contactId: true, completedAt: true },
+  });
+  if (!o) return;
+  await prisma.order.update({
+    where: { id: orderId },
+    data: {
+      status: "Udført",
+      ...(o.completedAt ? {} : { completedAt: new Date() }),
+    },
+  });
+  revalidatePath("/fakturering");
+  revalidateSchedule(orderId);
+  revalidatePath(`/customers/${o.contactId}`);
 }
 
 /** Simpel "Flyt opgave til anden dag" fra Afslut ordre-siden: sæt en ny

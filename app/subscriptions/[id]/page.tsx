@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { getSubscriptionEditData, getContactOptions, getEmployeeNames, getMinuteRate } from "@/lib/queries";
+import { getSubscriptionEditData, getContactOptions, getEmployeeNames, getEmployeeOptions, getMinuteRate } from "@/lib/queries";
 import { updateSubscription, stopSubscription, approveSubscription } from "@/app/actions/subscriptions";
 import { routeId } from "@/lib/route-ids";
 import SubscriptionForm from "@/components/SubscriptionForm";
@@ -10,10 +10,11 @@ export const metadata = { title: "Rediger abonnement · Karltoffel Business Mana
 export default async function EditSubscription({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const displayNo = routeId(id); // ikke-numerisk id ⇒ 404, ikke Prisma-500
-  const [sub, contacts, employees, minuteRate] = await Promise.all([
+  const [sub, contacts, employees, employeeOptions, minuteRate] = await Promise.all([
     getSubscriptionEditData(displayNo),
     getContactOptions(),
     getEmployeeNames(),
+    getEmployeeOptions(),
     getMinuteRate(),
   ]);
   if (!sub) notFound();
@@ -42,6 +43,7 @@ export default async function EditSubscription({ params }: { params: Promise<{ i
         action={updateSubscription.bind(null, sub.pk)}
         contacts={contacts}
         employees={employees}
+        employeeOptions={employeeOptions}
         initial={{
           contactId: sub.contactId, baseInterval: sub.baseInterval, startWeek: sub.startWeek,
           fixedEmployee: sub.fixedEmployee, tasks: sub.tasks,

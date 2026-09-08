@@ -16,9 +16,12 @@ export type TaskRow = {
   // "Måneder på pause" (kun abonnementer) — strengform til form-submit:
   // pauseActive/pauseYearly er '1'/'0', datoerne ISO 'YYYY-MM-DD'.
   pauseActive?: string; pauseStart?: string; pauseEnd?: string; pauseYearly?: string;
-  // Ugedage (kun abonnementer): digit-streng "0"-"6", 0=mandag … 6=søndag,
+  // Ugedage (kun abonnementer): digit-streng "0"–"6", 0=mandag … 6=søndag,
   // fx "0" = kun mandag. Tom/undefined = alle ugedage.
   weekdays?: string;
+  // Per-opgave medarbejder (kun abonnementer): "" = vælges automatisk, ellers
+  // bruger-id som streng. Gemmes som TaskLine.employeeId.
+  employee?: string;
 };
 
 const CAT_NAMES = Object.keys(CATEGORIES);
@@ -34,7 +37,7 @@ const timepris = (r: TaskRow) => {
 };
 
 export default function TaskLineEditor({
-  initial, mode = "order", rows: controlledRows, setRows: controlledSetRows, minuteRate,
+  initial, mode = "order", rows: controlledRows, setRows: controlledSetRows, minuteRate, employees,
 }: {
   initial?: TaskRow[];
   mode?: "order" | "subscription";
@@ -48,11 +51,20 @@ export default function TaskLineEditor({
    *  minutpris, afrundet (min. 1 min). Varigheden kan stadig rettes manuelt —
    *  en manuel rettelse står, indtil prisen ændres igen. */
   minuteRate?: number;
+  /** Medarbejdere (id + navn) til per-opgave tildeling (kun abonnement-mode).
+   *  Udelades den, vises kolonnen ikke (ordre-/fastpris-formularer uændrede). */
+  employees?: { id: number; name: string }[];
 }) {
   const sub = mode === "subscription";
+  const empList = sub ? employees ?? [] : [];
+  const showEmp = empList.length > 0;
   const [ownRows, setOwnRows] = useState<TaskRow[]>(initial?.length ? initial : [blank()]);
   const rows = controlledRows ?? ownRows;
   const setRows = controlledSetRows ?? setOwnRows;
+  // En gemt per-opgave medarbejder, der er deaktiveret (ikke i listen), skal
+  // stadig kunne SES og bevares — samme mønster som fixedEmployee i SubscriptionForm.
+  const savedEmpById = new Map(empList.map((e) => [String(e.id), e]));
+  const inactiveEmpIds = [...new Set(rows.map((r) => r.employee).filter((v) => v && !savedEmpById.has(v)))] as string[];
   const update = (i: number, patch: Partial<TaskRow>) =>
     setRows((rs) => rs.map((r, j) => (j === i ? { ...r, ...patch } : r)));
   const add = () => setRows((rs) => [...rs, blank()]);
@@ -78,6 +90,7 @@ export default function TaskLineEditor({
               <th style={{ width: 120 }}>Varighed (min.)</th>
               {sub && <th style={{ width: 190 }}>Interval</th>}
               {sub && <th style={{ width: 110 }}>Næste gang</th>}
+              {showEmp && <th style={{ width: 160 }} title="Bind opgaven til en bestemt medarbejder">Medarbejder</th>}
               {sub && <th style={{ width: 210 }} title="Opgaven køres kun på de valgte ugedage">Ugedage</th>}
               <th style={{ width: 40 }} />
             </tr>
@@ -168,6 +181,25 @@ export default function TaskLineEditor({
                       onChange={(e) => update(i, { nextWeek: e.target.value })} className="form-control form-control-sm" />
                   </td>
                 )}
+                {showEmp && (
+                  // Per-opgave medarbejder (Thomas, 2026-09-07): tom = vælges
+                  // automatisk. Feltet er en VISIBLE select med navn taskEmployee
+                  // (selects med samme name forskubber ikke getAll-zippet — de er
+                  // altid til stede pr. række, i modsætning til checkboxe).
+                  <td data-label="Medarbejder">
+                    <select
+                      name="taskEmployee" value={r.employee ?? ""}
+                      onChange={(e) => update(i, { employee: e.target.value })}
+                      className="form-control form-control-sm"
+                    >
+                      <option value="">Vælges automatisk</option>
+                      {empList.map((e) => <option key={e.id} value={String(e.id)}>{e.name}</option>)}
+                      {inactiveEmpIds.includes(r.employee ?? "") && (
+                        <option value={r.employee!}>Nuværende: ID {r.employee} (deaktiveret)</option>
+                      )}
+                    </select>
+                  </td>
+                )}
                 {sub && (
                   // Ugedage: små checkbokse (mandag–søndag). De synlige bokse er
                   // UGYLDIGE til submit (checkboxes med samme name forskubber
@@ -211,6 +243,7 @@ export default function TaskLineEditor({
               <td className="num" data-label="Minutter i alt" style={{ fontWeight: 600 }}>{dur}</td>
               {sub && <td />}
               {sub && <td />}
+              {showEmp && <td />}
               {sub && <td />}
               <td />
             </tr>

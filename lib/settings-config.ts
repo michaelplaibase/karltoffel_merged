@@ -259,6 +259,22 @@ export const SETTINGS_PAGES: Record<string, SPage> = {
     ],
   },
 
+  "/anmeldelser": {
+    title: "Anmeldelser",
+    route: "/anmeldelser",
+    purpose: "Link til jeres Google-profil, så kunderne kan give en anmeldelse. Linket indsættes automatisk i anmeldelses-mailen, der sendes fra afsluttede ordrer.",
+    saveLabel: "Gem alle ændringer",
+    sections: [
+      {
+        h: "Google anmeldelser",
+        fields: [
+          { t: "note", val: "Åbn jeres Google-profil (Google Business Profile) i browseren, klik 'Del' → kopier linket, og indsæt det her. Så bruger anmeldelses-mailen automatisk dette link. Har I ikke en Google-profil endnu, oprettes den gratis på google.com/business." },
+          { t: "text", l: "Link til Google-anmeldelser", key: "reviewLink", val: "", help: "Indsæt det fulde link, f.eks. https://g.page/r/XXXX/review" },
+        ],
+      },
+    ],
+  },
+
   "/standard-tasks": {
     title: "Oversigt over standardopgaver",
     route: "/standard-tasks",

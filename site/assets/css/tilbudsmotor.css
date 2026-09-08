@@ -207,6 +207,9 @@
 .tm-flow .pw-val{font-size:13px;font-weight:800;color:var(--brun);font-variant-numeric:tabular-nums;white-space:nowrap}
 .tm-flow .pw-unit{font-size:9.5px;letter-spacing:.02em;color:var(--bronze);font-weight:700;white-space:nowrap;line-height:1;margin-top:1px}
 .tm-flow .pw-note{font-size:12.5px;color:var(--bronze);font-weight:600;white-space:nowrap;text-align:center}
+/* Lang pris-note (hæk over 2,2 m: billede-copy) — må gerne breake linjen, ellers
+   skyder teksten ud over gridden (pw-kolonnen er kun ~88-270 px bred). */
+.tm-flow .pw-note.pw-note-lang{white-space:normal;max-width:300px;font-weight:500;line-height:1.3;text-align:left}
 /* Frekvens — "Besøg om året" over stepperen */
 .tm-flow .fw{grid-area:fw;display:flex;flex-direction:column;align-items:center;gap:3px}
 /* Antal døre, ruder og porte — kundens eget antal-felt (kun vinduespudsning udvendig) */
@@ -245,6 +248,20 @@
 @media (max-width:1023px){
   .tm-flow .pw-lbl,.tm-flow .fw-lbl{display:none}
   .tm-flow .pw-note{white-space:normal;font-size:10.5px;line-height:1.12;text-align:center}
+}
+/* Mobil (<700px): de horisontale grid-kolonner (navn | antal | pris | stepper)
+   bliver for smalle og overlapper hinanden — stack dem i stedet lodret:
+   navn+beskrivelse → antal-felt → pris → besøg-stepper. Eksplicit row-gap så
+   intet lægger OvenI hinanden. Checkbox + navn deler første linje. Fravalgte
+   felter (visibility:hidden) fjernes helt fra flowet med display:none, så de
+   ikke efterlader tomme linjer i den stakkede layout. Desktop (>=1024px)
+   og melleombreaket (700-1023px) påvirkes ikke. */
+@media (max-width:700px){
+  .tm-flow .row{grid-template-columns:auto minmax(0,1fr);grid-template-areas:"chk navn" ". pw" ". fw";row-gap:9px;column-gap:10px;align-items:start}
+  .tm-flow .qrow{grid-template-areas:"chk navn" ". qw" ". pw" ". fw"}
+  .tm-flow .qw,.tm-flow .pw,.tm-flow .fw{align-items:flex-start}
+  .tm-flow .pw-note{text-align:left}
+  .tm-flow .row--off .qw,.tm-flow .row--off .pw,.tm-flow .row--off .fw{display:none}
 }
 
 /* Kundetype-kortene (trin 2) skal have ENS bredde, når de stakker */
@@ -298,7 +315,7 @@
 .tm-flow .tm-card-chevron{flex:none;transition:transform .2s ease;font-size:14px}
 .tm-flow .tm-card.open .tm-card-chevron{transform:rotate(180deg)}
 /* Sammenklappet som standard: body vises kun når kortet er åbent. */
-.tm-flow .tm-card-body{display:none;flex-direction:column;gap:9px;padding:4px 10px 12px}
+.tm-flow .tm-card-body{display:flex;flex-direction:column;gap:9px;padding:4px 10px 12px}
 .tm-flow .tm-card.open .tm-card-body{display:flex}
 
 /* Sticky opsummering: under listen, over "Videre/Tilbage"-navgen. position:sticky
@@ -310,10 +327,16 @@
 
 /* Frekvens-mikrotekst: antal besøg påvirker ikke prisen. */
 .tm-flow .tm-freq-note{margin:12px 2px 0;font-size:13px;color:var(--bronze);font-weight:600}
+/* Mobil-fix (Kristian-screenshot 2026-09-09): sticky-linjen med fradrag
+   løb ud over skærmen — nowrap på tværs af dele er fjernet på mobil, så
+   teksten Wrappes i stedet for at stikke ud. */
 @media (max-width:600px){
   .tm-flow .tm-card-head{padding:13px 12px}
   .tm-flow .tm-card-body{padding:2px 6px 10px}
-  .tm-flow .tm-sticky{font-size:13px;padding:11px 12px;gap:4px 8px}
+  .tm-flow .tm-sticky{font-size:13px;padding:11px 12px;gap:4px 8px;flex-wrap:wrap;text-align:left}
+  .tm-flow .tm-sticky .tm-sticky-count,.tm-flow .tm-sticky .tm-sticky-total,.tm-flow .tm-sticky .tm-sticky-mid{white-space:normal}
+  .tm-flow .tm-sticky .tm-sticky-total{min-width:0;max-width:100%}
+  .tm-flow .tm-sticky small{white-space:normal;display:block;width:100%}
 }
 
 /* ==== UX-klarhed (2026-09-02): hvorfor-linjer + reassurance ==== */
@@ -350,3 +373,118 @@
 .tm-flow .tak-next{margin:18px auto 0;max-width:420px;text-align:left;padding:16px 20px;border-radius:12px;background:#FFFFF0;border:1px solid #AE8642;font-size:13.5px;color:#4C3718}
 .tm-flow .tak-next ol{margin:8px 0 0;padding-left:20px}
 .tm-flow .tak-next li{margin:4px 0}
+
+/* Alle 3 kort er ALTID åbne (Kristian 2026-09-04) — chevron fjernet, fold er væk. */
+.tm-flow .tm-card-chevron{display:none}
+
+/* Servicefradrag-tekst under prisen: lille, dæmpet, ikke-med-pulsen. */
+.tm-flow .pw-fradrag{display:block;font-size:0.72em;opacity:0.75;margin-top:2px}
+
+/* ==========================================================================
+   UX/UI-REWORK (2026-09-04, branch feat/tilbudsmotor-ux-desktop)
+   Problem: på desktop kollapsede 1fr-navne-kolonnen, når qty-label + prisblok
+   + stepper fyldte mere end rækkebredden — navnet løb ind under antal-feltet.
+   Løsning: faste, ikke-kollapsende kolonner (navn | antal | pris | stepper),
+   prisen som dominerende tal, fradrag som diskret Spire-grøn sekundærlinje,
+   hover/fravalgt-adskillelse så kortene ikke flyder sammen.
+   ========================================================================== */
+
+/* Fradrag: lille grøn (Spire) tilbehørslinje — fuld kontrast, ingen opacity,
+   så den aldrig tåges over gul. Basegælder alle breddegrader (mobil nedarver). */
+.tm-flow .pw-fradrag{font-size:11px;line-height:1.35;color:#616711;opacity:1;font-weight:600}
+
+/* Række-adskillelse: valgte rækker løftes let ved hover, fravalgte er dæmpede
+   (men læsbare) og vågner ved hover/fokus. Ingen layout-spring. */
+.tm-flow .row{transition:opacity .15s ease,filter .15s ease,box-shadow .15s ease}
+.tm-flow .row--off{opacity:.8}
+.tm-flow .row--off:hover,.tm-flow .row--off:focus-within{opacity:1}
+.tm-flow .row:not(.row--off):hover{filter:brightness(1.035);box-shadow:0 6px 18px rgba(28,20,11,.12)}
+
+/* TABLET (701–1023px): samme robuste stacking som mobil — den horisontale
+   44px pris-kolonne kan aldrig rumme '204 kr' + fradrag, så rækken stackes
+   i stedet (navn → antal → pris → stepper). qw-label beholdes (den er
+   selvforklarende og ombryder). */
+@media (min-width:701px) and (max-width:1023px){
+  .tm-flow .row{grid-template-columns:auto minmax(0,1fr);grid-template-areas:"chk navn" ". pw" ". fw";row-gap:9px;column-gap:10px;align-items:start}
+  .tm-flow .qrow{grid-template-areas:"chk navn" ". qw" ". pw" ". fw"}
+  .tm-flow .qw,.tm-flow .pw,.tm-flow .fw{align-items:flex-start}
+  .tm-flow .pw-note{text-align:left}
+  .tm-flow .qw-lbl{white-space:normal;text-align:left}
+  .tm-flow .row--off .qw,.tm-flow .row--off .pw,.tm-flow .row--off .fw{display:none}
+}
+
+/* DESKTOP (≥1024px): fem faste kolonner — checkbox | navn (1fr) | antal (150px)
+   | prisblok (250px, højrejusteret) | stepper (132px). Pris- og stepper-kolonnen
+   står præcis over hinanden i ALLE rækker, også dem uden antal-felt (tomt
+   område i grid-areas). 1fr med minmax(0,·) kan aldrig længere kollapse ind
+   i nabofelterne. */
+@media (min-width:1024px){
+  .tm-flow .rows{max-width:920px;gap:20px}
+  .tm-flow .row{
+    grid-template-columns:auto minmax(0,1fr) 150px 250px 132px;
+    grid-template-areas:"chk navn qw pw fw";
+    column-gap:22px;
+    padding:14px 22px;
+    align-items:center;
+  }
+  .tm-flow .row:not(.qrow){grid-template-areas:"chk navn . pw fw"}
+  .tm-flow .row .navn{font-size:15.5px}
+  /* Antal-felt: kompakt fast kolonne; label må ombryde på to linjer i stedet
+     for at presse navnet væk. */
+  .tm-flow .qw{width:150px}
+  .tm-flow .qw-lbl{white-space:normal;max-width:150px;line-height:1.3;font-size:10px}
+  .tm-flow .qw input{width:100%;max-width:120px}
+  /* Prisblok: PRISEN dominerer (24px), 'pr. besøg · X kr/år ved N besøg' på
+     ÉN linje, fradrag som sidste diskrete linje. Alt højrejusteret i blokken. */
+  .tm-flow .pw{width:250px;min-width:0;align-items:flex-end;text-align:right}
+  .tm-flow .pw-val{font-size:24px}
+  .tm-flow .pw-unit{font-size:11.5px;white-space:nowrap;margin-top:2px}
+  .tm-flow .pw-fradrag{max-width:250px}
+  /* Stepper: kompakt, centreret i egen kolonne. */
+  .tm-flow .fw{width:132px}
+  .tm-flow .fw-lbl{font-size:10px}
+}
+
+/* MOBIL-finslibning (<700px): fradragsteksten ombryder roligt, pris og stepper
+   får fast, ens afstand; intet trykkes sammen. (Layoutet var i forvejen OK —
+   dette låser bare mellemrummene.) */
+@media (max-width:700px){
+  .tm-flow .pw-fradrag{margin-top:3px}
+  .tm-flow .pw{max-width:100%}
+  .tm-flow .fw{padding-top:2px}
+}
+
+/* ===== Venteliste-trinnet (Sjælland/Fyn — vi kører der endnu ikke) ===== */
+/* Genbruger .kontakt-form-styling; kun postnr-linjen + bekræftelsen er nye. */
+.tm-flow .venteliste .v-postnr{margin:14px 0 0;font-size:15px;font-weight:700;color:var(--gul)}
+.tm-flow .venteliste .v-ok{display:none;background:var(--ivory);color:var(--brun);border-radius:12px;padding:20px 22px;font-size:17px;font-weight:700;margin-top:20px}
+.tm-flow .venteliste .v-ok.show{display:block}
+
+/* ===== Hæk-spørgsmål (trin 4): 4 spørgsmål + udkørsels-linje under hæk-rækken ===== */
+/* Fix 5 (UX 2026-09-08): hæk-spørgsmålene + gebyr-boksen får en egen
+   indramning, så blokken tydeligt binder sig til HÆK-rækken (gul venstre-
+   kant + kort-fornemmelse) — og ikke til Beskæring under den. */
+.tm-flow .tm-haekinfo{border:1px solid rgba(255,248,123,.28);border-left:3px solid var(--gul);border-radius:12px;margin-top:4px;padding:12px 14px;display:flex;flex-direction:column;gap:10px;background:rgba(255,248,123,.05)}
+.tm-flow .tm-haekinfo.row--off{display:none}
+.tm-flow .tm-haekinfo-q{display:flex;flex-direction:column;gap:5px}
+.tm-flow .tm-haekinfo-lbl{font-size:12px;font-weight:700;color:var(--ivory)}
+.tm-flow .tm-haekinfo-opts{display:flex;flex-wrap:wrap;gap:6px}
+/* Fix 3 (UX 2026-09-08): pænere tap-targets — desktop mindst 38 px høje pills
+   med 13,5 px tekst (var 28 px / 12 px); mobil kravet er 44 px + 14 px (neden). */
+.tm-flow .tm-haekinfo-opt{appearance:none;border:1.5px solid var(--brun);background:#fff;color:var(--brun);border-radius:999px;padding:8px 14px;font-size:13.5px;font-weight:700;font-family:inherit;cursor:pointer;line-height:1.3;min-height:38px;display:inline-flex;align-items:center}
+.tm-flow .tm-haekinfo-opt:hover{border-color:var(--bronze);color:var(--bronze)}
+.tm-flow .tm-haekinfo-opt.selected{background:var(--gul,var(--bronze));border-color:var(--brun);color:var(--brun);box-shadow:inset 0 0 0 1.5px var(--brun)}
+.tm-flow .tm-haekinfo-opt:focus-visible{outline:2px solid var(--bronze);outline-offset:1px}
+.tm-flow .tm-haekinfo-udkoersel{display:flex;flex-direction:column;gap:2px;background:var(--ivory,rgba(0,0,0,.04));border-radius:10px;padding:8px 12px;font-size:13px}
+.tm-flow .tm-haekinfo-udkoersel b{color:var(--brun)}
+.tm-flow .tm-haekinfo-udkoersel span{font-size:11.5px;color:var(--bronze);font-weight:500}
+/* Fix 1: venlig påkrævet-besked — samme err-mønster som kontakt-trinnet. */
+.tm-flow .tm-haekinfo-err{display:none;color:var(--ivory);background:var(--roed-moerk);border-radius:10px;padding:10px 14px;font-size:14px;line-height:1.35}
+.tm-flow .tm-haekinfo-err.show{display:block}
+@media (max-width:700px){
+  .tm-flow .tm-haekinfo{padding:10px 12px;gap:8px}
+  /* Fix 3: mobil (390 px) kræver mindst 44 px høje tap-targets og 14 px tekst
+     (var 27-28 px / 11,5-12 px — under alle WCAG minimums). */
+  .tm-flow .tm-haekinfo-opt{padding:10px 14px;font-size:14px;min-height:44px}
+}
+

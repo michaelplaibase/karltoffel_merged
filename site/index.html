@@ -40,7 +40,7 @@ Besøg os på www.bubble.dk eller ring til os på +45 6069 8700
 		<link rel="apple-touch-icon" href="/assets/img/design/appicon.png">
 	<link rel="stylesheet" href="/assets/css/typekit.css">
 	<link rel="stylesheet" type="text/css" href="/assets/css/style.css?v=6">
-	<link rel="stylesheet" href="/assets/css/tilbudsmotor.css?v=30">
+	<link rel="stylesheet" href="/assets/css/tilbudsmotor.css?v=41">
 	<link rel="stylesheet" href="/assets/css/spacing.css?v=4">
 	<link rel="stylesheet" href="/assets/css/kundetype.css?v=1">
 		<link rel="preload" as="image"
@@ -76,7 +76,24 @@ Besøg os på www.bubble.dk eller ring til os på +45 6069 8700
 	}
 	</style>
 
-	</head>
+		<link rel="stylesheet" href="/assets/css/floating-cta.css?v=1">
+<!-- Meta Pixel Code -->
+<script>!function(f,b,e,v,n,t,s)
+{if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+n.callMethod.apply(n,arguments):n.queue.push(arguments)};
+if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
+n.queue=[];t=b.createElement(e);t.async=!0;
+t.src=v;s=b.getElementsByTagName(e)[0];
+s.parentNode.insertBefore(t,s)}(window, document,'script',
+'https://connect.facebook.net/en_US/fbevents.js');
+fbq('init', '1574687980856727');
+fbq('track', 'PageView');
+</script>
+<noscript><img height="1" width="1" style="display:none"
+src="https://www.facebook.com/tr?id=1574687980856727&amp;ev=PageView&amp;noscript=1"
+/></noscript>
+<!-- End Meta Pixel Code -->
+</head>
 
 
 
@@ -270,11 +287,11 @@ Besøg os på www.bubble.dk eller ring til os på +45 6069 8700
 						<div class="rte rte--larger" data-in-view-scope>
 							<!-- FOTO-PLADSER: her skal det ægte foto af den pakkede bil ind (bagklap åben: grene, spand, vinduesfeje, solcelle-børste). Caption: 'Pakket klokken 7. Klar til alt.' -->
 <h1>Fast hus- og haveservice til heldige kartofler</h1>
-<p style="color:#ffffff">Én bil. Ét besøg. Haven, huset og alt det kedelige — ordnet. Du skal ikke røre en finger.</p>
+<p style="color:#ffffff">Du kobler dig på vores basisabonnement på vinduesvask. Derfra kan du frit vælge alle services i vores årshjul, når vi alligevel er der — så du ikke skal tænke på, om dit hus forbliver vedligeholdt.</p>
 																<div class="buttons">
 		<a href="/#tilbudsmotor" class="big-button in-view in-view--slide-up"><span>Bliv en heldig kartoffel</span></a>
 			</div>
-			<p class="hero-garanti">Ingen binding. Du betaler først, når vi rent faktisk har været forbi.</p>
+			<p class="hero-garanti">Prøv et enkeltbesøg inden du vælger mere. Så kan vi bevise vores værd.</p>
 													</div>
 					</div>
 				</div>
@@ -440,6 +457,28 @@ Besøg os på www.bubble.dk eller ring til os på +45 6069 8700
 	    <div class="tm-nav">
 	      <button class="btn btn-ja" id="adr-videre">Videre</button>
 	    </div>
+	  </section>
+
+
+	  <!-- VENTELISTE: Sjælland/Fyn — vi kører der endnu ikke -->
+	  <section class="step kontakt venteliste" id="step-venteliste" aria-labelledby="tm-h2vl">
+	    <h2 id="tm-h2vl">Vi kører desværre ikke i dit område — endnu</h2>
+	    <p>Vi dækker i øjeblikket kun Jylland. Skriv dig op på ventelisten, så giver vi dig besked, så snart vi åbner op i dit område. Vi åbner desværre først næste år.</p>
+	    <div class="v-postnr" id="v-postnr" hidden></div>
+	    <div id="v-form">
+	      <label for="v-navn">Fulde navn</label>
+	      <input id="v-navn" type="text" autocomplete="name" maxlength="120">
+	      <label for="v-mail">E-mail</label>
+	      <input id="v-mail" type="email" autocomplete="email" maxlength="200">
+	      <label for="v-tlf">Telefon</label>
+	      <input id="v-tlf" type="tel" autocomplete="tel" inputmode="tel" maxlength="40">
+	      <div class="err" id="v-err">Udfyld dit navn — og din e-mail eller dit telefonnummer.</div>
+	      <div class="verify-btns" style="justify-content:flex-start">
+	        <button class="btn btn-ja" id="v-send">Skriv mig op</button>
+	        <button class="btn btn-nej" id="v-tilbage">Tilbage</button>
+	      </div>
+	    </div>
+	    <div class="v-ok" id="v-ok" role="status">Tak! Du er skrevet op. Vi giver dig besked, når vi åbner i dit område.</div>
 	  </section>
 
 	  <!-- STEP 2: PRIVAT / ERHVERV -->
@@ -1485,6 +1524,10 @@ Besøg os på www.bubble.dk eller ring til os på +45 6069 8700
 			<script src="/assets/js/tilbudsmotor.config.js?v=9"></script>
 			<script src="/assets/js/vendor/geotiff.min.js"></script>
 			<script src="/assets/js/skraafoto.js?v=12"></script>
-			<script src="/assets/js/tilbudsmotor.js?v=43"></script>
+			<script src="/assets/js/tilbudsmotor.js?v=58"></script>
+	<a class="floating-cta" href="/#tilbudsmotor" aria-label="Bliv en heldig kartoffel">
+		<span class="floating-cta__ring" aria-hidden="true"></span>
+		<span class="floating-cta__disc"><span class="floating-cta__text">Bliv en heldig kartoffel</span></span>
+	</a>
 </body>
 </html>

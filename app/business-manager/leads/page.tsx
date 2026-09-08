@@ -7,6 +7,7 @@ import { getSessionUser } from "@/lib/api-auth";
 import { redirect } from "next/navigation";
 import { getLeadCalc, LEAD_SOURCES } from "@/lib/lead-calc";
 import { registerAcquisitionForm, saveMarketingSpend, deleteAcquisition } from "@/app/actions/lead-calc";
+import Link from "next/link";
 
 const kr = (n: number) => n.toLocaleString("da-DK", { maximumFractionDigits: 0 }) + " kr";
 const MD = ["Januar", "Februar", "Marts", "April", "Maj", "Juni", "Juli", "August", "September", "Oktober", "November", "December"];
@@ -31,8 +32,20 @@ export default async function LeadsPage({ searchParams }: { searchParams: Promis
     prisma.marketingSpend.findMany({ where: { companyId: 1, year }, orderBy: [{ channel: "asc" }, { month: "asc" }] }),
   ]);
 
+  // Månedsskift (Thomas, 2026-09-03): frem/tilbage ±1 måned, med Ægte månedsovergang.
+  const prevM = month === 1 ? 12 : month - 1, prevY = month === 1 ? year - 1 : year;
+  const nextM = month === 12 ? 1 : month + 1, nextY = month === 12 ? year + 1 : year;
+  const link = (y: number, m: number) => `/business-manager/leads?year=${y}&month=${m}`;
+  const erNuvarende = year === now.getFullYear() && month === now.getMonth() + 1;
+
   return (
     <>
+      <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap", marginBottom: 14 }}>
+        <Link className="btn btn-sm btn-light" href={link(prevY, prevM)}>← Forrige</Link>
+        <b style={{ fontSize: 15 }}>{MD[month - 1]} {year}</b>
+        <Link className="btn btn-sm btn-light" href={link(nextY, nextM)}>Næste →</Link>
+        {!erNuvarende && <Link className="btn btn-sm btn-light" href="/business-manager/leads">I dag</Link>}
+      </div>
       <div className="bm-kpis">
         <div className="revenue-kpi">
           <span className="revenue-kpi-label">Nye kunder — {MD[month - 1]} {year}</span>

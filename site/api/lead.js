@@ -39,6 +39,10 @@ module.exports = async function handler(req, res) {
         "content-type": "application/json",
         "x-karltoffel-secret": secret,
         "x-forwarded-for": clientIp, // CRM'ets rate-limit skal se kundens IP, ikke relayets
+        // Videregiv kundens rigtige user-agent — CRM'et bruger den til Meta
+        // CAPI user_data.client_user_agent (dedup/modellering). Overskriver
+        // fetch'ens default (node), så CRM'et ser browseren, ikke relayet.
+        "user-agent": req.headers["user-agent"] || "karltoffel-lead-relay",
       },
       body: raw,
     });

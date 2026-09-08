@@ -158,8 +158,10 @@ export async function getLeadCalc(fromISO: string, toISO: string): Promise<LeadC
   };
 }
 
-/** Kanaler (Thomas, 2026-09-03): fritekst muligt, disse er standardvalgene. */
-export const LEAD_SOURCES = ["SEO", "Meta", "Sociale medier", "Anbefaling", "Direkte", "Andet"] as const;
+/** Kanaler (Thomas, 2026-09-03): fritekst muligt, disse er standardvalgene.
+ *  "Venteliste" (2026-09-07): kunder der oprindelig skrev sig op på ventelisten
+ *  for Sjælland/Fyn i tilbudsmotoren (site sender source "venteliste"). */
+export const LEAD_SOURCES = ["SEO", "Meta", "Sociale medier", "Anbefaling", "Direkte", "Venteliste", "Andet"] as const;
 
 /** Valg af kategori for en ny kunde (auto-forslag ud fra CRM-data). */
 export function suggestCategory(hasSubscription: boolean, hasFixedPrice: boolean, isCompany: boolean): "privat" | "virksomhed" | "fastpris" {

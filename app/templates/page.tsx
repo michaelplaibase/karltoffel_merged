@@ -2,6 +2,8 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getSessionUser } from "@/lib/api-auth";
 import { TEMPLATES } from "@/lib/templates-config";
+import { LEAD_FOLLOWUP_TEMPLATE } from "@/lib/lead-followup-template";
+import { REVIEW_REQUEST_TEMPLATE } from "@/lib/review-request-template";
 
 export const metadata = { title: "E-mail og SMS skabeloner · Karltoffel Business Manager" };
 
@@ -28,7 +30,7 @@ export default async function TemplatesPage() {
       <p className="page-desc">Tilpas teksten i de notifikationer, bekræftelser og beskeder, der sendes til dine kunder.</p>
       <div className="card">
         <div className="card-body" style={{ paddingTop: 10, paddingBottom: 10 }}>
-          {TEMPLATES.map((t) => (
+          {[...TEMPLATES, LEAD_FOLLOWUP_TEMPLATE, REVIEW_REQUEST_TEMPLATE].map((t) => (
             <Link
               key={t.key}
               href={`/templates/${t.key}`}

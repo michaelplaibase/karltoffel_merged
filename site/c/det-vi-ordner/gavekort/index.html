@@ -164,7 +164,24 @@ button.gk-amount.is-selected .gk-amount__input{display:block}
 @media(max-width:640px){.gk-preview{position:static}}
 
 </style>
-		</head>
+			<link rel="stylesheet" href="/assets/css/floating-cta.css?v=1">
+<!-- Meta Pixel Code -->
+<script>!function(f,b,e,v,n,t,s)
+{if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+n.callMethod.apply(n,arguments):n.queue.push(arguments)};
+if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
+n.queue=[];t=b.createElement(e);t.async=!0;
+t.src=v;s=b.getElementsByTagName(e)[0];
+s.parentNode.insertBefore(t,s)}(window, document,'script',
+'https://connect.facebook.net/en_US/fbevents.js');
+fbq('init', '1574687980856727');
+fbq('track', 'PageView');
+</script>
+<noscript><img height="1" width="1" style="display:none"
+src="https://www.facebook.com/tr?id=1574687980856727&amp;ev=PageView&amp;noscript=1"
+/></noscript>
+<!-- End Meta Pixel Code -->
+</head>
 
 
 
@@ -749,6 +766,17 @@ button.gk-amount.is-selected .gk-amount__input{display:block}
 			btn.disabled = true;
 			btn.textContent = 'Sender …';
 
+			/* Meta CAPI-dedup: samme event_id til fbq (browser) og CRM'ets
+			   server-side Conversions API-kald (via body.meta_capi). */
+			var metaEventId;
+			try {
+				metaEventId = (window.crypto && typeof window.crypto.randomUUID === 'function')
+					? window.crypto.randomUUID()
+					: 'gk-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 12);
+			} catch (e) {
+				metaEventId = 'gk-' + Date.now().toString(36);
+			}
+
 			fetch(CRM + '/api/giftcards/checkout', {
 				method: 'POST',
 				headers: { 'content-type': 'application/json' },
@@ -760,12 +788,18 @@ button.gk-amount.is-selected .gk-amount__input{display:block}
 					recipientEmail: field('gk-recipientEmail').toLowerCase(),
 					buyerName: field('gk-buyerName'),
 					buyerEmail: field('gk-buyerEmail').toLowerCase(),
-					buyerPhone: field('gk-buyerPhone')
+					buyerPhone: field('gk-buyerPhone'),
+					meta_capi: { event_id: metaEventId, content_name: 'gavekort-bestilling' }
 				})
 			}).then(function (res) {
 				return res.json().catch(function () { return {}; }).then(function (data) { return { ok: res.ok, data: data }; });
 			}).then(function (r) {
 				if (r.ok && r.data.ok) {
+					try {
+						if (typeof window.fbq === 'function') {
+							window.fbq('track', 'Lead', { content_name: 'gavekort-bestilling', content_type: 'form', value: amt / 100, currency: 'DKK' }, { eventID: metaEventId });
+						}
+					} catch (e) {}
 					form.style.display = 'none';
 					$('gk-thanks-text').textContent = 'Du modtager en MobilePay-betalingsanmodning på ' + fmtKr(amt) + ' inden kort tid.';
 					$('gk-thanks').classList.add('is-visible');
@@ -804,5 +838,9 @@ button.gk-amount.is-selected .gk-amount__input{display:block}
   });
 })();
 </script>
+	<a class="floating-cta" href="/#tilbudsmotor" aria-label="Bliv en heldig kartoffel">
+		<span class="floating-cta__ring" aria-hidden="true"></span>
+		<span class="floating-cta__disc"><span class="floating-cta__text">Bliv en heldig kartoffel</span></span>
+	</a>
 </body>
 </html>

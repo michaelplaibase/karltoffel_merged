@@ -13,6 +13,7 @@
 // men KALDES IKKE i fase 0.
 import { prisma } from "@/lib/db";
 import { postMessage, leadsChannel } from "@/lib/slack";
+import { sendMetaLead } from "@/lib/meta-capi";
 import type { NextRequest } from "next/server";
 
 
@@ -125,6 +126,23 @@ export async function POST(req: NextRequest): Promise<Response> {
   if (!slack.ok && !slack.simulated) {
     // Ordren er gemt — en fejlet Slack-ping må ikke blokere kundens bestilling.
     console.error(`[giftcards:checkout] Slack-fejl for ordre ${order.id}: ${slack.error}`);
+  }
+
+  // Meta CAPI — server-side Lead-event med dedup: browserens
+  // fbq('track','Lead',{...},{eventID}) sender sin event_id med i body-feltet
+  // meta_capi (se lib/meta-capi.ts). Fire-and-forget-kontrakt: sendMetaLead
+  // kaster aldrig — en CAPI-fejl må aldrig vælte en bestilt ordre.
+  const meta = body.meta_capi && typeof body.meta_capi === "object" ? (body.meta_capi as Record<string, unknown>) : null;
+  if (meta) {
+    const capi = await sendMetaLead({
+      eventId: meta.event_id,
+      contentName: meta.content_name,
+      value: amountMinor / 100,
+      sourceUrl: req.headers.get("referer"),
+      clientIp: req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || null,
+      clientUserAgent: req.headers.get("user-agent"),
+    });
+    console.log(`[giftcards:checkout] meta-capi: ${capi} (ordre ${order.id})`);
   }
 
   return json({ ok: true, orderId: order.id }, 200, origin);
