@@ -2,29 +2,28 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 
-// Data-fix (Thomas, 2026-09-07): "Ret manglende ordrer"-knap + fixStaleFutureWeeks.
-// Fixer årstal-bump-bug-følgerne: aktive abonnementer med startWeek-ÅR > indeværende
-// år OG nul kommende ordrer får startugen rykket til nu + ordrer genereret.
+// Data-fix (Thomas, 2026-09-07): "Ret manglende ordrer"-knap + delte kriterier
+// med det selvhellende natvægn i lib/fix-stale-weeks.ts. Admin-guards bor i
+// app/actions/fix-stale-weeks.ts; kriterier/repair bor i lib/.
 
 const root = new URL("../", import.meta.url);
 const src = (p: string) => readFile(new URL(p, root), "utf8");
 
-test("fixStaleFutureWeeks: admin-only, årstal-krav, fremtids-guard, regenererer og rapporterer", async () => {
-  const a = await src("app/actions/fix-stale-weeks.ts");
-  // Admin-only (samme mønster som cleanup-descriptions).
-  assert.match(a, /getSessionUser/);
-  assert.match(a, /user\?\.isAdmin/);
-  // Rører (a) startuger med eksplicit år > indeværende år og (b) årløse
-  // PASSEREDE uger — begge former for 'skulle køre nu'.
+test("lib/fix-stale-weeks: brudte-kriterier (fremtids-år / årløs passeret) + nul-kommende-filter", async () => {
+  const a = await src("lib/fix-stale-weeks.ts");
   assert.match(a, /isFutureYear/);
   assert.match(a, /isPassedYearless/);
-  // Har abonnementet allerede kommende ordrer, er det ikke tørret — tavst.
-  assert.match(a, /futureCount > 0\) continue/);
-  // Rykker startugen + nulstiller opgave-uger og regenererer ordrer.
+  assert.match(a, /futureBySub\.get\(s\.id\) \?\? 0\) === 0/);
   assert.match(a, /startWeek: nowLabel, nextWeek: nowLabel/);
   assert.match(a, /generateForSubscriptionId\(sub\.id\)/);
-  // Idempotent rapport: per-abo detaljer.
-  assert.match(a, /details\.push\(`Abo\. \$\{sub\.displayNo\}/);
+});
+
+test("knappen er admin-only og bruger det delte bibliotek", async () => {
+  const actions = await src("app/actions/fix-stale-weeks.ts");
+  assert.match(actions, /getSessionUser/);
+  assert.match(actions, /user\?\.isAdmin/);
+  assert.match(actions, /listStaleSubs/);
+  assert.match(actions, /repairStaleSub/);
 });
 
 test("knappen er monteret på Abonnementer-siden ved siden af Generér", async () => {

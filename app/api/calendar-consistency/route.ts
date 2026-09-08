@@ -5,6 +5,7 @@ import { weekMondayToday } from "@/lib/calendar";
 import { sendEmail } from "@/lib/email";
 import { prisma } from "@/lib/db";
 import { subscriptionOutlookProblem } from "@/lib/recurrence";
+import { listStaleSubs, repairStaleSub } from "@/lib/fix-stale-weeks";
 
 // GET /api/calendar-consistency
 // Natligt VAGTVÆRN (se vercel.json — kører efter /api/plan): verificerer mod
@@ -51,6 +52,36 @@ export async function GET(req: Request) {
   ]);
   const futureBySub = new Map(futureCounts.map((g) => [g.subscriptionId, g._count._all]));
   const totalBySub = new Map(totalCounts.map((g) => [g.subscriptionId, g._count._all]));
+  // SELVHELLENDE VÆRN (Thomas, 2026-09-07: "systemet skal selv prøve at løse
+  // problemet først"): aktive abonnementer med brudt startuge (fremtids-årstal
+  // eller årløs passeret uge) og nul kommende ordrer repareres HER — startuge
+  // rykkes til nu + ordrer genereres — før alarm-mailen overhovedet vurderes.
+  // Kun det der STADIG er tørt efter reparationen alarmeres.
+  const repaired: string[] = [];
+  for (const stale of await listStaleSubs()) {
+    try {
+      const before = stale.startWeek ?? "?";
+      const created = await repairStaleSub(stale);
+      repaired.push(`Abo. ${stale.displayNo}: startuge ${before} → nu, ${created} ordrer oprettet (selvhelende)`);
+    } catch (e) {
+      console.error(`[kalender-konsistens] selvhelende reparation fejlede for abo ${stale.displayNo}:`, e);
+    }
+  }
+  if (repaired.length) {
+    console.log(`[kalender-konsistens] SELVHELLENDE: ${repaired.length} abonnement(er) repareret:\n${repaired.map((r) => "  - " + r).join("\n")}`);
+    // Genindlæs ordrétællingerne så outlook-vurderingen nedenfor ser efter-reparation-verdenen.
+    const [freshFuture, freshTotal] = await Promise.all([
+      prisma.order.groupBy({ by: ["subscriptionId"], where: { subscriptionId: { in: subs.map((s) => s.id) }, plannedAt: { gte: from } }, _count: { _all: true } }),
+      prisma.order.groupBy({ by: ["subscriptionId"], where: { subscriptionId: { in: subs.map((s) => s.id) } }, _count: { _all: true } }),
+    ]);
+    futureBySub.clear(); freshFuture.forEach((g) => futureBySub.set(g.subscriptionId, g._count._all));
+    totalBySub.clear(); freshTotal.forEach((g) => totalBySub.set(g.subscriptionId, g._count._all));
+    for (const s2 of subs) {
+      if (!repaired.some((r) => r.startsWith(`Abo. ${s2.displayNo}:`))) continue;
+      s2.startWeek = (await prisma.subscription.findUnique({ where: { id: s2.id }, select: { startWeek: true } }))?.startWeek ?? s2.startWeek;
+    }
+  }
+
   const starvedSubs = subs
     .map((s) => ({ aboNr: s.displayNo, problem: subscriptionOutlookProblem(s, futureBySub.get(s.id) ?? 0, totalBySub.get(s.id) ?? 0) }))
     .filter((s): s is { aboNr: number; problem: string } => s.problem != null);

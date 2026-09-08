@@ -1,22 +1,14 @@
 "use server";
 
-// Data-fix (Thomas, 2026-09-07): "Vil du sørge for og rette alle som ingen
-// kommende ordre har" — retter alle aktive abonnementer, hvis startuge/
-// opgave-uger blev skubbet til NÆSTE ÅR af årstal-bump-bugen (normalizeWeekLabel
-// før fix dd60deb): startWeek med årstal > indeværende år OG ingen kommende
-// ordrer → startuge rykkes til indeværende uge (catch-up), opgave-linjernes
-// startWeek nulstilles i samme træk (de følger ellers rytmen fra abonnementet),
-// og kommende ordrer regenereres. Idempotent: andet tryk rapporterer "0 rettet".
-//
-// KUN årstal > indeværende år røres — bevidste sæsonstart i NÆSTE år med
-// ordrer i sigtefeltet, eller yearless fremtidige uger, er legitime.
-import { prisma } from "@/lib/db";
+// Data-fix-knap (Thomas, 2026-09-07): "Vil du sørge for og rette alle som ingen
+// kommende ordre har" — retter alle aktive abonnementer hvis startuge er skubbet
+// til et fremtids-årstal eller er en årløs passeret uge, mens de har NUL kommende
+// ordrer. Logikken bor i lib/fix-stale-weeks.ts, så det natlige vægn selvhelende
+// kørsel (app/api/calendar-consistency) deler PRÆCIS samme kriterier og reparerer
+// FØR alarm-mailen. Idempotent: andet tryk rapporterer "0 rettet".
 import { guardAction, getSessionUser } from "@/lib/api-auth";
 import { revalidatePath } from "next/cache";
-import { parseWeekLabelParts, generateForSubscriptionId } from "@/lib/recurrence";
-import { weekMondayToday } from "@/lib/calendar";
-import { isoWeek } from "@/lib/planner";
-import { weekLabel } from "@/lib/weeks";
+import { listStaleSubs, repairStaleSub } from "@/lib/fix-stale-weeks";
 
 export type FixStaleResult = {
   ok: boolean;
@@ -33,61 +25,19 @@ export async function fixStaleFutureWeeks(): Promise<FixStaleResult> {
   }
   await guardAction();
 
-  const currentYear = new Date().getUTCFullYear();
-  const nowLabel = weekLabel(weekMondayToday());
-
-  const subs = await prisma.subscription.findMany({
-    where: { active: true, pending: false },
-    select: { id: true, displayNo: true, startWeek: true, nextWeek: true, tasks: { select: { id: true, startWeek: true } } },
-  });
-
+  const stale = await listStaleSubs();
   const details: string[] = [];
   let fixed = 0;
-
-  for (const sub of subs) {
-    const parts = parseWeekLabelParts(sub.startWeek);
-    if (!parts) continue; // ulæselig startuge — generatoren melder den selv
-    const currentWeek = isoWeek(weekMondayToday());
-    const isFutureYear = !!parts.year && parts.year > currentYear;
-    const isPassedYearless = !parts.year && parts.week < currentWeek; // årløs + passeret = 'skulle køre nu'
-    if (!isFutureYear && !isPassedYearless) continue; // legitim startuge — røres ikke
-    // Ingen horisont-guard her: Thomas' direktiv (2026-09-07) er at INGEN
-    // aktivt abonnement skal have startuge i et fremtidigt år, mens vi endnu
-    // er i det gamle år ("det skal den først gøre ved årsskifte"). En bevidst
-    // sæsonstart kan genskrives efter kørslen — bump-ofrene er de mange.
-    // Verificér at abonnementet reelt er tørret: ingen kommende ordrer.
-    const from = new Date(`${weekMondayToday()}T00:00:00Z`);
-    const futureCount = await prisma.order.count({
-      where: { subscriptionId: sub.id, plannedAt: { gte: from }, status: "Afventer levering" },
-    });
-    if (futureCount > 0) continue;
-
-    // Ryk startugen til nu, nulstil opgave-uger og regenerér.
-    await prisma.$transaction([
-      prisma.subscription.update({ where: { id: sub.id }, data: { startWeek: nowLabel, nextWeek: nowLabel } }),
-      prisma.taskLine.updateMany({
-        where: { subscriptionId: sub.id, startWeek: sub.startWeek ?? undefined },
-        data: { startWeek: nowLabel },
-      }),
-    ]);
-    // Opgave-linjer med ANDEN fremtids-år (fx "Uge 20, 2027" fra samme bump)
-    // rykkes også til nu — de var med i samme fejlgem.
-    for (const t of sub.tasks) {
-      const tp = parseWeekLabelParts(t.startWeek);
-      const tFuture = !!tp?.year && tp.year > currentYear;
-      const tPassed = !!tp && !tp.year && tp.week < currentWeek;
-      if (tFuture || tPassed) {
-        await prisma.taskLine.update({ where: { id: t.id }, data: { startWeek: nowLabel } });
-      }
-    }
-    const created = await generateForSubscriptionId(sub.id);
+  for (const sub of stale) {
+    const before = sub.startWeek ?? "?";
+    const created = await repairStaleSub(sub);
     fixed++;
-    details.push(`Abo. ${sub.displayNo}: startuge ${sub.startWeek} → ${nowLabel}, ${created} ordrer oprettet`);
+    details.push(`Abo. ${sub.displayNo}: startuge ${before} → nu, ${created} ordrer oprettet`);
   }
 
   revalidatePath("/subscriptions");
   revalidatePath("/orders");
   revalidatePath("/calendar");
   revalidatePath("/daycalendar");
-  return { ok: true, scanned: subs.length, fixed, details };
+  return { ok: true, scanned: stale.length, fixed, details };
 }
