@@ -161,7 +161,7 @@ const state = {
 const HAEK_SP = {
   sidstKlippet: { q:"Hvornår blev hækken klippet sidst?", opts:["Inden for det seneste år","Mere end et år siden","Ved ikke"] },
   hoejde:       { q:"Hvor høj er hækken?",               opts:["Under 1,5 m","1,5–2,2 m","Over 2,2 m","Ved ikke"] },
-  sider:        { q:"Hvad skal der klippes?",            opts:["Kun begge sider","Siderne OG toppen"] },
+  sider:        { q:"Hvad skal der klippes?",            opts:["Indersider og top","2 sider og top","Flere forskellige — vi tjekker på luftfoto"] },
   arbejde:      { q:"Skal hækken bare trimmes, eller skal den skæres ind?", opts:["Bare en trimning — den skal se pæn ud","Den er vokset sig for stor og skal skæres ind"] }
 };
 const HAEK_HOEJDE_UKENDT_TXT = "Over 2,2 m — vi ringer til dig og beder om et billede af hækken, så vi kan give dig et præcist tilbud";
