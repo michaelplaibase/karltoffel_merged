@@ -4,6 +4,7 @@ import { mondayOf, weekLabel } from "@/lib/weeks";
 import { getSubscriptions, getContacts } from "@/lib/queries";
 import { stopSubscription, approveSubscription } from "@/app/actions/subscriptions";
 import GenerateOrdersButton from "@/components/GenerateOrdersButton";
+import FixStaleWeeksButton from "@/components/FixStaleWeeksButton";
 import { CatChip, CustomerCell, MapLink, money } from "@/components/ui";
 import RowMenu from "@/components/RowMenu";
 import { SearchBar } from "@/components/ListControls";
@@ -44,6 +45,7 @@ export default async function SubscriptionsPage({ searchParams }: { searchParams
           <div className="toolbar">
             <Link href="/subscriptions/new" className="btn btn-outline-primary">Opret nyt abonnement</Link>
             <GenerateOrdersButton />
+            <FixStaleWeeksButton />
             <SearchBar placeholder="Abo. nr, dato, kundenavn, kundenr, email, tlf, vejnavn, husnr, postnr, opgave" q={q} />
           </div>
 
