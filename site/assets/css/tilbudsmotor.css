@@ -207,6 +207,9 @@
 .tm-flow .pw-val{font-size:13px;font-weight:800;color:var(--brun);font-variant-numeric:tabular-nums;white-space:nowrap}
 .tm-flow .pw-unit{font-size:9.5px;letter-spacing:.02em;color:var(--bronze);font-weight:700;white-space:nowrap;line-height:1;margin-top:1px}
 .tm-flow .pw-note{font-size:12.5px;color:var(--bronze);font-weight:600;white-space:nowrap;text-align:center}
+/* Lang pris-note (hæk over 2,2 m: billede-copy) — må gerne breake linjen, ellers
+   skyder teksten ud over gridden (pw-kolonnen er kun ~88-270 px bred). */
+.tm-flow .pw-note.pw-note-lang{white-space:normal;max-width:300px;font-weight:500;line-height:1.3;text-align:left}
 /* Frekvens — "Besøg om året" over stepperen */
 .tm-flow .fw{grid-area:fw;display:flex;flex-direction:column;align-items:center;gap:3px}
 /* Antal døre, ruder og porte — kundens eget antal-felt (kun vinduespudsning udvendig) */
