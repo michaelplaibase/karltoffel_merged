@@ -317,6 +317,30 @@ export async function completeOrder(orderId: number, _prev: CompleteOrderState, 
   redirect(invoiceFailed ? `/orders/${orderId}` : backUrl);
 }
 
+/** Simpel "Meld færdig"-knap i Faktureringsoverblikkets "Ikke meldt færdigt"-
+ *  tabel (Thomas, 2026-09-08): sæt status til "Udført" uden at gå via
+ *  Afslut ordre-formularen. Ingen kommentar/fakturavalg — ordren ryger ind i
+ *  "Klar til fakturering" og kan faktureres derfra (eller medInvoiceDecision
+ *  sættes senere på ordresiden). completedAt sættes som ved udførelse. */
+export async function markOrderDone(orderId: number): Promise<void> {
+  await guardAction();
+  const o = await prisma.order.findUnique({
+    where: { id: orderId },
+    select: { contactId: true, completedAt: true },
+  });
+  if (!o) return;
+  await prisma.order.update({
+    where: { id: orderId },
+    data: {
+      status: "Udført",
+      ...(o.completedAt ? {} : { completedAt: new Date() }),
+    },
+  });
+  revalidatePath("/fakturering");
+  revalidateSchedule(orderId);
+  revalidatePath(`/customers/${o.contactId}`);
+}
+
 /** Simpel "Flyt opgave til anden dag" fra Afslut ordre-siden: sæt en ny
  *  leveringsdato (Europe/Copenhagen, kl. 10 UTC som createOrder) og lad
  *  planlæggeren sortere resten. Ingen statusændring. */

@@ -14,6 +14,7 @@ import VerifyInvoicingButton from "@/components/VerifyInvoicingButton";
 import CleanupDescriptionsButton from "@/components/CleanupDescriptionsButton";
 import InvoiceAllButton from "@/components/InvoiceAllButton";
 import InvoiceNowButton from "@/components/InvoiceNowButton";
+import NotDoneRowActions from "@/components/NotDoneRowActions";
 
 export const metadata = { title: "Faktureringsoverblik · Karltoffel Business Manager" };
 
@@ -68,7 +69,7 @@ async function loadRows(): Promise<Row[]> {
   });
 }
 
-function Table({ rows, empty, showInvoiceNow = false }: { rows: Row[]; empty: string; showInvoiceNow?: boolean }) {
+function Table({ rows, empty, showInvoiceNow = false, showNotDoneActions = false }: { rows: Row[]; empty: string; showInvoiceNow?: boolean; showNotDoneActions?: boolean }) {
   if (rows.length === 0) return <div className="table-empty">{empty}</div>;
   return (
     <div className="table-wrap">
@@ -78,6 +79,7 @@ function Table({ rows, empty, showInvoiceNow = false }: { rows: Row[]; empty: st
             <th>Ordre nr.</th><th>Kunde</th><th>Leverings-dato</th><th>Opgaver</th>
             <th>Pris</th><th>Medarbejder</th><th>Status</th><th>Faktura</th>
             {showInvoiceNow ? <th>Fakturer</th> : null}
+            {showNotDoneActions ? <th>Ryd op</th> : null}
           </tr>
         </thead>
         <tbody>
@@ -100,6 +102,9 @@ function Table({ rows, empty, showInvoiceNow = false }: { rows: Row[]; empty: st
                 : <span className="badge badge-soft-danger">Faktura ikke afsendt</span>}</td>
               {showInvoiceNow ? (
                 <td><InvoiceNowButton orderId={o.id} /></td>
+              ) : null}
+              {showNotDoneActions ? (
+                <td><NotDoneRowActions orderId={o.id} /></td>
               ) : null}
             </tr>
           ))}
@@ -148,7 +153,7 @@ export default async function InvoicingOverviewPage() {
 
           <div className="card" style={{ marginBottom: 16 }}>
             <div className="card-header"><h4 className="section-title">Ikke meldt færdigt ({notDone.length}) — {money(sum(notDone))}</h4></div>
-            <div className="card-body tight"><Table rows={notDone} empty="Ingen uafsluttede fortidsordrer." /></div>
+            <div className="card-body tight"><Table rows={notDone} empty="Ingen uafsluttede fortidsordrer." showNotDoneActions /></div>
           </div>
 
           <div className="card">
