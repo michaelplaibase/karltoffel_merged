@@ -12,6 +12,9 @@ import { weekMondayToday } from "@/lib/calendar";
 import { parseLeadPayload, beregn, medRabatkode, type LeadPayload, type PricedService } from "@/lib/tilbudsmotor-pricing";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { getTemplateValues } from "@/lib/settings-store";
+import { renderTemplate } from "@/lib/quote-render";
+import { sendEmail } from "@/lib/email";
 
 /** Tilbudsmotor-service-id → CRM-kategori (styrer farve-chippen på opgavelinjer). */
 const TM_KATEGORI: Record<string, string> = {
@@ -176,6 +179,83 @@ export async function markLeadContacted(id: number): Promise<void> {
   await guardAction();
   await prisma.lead.update({ where: { id }, data: { status: "contacted" } });
   revalidatePath("/leads");
+}
+
+// ---- Opfølgning på emne (Kristian, 2026-09-08) ------------------------------
+// Et-kliks-opfølgning på leads der ligger stille ("new"/"contacted" og ikke
+// konverteret/afvist). IKKE automatisk afsendelse (Michael stoppede bevidst
+// automails i 2026-08): hvert lead sendes manuelt fra /leads-listen, men med
+// forslag + skabelon klar, så det koster ét klik. Composeren logger
+// followUpSentAt, så man kan se hvem der er fulgt op — og ikke spammer to gange.
+
+export type LeadFollowUpState = { ok?: boolean; error?: string; message?: string };
+
+const EMAIL_RE_FOLLOWUP = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+/** Byg udkast (modtager/emne/brødtekst) til opfølgnings-mailen på et lead.
+ *  Bruger den redigerbare "lead-opfoelgning"-skabelon — samme mønster som
+ *  buildLeadQuoteDraft i lib/quote.ts. Server-only. */
+export async function buildLeadFollowUpDraft(id: number): Promise<{
+  to: string; subject: string; body: string; leadName: string;
+} | null> {
+  const lead = await prisma.lead.findUnique({ where: { id } });
+  if (!lead?.email) return null;
+  const [company, tpl] = await Promise.all([
+    prisma.company.findFirst(),
+    import("@/lib/lead-followup-template").then((m) => m.LEAD_FOLLOWUP_TEMPLATE),
+  ]);
+  const values = await getTemplateValues("lead-opfoelgning");
+  const fornavn = lead.name.trim().split(/\s+/)[0] || lead.name;
+  const vars: Record<string, string> = {
+    kunde_fornavn: fornavn,
+    leverings_adresse: lead.address ?? "din adresse",
+    dit_firmanavn: company?.name ?? "Karltoffel",
+    dit_telefonnummer: company?.phone ?? "",
+    din_email: company?.email ?? "",
+  };
+  const subjectTpl = values.subjects?.[0] ?? tpl.subjects[0]?.val ?? "";
+  const bodyTpl = values.body ?? tpl.body ?? "";
+  return {
+    to: lead.email,
+    subject: renderTemplate(subjectTpl, vars),
+    body: renderTemplate(bodyTpl, vars),
+    leadName: lead.name,
+  };
+}
+
+/** Send den (eventuelt redigerede) opfølgning og markér leadet "contacted" +
+ *  followUpSentAt, så listen viser at der er fulgt op. */
+export async function sendLeadFollowUp(_prev: LeadFollowUpState, formData: FormData): Promise<LeadFollowUpState> {
+  await guardAction();
+  const leadId = Number(formData.get("leadId"));
+  const to = String(formData.get("to") ?? "").trim();
+  const subject = String(formData.get("subject") ?? "").trim();
+  const body = String(formData.get("body") ?? "").trim();
+  if (!Number.isInteger(leadId)) return { error: "Ugyldigt emne." };
+  if (!EMAIL_RE_FOLLOWUP.test(to)) return { error: "Angiv en gyldig e-mailadresse." };
+  if (!subject) return { error: "Angiv et emne." };
+  if (!body) return { error: "Beskeden er tom." };
+
+  const lead = await prisma.lead.findUnique({ where: { id: leadId } });
+  if (!lead) return { error: "Emnet findes ikke længere." };
+
+  const res = await sendEmail({ to, subject, text: body });
+  if (!res.ok) return { error: `Kunne ikke sende opfølgningen: ${res.error ?? "ukendt fejl"}` };
+
+  // Status ryger aldrig BAGLÆNS: et lead der allerede er "contacted"/konverteret
+  // bliver stående — kun "new" rykker til "contacted" (samme konvention som
+  // sendLeadQuote i lib/mcp-tools.ts).
+  if (lead.status === "new") {
+    await prisma.lead.update({ where: { id: lead.id }, data: { status: "contacted" } });
+  }
+  revalidatePath("/leads");
+  revalidatePath(`/leads/${lead.id}/opfoelgning`);
+  return {
+    ok: true,
+    message: res.simulated
+      ? "Opfølgningen er klar (simuleret – ingen e-mail-udbyder er konfigureret endnu)."
+      : `Opfølgning sendt til ${to}.`,
+  };
 }
 
 export async function rejectLead(id: number): Promise<void> {

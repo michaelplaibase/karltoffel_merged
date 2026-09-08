@@ -9,6 +9,7 @@ import { CatChip, MapLink, StatusPill, money } from "@/components/ui";
 import ConfirmButton from "@/components/ConfirmButton";
 import EmployeePicker from "@/components/EmployeePicker";
 import { getEmployeeOptions } from "@/lib/queries";
+import { CLOSED_STATUSES as CLOSED_ORDER_STATUSES } from "@/lib/invoice-status";
 
 export const metadata = { title: "Rediger ordre · Karltoffel Business Manager" };
 
@@ -206,6 +207,14 @@ export default async function OrderDetail({ params }: { params: Promise<{ id: st
           body="Er du sikker på, at du vil slette ordren?" confirmLabel="Slet ordre"
         />
         <Link href={`/orders/${o.id}/send-tilbud`} className="btn btn-outline-primary">Send tilbud</Link>
+        {/* Anmeldelses-anmodning giver kun mening på en AFSLUTTET ordre — vises
+            først når ordren er lukket ("Afsluttet"/"Udført", samme CLOSED_STATUSES
+            som faktureringsoverblikket), ellers får kunden en tak for noget der
+            endnu ikke er lavet. Kunden skal have en e-mail (composeren kan ikke
+            sende til ingenting). */}
+        {CLOSED_ORDER_STATUSES.has(o.status) && o.contact.email ? (
+          <Link href={`/orders/${o.id}/anmeldelse`} className="btn btn-outline-primary">Bed om anmeldelse</Link>
+        ) : null}
         <Link href={`/orders/${o.id}/complete?back=${encodeURIComponent(`/orders/${o.id}`)}`} className="btn btn-primary">Afslut ordre</Link>
       </div>
     </div>
