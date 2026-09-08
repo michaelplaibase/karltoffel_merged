@@ -50,6 +50,14 @@ export default async function OrderDetail({ params }: { params: Promise<{ id: st
   const showBatch = !!batch?.contact.isCompany
     && !!(batch.businessBatchInvoiceStatus || batch.businessBatchInvoiceNumber || batch.businessBatchError);
 
+  // KS-fotos (kvalitetssikrings-billeder) på ordren — read-only galleri.
+  const photos = await prisma.orderPhoto.findMany({
+    where: { orderId },
+    orderBy: { createdAt: "desc" },
+    select: { id: true, url: true, createdAt: true, uploadedBy: { select: { firstName: true, lastName: true } } },
+  });
+  const photoDate = (d: Date) => new Intl.DateTimeFormat("da-DK", { dateStyle: "short", timeStyle: "short" }).format(d);
+
   return (
     <div className="container-1140">
       <div className="toolbar" style={{ justifyContent: "space-between" }}>
@@ -193,6 +201,24 @@ export default async function OrderDetail({ params }: { params: Promise<{ id: st
           </div>
         </div>
       ) : null}
+
+      <div className="card">
+        <div className="card-header"><h4 className="section-title">KS-fotos</h4></div>
+        <div className="card-body tight">
+          {photos.length === 0 ? (
+            <p className="muted" style={{ margin: 0 }}>Ingen KS-fotos på denne ordre.</p>
+          ) : (
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+              {photos.map((p) => (
+                <a key={p.id} href={p.url} target="_blank" rel="noopener noreferrer" title={`KS-foto${p.uploadedBy ? ` · ${[p.uploadedBy.firstName, p.uploadedBy.lastName].filter(Boolean).join(" ")}` : ""} · ${photoDate(p.createdAt)}`}>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={p.url} alt="KS-foto" style={{ width: 88, height: 88, objectFit: "cover", borderRadius: 6, border: "1px solid var(--line, #ddd)" }} />
+                </a>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
 
       <div className="savebar">
         <Link href="/orders" className="btn btn-light">Luk</Link>

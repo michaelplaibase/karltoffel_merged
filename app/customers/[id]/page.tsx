@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { routeId } from "@/lib/route-ids";
+import { prisma } from "@/lib/db";
 import { getContactById, getSubscriptionsForContact, getFixedPricesForContact, getOrdersForContact } from "@/lib/queries";
 import { CatChip, MapLink, money } from "@/components/ui";
 import RowMenu from "@/components/RowMenu";
@@ -28,6 +29,22 @@ export default async function CustomerDetail({
     getFixedPricesForContact(c.id),
     getOrdersForContact(c.id),
   ]);
+  // KS-fotos på tværs af alle kundens ordrer — read-only galleri, nyeste først.
+  const photos = await prisma.orderPhoto.findMany({
+    where: { contactId: c.id },
+    orderBy: { createdAt: "desc" },
+    include: {
+      uploadedBy: { select: { firstName: true, lastName: true } },
+      order: { select: { id: true, plannedAt: true } },
+    },
+  });
+  const photoDate = (d: Date) => new Intl.DateTimeFormat("da-DK", { dateStyle: "short", timeStyle: "short" }).format(d);
+  const photoInitials = (u: { firstName: string | null; lastName: string | null } | null) => {
+    if (!u) return "";
+    const f = (u.firstName ?? "").trim().charAt(0).toUpperCase();
+    const l = (u.lastName ?? "").trim().charAt(0).toUpperCase();
+    return (f + l) || "";
+  };
   // Separatorer kun mellem udfyldte felter — ingen løse " · "/kommaer når
   // telefon/e-mail/by mangler (fx lead-konverterede kunder med kun telefon).
   const address = [c.street, c.city].filter(Boolean).join(", ");
@@ -73,6 +90,36 @@ export default async function CustomerDetail({
       </div>
 
       <SkraafotoCard address={address} configured={SKRAAFOTO_CONFIGURED} />
+
+      <div className="card">
+        <div className="card-header"><h4 className="section-title">KS-fotos</h4></div>
+        <div className="card-body tight">
+          {photos.length === 0 ? (
+            <p className="muted" style={{ margin: 0 }}>Ingen KS-fotos på kunden endnu.</p>
+          ) : (
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 12 }}>
+              {photos.map((p) => {
+                const uploader = p.uploadedBy ? [p.uploadedBy.firstName, p.uploadedBy.lastName].filter(Boolean).join(" ") : "";
+                const initials = photoInitials(p.uploadedBy);
+                return (
+                  <div key={p.id} style={{ width: 110 }}>
+                    <a href={p.url} target="_blank" rel="noopener noreferrer" title={`KS-foto${uploader ? ` · ${uploader}` : ""} · ${photoDate(p.createdAt)}`}>
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={p.url} alt="KS-foto" style={{ width: 88, height: 88, objectFit: "cover", borderRadius: 6, border: "1px solid var(--line, #ddd)" }} />
+                    </a>
+                    <div className="muted" style={{ fontSize: 11, marginTop: 4, lineHeight: 1.4 }}>
+                      {photoDate(p.createdAt)}
+                      <br />
+                      <Link href={`/orders/${p.order?.id ?? ""}`} style={{ fontSize: 11 }}>Ordre #{p.order?.id ?? "?"}</Link>
+                      {initials || uploader ? <> · {initials ? `${initials}` : uploader}</> : null}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      </div>
 
       <div className="card">
         <div className="card-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
