@@ -118,6 +118,21 @@ export default function TeamCalendarClient(props: Props) {
   const canDrag = props.mode === "week" && !readOnly && dragEdit;
   const todayISO = useSyncExternalStore(noopSubscribe, localTodayISO, () => null); // null during SSR → no hydration drift
   const menuRef = useRef<HTMLDivElement>(null);
+
+  // Flip the menu inside the viewport: once rendered, measure it and shift it
+  // up/left if it would overflow the bottom/right edge (Thomas: popup klipped).
+  useEffect(() => {
+    if (!menu) return;
+    const el = menuRef.current;
+    if (!el) return;
+    const rect = el.getBoundingClientRect();
+    const maxY = window.innerHeight - rect.height - 8;
+    const maxX = window.innerWidth - rect.width - 8;
+    if (menu.y > maxY || menu.x > maxX) {
+      setMenu((m) => m ? { ...m, y: Math.max(8, Math.min(m.y, maxY)), x: Math.max(8, Math.min(m.x, maxX)) } : m);
+    }
+  }, [menu]);
+
   const usersRef = useRef<HTMLSpanElement>(null);
 
   useEffect(() => {
