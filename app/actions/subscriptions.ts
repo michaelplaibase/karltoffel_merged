@@ -99,8 +99,17 @@ function normalizeWeekLabel(raw: string): string | null {
   if (!parts) return null;
   if (parts.year != null) return `Uge ${parts.week}, ${parts.year}`;
   const nowMonday = weekMondayToday();
-  const year = isoWeekYear(nowMonday) + (parts.week < isoWeek(nowMonday) ? 1 : 0);
-  return `Uge ${parts.week}, ${year}`;
+  // BUG 2026-09-07 (McDonald's/Purhus, "Næste gang: Uge 33, 2027"): en PASSERET
+  // årløs uge blev her skubbet til NÆSTE ÅR ved gem. Det knækkede både
+  // startugen (anchor i 2027 → nul ordrer i et år) og opgave-linjernes
+  // "Næste gang" (j0-offset 52 uger frem). Korrekt semantik (Michaels
+  // beslutning, "passeret uge = skulle allerede køre"): en passeret årløs uge
+  // betyder START NU — anchor lander i fortiden, og genereringens
+  // fasejustering (catch-up) rykker første besøg til indeværende uge. En
+  // bevidst sæsonstart i fremtiden skrives med eksplicit år ("Uge 20, 2027").
+  // fremtidig uge i år: uændret (med eksplicit år for entydighed).
+  if (parts.week >= isoWeek(nowMonday)) return `Uge ${parts.week}, ${isoWeekYear(nowMonday)}`;
+  return weekLabel(nowMonday); // passeret årløs uge → start nu (indeværende uge)
 }
 
 type Fields = { contactId: number; baseInterval: string; startWeek: string; fixedEmployee: string; lines: ReturnType<typeof readTaskLines> };

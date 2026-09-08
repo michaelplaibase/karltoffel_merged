@@ -88,6 +88,21 @@ test("parse() afviser en startuge genereringen ikke forstår og ekkoer indtastni
   assert.doesNotMatch(actions, /startWeek: p\.startWeek \|\| null/);
 });
 
+// BUG 2026-09-07 (McDonald's/Purhus): en PASSERET årløs uge ("33") blev ved gem
+// skubbet til NÆSTE ÅR ("Uge 33, 2027") — startugen landede i 2027, genereringen
+// skabte nul ordrer i et år, og alle opgave-linjer viste "Næste gang: Uge 33,
+// 2027". Passeret årløs uge skal betyde START NU (indeværende uge), aldrig
+// næste år. Eksplicit år ("Uge 20, 2027") bevares som bevidst sæsonstart.
+test("normalizeWeekLabel: passeret årløs uge = start nu, aldrig næste år (Purhus-bugfix)", async () => {
+  const actions = await src("app/actions/subscriptions.ts");
+  // Ingen årstal-inkrement mere: næste-år-skub er fjernet.
+  assert.doesNotMatch(actions, /\+ \(parts\.week < isoWeek\(nowMonday\) \? 1 : 0\)/);
+  // Fremtidig årløs uge gemmes årstemplet for indeværende år...
+  assert.match(actions, /parts\.week >= isoWeek\(nowMonday\)\) return `Uge \$\{parts\.week\}, \$\{isoWeekYear\(nowMonday\)\}`/);
+  // ...og passeret årløs uge snaps til indeværende uge (weekLabel(nowMonday)).
+  assert.match(actions, /return weekLabel\(nowMonday\)/);
+});
+
 test("startugens anker deles mellem generator og vagt — passeret uge = 'skulle allerede køre'", async () => {
   const rec = await src("lib/recurrence.ts");
   // Michaels beslutning efter Ejerlaugs-hændelsen: en PASSERET årløs startuge
