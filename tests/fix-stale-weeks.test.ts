@@ -14,8 +14,14 @@ test("lib/fix-stale-weeks: brudte-kriterier (fremtids-år / årløs passeret) + 
   assert.match(a, /isFutureYear/);
   assert.match(a, /isPassedYearless/);
   assert.match(a, /futureBySub\.get\(s\.id\) \?\? 0\) === 0/);
+  // 'Kommende ordrer' tæller kun inden for genereringens horisont (26 uger) —
+  // ellers tæller 2027-ordre som dækning og reparationen springer over (Purhus).
+  assert.match(a, /lt: horizonEnd/);
   assert.match(a, /startWeek: nowLabel, nextWeek: nowLabel/);
   assert.match(a, /generateForSubscriptionId\(sub\.id\)/);
+  // Gamle fejlplacerede ordrer (2027) slettes før regenerering — ellers dubletter.
+  assert.match(a, /lockedFully: false/);
+  assert.match(a, /order\.deleteMany/);
 });
 
 test("knappen er admin-only og bruger det delte bibliotek", async () => {

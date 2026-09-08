@@ -36,6 +36,11 @@ export async function listStaleSubs(): Promise<StaleSub[]> {
   const currentWeek = isoWeek(weekMondayToday());
   const currentYear = new Date().getUTCFullYear();
   const from = new Date(`${weekMondayToday()}T00:00:00Z`);
+  // "Kommende ordrer" = inden for genereringens horisont (26 uger). Ordrer
+  // LÆNGERE ude (fx årstal-bump-ofrene i 2027) tæller IKKE som dækkende —
+  // ellers bliver en 2027-tiltildelt startuge aldrig repareret (fund i live
+  // data: McDonald's Purhus, alle ordrer i feb-mar 2027).
+  const horizonEnd = new Date(from.getTime() + 26 * 7 * 864e5);
 
   const subs = await prisma.subscription.findMany({
     where: { active: true, pending: false },
@@ -49,7 +54,7 @@ export async function listStaleSubs(): Promise<StaleSub[]> {
   const [futureCounts, brokenStarts] = await Promise.all([
     prisma.order.groupBy({
       by: ["subscriptionId"],
-      where: { subscriptionId: { in: subs.map((s) => s.id) }, plannedAt: { gte: from }, status: "Afventer levering" },
+      where: { subscriptionId: { in: subs.map((s) => s.id) }, plannedAt: { gte: from, lt: horizonEnd }, status: "Afventer levering" },
       _count: { _all: true },
     }),
     Promise.resolve(subs.filter((s) => isBrokenStartWeek(s.startWeek, currentWeek, currentYear))),
@@ -68,6 +73,23 @@ export async function repairStaleSub(sub: StaleSub): Promise<number> {
   const nowLabel = weekLabel(weekMondayToday());
   const currentWeek = isoWeek(weekMondayToday());
   const currentYear = new Date().getUTCFullYear();
+
+  // Slet først de gamle FEJL-placerede kommende ordrer (fx alle i 2027) —
+  // ellers ligger de tilbage som dubletter oven i de korrekt genererede
+  // (samme mønster som regenerateFutureOrders: kun pending + ulåste, fra
+  // næste uge; historik/afsluttede/låste/indeværende uge røres ikke).
+  const nextMonday = new Date(Date.parse(`${weekMondayToday()}T00:00:00Z`) + 7 * 864e5);
+  const stale = await prisma.order.findMany({
+    where: { subscriptionId: sub.id, plannedAt: { gte: nextMonday }, status: "Afventer levering", lockedFully: false },
+    select: { id: true },
+  });
+  if (stale.length) {
+    const ids = stale.map((o) => o.id);
+    await prisma.$transaction([
+      prisma.taskLine.deleteMany({ where: { orderId: { in: ids } } }),
+      prisma.order.deleteMany({ where: { id: { in: ids } } }),
+    ]);
+  }
 
   await prisma.$transaction([
     prisma.subscription.update({ where: { id: sub.id }, data: { startWeek: nowLabel, nextWeek: nowLabel } }),
