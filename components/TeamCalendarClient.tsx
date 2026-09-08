@@ -125,12 +125,20 @@ export default function TeamCalendarClient(props: Props) {
     if (!menu) return;
     const el = menuRef.current;
     if (!el) return;
-    const rect = el.getBoundingClientRect();
-    const maxY = window.innerHeight - rect.height - 8;
-    const maxX = window.innerWidth - rect.width - 8;
-    if (menu.y > maxY || menu.x > maxX) {
-      setMenu((m) => m ? { ...m, y: Math.max(8, Math.min(m.y, maxY)), x: Math.max(8, Math.min(m.x, maxX)) } : m);
-    }
+    // Re-measure whenever the menu RESIZES too (submenu "Flyt til anden uge …"
+    // makes it taller after it's already open — Thomas: nederste del klippet).
+    const keepVisible = () => {
+      const rect = el.getBoundingClientRect();
+      const maxY = window.innerHeight - rect.height - 8;
+      const maxX = window.innerWidth - rect.width - 8;
+      if (menu.y > maxY || menu.x > maxX) {
+        setMenu((m) => m ? { ...m, y: Math.max(8, Math.min(m.y, maxY)), x: Math.max(8, Math.min(m.x, maxX)) } : m);
+      }
+    };
+    keepVisible();
+    const ro = new ResizeObserver(keepVisible);
+    ro.observe(el);
+    return () => ro.disconnect();
   }, [menu]);
 
   const usersRef = useRef<HTMLSpanElement>(null);
