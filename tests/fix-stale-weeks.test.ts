@@ -14,10 +14,11 @@ test("fixStaleFutureWeeks: admin-only, årstal-krav, fremtids-guard, regenererer
   // Admin-only (samme mønster som cleanup-descriptions).
   assert.match(a, /getSessionUser/);
   assert.match(a, /user\?\.isAdmin/);
-  // Rører KUN startuger med eksplicit år > indeværende år.
-  assert.match(a, /parts\?\.year \|\| parts\.year <= currentYear\) continue/);
-  // Legitime sæsonstarter (inden for horisonten, har kommende ordrer) er tavse.
-  assert.match(a, /anchorMs <= horizonEndMs\) continue/);
+  // Rører (a) startuger med eksplicit år > indeværende år og (b) årløse
+  // PASSEREDE uger — begge former for 'skulle køre nu'.
+  assert.match(a, /isFutureYear/);
+  assert.match(a, /isPassedYearless/);
+  // Har abonnementet allerede kommende ordrer, er det ikke tørret — tavst.
   assert.match(a, /futureCount > 0\) continue/);
   // Rykker startugen + nulstiller opgave-uger og regenererer ordrer.
   assert.match(a, /startWeek: nowLabel, nextWeek: nowLabel/);

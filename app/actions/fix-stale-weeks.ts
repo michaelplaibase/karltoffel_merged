@@ -15,6 +15,7 @@ import { guardAction, getSessionUser } from "@/lib/api-auth";
 import { revalidatePath } from "next/cache";
 import { parseWeekLabelParts, generateForSubscriptionId } from "@/lib/recurrence";
 import { weekMondayToday } from "@/lib/calendar";
+import { isoWeek } from "@/lib/planner";
 import { weekLabel } from "@/lib/weeks";
 
 export type FixStaleResult = {
@@ -33,7 +34,6 @@ export async function fixStaleFutureWeeks(): Promise<FixStaleResult> {
   await guardAction();
 
   const currentYear = new Date().getUTCFullYear();
-  const horizonEndMs = Date.parse(`${weekMondayToday()}T00:00:00Z`) + 26 * 7 * 864e5; // genereringens horisont (26 uger)
   const nowLabel = weekLabel(weekMondayToday());
 
   const subs = await prisma.subscription.findMany({
@@ -46,9 +46,15 @@ export async function fixStaleFutureWeeks(): Promise<FixStaleResult> {
 
   for (const sub of subs) {
     const parts = parseWeekLabelParts(sub.startWeek);
-    if (!parts?.year || parts.year <= currentYear) continue; // årystart eller årløs — ikke vores tilfælde
-    const anchorMs = Date.parse(`${parts.year}-01-04T00:00:00Z`);
-    if (anchorMs <= horizonEndMs) continue; // år-langt væk men stadig inden for horisonten — legitim sæsonstart, lad være
+    if (!parts) continue; // ulæselig startuge — generatoren melder den selv
+    const currentWeek = isoWeek(weekMondayToday());
+    const isFutureYear = !!parts.year && parts.year > currentYear;
+    const isPassedYearless = !parts.year && parts.week < currentWeek; // årløs + passeret = 'skulle køre nu'
+    if (!isFutureYear && !isPassedYearless) continue; // legitim startuge — røres ikke
+    // Ingen horisont-guard her: Thomas' direktiv (2026-09-07) er at INGEN
+    // aktivt abonnement skal have startuge i et fremtidigt år, mens vi endnu
+    // er i det gamle år ("det skal den først gøre ved årsskifte"). En bevidst
+    // sæsonstart kan genskrives efter kørslen — bump-ofrene er de mange.
     // Verificér at abonnementet reelt er tørret: ingen kommende ordrer.
     const from = new Date(`${weekMondayToday()}T00:00:00Z`);
     const futureCount = await prisma.order.count({
@@ -68,7 +74,9 @@ export async function fixStaleFutureWeeks(): Promise<FixStaleResult> {
     // rykkes også til nu — de var med i samme fejlgem.
     for (const t of sub.tasks) {
       const tp = parseWeekLabelParts(t.startWeek);
-      if (tp?.year && tp.year > currentYear) {
+      const tFuture = !!tp?.year && tp.year > currentYear;
+      const tPassed = !!tp && !tp.year && tp.week < currentWeek;
+      if (tFuture || tPassed) {
         await prisma.taskLine.update({ where: { id: t.id }, data: { startWeek: nowLabel } });
       }
     }
