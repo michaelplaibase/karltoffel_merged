@@ -13,6 +13,8 @@ export type LockState = "fastlaast" | "delvist" | "frigjort";
 export type CalendarTaskDetail = {
   id: number; category: string; description: string;
   intervalMultiplier: string | null; durationMin: number; durationDefaulted?: boolean;
+  /** Per-opgave medarbejder (Thomas, 2026-09-07): sat når linjen er bundet. */
+  employeeName?: string;
 };
 
 export type CalEvent = {
@@ -150,7 +152,9 @@ export type DayStop = {
   subscriptionNo: number | null;
   phone: string | null;
   status: string;
-  tasks: { category: string; letter: string; description: string; price: number; durationMin: number }[];
+  // Per-opgave medarbejder (Thomas, 2026-09-07): employeeName er sat når
+  // opgavelinjen er bundet til en bestemt medarbejder.
+  tasks: { category: string; letter: string; description: string; price: number; durationMin: number; employeeName?: string }[];
   comment: string;
   addressNote: string;
 };

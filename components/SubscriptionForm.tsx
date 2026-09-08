@@ -7,6 +7,8 @@ import ContactPicker, { type ContactOption } from "@/components/ContactPicker";
 import TaskLineEditor, { blankTaskRow, type TaskRow } from "@/components/TaskLineEditor";
 import PauseSection from "@/components/PauseSection";
 
+export type EmployeeOption = { id: number; name: string };
+
 const BASE_INTERVALS = [
   "Hver uge", "Hver 2. uge", "Hver 3. uge", "Hver 4. uge", "Hver 5. uge", "Hver 6. uge",
   "Hver 8. uge", "Hver 10. uge", "Hver 12. uge", "Hver 13. uge", "Hver 16. uge",
@@ -22,11 +24,14 @@ export type SubscriptionInitial = {
 };
 
 export default function SubscriptionForm({
-  action, contacts, employees, initial, title, submitLabel, danger, minuteRate,
+  action, contacts, employees, employeeOptions, initial, title, submitLabel, danger, minuteRate,
 }: {
   action: (state: SubscriptionState, formData: FormData) => Promise<SubscriptionState>;
   contacts: ContactOption[];
   employees: string[];
+  /** Medarbejdere med id til per-opgave tildeling (Medarbejder-kolonnen i
+   *  opgavetabellen). Udelades den, vises kolonnen ikke. */
+  employeeOptions?: EmployeeOption[];
   initial?: SubscriptionInitial;
   title: string;
   submitLabel: string;
@@ -81,7 +86,7 @@ export default function SubscriptionForm({
               <input name="startWeek" defaultValue={v?.startWeek ?? initial?.startWeek ?? ""} placeholder="Uge 29" className="form-control form-control-sm" />
             </div>
           </div>
-          <TaskLineEditor mode="subscription" rows={rows} setRows={setRows} minuteRate={minuteRate} />
+          <TaskLineEditor mode="subscription" rows={rows} setRows={setRows} minuteRate={minuteRate} employees={employeeOptions} />
         </div>
       </div>
 

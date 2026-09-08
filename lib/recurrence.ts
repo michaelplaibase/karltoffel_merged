@@ -253,6 +253,7 @@ export async function generateForSubscription(sub: SubWithTasks, ref: Date = new
               intervalMultiplier: t.intervalMultiplier, startWeek: t.startWeek,
               isStandardTask: t.isStandardTask, fromSubscription: true, sort: i,
               weekdays: t.weekdays, // ugedage-begrænsning følger opgaven ud i ordrerne
+              employeeId: t.employeeId, // per-opgave medarbejder følger opgaven ud i ordrerne (Thomas, 2026-09-07)
             })),
           },
         },

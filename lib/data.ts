@@ -12,6 +12,9 @@ export type TaskLine = {
   nextWeek?: string;
   fromSubscription?: boolean;
   isStandardTask?: boolean;
+  /** Per-opgave medarbejder-navn (Thomas, 2026-09-07): sat når opgavelinjen er
+   *  bundet til en bestemt medarbejder — vises på kalender-/dagsprogramkort. */
+  employeeName?: string;
 };
 
 export type Contact = {

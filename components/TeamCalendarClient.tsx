@@ -79,6 +79,7 @@ function PreviewTaskDetails({ tasks }: { tasks: CalendarTaskDetail[] }) {
         <span key={task.id !== undefined ? task.id : i} className="ev-task" style={{ fontSize: 11, lineHeight: 1.35, display: "block" }}>
           <strong>{task.category}</strong> · {task.description}
           <span className="num" style={{ opacity: 0.75 }}> · {task.durationMin} min.</span>
+          {task.employeeName && <span style={{ opacity: 0.85 }}> · 👤 {task.employeeName}</span>}
         </span>
       ))}
     </span>

@@ -62,6 +62,7 @@ model User {
   orders           Order[]
   timeEntries      TimeEntry[]
   vehicles         Vehicle[]
+  taskLines        TaskLine[]
 
   @@index([companyId])
 }
@@ -236,6 +237,11 @@ model TaskLine {
   fixedPriceId  Int?
   order         Order?   @relation(fields: [orderId], references: [id])
   orderId       Int?
+  // Per-opgave medarbejder (Thomas, 2026-09-07): en opgavelinje kan bindes til
+  // en bestemt medarbejder, når kunden har flere serviceydelser med forskellige
+  // udførere. null = opgaven følger besøgets/abonnementets almindelige tildeling.
+  employee      User?    @relation(fields: [employeeId], references: [id])
+  employeeId    Int?
   sort          Int      @default(0)
 
   @@index([orderId])
