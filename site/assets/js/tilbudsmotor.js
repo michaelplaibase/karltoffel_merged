@@ -29,25 +29,25 @@ const PRODUCTS = [
      vokset sig for stor) 33,50 kr/m. Prisen afledes af hæk-spørgsmålene
      (state.haekInfo, se syncHaekPris). wm-navnene er UÆNDREDE (samme
      WorkMaker-produkt for begge priser indtil nyt produkt findes i CSV). */
-  {id:"haek",     navn:"Hækklipning",                    enhed:"m hæk",      pris:27.00, note:"Trimning — hæk under 220 cm",            qty:65,  freq:1,  fmax:3,  on:false, pakke:true, kat:"pakke", wm:"Hækklipning 1 side pr meter Under 220 cm"},
-  {id:"green",    navn:"Greenkeeper græspleje",          enhed:"m² plæne",   pris:2.30,  note:"Gødning og pleje af plænen",      qty:450, freq:3,  fmax:6,  on:false, pakke:true, kat:"pakke", wm:"Greenkeeper græspleje"},
-  {id:"alge",     navn:"Algebehandling af tag",          enhed:"m² tag",     pris:9.80,  min:950,  note:"Mos og alger, beregnet på skråt tagareal", qty:120, freq:1, fmax:2, on:false, pakke:true, kat:"pakke", wm:"Algebehandling af tag"},
-  {id:"tagrender",navn:"Tagrenderens",                   enhed:"m tagrende", pris:18.00, note:"Stueplan / 1-plans hus",          qty:24,  freq:1,  fmax:2,  on:false, pakke:true, kat:"pakke", wm:"Tagrenderens Stueplan / 1-plans hus"},
+  {id:"haek",     navn:"Hækklipning",                    enhed:"m hæk",      pris:27.00, note:"Trimning — hæk under 220 cm",            qty:0,  freq:1,  fmax:3,  on:false, pakke:true, kat:"pakke", wm:"Hækklipning 1 side pr meter Under 220 cm"},
+  {id:"green",    navn:"Greenkeeper græspleje",          enhed:"m² plæne",   pris:2.30,  note:"Gødning og pleje af plænen",      qty:0, freq:3,  fmax:6,  on:false, pakke:true, kat:"pakke", wm:"Greenkeeper græspleje"},
+  {id:"alge",     navn:"Algebehandling af tag",          enhed:"m² tag",     pris:9.80,  min:950,  note:"Mos og alger, beregnet på skråt tagareal", qty:0, freq:1, fmax:2, on:false, pakke:true, kat:"pakke", wm:"Algebehandling af tag"},
+  {id:"tagrender",navn:"Tagrenderens",                   enhed:"m tagrende", pris:18.00, note:"Stueplan / 1-plans hus",          qty:0,  freq:1,  fmax:2,  on:false, pakke:true, kat:"pakke", wm:"Tagrenderens Stueplan / 1-plans hus"},
 
   /* ---- Tilvalg: "Vi tilbyder også" (off som standard, gruppe = kat) ---- */
-  {id:"ukrudt_sproejt", navn:"Sprøjtning af ukrudt mellem belægning", enhed:"m² fliser", pris:1.50, min:150, note:"Vi holder fugerne rene", qty:75, freq:5, fmax:8, on:false, pakke:false, kat:"groen", wm:"Ukrudt bekæmpelse på belægningsarealer"},
-  {id:"ukrudt_fjern", navn:"Fjernelse af ukrudt mellem belægning", enhed:"m² fliser", pris:4.00, note:"Manuel fjernelse af ukrudt — hvis det er fjernet indenfor den sidste måned", qty:60, freq:5, fmax:8, on:false, pakke:false, kat:"groen", wm:null},
-  {id:"beskaering",navn:"Beskæring af buske, træer og planter",   enhed:"træer",     pris:250.00, note:"Små træer/frugttræer — større træer efter besøg", qty:3, freq:1, fmax:2, on:false, pakke:false, kat:"groen", prisEnh:"træ", wm:"Beskæring Små træer / Frugttræer"},
+  {id:"ukrudt_sproejt", navn:"Sprøjtning af ukrudt mellem belægning", enhed:"m² fliser", pris:1.50, min:150, note:"Vi holder fugerne rene", qty:0, freq:5, fmax:8, on:false, pakke:false, kat:"groen", wm:"Ukrudt bekæmpelse på belægningsarealer"},
+  {id:"ukrudt_fjern", navn:"Fjernelse af ukrudt mellem belægning", enhed:"m² fliser", pris:4.00, note:"Manuel fjernelse af ukrudt — hvis det er fjernet indenfor den sidste måned", qty:0, freq:5, fmax:8, on:false, pakke:false, kat:"groen", wm:null},
+  {id:"beskaering",navn:"Beskæring af buske, træer og planter",   enhed:"træer",     pris:250.00, note:"Små træer/frugttræer — større træer efter besøg", qty:0, freq:1, fmax:2, on:false, pakke:false, kat:"groen", prisEnh:"træ", wm:"Beskæring Små træer / Frugttræer"},
   {id:"vinduerind",navn:"Vinduespudsning indeni huset",            enhed:"glas",      pris:24.87,  note:"Indvendige døre, vinduer og porte", qty:0,   freq:1,  fmax:6,  on:false, pakke:false, kat:"vinduer", wm:"Indendørs vinduespudsning pr glas"},
   {id:"solcelle",  navn:"Solcellevask",                           enhed:"paneler",   pris:40.00,  note:"Solcellepaneler på taget",          qty:0,   freq:1,  fmax:4,  on:false, pakke:false, kat:"vinduer", prisEnh:"panel", wm:"Solcellevask pr panel"},
-  {id:"drivhus",   navn:"Drivhusvask",                            enhed:"gang",      pris:100.00, note:"Fast pris pr. gang — så er drivhuset vasket", qty:1, freq:1,  fmax:2,  on:false, pakke:false, kat:"vinduer", wm:"Drivhusvask — fast pris pr. gang"},
-  {id:"algeflis",  navn:"Algebehandling af belægning",            enhed:"m² fliser", pris:7.80,   min:850, note:"Alger på fliser, terrasse og indkørsel", qty:60, freq:1, fmax:2, on:false, pakke:false, kat:"tag", wm:"Algebehandling af belægning"},
-  {id:"fliserens", navn:"Fliserens",                              enhed:"",          pris:null,   note:"Dybderens med maskine — pris ved besøg", qty:1, freq:1, fmax:2, on:false, pakke:false, kat:"tag", wm:null},
-  {id:"sammenriv", navn:"Sammenrivning & bortskaffelse af affald",enhed:"m² plæne",  pris:3.00,   note:"Åbne arealer / plæne",    qty:450, freq:1,  fmax:4,  on:false, pakke:false, kat:"affald",  wm:"Opsamling af løvfald til efteråret Åbne arealer / Græsplæne"},
+  {id:"drivhus",   navn:"Drivhusvask",                            enhed:"gang",      pris:100.00, note:"Fast pris pr. gang — så er drivhuset vasket", qty:0, freq:1,  fmax:2,  on:false, pakke:false, kat:"vinduer", wm:"Drivhusvask — fast pris pr. gang"},
+  {id:"algeflis",  navn:"Algebehandling af belægning",            enhed:"m² fliser", pris:7.80,   min:850, note:"Alger på fliser, terrasse og indkørsel", qty:0, freq:1, fmax:2, on:false, pakke:false, kat:"tag", wm:"Algebehandling af belægning"},
+  {id:"fliserens", navn:"Fliserens",                              enhed:"",          pris:null,   note:"Dybderens med maskine — pris ved besøg", qty:0, freq:1, fmax:2, on:false, pakke:false, kat:"tag", wm:null},
+  {id:"sammenriv", navn:"Sammenrivning & bortskaffelse af affald",enhed:"m² plæne",  pris:3.00,   note:"Åbne arealer / plæne",    qty:0, freq:1,  fmax:4,  on:false, pakke:false, kat:"affald",  wm:"Opsamling af løvfald til efteråret Åbne arealer / Græsplæne"},
 
   /* ---- Skadedyr ---- */
-  {id:"myre_ude",   navn:"Myrebekæmpelse, udvendig sokkelbehandling", enhed:"gang", pris:935.00,  note:"Standard parcelhus",              qty:1, freq:1, fmax:2, on:false, pakke:false, kat:"skadedyr", wm:"Myrebekæmpelse udvendig sokkelbehandling"},
-  {id:"myre_inde",  navn:"Myrebekæmpelse, indvendig behandling",      enhed:"gang", pris:650.00,  note:"Standard parcelhus",              qty:1, freq:1, fmax:2, on:false, pakke:false, kat:"skadedyr", wm:"Myrebekæmpelse indvendig behandling"}
+  {id:"myre_ude",   navn:"Myrebekæmpelse, udvendig sokkelbehandling", enhed:"gang", pris:935.00,  note:"Standard parcelhus",              qty:0, freq:1, fmax:2, on:false, pakke:false, kat:"skadedyr", wm:"Myrebekæmpelse udvendig sokkelbehandling"},
+  {id:"myre_inde",  navn:"Myrebekæmpelse, indvendig behandling",      enhed:"gang", pris:650.00,  note:"Standard parcelhus",              qty:0, freq:1, fmax:2, on:false, pakke:false, kat:"skadedyr", wm:"Myrebekæmpelse indvendig behandling"}
 ];
 /* Uberørt kopi til at nulstille pakken når en ny adresse vælges. */
 const DEFAULTS = PRODUCTS.map(function(p){ return Object.assign({}, p); });
@@ -100,12 +100,13 @@ function beregn(products){
       yearTotal += linje * p.freq;
     }
   }
-  /* Hækkens faste udkørsels-linje (Kristian 2026-09-09): når hækklipning
-     er valgt følger "Udkørsel og fjernelse af klip" automatisk med —
-     500 kr pr. hæk-besøg (udkørsel + renovationsgebyr). Gælder også når
-     hækken er over 2,2 m (pris:null) — udkørslen afholdes uanset. */
+  /* Hækkens udkørsels-TILVALG (Kristian 2026-09-09): 500 kr lægges kun i,
+     når kunden HAR svaret Ja på "Skal vi køre klippet på lossepladsen?" —
+     IKKE længere automatisk med som fast post. Ingen forudvælg: intet svar
+     = ingen gebyr-linje. Gælder også når hækken er over 2,2 m (pris:null)
+     — gebyret afholdes stadig pr. hæk-besøg når ja er valgt. */
   const haek = products.find(p => p.id === "haek");
-  if(haek && haek.on){
+  if(haek && haek.on && state.haekInfo && state.haekInfo.udkoersel === "Ja"){
     total += HAEK_UDKOERSEL;
     yearTotal += HAEK_UDKOERSEL * haek.freq;
   }
@@ -145,8 +146,10 @@ const state = {
   betaling: "pr_gang",   /* fast: betaling pr. gang — abonnements-valg fjernet */
   rabatkode: { code:"", percent:0, valid:false },   /* valideret server-side via /api/rabatkode */
   /* Hæk-spørgsmålene (trin 4): kundens egne svar uden forvalg.
-     sidstKlippet + hoejde + sider + arbejde — styrer hækkens pris (syncHaekPris). */
-  haekInfo: { sidstKlippet:"", hoejde:"", sider:"", arbejde:"" },
+     sidstKlippet + hoejde + sider + arbejde + udkoersel — styrer hækkens pris
+     (syncHaekPris). udkoersel = tilvalg (Kristian 2026-09-09): intet svar =
+     ingen 500-kr-gebyr. */
+  haekInfo: { sidstKlippet:"", hoejde:"", sider:"", arbejde:"", udkoersel:"" },
   ejendom: { type:"Villa, 1 fam.", grund:"827 m²", opfoert:"2007", haek:"65 m" }
 };
 
@@ -201,7 +204,8 @@ function haekUsikker(){
 }
 function haekGebyrAar(){
   const h = PRODUCTS.find(p => p.id === "haek");
-  return (h && h.on) ? HAEK_UDKOERSEL * h.freq : 0;
+  /* Kun når tilvalget er svaret Ja — ellers er gebyret ikke i totalen. */
+  return (h && h.on && state.haekInfo && state.haekInfo.udkoersel === "Ja") ? HAEK_UDKOERSEL * h.freq : 0;
 }
 
 
@@ -286,25 +290,19 @@ function renderSkraafoto(dir){
   }
 }
 
-/* Auto-mål (nDSM): forudfyld mængderne fra matrikel + bygninger + DHM. */
+/* Auto-mål (nDSM): Kristian 2026-09-09 — ALLE felter skal kunden selv skrive
+   i. Auto-målingen forudfylder IKKE længere nogen mængder; state.ejendom
+   opdateres stadig (vist i ejendoms-trinnet), men qty felterne starter tomme
+   ("Pris efter antal") indtil kunden taster selv. */
 function applyMeasurements(m){
   if(!m) return;
   state.maal = m;
   const m2 = (v)=> DKK0.format(v) + " m²";
   if(m.grundAreal) state.ejendom.grund = m2(m.grundAreal);
   if(m.haekLangde) state.ejendom.haek = DKK0.format(m.haekLangde) + " m";
-  /* Forudfyld kun mængder kunden ikke selv har rettet (touched). */
-  const put = (id,v)=>{ if(v>0){ const p = PRODUCTS.find(x=>x.id===id); if(p && !p.touched) p.qty = v; } };
-  /* Plænefaktor: haven (grund − bygninger) rummer også indkørsel, terrasse,
-     bede og stier. I danske parcelhushaver udgør plænen typisk 60–75 % af
-     det åbne areal — vi bruger 70 % som rundt standardtal, afrundet til 10 m². */
-  const PLAENE_FAKTOR = 0.70;
-  const plaeneAreal = m.haveAreal > 0 ? Math.max(10, Math.round(m.haveAreal * PLAENE_FAKTOR / 10) * 10) : 0;
-  put("green", plaeneAreal); put("sammenriv", plaeneAreal);
-  put("haek", m.haekLangde); put("tagrender", m.tagrendeLangde);
-  put("alge", m.tagArealSkraat || m.tagAreal);           /* skråt tagareal hvor muligt */
-  /* Træantal kan ikke måles — skøn ~1 træ/busk pr. 150 m² have, clamp 2–8. */
-  if(m.haveAreal) put("beskaering", Math.min(8, Math.max(2, Math.round(m.haveAreal / 150))));
+  /* Kristian 2026-09-09: INGEN auto-forudfyldning — kunden taster selv alle
+     mængder (put()-kaldene er fjernet). Kun tagrenderens 2-plans-tier styres
+     stadig af målingen (det er en pris, ikke en mængde). */
   /* Hæk-tiers (27,50/38,50) er UDGAET: hækkens pris styres nu af
      kundens egne svar i hæk-spørgsmålene (syncHaekPris) — auto-målingen
      forudfylder kun meter-antallet ovenfor. */
@@ -325,7 +323,7 @@ function resetProducts(){
   PRODUCTS.forEach(function(p,i){ Object.assign(p, DEFAULTS[i]); p.touched = false; });
   tmPagePreselectDone = false;   /* ny adresse → forudvælg servicesidens ydelse igen */
   state.maal = null;
-  state.haekInfo = { sidstKlippet:"", hoejde:"", sider:"", arbejde:"" };
+  state.haekInfo = { sidstKlippet:"", hoejde:"", sider:"", arbejde:"", udkoersel:"" };
   syncHaekPris();                /* tilbage til standard: trimning 27,00 kr/m */
 }
 
@@ -798,12 +796,15 @@ $("btn-send").addEventListener("click", ()=>{
         sidstKlippet: state.haekInfo.sidstKlippet || "Ikke besvaret",
         hoejde: state.haekInfo.hoejde || "Ikke besvaret",
         sider: state.haekInfo.sider || "Ikke besvaret",
-        arbejde: state.haekInfo.arbejde || "Ikke besvaret"
+        arbejde: state.haekInfo.arbejde || "Ikke besvaret",
+        udkoersel: state.haekInfo.udkoersel || "Ikke besvaret"
       };
       if(state.haekInfo.hoejde === "Over 2,2 m") s.note = HAEK_HOEJDE_UKENDT_TXT;
       else if(p.haekBeskaering) s.note = "Beskæring (skæres ind) — 33,50 kr/m, sendes med samme WM-produkt indtil videre";
-      /* Den faste udkørsels-linje som egen services[]-post. */
-      servicesArr.push({ id:"haek_udkoersel", navn:"Udkørsel og fjernelse af klip", wm:null, qty:1, enhed:"", freq:p.freq, pris:HAEK_UDKOERSEL, erPakkevare:false });
+      /* Udkørsels-tilvalget: haek_udkoersel-post KUN ved Ja (Kristian 2026-09-09). */
+      if(state.haekInfo.udkoersel === "Ja"){
+        servicesArr.push({ id:"haek_udkoersel", navn:"Udkørsel og fjernelse af klip", wm:null, qty:1, enhed:"", freq:p.freq, pris:HAEK_UDKOERSEL, erPakkevare:false });
+      }
     }
     servicesArr.push(s);
   });
@@ -897,10 +898,11 @@ $("btn-send").addEventListener("click", ()=>{
                      : (!p.qty ? " (angiv antal)" : " (" + p.freq + "x/år)");
         return esc(p.navn) + suffix;
       });
-      /* Udkørsels-linjen vises også på tak-siden (regnet med i totalen). */
-      if(valgt.some(p=>p.id === "haek")){
+      /* Udkørsels-tilvalget (Kristian 2026-09-09): 500-kr-linjen KUN når
+         kunden har svaret Ja. Nej/intet svar → ingen linje. */
+      if(valgt.some(p=>p.id === "haek") && state.haekInfo.udkoersel === "Ja"){
         const hae = valgt.find(p=>p.id === "haek");
-        linjer.push("Udkørsel og fjernelse af klip (500 kr — vi kører det grønne på lossepladsen, firma-gebyr m. gule nummerplader, " + hae.freq + "x/år)");
+        linjer.push("Udkørsel og fjernelse af klip (500 kr — fordi vores biler har gule nummerplader, koster det os 500 kroner at køre det på genbrugspladsen, " + hae.freq + "x/år)");
       }
       var kodeLinje = kodePct > 0 ? "Rabatkode anvendt: <b>−" + kodePct + "%</b><br>" : "";
       /* Fradrags-linjen på tak-siden (fix 1, 2026-09-09): vises ALTID når der
@@ -984,10 +986,10 @@ function pushLeadEvent(valgt, r, totalNet, kodePct){
       };
     })
   };
-  /* Udkørsels-linjen (500 kr) følger med som eget item, så items' sum
-     matcher lead_value_total (beregn() tæller 500'eren med i totalen). */
+  /* Udkørsels-tilvalget: eget GTM-item KUN ved Ja (så items' sum matcher
+     lead_value_total — beregn() lægger 500'eren kun i når Ja). */
   const hae = valgt.find(p => p.id === "haek");
-  if(hae){
+  if(hae && state.haekInfo.udkoersel === "Ja"){
     ev.items.push({
       item_id: "haek_udkoersel",
       item_name: "Udkørsel og fjernelse af klip",
@@ -1311,14 +1313,43 @@ function byggHaekInfo(){
     blk.appendChild(opts);
     sec.appendChild(blk);
   });
-  /* Den faste linje: udkørsel og fjernelse af klip — følger automatisk med
-     når hækklipning vælges (regnes med i totalen via beregn()). */
-  /* Fix 4 (UX 2026-09-08): "500 kr" står nu KUN ÉN gang — overskriften bærer
-     tallet, teksten holder Bud 2-tonen (losseplads, gule nummerplader). */
+  /* Udkørsels-TILVALG (Kristian 2026-09-09): pænt spørgsmål med to valg,
+     ingen forudvælgelse. Ja → 500 kr pr. hæk-besøg (beregn()); Nej → ingen
+     gebyr-linje. Samme tone som Bud 2 (losseplads/genbrugsplads, gule
+     nummerplader, 'du ikk' skal røre en finger'). */
   const udk = document.createElement("div");
-  udk.className = "tm-haekinfo-udkoersel";
+  udk.className = "tm-haekinfo-q tm-haekinfo-udkoersel";
   udk.id = "tm-haekinfo-udkoersel";
-  udk.innerHTML = "<b>Udkørsel og fjernelse af klip — 500 kr i gebyr</b><span>Alt det grønne kører vi af sted til lossepladsen, så du ikk' skal røre en finger. Gebyret dækker afleveringen — deraf de gule nummerplader.</span>";
+  const udkLbl = document.createElement("span");
+  udkLbl.className = "tm-haekinfo-lbl";
+  udkLbl.textContent = "Skal vi køre klippet på genbrugspladsen?";
+  udk.appendChild(udkLbl);
+  const udkOpts = document.createElement("div");
+  udkOpts.className = "tm-haekinfo-opts";
+  udkOpts.setAttribute("role", "radiogroup");
+  udkOpts.setAttribute("aria-label", "Skal vi køre klippet på genbrugspladsen?");
+  const UDK_OPTS = [
+    { v:"Ja",  t:"Ja tak — vi kører det grønne af sted, så du ikk' skal røre en finger (+ 500 kr i gebyr, fordi vores biler har gule nummerplader)" },
+    { v:"Nej", t:"Nej tak — jeg kører det selv væk" }
+  ];
+  UDK_OPTS.forEach(o => {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "tm-haekinfo-opt" + (state.haekInfo.udkoersel === o.v ? " selected" : "");
+    b.setAttribute("role", "radio");
+    b.setAttribute("aria-checked", state.haekInfo.udkoersel === o.v ? "true" : "false");
+    b.textContent = o.t;
+    b.addEventListener("click", ()=>{
+      state.haekInfo.udkoersel = o.v;
+      udkOpts.querySelectorAll(".tm-haekinfo-opt").forEach(x=>{
+        x.classList.toggle("selected", x === b);
+        x.setAttribute("aria-checked", x === b ? "true" : "false");
+      });
+      opdater();
+    });
+    udkOpts.appendChild(b);
+  });
+  udk.appendChild(udkOpts);
   sec.appendChild(udk);
   /* Fix 1: venlig påkrævet-besked (samme err-mønster som kontakt-trinnet).
      Vises kun ved blokeret "Videre"-klik uden højde-svar; en højde-valg fjerner den. */
