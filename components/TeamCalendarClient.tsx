@@ -6,7 +6,7 @@ import { Fragment, useEffect, useRef, useState, useSyncExternalStore, useTransit
 import type { CalendarMonth, CalendarTaskDetail, CalendarWeek, CalStatus } from "@/lib/calendar";
 import { categoryColor } from "@/lib/categories";
 import { telHref, telDisplay } from "@/components/ui";
-import { setOrderLock, moveOrderWeeks, replanWeek, deleteOrder, moveOrderManual } from "@/app/actions/orders";
+import { setOrderLock, moveOrderWeeks, moveOrderToExactDate, replanWeek, deleteOrder, moveOrderManual } from "@/app/actions/orders";
 
 type Props =
   | { mode: "week"; week: CalendarWeek; nav: { prevWeek: string; nextWeek: string; monthParam: string }; readOnly?: boolean; moveOnly?: boolean; basePath?: string }
@@ -101,6 +101,7 @@ export default function TeamCalendarClient(props: Props) {
 
   const [menu, setMenu] = useState<{ x: number; y: number; ev: MenuTarget } | null>(null);
   const [expanded, setExpanded] = useState<string | null>(null);
+  const [flytDate, setFlytDate] = useState(""); // "Flyt til specifik dato"-feltet i menuen
   const [pending, startTransition] = useTransition();
 
   // View state (all client-side, no reload):
@@ -174,6 +175,7 @@ export default function TeamCalendarClient(props: Props) {
   function openMenu(e: React.MouseEvent, ev: MenuTarget) {
     e.stopPropagation();
     setExpanded(null);
+    setFlytDate("");
     setMenu({ x: Math.min(e.clientX, window.innerWidth - 250), y: e.clientY, ev });
   }
 
@@ -183,6 +185,7 @@ export default function TeamCalendarClient(props: Props) {
     const x = "clientX" in e && e.clientX > 0 ? e.clientX : rect.left + Math.min(rect.width, 24);
     const y = "clientY" in e && e.clientY > 0 ? e.clientY : rect.top + Math.min(rect.height, 24);
     setExpanded(null);
+    setFlytDate("");
     setMenu({ x: Math.min(x, window.innerWidth - 250), y, ev });
   }
 
@@ -542,6 +545,21 @@ export default function TeamCalendarClient(props: Props) {
             <div className="ctxmenu-item" key={label} style={{ paddingLeft: 34 }}
               onClick={() => run(() => moveOrderWeeks(menu.ev.id, w, unlock))}>{label}</div>
           ))}
+          {expanded === "flyt" && (
+            <div style={{ padding: "6px 18px 8px 34" }} onClick={(e) => e.stopPropagation()}>
+              <label style={{ display: "block", fontSize: 12, color: "var(--muted)", marginBottom: 4 }}>
+                Eller flyt til specifik dato:
+              </label>
+              <div style={{ display: "flex", gap: 6 }}>
+                <input type="date" value={flytDate} onChange={(e) => setFlytDate(e.target.value)}
+                  style={{ flex: 1, minWidth: 0, padding: "4px 6px", border: "1px solid var(--light)", borderRadius: 4 }} />
+                <button type="button" className="btn btn-sm" disabled={!flytDate}
+                  onClick={() => run(() => moveOrderToExactDate(menu.ev.id, flytDate))}>
+                  Flyt
+                </button>
+              </div>
+            </div>
+          )}
           {/* "Mere …"-undermenuen (slet ordre, notifikation m.m.) er kun til admins. */}
           {!moveOnly && (
             <div className="ctxmenu-item" onClick={() => setExpanded(expanded === "mere" ? null : "mere")}>

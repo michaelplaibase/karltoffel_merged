@@ -190,6 +190,33 @@ export async function moveOrderWeeks(orderId: number, weeks: number, unlock = fa
   });
   if (!o) return;
   const plannedAt = new Date(o.plannedAt.getTime() + weeks * 7 * 864e5);
+  await applyOrderMove(o, orderId, plannedAt, unlock);
+}
+
+/** Kalendermenuen "Flyt til specifik dato": sæt ordrens leveringsdato til en
+ *  valgt dato (kl. 10 UTC som createOrder/moveOrderToDate) med samme
+ *  tombstone/lås-logik som moveOrderWeeks. */
+export async function moveOrderToExactDate(orderId: number, dateISO: string, unlock = false): Promise<void> {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(dateISO)) return;
+  await guardAction();
+  const o = await prisma.order.findUnique({
+    where: { id: orderId },
+    select: { plannedAt: true, subscriptionId: true, sourceWeek: true },
+  });
+  if (!o) return;
+  const plannedAt = new Date(`${dateISO}T10:00:00Z`);
+  if (Number.isNaN(plannedAt.getTime())) return;
+  await applyOrderMove(o, orderId, plannedAt, unlock);
+}
+
+/** Fælles maskine for moveOrderWeeks/moveOrderToExactDate: sourceWeek-backfill
+ *  (rytmeugen = ugen FØR flytningen), lås-håndtering og revalidering. */
+async function applyOrderMove(
+  o: { plannedAt: Date; subscriptionId: number | null; sourceWeek: Date | null },
+  orderId: number,
+  plannedAt: Date,
+  unlock: boolean,
+): Promise<void> {
   // Backfill sourceWeek for abonnements-rækker fra før sourceWeek-migrationen:
   // uden den ville deleteOrders tombstone-fallback (mondayOf(plannedAt)) efter
   // en flytning ramme den FLYTTEDE uge, så natte-genereringen genopretter
