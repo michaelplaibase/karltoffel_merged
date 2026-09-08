@@ -91,6 +91,9 @@ function beregn(products){
     var p = products[i];
     if(!p.on) continue;
     count += 1;                                   /* uprisede ("indeholdt") tæller også med */
+    /* Hæk før højde er besvaret: ingen konkret meterpris i totalen endnu
+       (fix 6) — rækken viser neutral note, beløbet rulles ind ved svar. */
+    if(p.id === "haek" && !(state.haekInfo && state.haekInfo.hoejde)) continue;
     if(p.pris != null && p.qty > 0){
       var linje = Math.max(p.pris * p.qty, p.min || 0);
       total += linje;
@@ -180,6 +183,22 @@ function syncHaekPris(){
     h.haekBeskaering = beskaering;
     delete h.prisNote;
   }
+}
+
+/* UX-fixes 2026-09-08 (hækklipnings-flowet):
+   - haekUsikker(): hæk er valgt, men højden er enten ikke svaret endnu eller
+     "Over 2,2 m" (personligt tilbud). I begge tilfælde må totalen IKKE bare
+     vise 500-gebyret, som om hækken blev billig — og fradrag må ALDRIG
+     beregnes på gebyret (fradrag gælder kun arbejdsløn, ikke udkørselsgebyr).
+   - haekGebyrAar(): gebyrets årstotal, så fradragsgrundlaget kan stribe
+     gebyret ud af yearTotal (blandet kurv: andre services følger normal logik). */
+function haekUsikker(){
+  const h = PRODUCTS.find(p => p.id === "haek");
+  return !!(h && h.on && (!state.haekInfo.hoejde || state.haekInfo.hoejde === "Over 2,2 m"));
+}
+function haekGebyrAar(){
+  const h = PRODUCTS.find(p => p.id === "haek");
+  return (h && h.on) ? HAEK_UDKOERSEL * h.freq : 0;
 }
 
 
@@ -482,6 +501,9 @@ function vaelgBetaling(t){
 function opdaterBetaling(){
   if(!btTotal) return;
   const r = beregn(PRODUCTS);
+  /* Fix 2: KUN hæk-gebyret tilbage (højde ikke svaret / over 2,2 m) → intet
+     konkret total-tal på betalingskortet endnu — 500 kr må ikke ligne en pris. */
+  if(haekUsikker() && r.yearTotal <= haekGebyrAar()){ btTotal.textContent = "—"; return; }
   btTotal.textContent = DKK0.format(Math.round(r.yearTotal));
 }
 
@@ -496,7 +518,22 @@ $("adr-videre").addEventListener("click", ()=>{
 });
 $("vf-tilbage").addEventListener("click", ()=> visStep("step-kundetype"));
 $("ls-tilbage").addEventListener("click", ()=> visStep("step-verify"));
-$("ls-videre").addEventListener("click", ()=>{ if(state.betaling) visStep("step-kontakt"); });
+/* Fix 1 (UX 2026-09-08): når Hækklipning er valgt, er "Hvor høj er hækken?"
+   PÅKRÆVET — det er det eneste spørgsmål der ændrer prisen. Ubesvaret
+   "Videre"-klik blokeres, hæk-sektionen rulles op, og en kort venlig besked
+   vises (samme err-mønster som kontakt-trinnet). De andre 3 spørgsmål
+   forbliver valgfrie — "Ved ikke"-mulighederne fanger usikre kunder. */
+$("ls-videre").addEventListener("click", ()=>{
+  const hp = PRODUCTS.find(p=>p.id==="haek");
+  if(hp && hp.on && !(state.haekInfo && state.haekInfo.hoejde)){
+    const err = $("tm-haekinfo-err");
+    if(err) err.classList.add("show");
+    const hsec = $("tm-haekinfo");
+    if(hsec) hsec.scrollIntoView({ block:"center", behavior:"smooth" });
+    return;                       /* bloker videreklik */
+  }
+  if(state.betaling) visStep("step-kontakt");
+});
 /* "Skift adresse" på løsnings-trinnet: start flowet forfra på adresse-trinnet.
    resetProducts() kører automatisk, når en ny adresse vælges (vaelgAdresse). */
 $("ls-skift").addEventListener("click", ()=>{
@@ -739,6 +776,13 @@ $("btn-send").addEventListener("click", ()=>{
   const kodePct = state.rabatkode.valid ? state.rabatkode.percent : 0;
   const totalNet = r.total * (1 - kodePct/100);        /* pr. besøg, netto */
   const yearNet = r.yearTotal * (1 - kodePct/100);     /* ÅRLIGT netto estimat (freq ganget ind) */
+  /* Fix 2 (UX 2026-09-08): skattefradrag KUN på arbejdsløn — gebyret (500 kr
+     udkørsel) strihes ud af grundlaget (blandet kurv håndteret her: gebyret
+     får samme kodePct som resten af totalen). Er KUN gebyret tilbage, vises
+     ingen fradrag — i stedet en ærlig note om hækkens pris. */
+  const gebyrNet = haekGebyrAar() * (1 - kodePct/100);
+  const fradrBase = Math.max(0, yearNet - gebyrNet);
+  const usikker = haekUsikker();
 
   /* Lead-payload til CRM'et: kontaktinfo + valgte services (med WorkMaker-
      nøgle under overgangen) + estimat + kundetype. Sendes via sitets relay
@@ -858,13 +902,22 @@ $("btn-send").addEventListener("click", ()=>{
         linjer.push("Udkørsel og fjernelse af klip (500 kr — vi kører det grønne på lossepladsen, firma-gebyr m. gule nummerplader, " + hae.freq + "x/år)");
       }
       var kodeLinje = kodePct > 0 ? "Rabatkode anvendt: <b>−" + kodePct + "%</b><br>" : "";
+      /* Fradrags-linjen på tak-siden (fix 2): kun når der ER arbejdsløn at
+         fratrække. Kun gebyret tilbage → ærlig note i stedet for fradrag. */
+      let fradrLinje = "";
+      if(fradrBase > 0){
+        const f = Math.min(fradrBase * 0.26, 18300);
+        fradrLinje = "Ca. " + kr(f) + "/år i skattefradrag (servicefradraget, 2026) — ≈ <b>" + kr(fradrBase - f) + "/år efter fradrag</b><br>";
+      } else if(usikker){
+        fradrLinje = "Prisen for hækken kommer, når vi har set den — 500 kr til udkørsel kommer ud over. Skattefradraget regner vi, når hækkens pris er klar.<br>";
+      }
       opsum.innerHTML =
         "<b>" + esc(state.adresse) + ktLabel + "</b><br>" +
         "Valgt: " + linjer.join(", ") + "<br>" +
         kodeLinje +
         'Pr. besøg: <b><span id="tak-total" class="tm-anim-kr">' + kr(totalNet) + '</span></b>' +
         ' · <b><span id="tak-aar" class="tm-anim-kr">' + kr(yearNet) + '</span>/år</b><br>' +
-        'Ca. ' + kr(Math.min(yearNet * 0.26, 18300)) + '/år i skattefradrag (servicefradraget, 2026) — ≈ <b>' + kr(yearNet - Math.min(yearNet * 0.26, 18300)) + '/år efter fradrag</b><br>' +
+        fradrLinje +
         'Estimat — endelig pris aftaler vi ved opkaldet';
       /* Tak-totalerne tæller blødt op fra 0 (count-animationen). */
       animateNumber(opsum.querySelector("#tak-total"), 0, totalNet, kr);
@@ -910,7 +963,9 @@ function pushLeadEvent(valgt, r, totalNet, kodePct){
     lead_coupon_discount_pct: kodePct,
     items: valgt.map(function(p, i){
       const enhedspris = p.pris == null ? 0 : p.pris;
-      const linje = (p.pris == null || !(p.qty > 0)) ? 0 : Math.max(enhedspris * p.qty, p.min || 0);
+      /* Hæk før højde er besvaret: 0-kr linje, så items' sum matcher
+         lead_value_total (beregn() tæller hæk-beløbet heller ikke endnu). */
+      const linje = (p.pris == null || !(p.qty > 0) || (p.id === "haek" && !(state.haekInfo && state.haekInfo.hoejde))) ? 0 : Math.max(enhedspris * p.qty, p.min || 0);
       return {
         item_id: p.id,
         item_name: p.navn,
@@ -1066,13 +1121,30 @@ function renderRows(){
    Y = yearTotal (freq ganget ind), Z = total pr. besøgs-runde. */
 function opdaterSticky(){
   const r = beregn(PRODUCTS);
-  /* Servicefradrag 2026: 26% af arbejdsløn (inkl. moms), maks 18.300 kr/år pr. person. */
-  const fradrTotal = Math.min(r.yearTotal * 0.26, 18300);
+  /* Fix 2 (UX 2026-09-08): fradraget beregnes KUN på arbejdsløn — gebyret
+     (500 kr udkørsel) strihes ud af grundlaget. Er KUN gebyret tilbage af
+     hækken (over 2,2 m eller højde ikke besvaret), vises ingen fradrag, og
+     totalen må ikke bare vise 500 kr som om hækken blev billig. */
+  const gebyr = haekGebyrAar();
+  const fradrBase = Math.max(0, r.yearTotal - gebyr);
+  const usikker = haekUsikker();
   const cnt = $("tm-sticky-count"), tot = $("tm-sticky-total");
   if(cnt) cnt.textContent = r.count + " ting valgt";
   if(tot){
     const old = tot.dataset.v;
-    tot.textContent = kr(r.yearTotal) + "/år i alt · " + kr(r.total) + " pr. besøg · ca. " + kr(fradrTotal) + "/år i skattefradrag (≈ " + kr(r.yearTotal - fradrTotal) + "/år efter fradrag)";
+    let txt;
+    if(usikker && fradrBase <= 0){
+      txt = "Prisen for hækken kommer, når vi har set den — 500 kr til udkørsel kommer ud over";
+    } else {
+      let fradrTxt = "";
+      if(fradrBase > 0){
+        const fradrTotal = Math.min(fradrBase * 0.26, 18300);
+        fradrTxt = " · ca. " + kr(fradrTotal) + "/år i skattefradrag (≈ " + kr(fradrBase - fradrTotal) + "/år efter fradrag)";
+      }
+      txt = kr(r.yearTotal) + "/år i alt · " + kr(r.total) + " pr. besøg" + fradrTxt +
+            (usikker ? " — hækkens pris kommer, når vi har set den" : "");
+    }
+    tot.textContent = txt;
     /* Runde 2: kort pulse på beløbet når det ændrer sig — prisen skal mærkes. */
     if(old !== undefined && old !== String(r.yearTotal)){
       tot.classList.remove("tm-pulse");
@@ -1229,6 +1301,7 @@ function byggHaekInfo(){
           x.classList.toggle("selected", x === b);
           x.setAttribute("aria-checked", x === b ? "true" : "false");
         });
+        if(key === "hoejde"){ const er = $("tm-haekinfo-err"); if(er) er.classList.remove("show"); }
         syncHaekPris();
         opdater();
       });
@@ -1239,11 +1312,20 @@ function byggHaekInfo(){
   });
   /* Den faste linje: udkørsel og fjernelse af klip — følger automatisk med
      når hækklipning vælges (regnes med i totalen via beregn()). */
+  /* Fix 4 (UX 2026-09-08): "500 kr" står nu KUN ÉN gang — overskriften bærer
+     tallet, teksten holder Bud 2-tonen (losseplads, gule nummerplader). */
   const udk = document.createElement("div");
   udk.className = "tm-haekinfo-udkoersel";
   udk.id = "tm-haekinfo-udkoersel";
-  udk.innerHTML = "<b>Udkørsel og fjernelse af klip</b><span>500 kr — alt det grønne kører vi af sted til lossepladsen — du skal ikk' røre en finger. Turen koster 500 kr i gebyr, fordi vi som firma betaler for at aflevere (deraf de gule nummerplader).</span>";
+  udk.innerHTML = "<b>Udkørsel og fjernelse af klip — 500 kr i gebyr</b><span>Alt det grønne kører vi af sted til lossepladsen, så du ikk' skal røre en finger. Gebyret dækker afleveringen — deraf de gule nummerplader.</span>";
   sec.appendChild(udk);
+  /* Fix 1: venlig påkrævet-besked (samme err-mønster som kontakt-trinnet).
+     Vises kun ved blokeret "Videre"-klik uden højde-svar; en højde-valg fjerner den. */
+  const err = document.createElement("div");
+  err.className = "tm-haekinfo-err";
+  err.id = "tm-haekinfo-err";
+  err.textContent = "Vælg lige højden på din hæk — så rammer vi prisen bedre.";
+  sec.appendChild(err);
   return sec;
 }
 
@@ -1286,6 +1368,14 @@ function opdater(){
   PRODUCTS.forEach(p => {
     const el = ROOT.querySelector('.pw[data-id="' + p.id + '"]');
     if(!el) return;
+    /* Fix 6 (UX 2026-09-08): hæk-rækken må IKKE vise et konkret pris-tal,
+       før højden er valgt — neutral note (prisNote-mønsteret) indtil da.
+       Efter højde-valg opdateres som normalt. */
+    if(p.id === "haek" && p.on && !(state.haekInfo && state.haekInfo.hoejde)){
+      el.innerHTML = '<span class="pw-note">Ca. 27,00 kr/m — afhængig af højde</span>';
+      delete el.dataset.val;
+      return;
+    }
     if(p.pris == null){
       el.innerHTML = '<span class="pw-note">' + (p.prisNote || (p.pakke ? "Inkluderet — aftales ved opkald" : "Pris ved besøg")) + '</span>';
       delete el.dataset.val;
