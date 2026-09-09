@@ -16,6 +16,19 @@ import { deleteFixedPrice } from "@/app/actions/fixed-prices";
 // vise "ikke konfigureret" hvis DATAFORSYNINGEN_TOKEN mangler.
 const SKRAAFOTO_CONFIGURED = !!(process.env.DATAFORSYNINGEN_TOKEN || "").trim();
 
+// KS-fotos for én kunde — isoleret i egen funktion så tabellens fravær (før
+// migrationen er kørt) ikke kan crashe kundesiden.
+async function getPhotosForContact(contactId: number) {
+  return prisma.orderPhoto.findMany({
+    where: { contactId },
+    orderBy: { createdAt: "desc" },
+    include: {
+      uploadedBy: { select: { firstName: true, lastName: true } },
+      order: { select: { id: true, plannedAt: true } },
+    },
+  });
+}
+
 export default async function CustomerDetail({
   params,
 }: {
@@ -30,14 +43,14 @@ export default async function CustomerDetail({
     getOrdersForContact(c.id),
   ]);
   // KS-fotos på tværs af alle kundens ordrer — read-only galleri, nyeste først.
-  const photos = await prisma.orderPhoto.findMany({
-    where: { contactId: c.id },
-    orderBy: { createdAt: "desc" },
-    include: {
-      uploadedBy: { select: { firstName: true, lastName: true } },
-      order: { select: { id: true, plannedAt: true } },
-    },
-  });
+  // Foto-tabellen findes muligvis ikke endnu (migration kører først ved deploy) —
+  // fejl må ALDRIG nedlægge hele kundesiden, derfor try/catch → tomt galleri.
+  let photos: Awaited<ReturnType<typeof getPhotosForContact>> = [];
+  try {
+    photos = await getPhotosForContact(c.id);
+  } catch {
+    photos = [];
+  }
   const photoDate = (d: Date) => new Intl.DateTimeFormat("da-DK", { dateStyle: "short", timeStyle: "short" }).format(d);
   const photoInitials = (u: { firstName: string | null; lastName: string | null } | null) => {
     if (!u) return "";

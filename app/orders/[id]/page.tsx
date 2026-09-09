@@ -34,6 +34,16 @@ const BATCH_STATUS: Record<string, { label: string; color: string }> = {
   Failed: { label: "Samlefakturering fejlede", color: "#C4183C" },
 };
 
+// KS-fotos for én ordre — isoleret så tabellens fravær (før migrationen er
+// kørt) ikke kan crashe ordresiden.
+async function getOrderPhotos(orderId: number) {
+  return prisma.orderPhoto.findMany({
+    where: { orderId },
+    orderBy: { createdAt: "desc" },
+    select: { id: true, url: true, createdAt: true, uploadedBy: { select: { firstName: true, lastName: true } } },
+  });
+}
+
 export default async function OrderDetail({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const orderId = routeId(id);
@@ -55,11 +65,14 @@ export default async function OrderDetail({ params }: { params: Promise<{ id: st
   const employees = await getEmployeeOptions();
 
   // KS-fotos (kvalitetssikrings-billeder) på ordren — read-only galleri.
-  const photos = await prisma.orderPhoto.findMany({
-    where: { orderId },
-    orderBy: { createdAt: "desc" },
-    select: { id: true, url: true, createdAt: true, uploadedBy: { select: { firstName: true, lastName: true } } },
-  });
+  // try/catch: foto-tabellen findes muligvis ikke endnu (migration kører først
+  // ved deploy) — fejl må aldrig nedlægge hele ordresiden.
+  let photos: Awaited<ReturnType<typeof getOrderPhotos>> = [];
+  try {
+    photos = await getOrderPhotos(orderId);
+  } catch {
+    photos = [];
+  }
   const photoDate = (d: Date) => new Intl.DateTimeFormat("da-DK", { dateStyle: "short", timeStyle: "short" }).format(d);
 
   return (
