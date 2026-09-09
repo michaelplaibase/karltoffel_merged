@@ -8,7 +8,7 @@
     { "source": "/erhverv/", "destination": "/p/erhverv", "permanent": false },
     { "source": "/c/det-vi-ordner/soignering-af-bede", "destination": "/p/det-vi-ordner", "permanent": true },
     { "source": "/c/det-vi-ordner/soignering-af-bede/", "destination": "/p/det-vi-ordner", "permanent": true },
-    { "source": "/p/forside", "destination": "/", "permanent": true, "statusCode": 308 },
-    { "source": "/p/forside/", "destination": "/", "permanent": true, "statusCode": 308 }
+    { "source": "/p/forside", "destination": "/", "statusCode": 308 },
+    { "source": "/p/forside/", "destination": "/", "statusCode": 308 }
   ]
 }
