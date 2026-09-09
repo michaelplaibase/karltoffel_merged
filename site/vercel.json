@@ -1,4 +1,6 @@
 {
+  "buildCommand": "node build.js",
+  "outputDirectory": "dist",
   "trailingSlash": false,
   "redirects": [
     { "source": "/(.*)", "has": [{ "type": "host", "value": "www.karltoffel.dk" }], "destination": "https://karltoffel.dk/:1", "permanent": true },
