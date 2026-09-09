@@ -1,0 +1,154 @@
+<!-- ============ TILBUDSMOTOR (lead flow) ============ -->
+	<section class="tm-flow" id="tilbudsmotor-privat" aria-label="Tilbudsmotor – få din pris">
+	<div class="tm-main">
+	  <div class="tm-progress" id="tm-progress">
+	    <span class="tm-progress-txt" id="tm-progress-txt">Trin 1 af 5</span>
+	    <span class="tm-progress-dots" id="tm-progress-dots" aria-hidden="true"><i class="on"></i><i></i><i></i><i></i><i></i></span>
+	  </div>
+	  <!-- STEP 1 -->
+	  <section class="step active hero" id="step-adresse" aria-labelledby="tm-h1">
+	    <h2 id="tm-h1">Hvad koster din bygning at vedligeholde?</h2>
+	    <p class="sub">Tast din adresse. Så graver vi tallene frem og giver dig en fast månedspris, mens du venter.</p>
+	    <div class="adr-wrap">
+	      <label class="adr-label" for="adr-input">Din adresse</label>
+	      <input id="adr-input" type="text" autocomplete="off" placeholder="F.eks. Sundvej 8, 8700 Horsens" aria-describedby="adr-note">
+	      <div class="adr-list" id="adr-list" role="listbox" aria-label="Adresseforslag"></div>
+	      <p class="adr-note" id="adr-note">Adresseopslaget svarer ikke lige nu — vælg et forslag i listen eller skriv hele adressen.</p>
+	    </div>
+	    <div class="tm-nav">
+	      <button class="btn btn-ja" id="adr-videre">Videre</button>
+	    </div>
+	  </section>
+
+	  <!-- STEP 2: PRIVAT / ERHVERV -->
+	  <section class="step ktype" id="step-kundetype" aria-labelledby="tm-h2p">
+	    <h2 id="tm-h2p">Hvem gør vi det for?</h2>
+	    <p class="ktype-sub">Vælg om adressen er privat eller erhverv — så rammer vi rigtigt fra start.</p>
+	    <div class="ktype-cards" role="radiogroup" aria-label="Privat eller erhverv">
+	      <button type="button" class="ktype-card" id="kt-privat" role="radio" aria-checked="false">
+	        <svg viewBox="0 0 48 48" fill="none" aria-hidden="true"><path d="M8 22 24 8l16 14" stroke="#FFF87B" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/><path d="M12 20v20h24V20" stroke="#FFF87B" stroke-width="3" stroke-linejoin="round"/><path d="M20 40V28h8v12" stroke="#FFF87B" stroke-width="3" stroke-linejoin="round"/></svg>
+	        <b>Privat</b>
+	        <small>Villa, rækkehus eller sommerhus</small>
+	      </button>
+	      <button type="button" class="ktype-card" id="kt-erhverv" role="radio" aria-checked="false">
+	        <svg viewBox="0 0 48 48" fill="none" aria-hidden="true"><rect x="10" y="8" width="20" height="32" stroke="#FFF87B" stroke-width="3" stroke-linejoin="round"/><path d="M30 18h8v22H10" stroke="#FFF87B" stroke-width="3" stroke-linejoin="round"/><path d="M16 15h3M21 15h3M16 21h3M21 21h3M16 27h3M21 27h3" stroke="#FFF87B" stroke-width="3" stroke-linecap="round"/></svg>
+	        <b>Erhverv</b>
+	        <small>Virksomhed, udlejning eller forening</small>
+	      </button>
+	    </div>
+	    <p class="ktype-note" id="kt-note">Erhverv: prisen her er vejledende — vi skræddersyr tilbuddet, når vi ringer.</p>
+	    <div class="tm-nav">
+	      <button class="btn btn-nej" id="kt-tilbage">Tilbage</button>
+	      <button class="btn btn-ja" id="kt-videre" disabled>Videre</button>
+	    </div>
+	  </section>
+
+	  <!-- STEP 3 -->
+	  <section class="step verify" id="step-verify" aria-labelledby="tm-h2v">
+	    <h2 id="tm-h2v">Er det her din ejendom?</h2>
+	    <div class="adr" id="verify-adr"></div>
+	    <div class="foto-card">
+	      <span class="foto-badge" id="sf-badge">Luftfoto</span>
+      <canvas id="sf-canvas" class="sf-canvas" role="img" aria-label="Skråfoto af ejendommen"></canvas>
+	      <svg id="sf-fallback" viewBox="0 0 640 380" role="img" aria-label="Luftfoto af ejendom, demo-illustration">
+	        <rect width="640" height="380" fill="#FFFFF0"/>
+	        <rect x="0" y="0" width="640" height="380" fill="#e9e4c6"/>
+	        <path d="M0 300 Q160 260 320 300 T640 290 V380 H0 Z" fill="#d8d2ad"/>
+	        <rect x="70" y="60" width="500" height="270" fill="none" stroke="#86612A" stroke-width="3" stroke-dasharray="10 8"/>
+	        <rect x="120" y="120" width="180" height="120" fill="#4C3718"/>
+	        <polygon points="120,120 210,80 300,120" fill="#5a4322"/>
+	        <rect x="230" y="150" width="30" height="30" fill="#FFF87B"/>
+	        <rect x="150" y="150" width="30" height="30" fill="#FFF87B"/>
+	        <rect x="330" y="140" width="90" height="70" fill="#6b5227"/>
+	        <circle cx="480" cy="140" r="34" fill="#9aa06b"/>
+	        <circle cx="520" cy="200" r="24" fill="#9aa06b"/>
+	        <circle cx="450" cy="230" r="20" fill="#9aa06b"/>
+	        <rect x="120" y="270" width="300" height="26" fill="#c9c39f"/>
+	        <text x="88" y="52" font-family="DM Sans, sans-serif" font-size="15" fill="#86612A">Matrikelgrænse (demo)</text>
+	      </svg>
+	    </div>
+	    <div class="verify-btns">
+	      <button class="btn btn-ja" id="btn-ja">Ja, det er min</button>
+	      <button class="btn btn-nej" id="btn-nej">Nej, prøv igen</button>
+	    </div>
+	    <small id="sf-note">Fotoet er kun til genkendelse — det påvirker ikke din pris.</small>
+	    <div class="tm-nav">
+	      <button class="btn btn-nej" id="vf-tilbage">Tilbage</button>
+	    </div>
+	  </section>
+
+	  <!-- STEP 4 -->
+	  <section class="step losning" id="step-losning" aria-labelledby="tm-h2l">
+	    <h2 id="tm-h2l" style="position:absolute;left:-9999px">Din løsning</h2>
+	    <div class="topbar">
+	      <div class="adr-line">
+	        <svg class="pin" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 21s-7-6.1-7-11a7 7 0 1 1 14 0c0 4.9-7 11-7 11Z" stroke="#4C3718" stroke-width="2"/><circle cx="12" cy="10" r="2.6" fill="#4C3718"/></svg>
+	        <span class="adr-txt"><span class="lbl">Din adresse</span><span id="t-adr"></span></span>
+	      </div>
+	      <button type="button" class="ls-skift" id="ls-skift">Skift adresse</button>
+	    </div>
+
+	    <p class="socio">Sæt flueben ved det, du vil have, og vælg hvor tit vi kommer.</p>
+	    <div class="rows" id="rows"></div>
+	    <p class="gaps">Services markeret "indeholdt / pris ved besøg" aftales, når vi ringer — uden det koster dig noget.</p>
+	    <div class="tm-rabat" id="tm-rabat" hidden></div>
+	    <div class="tm-nav">
+	      <button class="btn btn-nej" id="ls-tilbage">Tilbage</button>
+	      <button class="btn btn-ja" id="ls-videre">Videre</button>
+	    </div>
+	  </section>
+
+	  <!-- STEP 5 -->
+	  <section class="step kontakt" id="step-kontakt" aria-labelledby="tm-h2k">
+	    <h2 id="tm-h2k">Næsten i mål</h2>
+	    <p>Vi ringer og bekræfter tallene, før noget koster dig en krone.</p>
+	    <div id="k-cvr-wrap" class="k-cvr-wrap" hidden>
+	      <label for="k-cvr">CVR-nummer (valgfrit — udfylder firmaoplysninger automatisk)</label>
+	      <input id="k-cvr" type="text" inputmode="numeric" autocomplete="off" maxlength="8" placeholder="8 cifre">
+	      <div class="rk-note" id="k-cvr-status" role="status" aria-live="polite" hidden></div>
+	      <label for="k-firma">Firmanavn</label>
+	      <input id="k-firma" type="text" autocomplete="organization" maxlength="200">
+	      <label for="k-firma-adr">Firmaadresse</label>
+	      <input id="k-firma-adr" type="text" autocomplete="street-address" maxlength="200" placeholder="Vejnavn og nr., postnr. og by">
+	    </div>
+	    <label for="k-navn">Fulde navn</label>
+	    <input id="k-navn" type="text" autocomplete="name" maxlength="120">
+	    <label for="k-tlf">Telefon</label>
+	    <input id="k-tlf" type="tel" autocomplete="tel" inputmode="tel" maxlength="40">
+	    <label for="k-mail">E-mail (valgfri)</label>
+	    <input id="k-mail" type="email" autocomplete="email" maxlength="200">
+	    <label for="k-note">Noget vi skal vide? (valgfrit)</label>
+	    <textarea id="k-note" rows="3" maxlength="2000"></textarea>
+	    <label for="k-rabat">Rabatkode (valgfri)</label>
+	    <input id="k-rabat" type="text" autocomplete="off" autocapitalize="characters" spellcheck="false" maxlength="40">
+	    <div class="rk-note" id="k-rabat-status" role="status" aria-live="polite" hidden></div>
+	    <div class="err" id="k-err">Udfyld navn og telefonnummer, så vi kan ringe dig op.</div>
+	    <div class="verify-btns" style="justify-content:flex-start">
+	      <button class="btn btn-ja" id="btn-send">Send og bliv kontaktet</button>
+	      <button class="btn btn-nej" id="btn-tilbage">Tilbage</button>
+	    </div>
+	  </section>
+
+	  <!-- STEP 6 -->
+	  <section class="step tak" id="step-tak" aria-labelledby="tm-h2t">
+	    <h2 id="tm-h2t">Tak, heldige karltoffel</h2>
+	    <p>Vi har lagt dit opkald i kalenderen og ringer hurtigst muligt — typisk inden for et kvarter i åbningstiden. Naboen bliver grøn af misundelse.</p>
+	    <div class="tak-ring" id="tak-ring" role="status"></div>
+	    <div class="opsum" id="tak-opsum"></div>
+	  </section>
+	</div>
+
+	<div id="dig" role="status" aria-live="polite">
+	  <div class="dig-inner">
+	    <svg class="spade" viewBox="0 0 64 64" aria-hidden="true">
+	      <rect x="29" y="4" width="6" height="30" rx="3" fill="#FFF87B"/>
+	      <rect x="22" y="2" width="20" height="7" rx="3.5" fill="#FFF87B"/>
+	      <path d="M20 34 h24 v10 a12 12 0 0 1 -24 0 Z" fill="#FFF87B"/>
+	    </svg>
+	    <div id="dig-msg">Graver din matrikel frem...</div>
+	    <div class="dig-adr" id="dig-adr"></div>
+	    <div class="dig-bar"><div class="dig-fill" id="dig-fill"></div></div>
+	  </div>
+	</div>
+	</section>
+	<!-- ============ /TILBUDSMOTOR ============ -->

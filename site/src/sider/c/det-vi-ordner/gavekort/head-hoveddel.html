@@ -1,0 +1,143 @@
+<meta http-equiv="x-ua-compatible" content="ie=edge">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+	<link rel="icon" type="image/png" href="/assets/img/design/favicon.png">
+		<link rel="apple-touch-icon" href="/assets/img/design/appicon.png">
+	<link rel="stylesheet" href="/assets/css/typekit.css">
+	<link rel="stylesheet" type="text/css" href="/assets/css/style.css?v=6">
+	<link rel="stylesheet" href="/assets/css/spacing.css?v=4">
+
+		<link rel="preload" as="image"
+		href="/assets/img/thumb/d45f7cdec7304b6b8d84e8162913f8f3371aff6e_w2000.webp"
+		imagesrcset="/assets/img/thumb/d45f7cdec7304b6b8d84e8162913f8f3371aff6e_w2000.webp 2000w,
+					 /assets/img/thumb/d45f7cdec7304b6b8d84e8162913f8f3371aff6e_w1500.webp 1200w,
+					 /assets/img/thumb/d45f7cdec7304b6b8d84e8162913f8f3371aff6e_w1000.webp 800w,
+					 /assets/img/thumb/d45f7cdec7304b6b8d84e8162913f8f3371aff6e_w800.webp 400w,
+					 /assets/img/thumb/d45f7cdec7304b6b8d84e8162913f8f3371aff6e_w600.webp 300w"
+		imagesizes="100vw"
+		fetchpriority="high">
+		<style>
+.gk-cards3{display:grid;grid-template-columns:repeat(3,1fr);gap:1.5rem;margin-top:2rem}
+.gk-cards3 .card{background:#FFFFF0;border-radius:1rem;padding:2rem 1.5rem;text-align:center;border:2px solid #4C3718}
+.gk-cards3 .card .card__emoji{font-size:2.5rem;display:block;margin-bottom:.75rem}
+.gk-cards3 .card h3{margin:0 0 .25rem}
+.gk-cards3 .card p{margin:0;font-size:.95rem}
+@media(max-width:640px){.gk-cards3{grid-template-columns:1fr}}
+.gk-designs{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:1.5rem;margin-top:2rem}
+.gk-design{border-radius:1rem;padding:2rem 1.5rem;color:#1C140B;position:relative;min-height:230px;display:flex;flex-direction:column;justify-content:space-between;box-shadow:0 10px 24px rgba(28,20,11,.12)}
+.gk-design h3{margin:0 0 .5rem;font-weight:900}
+.gk-design p{margin:0;font-size:.95rem;font-style:italic}
+.gk-design .gk-tag{font-size:.75rem;text-transform:uppercase;letter-spacing:.08em;opacity:.75;margin-bottom:.5rem;display:block}
+.gk-design--friture{background:#FFF87B}
+.gk-design--mos{background:#FFFFF0}
+.gk-design--muld{background:#1C140B;color:#FFFFF0}
+.gk-design--spire{background:#616711;color:#FFFFF0}
+.gk-design--ristet{background:#AE8642;color:#FFFFF0}
+.gk-flow{display:grid;grid-template-columns:repeat(3,1fr);gap:1.5rem;margin-top:2rem}
+.gk-step{background:#FFFFF0;border:2px solid #4C3718;border-radius:1rem;padding:1.5rem}
+.gk-step__num{display:inline-flex;align-items:center;justify-content:center;width:2rem;height:2rem;border-radius:50%;background:#4C3718;color:#FFF87B;font-weight:700;margin-bottom:.75rem}
+.gk-step h3{margin:.25rem 0 .5rem;font-size:1.15rem}
+.gk-step p{margin:0;font-size:.95rem}
+@media(max-width:640px){.gk-flow{grid-template-columns:1fr}}
+.gk-amounts{display:grid;grid-template-columns:repeat(4,1fr);gap:1.25rem;margin-top:2rem;text-align:center}
+.gk-amount{background:#1C140B;color:#FFF87B;border-radius:1rem;padding:1.75rem 1rem;font-weight:700}
+.gk-amount .gk-amount__value{font-size:1.6rem;display:block}
+.gk-amount .gk-amount__note{font-size:.85rem;font-weight:400;opacity:.85;display:block;margin-top:.25rem}
+@media(max-width:640px){.gk-amounts{grid-template-columns:repeat(2,1fr)}}
+.gk-trust{display:grid;grid-template-columns:repeat(3,1fr);gap:1.5rem;text-align:center;font-size:.95rem}
+.gk-trust div{padding:0 1rem}
+@media(max-width:640px){.gk-trust{grid-template-columns:1fr}}
+
+.gk-step h3,.gk-design h3,.gk-cards3 .card h3{font-family:var(--font-head,'SnagaUniText-Black'),sans-serif;font-weight:900;font-size:1.3rem;line-height:1.2;color:inherit}
+.gk-step p,.gk-design p,.gk-cards3 .card p{font-family:'Hanken Grotesk',sans-serif;color:inherit}
+.collapse--faq h3{display:list-item}
+
+/* fix: eksplicit kontrast i kort */
+.gk-step{color:#4C3718}
+.gk-step h3,.gk-step p{color:#4C3718}
+.gk-cards3 .card{color:#4C3718}
+.gk-cards3 .card h3,.gk-cards3 .card p{color:#4C3718}
+.gk-design h3,.gk-design p{color:inherit}
+.gk-amount{color:#FFF87B}
+
+/* pill-knapper som forsiden (big-button-reglerne er scoped til hero-slider der) */
+#section-id-gk-hero .big-button,#section-id-gk-cta .button{background:#FFF87B;border-color:#FFF87B;color:#4C3718;font-size:17px;min-height:64px;padding:18px 44px;border-radius:999px;box-shadow:0 10px 30px rgba(0,0,0,.35)}
+#section-id-gk-hero .big-button:hover,#section-id-gk-hero .big-button:focus,#section-id-gk-cta .button:hover,#section-id-gk-cta .button:focus{background:#4C3718;color:#FFF87B}
+
+/* kort med univers-billedet */
+.gk-design{background:#FFFFF0;border:2px solid #4C3718;padding:0;overflow:hidden;min-height:0}
+.gk-design__img{aspect-ratio:16/9;overflow:hidden}
+.gk-design__img img{width:100%;height:100%;object-fit:cover;display:block}
+.gk-design__body{padding:1.25rem 1.5rem 1.5rem;color:#4C3718}
+.gk-design__body h3,.gk-design__body p{color:#4C3718}
+
+/* trykbare kort: flip-effekt */
+.gk-flip{cursor:pointer;position:relative;transition:transform .25s,box-shadow .25s}
+.gk-flip:hover{transform:translateY(-4px);box-shadow:0 16px 32px rgba(28,20,11,.18)}
+.gk-flip:focus-visible{outline:3px solid #616711;outline-offset:3px}
+.gk-back{position:absolute;inset:0;background:#1C140B;color:#FFFFF0;padding:1.5rem;display:flex;flex-direction:column;justify-content:center;opacity:0;visibility:hidden;transition:opacity .25s;cursor:default}
+.gk-back h4{margin:0 0 .5rem;font-family:snaga-unicase-display,SnagaUniText-Black,sans-serif;font-weight:900;color:#FFF87B}
+.gk-back p{margin:0 0 .75rem;font-size:.95rem;color:#FFFFF0}
+.gk-back__hint{font-size:.75rem;opacity:.7;margin-top:auto}
+.gk-flip.is-flipped .gk-back{opacity:1;visibility:visible}
+/* beløbs-knapper */
+button.gk-amount{font-family:inherit;border:2px solid #1C140B;cursor:pointer;transition:transform .15s,background .2s}
+button.gk-amount:hover{transform:translateY(-2px)}
+button.gk-amount.is-selected{background:#FFF87B;color:#4C3718;border-color:#FFF87B;box-shadow:0 10px 24px rgba(28,20,11,.25)}
+button.gk-amount.is-selected .gk-amount__value{color:#4C3718}
+.gk-amount__input{display:none;margin-top:.5rem;width:90%;padding:.5rem;border-radius:.5rem;border:2px solid #FFF87B;background:#FFFFF0;color:#1C140B;font-size:1rem}
+button.gk-amount.is-selected .gk-amount__input{display:block}
+.gk-pick{margin-top:1rem;text-align:center;font-size:.9rem;color:#4C3718;min-height:1.2em}
+
+/* gul korttekst over billedet */
+.gk-design__img{position:relative}
+.gk-design__img::after{content:'';position:absolute;inset:0;background:linear-gradient(to top,rgba(28,20,11,.55),transparent 55%)}
+.gk-design__title{position:absolute;left:0;right:0;bottom:.75rem;z-index:2;text-align:center;font-family:snaga-unicase-display,SnagaUniText-Black,sans-serif;font-weight:900;font-size:1.15rem;letter-spacing:.02em;color:#FFF87B;text-shadow:0 2px 8px rgba(28,20,11,.6)}
+/* hero overlay */
+.gk-hero-img{position:relative;display:inline-block}
+.gk-hero-img img{display:block}
+.gk-hero-img::after{content:'';position:absolute;inset:0;background:linear-gradient(to top,rgba(28,20,11,.55),transparent 55%);border-radius:1rem}
+.gk-hero-img .gk-design__title{font-size:1.6rem;bottom:1.25rem}
+
+.gk-flip.is-flipped .gk-design__img,.gk-flip.is-flipped .gk-design__body{visibility:hidden}
+
+/* --- Bestillingsflow (fase 0: MobilePay, manuel betaling) --- */
+.gk-order{display:grid;grid-template-columns:minmax(0,1fr) 380px;gap:2rem;margin-top:2rem;align-items:start}
+@media(max-width:900px){.gk-order{grid-template-columns:1fr}}
+.gk-order__form{display:flex;flex-direction:column;gap:1.75rem}
+.gk-fieldset{background:#FFFFF0;border:2px solid #4C3718;border-radius:1rem;padding:1.5rem}
+.gk-fieldset h3{margin:0 0 1rem;font-size:1.15rem;color:#4C3718}
+.gk-fieldset h3 .gk-step__num{margin-right:.5rem;vertical-align:middle}
+.gk-grid2{display:grid;grid-template-columns:1fr 1fr;gap:1rem}
+@media(max-width:640px){.gk-grid2{grid-template-columns:1fr}}
+.gk-label{display:block;font-size:.85rem;font-weight:700;color:#4C3718;margin:.75rem 0 .25rem}
+.gk-input{width:100%;padding:.65rem .75rem;border:2px solid #4C3718;border-radius:.6rem;font-size:1rem;background:#fff;color:#1C140B;box-sizing:border-box}
+.gk-input:focus{outline:3px solid #616711;outline-offset:1px}
+/* valgbare kort */
+.gk-design.is-selected{outline:4px solid #616711;outline-offset:3px}
+.gk-design.is-selected .gk-design__body h3::after{content:' ✓ valgt';color:#616711}
+/* kort-preview: besked skrives direkte på kortet */
+.gk-preview{position:sticky;top:5.5rem;border:2px solid #4C3718;border-radius:1rem;overflow:hidden;background:#1C140B;box-shadow:0 10px 24px rgba(28,20,11,.2)}
+.gk-preview__img{position:relative;aspect-ratio:16/10;overflow:hidden}
+.gk-preview__img img{width:100%;height:100%;object-fit:cover;display:block}
+.gk-preview__img::after{content:'';position:absolute;inset:0;background:linear-gradient(to top,rgba(28,20,11,.65),transparent 60%)}
+.gk-preview__title{position:absolute;left:0;right:0;bottom:1.5rem;z-index:2;text-align:center;font-family:snaga-unicase-display,SnagaUniText-Black,sans-serif;font-weight:900;font-size:1.2rem;letter-spacing:.02em;color:#FFF87B;text-shadow:0 2px 8px rgba(28,20,11,.6);padding:0 1rem}
+.gk-preview__body{padding:1.25rem 1.25rem 1.5rem;color:#FFFFF0}
+.gk-preview__occasion{text-align:center;font-style:italic;font-size:.95rem;opacity:.9;margin:0 0 .75rem}
+.gk-preview__msg{width:100%;min-height:7rem;resize:vertical;background:transparent;border:2px dashed rgba(255,248,123,.7);border-radius:.75rem;color:#FFFFF0;font-family:'Hanken Grotesk',sans-serif;font-size:1rem;line-height:1.5;padding:.75rem;box-sizing:border-box}
+.gk-preview__msg::placeholder{color:rgba(255,248,123,.65)}
+.gk-preview__msg:focus{outline:3px solid #616711;background:rgba(28,20,11,.6)}
+.gk-preview__hint{font-size:.75rem;opacity:.7;margin:.5rem 0 0;text-align:center}
+/* oversigt + betaling */
+.gk-summary{margin:0;padding:0;list-style:none}
+.gk-summary li{display:flex;justify-content:space-between;gap:1rem;padding:.5rem 0;border-bottom:1px solid rgba(76,55,24,.2);font-size:.95rem;color:#4C3718}
+.gk-summary li span:last-child{text-align:right;font-weight:600;overflow-wrap:anywhere}
+.gk-paybtn{width:100%;min-height:64px;font-size:17px;font-weight:700;border:none;border-radius:999px;background:#FFF87B;color:#4C3718;cursor:pointer;box-shadow:0 10px 30px rgba(0,0,0,.35);transition:background .2s}
+.gk-paybtn:hover:not(:disabled),.gk-paybtn:focus-visible:not(:disabled){background:#4C3718;color:#FFF87B;outline:none}
+.gk-paybtn:disabled{opacity:.6;cursor:wait}
+.gk-error{display:none;margin-top:1rem;padding:.85rem 1rem;border-radius:.6rem;background:#fde8e8;color:#8a1f1f;border:2px solid #8a1f1f;font-size:.95rem}
+.gk-error.is-visible{display:block}
+.gk-thanks{display:none;background:#FFFFF0;border:2px solid #616711;border-radius:1rem;padding:2rem;text-align:center;color:#4C3718;font-size:1.05rem}
+.gk-thanks.is-visible{display:block}
+@media(max-width:640px){.gk-preview{position:static}}
+
+</style>

@@ -1,0 +1,42 @@
+
+
+		<a href="javascript:void(0)" id="csconsentlink" class="cookie-badge"><i class="fa-default fa-cookie"></i></a>
+	</div>
+
+		<script src="/assets/js/script.js"></script>
+
+	
+
+
+			<script>window.KARLTOFFEL=window.KARLTOFFEL||{};window.KARLTOFFEL.tilbudsmotorPage={service:"green",source:"graespleje"};</script>
+		<script src="/assets/js/tilbudsmotor.config.js?v=9"></script>
+		<script src="/assets/js/vendor/geotiff.min.js"></script>
+		<script src="/assets/js/skraafoto.js?v=12"></script>
+		<script src="/assets/js/tilbudsmotor.js?v=58"></script>
+		<script>
+/* Hero-formularen maa IKKE navigere vaek fra siden (Anton): submit forudfyller
+   tilbudsmotoren samme sted og starter flowet. meta-events.js fyrer stadig sit
+   '<slug>-hero' Lead-event paa submit (lytter uafhaengigt) -> CAPI-handoff virker. */
+(function(){
+  var f = document.querySelector("form.sp-form__fields");
+  if(!f || f.__ktHeroBound) return;
+  f.__ktHeroBound = true;
+  f.addEventListener("submit", function(e){
+    e.preventDefault();
+    function g(n){ var el = f.querySelector('[name="'+n+'"]'); return el ? el.value.trim() : ""; }
+    try {
+      var samlet = [g("adresse"), g("postnummer")].filter(Boolean).join(", ");
+      var adr = document.getElementById("adr-input");
+      if(samlet && adr){ adr.value = samlet; adr.dispatchEvent(new Event("input", {bubbles:true})); }
+      var n = document.getElementById("k-navn"), t = document.getElementById("k-tlf");
+      if(g("navn") && n && !n.value) n.value = g("navn");
+      if(g("telefon") && t && !t.value) t.value = g("telefon");
+    } catch(err) {}
+    var tm = document.getElementById("tilbudsmotor");
+    if(tm) tm.scrollIntoView({ behavior:"smooth", block:"start" });
+    var videre = document.getElementById("adr-videre");
+    if(videre) videre.click();
+  });
+})();
+		</script>
+		

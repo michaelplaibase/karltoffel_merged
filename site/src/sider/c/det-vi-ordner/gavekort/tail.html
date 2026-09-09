@@ -1,0 +1,225 @@
+
+	<a href="javascript:void(0)" id="csconsentlink" class="cookie-badge"><i class="fa-default fa-cookie"></i></a>
+	</div>
+
+		<script src="/assets/js/script.js"></script>
+
+	<script>
+	// Gavekort-bestillingsflow (fase 0: MobilePay, manuel betaling).
+	// POST'er til CRM'et; teamet sender betalingsanmodningen manuelt.
+	(function () {
+		'use strict';
+
+		// CRM-API'ets base. Override i preview ved at sætte window.GK_CRM_URL.
+		var CRM = (window.GK_CRM_URL || 'https://crm.karltoffel.dk').replace(/\/$/, '');
+
+		var OCCASIONS = {
+			kartoffelgaven: 'Gode ting udefra. Mere overskud indenfor.',
+			foedselsdagskartofflen: 'Ét år ældre. Nul flere opgaver.',
+			julemosset: 'Glædelig jul — og pyh, tagrenderne klarer vi.',
+			morsdagskartofflen: 'Hun har ryddet op i dit liv i 30 år. Lad os tage haven.',
+			farsdagskartofflen: 'Far har alt nok værktøj. Giv ham tid til at bruge det.',
+			'flytte-kartofflen': 'Nyt hus, nye kartofler. Vi tager det grimme arbejde.',
+			kartoffelrosen: 'Smukkere end blomster. Og de vander sig selv.'
+		};
+
+		var state = { design: null, amount: null };
+
+		var $ = function (id) { return document.getElementById(id); };
+		var form = $('gk-form');
+		if (!form) return;
+
+		var fmtKr = function (minor) {
+			return (minor / 100).toLocaleString('da-DK', { maximumFractionDigits: 0 }) + ' kr.';
+		};
+
+		// --- Design-valg (kortene i #gk-designs) ---
+		document.querySelectorAll('.gk-design.gk-flip').forEach(function (card) {
+			card.addEventListener('click', function () {
+				var wasSelected = card.classList.contains('is-selected');
+				document.querySelectorAll('.gk-design.gk-flip').forEach(function (c) {
+					c.classList.remove('is-selected');
+					c.classList.remove('is-flipped');
+				});
+				if (!wasSelected) {
+					card.classList.add('is-selected');
+					card.classList.add('is-flipped');
+					state.design = card.getAttribute('data-design');
+					$('gk-chosen').textContent = 'Valgt: ' + card.querySelector('h3').textContent.trim();
+					$('gk-preview-occasion').textContent = OCCASIONS[state.design] || '';
+					renderSummary();
+				} else {
+					state.design = null;
+					$('gk-chosen').textContent = 'Ingen kort valgt endnu.';
+					$('gk-preview-occasion').textContent = 'Vælg et design ovenfor — anledningsteksten vises her.';
+					renderSummary();
+				}
+			});
+		});
+
+		// --- Beløb ---
+		function selectedAmount() {
+			var sel = document.querySelector('.gk-amount.is-selected');
+			if (!sel) return null;
+			if (sel.getAttribute('data-amount') === 'fri') {
+				var v = Math.round(Number($('gk-free-amount').value) || 0) * 100;
+				return v >= 50000 ? v : null;
+			}
+			return Number(sel.getAttribute('data-amount')) * 100;
+		}
+		document.querySelectorAll('.gk-amount').forEach(function (btn) {
+			btn.addEventListener('click', function (e) {
+				if (e.target.closest('.gk-amount__input')) return; // fri-beløb-feltet klikkes igennem
+				document.querySelectorAll('.gk-amount').forEach(function (b) { b.classList.remove('is-selected'); });
+				btn.classList.add('is-selected');
+				if (btn.getAttribute('data-amount') === 'fri') {
+					$('gk-pick').textContent = 'Skriv dit eget beløb (minimum 500 kr.).';
+					$('gk-free-amount').focus();
+				} else {
+					state.amount = Number(btn.getAttribute('data-amount')) * 100;
+					$('gk-pick').textContent = 'Beløb: ' + fmtKr(state.amount);
+				}
+				renderSummary();
+			});
+		});
+		$('gk-free-amount').addEventListener('input', function () {
+			state.amount = selectedAmount();
+			$('gk-pick').textContent = state.amount
+				? 'Beløb: ' + fmtKr(state.amount)
+				: 'Minimum 500 kr.';
+			renderSummary();
+		});
+
+		// --- Besked: skrives direkte på kortet ---
+		var msg = $('gk-message');
+		var previewMsg = $('gk-preview-msg');
+		function syncMessage(from) {
+			if (from === previewMsg) msg.value = previewMsg.value;
+			else previewMsg.value = msg.value;
+			renderSummary();
+		}
+		msg.addEventListener('input', function () { syncMessage(msg); });
+		previewMsg.addEventListener('input', function () { syncMessage(previewMsg); });
+
+		// --- Oversigt ---
+		function field(id) { return ($(id).value || '').trim(); }
+		function renderSummary() {
+			var rows = [];
+			var amt = selectedAmount();
+			rows.push(['Kort', state.design ? $('gk-chosen').textContent.replace(/^Valgt: /, '') : '— ikke valgt —']);
+			rows.push(['Til', field('gk-recipientName') || '— skriv modtagerens navn —']);
+			rows.push(['Modtagers e-mail', field('gk-recipientEmail') || '— skriv modtagerens e-mail —']);
+			rows.push(['Fra', field('gk-buyerName') || '— skriv dit navn —']);
+			rows.push(['Betaling via', field('gk-buyerPhone') ? 'MobilePay (' + field('gk-buyerPhone') + ')' : '— skriv dit mobilnummer —']);
+			rows.push(['Beløb', amt ? fmtKr(amt) : '— vælg beløb —']);
+			var ul = $('gk-summary');
+			ul.innerHTML = '';
+			rows.forEach(function (r) {
+				var li = document.createElement('li');
+				var a = document.createElement('span'); a.textContent = r[0];
+				var b = document.createElement('span'); b.textContent = r[1];
+				li.appendChild(a); li.appendChild(b); ul.appendChild(li);
+			});
+		}
+		['gk-recipientName', 'gk-recipientEmail', 'gk-buyerName', 'gk-buyerEmail', 'gk-buyerPhone'].forEach(function (id) {
+			$(id).addEventListener('input', renderSummary);
+		});
+		renderSummary();
+
+		// --- Submit ---
+		var errorBox = $('gk-error');
+		function showError(t) { errorBox.textContent = t; errorBox.classList.add('is-visible'); }
+		function hideError() { errorBox.classList.remove('is-visible'); }
+
+		form.addEventListener('submit', function (e) {
+			e.preventDefault();
+			hideError();
+
+			var amt = selectedAmount();
+			if (!state.design) { showError('Vælg venligst et af de syv kort-designs.'); return; }
+			if (!field('gk-recipientName')) { showError('Skriv modtagerens navn.'); return; }
+			if (!field('gk-recipientEmail')) { showError("Skriv modtagerens e-mail."); return; }
+			if (!field('gk-buyerName')) { showError('Skriv dit eget navn.'); return; }
+			if (!field('gk-buyerEmail')) { showError('Skriv din e-mail.'); return; }
+			if (!/^\d{8}$/.test(field('gk-buyerPhone').replace(/[^\d]/g, '').replace(/^(45|0045)(?=\d{8}$)/, ''))) { showError('Indtast dit mobilnummer (8 cifre) — det bruger vi til MobilePay-betalingen.'); return; }
+			if (!msg.value.trim()) { showError('Skriv en personlig besked til modtageren.'); return; }
+			if (!amt || amt < 50000) { showError('Gavekortet skal være mindst 500 kr.'); return; }
+
+			var btn = $('gk-pay');
+			var btnText = btn.textContent;
+			btn.disabled = true;
+			btn.textContent = 'Sender …';
+
+			/* Meta CAPI-dedup: samme event_id til fbq (browser) og CRM'ets
+			   server-side Conversions API-kald (via body.meta_capi). */
+			var metaEventId;
+			try {
+				metaEventId = (window.crypto && typeof window.crypto.randomUUID === 'function')
+					? window.crypto.randomUUID()
+					: 'gk-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 12);
+			} catch (e) {
+				metaEventId = 'gk-' + Date.now().toString(36);
+			}
+
+			fetch(CRM + '/api/giftcards/checkout', {
+				method: 'POST',
+				headers: { 'content-type': 'application/json' },
+				body: JSON.stringify({
+					design: state.design,
+					amountMinor: amt,
+					message: msg.value.trim(),
+					recipientName: field('gk-recipientName'),
+					recipientEmail: field('gk-recipientEmail').toLowerCase(),
+					buyerName: field('gk-buyerName'),
+					buyerEmail: field('gk-buyerEmail').toLowerCase(),
+					buyerPhone: field('gk-buyerPhone'),
+					meta_capi: { event_id: metaEventId, content_name: 'gavekort-bestilling' }
+				})
+			}).then(function (res) {
+				return res.json().catch(function () { return {}; }).then(function (data) { return { ok: res.ok, data: data }; });
+			}).then(function (r) {
+				if (r.ok && r.data.ok) {
+					try {
+						if (typeof window.fbq === 'function') {
+							window.fbq('track', 'Lead', { content_name: 'gavekort-bestilling', content_type: 'form', value: amt / 100, currency: 'DKK' }, { eventID: metaEventId });
+						}
+					} catch (e) {}
+					form.style.display = 'none';
+					$('gk-thanks-text').textContent = 'Du modtager en MobilePay-betalingsanmodning på ' + fmtKr(amt) + ' inden kort tid.';
+					$('gk-thanks').classList.add('is-visible');
+					$('gk-thanks').scrollIntoView({ behavior: 'smooth', block: 'center' });
+				} else {
+					btn.disabled = false;
+					btn.textContent = btnText;
+					showError(r.data.error || 'Noget gik galt. Prøv igen om et øjeblik — eller skriv til hej@karltoffel.dk.');
+				}
+			}).catch(function () {
+				btn.disabled = false;
+				btn.textContent = btnText;
+				showError('Der kunne ikke skabes forbindelse. Tjek dit internet og prøv igen — eller skriv til hej@karltoffel.dk.');
+			});
+		});
+	})();
+	</script>
+	
+
+
+		
+<script>
+(function(){
+  document.querySelectorAll('.gk-flip').forEach(function(card){
+    card.addEventListener('click', function(){ card.classList.toggle('is-flipped'); });
+    card.addEventListener('keydown', function(e){ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); card.classList.toggle('is-flipped'); } });
+  });
+  document.querySelectorAll('.gk-amount').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      document.querySelectorAll('.gk-amount').forEach(function(b){ b.classList.remove('is-selected'); });
+      btn.classList.add('is-selected');
+      var label = btn.getAttribute('data-amount') === 'fri' ? 'Fri beløb' : btn.getAttribute('data-amount') + ' kr.';
+      var pick = document.querySelector('.gk-pick');
+      if (pick) pick.textContent = 'Fedt valg — ' + label + ' er noteret. Tryk "Bestil gavekortet" nederst.';
+    });
+  });
+})();
+</script>
+	

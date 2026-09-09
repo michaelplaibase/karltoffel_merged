@@ -1,0 +1,47 @@
+
+
+<!-- Header-spacer: .main-wrap .section har padding-top:100px !important sitewide (kun
+     section--type-hero er flush under den faste header) — men headeren selv er position:fixed
+     med en negativ bund-margin, så en del af de 100px topluft reelt ligger SKJULT bag headeren.
+     En almindelig sektion lige efter headeren får derfor kun ca. 100-81=19px synlig luft, mens
+     bunden (theme-primary's padding-bottom:100px !important) er fuldt synlig. Højden sættes af
+     scriptet nedenfor til headerens faktiske højde, så synlig top- og bundluft bliver ens. -->
+<div id="header-spacer" style="height:81px"></div>
+
+<!-- Svar-hero. Samme sekskantede billede-layout og section--theme-primary (gul baggrund)
+     som "Mindre bøvl og mere overskud"-sektionen på /p/erhverv — samme identitet, ikke en
+     løsrevet kvitteringsboks. Teksten sættes af scriptet nedenfor ud fra ?c=accept|maybe|decline. -->
+<div class="section section--type-standard section--theme-primary section--image-position-left section--image-format-karltoffel section--padding-top-xlarge section--padding-bottom-xlarge" id="svar-hero">
+	<div class="section__background"></div>
+	<div class="grid-container">
+		<div class="grid-x grid-margin-x align-middle">
+			<div class="cell small-12 large-6">
+				<div class="section__images">
+					<div class="section-slider section-slider--karltoffel swiper">
+						<div class="swiper-wrapper">
+							<div class="swiper-slide">
+								<div class="section-slider__image">
+									<img src="/assets/img/thumb/d45f7cdec7304b6b8d84e8162913f8f3371aff6e_w1500.webp" alt="Heldig karltoffel, der slår benene op med en drink" loading="lazy"
+										srcset="/assets/img/thumb/d45f7cdec7304b6b8d84e8162913f8f3371aff6e_w1500.webp 1000w,
+										        /assets/img/thumb/d45f7cdec7304b6b8d84e8162913f8f3371aff6e_w1100.webp 600w,
+										        /assets/img/thumb/d45f7cdec7304b6b8d84e8162913f8f3371aff6e_w800.webp 400w"
+										sizes="100vw">
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+			<div class="cell small-12 large-6 xlarge-5 xlarge-offset-1">
+				<div class="section__text rte rte--limit-text-width" data-in-view-scope>
+					<h1 id="svar-titel">Tak, heldige karltoffel!</h1>
+					<p id="svar-tekst">Vi har modtaget dit svar.</p>
+					<div class="buttons">
+						<a href="tel:+4522223833" class="button in-view in-view--slide-up"><span>Ring til os: 22 22 38 33</span></a>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+</div>
+
