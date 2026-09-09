@@ -23,7 +23,7 @@ FAQ på `c/det-vi-ordner/gavekort` og `p/erhverv` (plus erhvervsmotoren som egen
 
 ## Tilbudsmotor
 - Motor-blokken (inkl. venteliste-trin) findes i dag på: forsiden, 12 c/-sider (IKKE gavekort) og p/erhverv — bygges præcis dér.
-- **12 c/-sider**: underteksten under "Hvad koster din have?" lyder "… giver dig **et estimat på prisen**, mens du venter." mod forsidens "… giver dig **en fast månedspris**, mens du venter." → parametriseret som `{{SUB_TEKST}}` (forsidens udgave = skabelonens standard).
+- **12 c/-sider**: underteksten under "Hvad koster din have?" lyder "… giver dig **et estimat på prisen**, mens du venter." Forsiden og erhvervssiden er siden ensrettet til samme estimat-tekst (Anton 2026-09-10): "… giver dig et estimat på prisen, mens du venter."
 - **p/erhverv**: har en helt anden motor (id `tilbudsmotor-privat`, anden h2, ingen venteliste, erhverv-flow) → egen partial `partials/tilbudsmotor-erhverv.html` (verbatim).
 - Whitespace-forskelle (én tom linje i nogle c/-udgaver) — tilladt.
 

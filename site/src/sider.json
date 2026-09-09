@@ -482,7 +482,7 @@
       },
       "motor": {
         "type": "standard",
-        "sub_tekst": "Tast din adresse. Så graver vi tallene frem og giver dig en fast månedspris, mens du venter."
+        "sub_tekst": "Tast din adresse. Så graver vi tallene frem og giver dig et estimat på prisen, mens du venter."
       },
       "ydelseskort": {
         "kort": [
