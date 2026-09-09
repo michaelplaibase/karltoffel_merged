@@ -3,7 +3,7 @@
   "outputDirectory": "dist",
   "trailingSlash": false,
   "redirects": [
-    { "source": "/(.*)", "has": [{ "type": "host", "value": "www.karltoffel.dk" }], "destination": "https://karltoffel.dk/:1", "permanent": true },
+    { "source": "/:path*", "has": [{ "type": "host", "value": "www.karltoffel.dk" }], "destination": "https://karltoffel.dk/:path*", "permanent": true },
     { "source": "/index.html", "destination": "/", "permanent": true },
     { "source": "/p/forside", "destination": "/", "permanent": true },
     { "source": "/p/faa-et-tilbud", "destination": "/#tilbudsmotor", "permanent": true },
