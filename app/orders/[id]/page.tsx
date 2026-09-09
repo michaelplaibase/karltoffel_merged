@@ -34,6 +34,16 @@ const BATCH_STATUS: Record<string, { label: string; color: string }> = {
   Failed: { label: "Samlefakturering fejlede", color: "#C4183C" },
 };
 
+// KS-fotos for én ordre — isoleret så tabellens fravær (før migrationen er
+// kørt) ikke kan crashe ordresiden.
+async function getOrderPhotos(orderId: number) {
+  return prisma.orderPhoto.findMany({
+    where: { orderId },
+    orderBy: { createdAt: "desc" },
+    select: { id: true, url: true, createdAt: true, uploadedBy: { select: { firstName: true, lastName: true } } },
+  });
+}
+
 export default async function OrderDetail({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const orderId = routeId(id);
@@ -53,6 +63,17 @@ export default async function OrderDetail({ params }: { params: Promise<{ id: st
   const showBatch = !!batch?.contact.isCompany
     && !!(batch.businessBatchInvoiceStatus || batch.businessBatchInvoiceNumber || batch.businessBatchError);
   const employees = await getEmployeeOptions();
+
+  // KS-fotos (kvalitetssikrings-billeder) på ordren — read-only galleri.
+  // try/catch: foto-tabellen findes muligvis ikke endnu (migration kører først
+  // ved deploy) — fejl må aldrig nedlægge hele ordresiden.
+  let photos: Awaited<ReturnType<typeof getOrderPhotos>> = [];
+  try {
+    photos = await getOrderPhotos(orderId);
+  } catch {
+    photos = [];
+  }
+  const photoDate = (d: Date) => new Intl.DateTimeFormat("da-DK", { dateStyle: "short", timeStyle: "short" }).format(d);
 
   return (
     <div className="container-1140">
@@ -198,6 +219,24 @@ export default async function OrderDetail({ params }: { params: Promise<{ id: st
           </div>
         </div>
       ) : null}
+
+      <div className="card">
+        <div className="card-header"><h4 className="section-title">KS-fotos</h4></div>
+        <div className="card-body tight">
+          {photos.length === 0 ? (
+            <p className="muted" style={{ margin: 0 }}>Ingen KS-fotos på denne ordre.</p>
+          ) : (
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+              {photos.map((p) => (
+                <a key={p.id} href={p.url} target="_blank" rel="noopener noreferrer" title={`KS-foto${p.uploadedBy ? ` · ${[p.uploadedBy.firstName, p.uploadedBy.lastName].filter(Boolean).join(" ")}` : ""} · ${photoDate(p.createdAt)}`}>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={p.url} alt="KS-foto" style={{ width: 88, height: 88, objectFit: "cover", borderRadius: 6, border: "1px solid var(--line, #ddd)" }} />
+                </a>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
 
       <div className="savebar">
         <Link href="/orders" className="btn btn-light">Luk</Link>
