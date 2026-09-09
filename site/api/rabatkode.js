@@ -8,6 +8,7 @@
 //                   CRM-basen (uden /api/leads) genbruges til valideringen.
 const CRM_LEADS_URL = process.env.CRM_LEADS_URL || "https://karltoffel-crm.vercel.app/api/leads";
 const CRM_BASE = CRM_LEADS_URL.replace(/\/api\/leads\/?$/, "");
+const { tooManyRequests } = require("./_ratelimit");
 
 module.exports = async function handler(req, res) {
   res.setHeader("content-type", "application/json; charset=utf-8");
@@ -16,6 +17,7 @@ module.exports = async function handler(req, res) {
     return res.status(405).json({ error: "Method not allowed" });
   }
 
+  if (tooManyRequests(req, res, 10)) return; // 10 kald/min pr. IP
   const nej = () => res.status(200).json({ valid: false, percent: 0 });
   const code = typeof (req.query && req.query.code) === "string" ? req.query.code.trim() : "";
   if (!code || code.length > 64) return nej();
