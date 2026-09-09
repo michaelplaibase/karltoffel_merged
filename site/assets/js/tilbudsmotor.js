@@ -284,10 +284,37 @@ verifyHint.setAttribute("aria-live", "polite");
 function setVerifyHint(t){ verifyHint.textContent = t || ""; verifyHint.style.display = t ? "block" : "none"; }
 setVerifyHint("");
 
+/* Runde 4: geotiff.min.js + skraafoto.js indlæses nu lazy, første gang
+   luftfoto-trinnet (step-verify) skal rendere — tidligere blev de hentet på
+   alle 24 sider. Logikken er uændret; blot ventes der på scriptsne først. */
+let luftfotoPromise = null;
+function loadLuftfoto(){
+  if(window.KARLTOFFEL && window.KARLTOFFEL.skraafotoRender) return Promise.resolve();
+  if(luftfotoPromise) return luftfotoPromise;
+  luftfotoPromise = new Promise(function(res, rej){
+    const s1 = document.createElement("script");
+    s1.src = "/assets/js/vendor/geotiff.min.js";
+    s1.onload = function(){
+      const s2 = document.createElement("script");
+      s2.src = "/assets/js/skraafoto.js?v=12";
+      s2.onload = function(){ res(); };
+      s2.onerror = function(){ rej(new Error("skraafoto.js kunne ikke hentes")); };
+      document.head.appendChild(s2);
+    };
+    s1.onerror = function(){ rej(new Error("geotiff.min.js kunne ikke hentes")); };
+    document.head.appendChild(s1);
+  });
+  return luftfotoPromise;
+}
 function renderSkraafoto(dir){
-  if(window.KARLTOFFEL && window.KARLTOFFEL.skraafotoRender){
-    window.KARLTOFFEL.skraafotoRender(state.adresse, dir);
-  }
+  const badge = document.getElementById("sf-badge");
+  const klar = window.KARLTOFFEL && window.KARLTOFFEL.skraafotoRender;
+  if(!klar && badge) badge.textContent = "Henter luftfoto \u2026";   /* synlig tilstand mens scripts hentes */
+  loadLuftfoto().then(function(){
+    if(window.KARLTOFFEL && window.KARLTOFFEL.skraafotoRender){
+      window.KARLTOFFEL.skraafotoRender(state.adresse, dir);
+    }
+  }).catch(function(err){ console.warn("Luftfoto kunne ikke indlæses:", err); if(badge) badge.textContent = ""; });
 }
 
 /* Auto-mål (nDSM): Kristian 2026-09-09 — ALLE felter skal kunden selv skrive
