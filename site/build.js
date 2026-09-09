@@ -31,9 +31,9 @@ const MELLEM_TPL = partial('mellem.html');
 const SLUT_TPL = partial('slut.html');
 
 // sociale links (konstante) — uddrag af forsidens footer-markup
-const IG_LINE = '\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t<a href="https://www.instagram.com/karltoffel/" target="_blank" title="Instagram"><i class="fa-brands fa-instagram"></i><span>Instagram</span></a>';
-const LI_LINE = '\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t<a href="https://www.linkedin.com/company/karltoffel/" target="_blank" title="LinkedIn"><i class="fa-brands fa-linkedin-in"></i><span>LinkedIn</span></a>';
-const EM_HTML = '<p><em>Fast aftale og fleksible løsninger · Miljøvenlige metoder · Erfaren og pålidelig service · 100 % tilfredshed — ellers kommer vi igen.</em></p>';
+const IG_LINE = '\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t<a href="https://www.instagram.com/karltoffel.dk/" target="_blank" title="Instagram"><i class="fa-brands fa-instagram"></i><span>Instagram</span></a>';
+const LI_LINE = '\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t<a href="https://www.linkedin.com/company/karltoffel-dk/" target="_blank" title="LinkedIn"><i class="fa-brands fa-linkedin-in"></i><span>LinkedIn</span></a>';
+const EM_HTML = '<p><em>Fast aftale og fleksible løsninger · Miljøvenlige metoder · Erfaren og pålidelig service · 100 % tilfredshed - ellers kommer vi igen.</em></p>';
 
 const chunk = (fil, navn) => {
   const p = path.join(SRC, 'sider', fil, navn);

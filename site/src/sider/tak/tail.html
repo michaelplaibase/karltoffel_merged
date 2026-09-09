@@ -5,7 +5,7 @@
 	<script>
 	(function () {
 		// Ét ord (fornavnet) i klartekst i URL'en er ufarligt (ingen accept/decline-logik
-		// afhænger af det — det er kun til visning), men vi undgår alligevel at lægge
+		// afhænger af det  -  det er kun til visning), men vi undgår alligevel at lægge
 		// noget følsomt i query-strengen: kun c (svar) og evt. navn sendes af CRM'et.
 		var params = new URLSearchParams(location.search);
 		var c = params.get("c");
@@ -15,7 +15,7 @@
 		var COPY = {
 			accept: {
 				titel: "Slå benene op, " + hilsen,
-				tekst: "Vi klarer resten. Vi har lagt dig i kalenderen og ringer snarest — typisk inden for et kvarter i åbningstiden — for at bekræfte tid og de sidste detaljer. Du kan roligt læne dig tilbage, mens naboen bliver grøn af misundelse."
+				tekst: "Vi klarer resten. Vi har lagt dig i kalenderen og ringer snarest  -  typisk inden for et kvarter i åbningstiden  -  for at bekræfte tid og de sidste detaljer. Du kan roligt læne dig tilbage, mens naboen bliver grøn af misundelse."
 			},
 			maybe: {
 				titel: "Noteret, " + hilsen,
@@ -23,7 +23,7 @@
 			},
 			decline: {
 				titel: "Tak for din tid, " + hilsen,
-				tekst: "Vi hopper videre uden hårde følelser. Skifter du mening, står tilbuddet stadig — ring eller skriv til os, når det passer dig."
+				tekst: "Vi hopper videre uden hårde følelser. Skifter du mening, står tilbuddet stadig  -  ring eller skriv til os, når det passer dig."
 			},
 			already_used: {
 				titel: "Du har allerede svaret",
@@ -31,7 +31,7 @@
 			},
 			expired: {
 				titel: "Linket er udløbet",
-				tekst: "Tilbuddet er desværre ikke længere aktivt. Er du stadig interesseret, ringer du bare — så laver vi et nyt."
+				tekst: "Tilbuddet er desværre ikke længere aktivt. Er du stadig interesseret, ringer du bare  -  så laver vi et nyt."
 			},
 			error: {
 				titel: "Hovsa, noget gik galt",
@@ -50,7 +50,7 @@
 		// !important ligger delvist skjult bag den faste header, så vi sætter en
 		// spacer i fuld headerhøjde foran sektionen i stedet for at forsøge at
 		// overskrive selve paddingen (umuligt uden også !important, og det ville
-		// stadig ikke virke — headeren er position:fixed og optager ikke normal flow-plads).
+		// stadig ikke virke  -  headeren er position:fixed og optager ikke normal flow-plads).
 		function rettSpacingUnderHeader() {
 			var header = document.querySelector(".header--fixed");
 			var spacer = document.getElementById("header-spacer");
