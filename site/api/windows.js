@@ -97,7 +97,10 @@ async function countPanes(media, data) {
   return { ok: true, source: "ai", panes, confidence: out.confidence || "low" };
 }
 
+const { tooManyRequests } = require("./_ratelimit");
+
 module.exports = async function handler(req, res) {
+  if (tooManyRequests(req, res, 10)) return; // 10 kald/min pr. IP (Anthropic-kald er dyrt)
   if (req.method !== "POST") {
     res.setHeader("Allow", "POST");
     return res.status(405).json({ error: "Method not allowed" });
