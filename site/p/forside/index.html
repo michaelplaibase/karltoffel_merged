@@ -11,20 +11,6 @@ Besøg os på www.bubble.dk eller ring til os på +45 6069 8700
 	<title>Fast hus- og haveservice til heldige karltofler - Karltoffel</title>
 	<meta name="description" content="Vi holder løbende hus og have skarpt, så du kan bruge tiden på noget sjovere.">
 	<meta name="apple-mobile-web-app-title" content="Karltoffel">
-	<script>
-	/* Kundetype: har kunden tidligere valgt "erhverv" (localStorage-nøglen
-	   "kt-kundetype-v1", sat af kundetype.js/tilbudsmotoren), sendes de direkte
-	   til /erhverv — kørt FØR stylesheets, så forsiden ikke når at blinke.
-	   Undtagelser: #tilbudsmotor (erhvervs-CTA'er til motoren skal virke) og
-	   ?privat-overriden. */
-	(function(){
-		try {
-			if(location.hash === "#tilbudsmotor") return;
-			if(/[?&]privat([=&]|$)/.test(location.search)) return;
-			if(localStorage.getItem("kt-kundetype-v1") === "erhverv") location.replace("/erhverv");
-		} catch(e){}
-	})();
-	</script>
 	<link rel="stylesheet" type="text/css" href="/assets/css/main.min.css">
 	<script type="text/javascript" charset="UTF-8" src="//cdn.cookie-script.com/s/ef5f34255da71cfcf814c76250b36eb1.js"></script>
 	<!-- Google Tag Manager -->
@@ -42,7 +28,7 @@ Besøg os på www.bubble.dk eller ring til os på +45 6069 8700
 	<link rel="stylesheet" type="text/css" href="/assets/css/style.css?v=5">
 	<link rel="stylesheet" href="/assets/css/tilbudsmotor.css?v=41">
 	<link rel="stylesheet" href="/assets/css/spacing.css?v=3">
-	<link rel="stylesheet" href="/assets/css/kundetype.css?v=1">
+
 		<link rel="preload" as="image"
 		href="/assets/img/thumb/e2a541dff09c05bfe2957c4875f7dfe5e570401c_w2000.webp"
 		imagesrcset="assets/img/thumb/e2a541dff09c05bfe2957c4875f7dfe5e570401c_w2000.webp 2000w,
@@ -1228,7 +1214,7 @@ src="https://www.facebook.com/tr?id=1574687980856727&amp;ev=PageView&amp;noscrip
 	</div>
 
 		<script src="/assets/js/script.js"></script>
-		<script src="/assets/js/kundetype.js?v=1" defer></script>
+
 	
 
 
