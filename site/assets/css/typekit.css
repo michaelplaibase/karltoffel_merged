@@ -1,3 +1,11 @@
+@font-face {
+font-family:"snaga-fallback";
+src:local("Arial"),local("Liberation Sans"),local("Helvetica Neue"),local("Helvetica");
+size-adjust:100%;
+ascent-override:100.2%;
+descent-override:24%;
+line-gap-override:0%;
+}
 /*
  * The Typekit service used to deliver this font or fonts for use on websites
  * is provided by Adobe and is subject to these Terms of Use

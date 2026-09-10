@@ -60,9 +60,12 @@ function renderKort(page) {
     if (!y) throw new Error('Ukendt ydelse: ' + slug);
     const pris = (yk.kontekst === 'erhverv' && y.pris_erhverv) ? y.pris_erhverv : y.pris;
     const tekst = yk.vis_kort_tekst ? y.kort_tekst : '';
+    let dimsHtml = '';
+    if (y.billede_bredde && y.billede_hoejde) dimsHtml = ' width="' + y.billede_bredde + '" height="' + y.billede_hoejde + '"';
     return KORT_TPL
       .replaceAll('{{HREF}}', '/c/det-vi-ordner/' + slug)
       .replaceAll('{{BILLEDE}}', y.billede)
+      .replaceAll('{{IMG_DIMS}}', dimsHtml)
       .replaceAll('{{ALT}}', y.navn)
       .replaceAll('{{PRIS}}', 'Fra ' + pris + ' kr')
       .replaceAll('{{NAVN}}', y.navn)

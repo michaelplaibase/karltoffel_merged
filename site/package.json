@@ -1,0 +1,20 @@
+{
+  "name": "site",
+  "version": "1.0.0",
+  "description": "En 1:1 lokal rekonstruktion af **hele** **[karltoffel.dk](https://karltoffel.dk/)** — forsiden **og alle 22 undersider** (23 sider i alt).",
+  "main": "build.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "devDependencies": {
+    "purgecss": "^8.0.0"
+  },
+  "dependencies": {
+    "esbuild": "^0.28.2",
+    "swiper": "^11.1.9"
+  }
+}
