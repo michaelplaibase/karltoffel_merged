@@ -267,8 +267,10 @@ select.form-control-sm { background-position: right 10px center; padding-right: 
 
 /* Auto-voksende opgavebeskrivelse (TaskLineEditor): hele teksten skal kunne
    læses — feltet ombryder og gør rækken højere i stedet for at klippe af.
-   (Overskrider textarea.form-control-sm's 80px min-højde fra én-linjes brug.) */
-textarea.task-desc { resize: none; overflow: hidden; min-height: 34px; height: auto; line-height: 1.45; }
+   (Overskrider textarea.form-control-sm's 80px min-højde fra én-linjes brug.)
+   Thomas 2026-09-10: feltet starter større (tre linjer ≈ 72px), så man kan
+   se, hvad man skriver, uden at rækken bliver absurd høj. */
+textarea.task-desc { resize: none; overflow: hidden; min-height: 72px; height: auto; line-height: 1.45; }
 
 /* detached search bar */
 .searchbar { display: flex; gap: 8px; align-items: stretch; max-width: 540px; flex: 1; }

@@ -6,7 +6,9 @@
 // with formData.getAll, aligned by index. Used by order create and the
 // subscription editor.
 import { useState } from "react";
-import { CATEGORIES, categoryColor } from "@/lib/categories";
+import {
+  CATEGORIES, chipBackground, chipTextColor, EGEN_KATEGORI, isNewCategoryName,
+} from "@/lib/categories";
 import { MOMS } from "@/lib/data";
 import { WEEKDAYS_DA_SHORT, weekdayDigits } from "@/lib/task-weekdays";
 
@@ -65,6 +67,12 @@ export default function TaskLineEditor({
   // stadig kunne SES og bevares — samme mønster som fixedEmployee i SubscriptionForm.
   const savedEmpById = new Map(empList.map((e) => [String(e.id), e]));
   const inactiveEmpIds = [...new Set(rows.map((r) => r.employee).filter((v) => v && !savedEmpById.has(v)))] as string[];
+  // Egen kategori (Thomas 2026-09-10): hver række kan have sin egen fritekst-
+  // kategori ud over de 15 faste. Dropdown viser "Egen kategori…" som sidste
+  // punkt; vælges den, erstattes dropdownen af et tekstfelt (med chip foran).
+  // Gemte fritekst-kategorier vises i dropdownen, så de kan genvælges —
+  // ellers ville en gemt række med "Min kategori" falde tilbage til index 0.
+  const savedCatNames = [...new Set(rows.map((r) => r.category).filter(isNewCategoryName)) as Set<string>];
   const update = (i: number, patch: Partial<TaskRow>) =>
     setRows((rs) => rs.map((r, j) => (j === i ? { ...r, ...patch } : r)));
   const add = () => setRows((rs) => [...rs, blank()]);
@@ -96,15 +104,20 @@ export default function TaskLineEditor({
             </tr>
           </thead>
           <tbody>
-            {rows.map((r, i) => (
+            {rows.map((r, i) => {
+              const egen = r.category === EGEN_KATEGORI;
+              return (
               <tr key={i}>
                 <td data-label="Opgavebeskrivelse">
                   {/* Auto-voksende textarea i stedet for input: hele teksten
                       er altid synlig (ombryder + linjen bliver højere), også
                       når teksten er hentet fra databasen. Samme felt-
-                      navn/taskDescription → server action uændret. */}
+                      navn/taskDescription → server action uændret.
+                      (Thomas 2026-09-10: feltet skal være lidt større — der er
+                      nu plads til tre linjer, og feltet vokser stadig frit ved
+                      længere tekst.) */}
                   <textarea
-                    name="taskDescription" value={r.description} rows={1}
+                    name="taskDescription" value={r.description} rows={3}
                     onChange={(e) => {
                       update(i, { description: e.target.value });
                       e.target.style.height = "auto";
@@ -129,19 +142,31 @@ export default function TaskLineEditor({
                   {timepris(r) > 0 && <small className="form-text field-help">Timepris {timepris(r)} kr/t</small>}
                 </td>
                 <td data-label="Kategori">
-                  {/* Kategori på én linje: chip + dropdown flexer side om side,
-                      dropdown fylder resten af bredden (også på smalle skærme). */}
+                  {/* Kategori på én linje: chip + felt flexer side om side,
+                      feltet fylder resten af bredden (også på smalle skærme). */}
                   <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                    <span className="catchip" style={{ background: categoryColor(r.category), flexShrink: 0 }}>
+                    <span className="catchip" style={{ background: chipBackground(r.category), color: chipTextColor(r.category), flexShrink: 0 }}>
                       {(r.category[0] ?? "A").toUpperCase()}
                     </span>
-                    <select
-                      name="taskCategory" value={r.category}
-                      onChange={(e) => update(i, { category: e.target.value })}
-                      className="form-control form-control-sm" style={{ flex: 1, minWidth: 0 }}
-                    >
-                      {CAT_NAMES.map((c) => <option key={c} value={c}>{c}</option>)}
-                    </select>
+                    {egen ? (
+                      // Egen kategori valgt: fritekstfelt i stedet for dropdown.
+                      <input
+                        type="text" value={r.category === EGEN_KATEGORI ? "" : r.category}
+                        onChange={(e) => update(i, { category: e.target.value })}
+                        className="form-control form-control-sm" style={{ flex: 1, minWidth: 0 }}
+                        placeholder="Skriv kategori…" autoFocus
+                      />
+                    ) : (
+                      <select
+                        name="taskCategory" value={r.category}
+                        onChange={(e) => update(i, { category: e.target.value })}
+                        className="form-control form-control-sm" style={{ flex: 1, minWidth: 0 }}
+                      >
+                        {CAT_NAMES.map((c) => <option key={c} value={c}>{c}</option>)}
+                        {savedCatNames.map((c) => <option key={c} value={c}>{c}</option>)}
+                        <option value={EGEN_KATEGORI}>Egen kategori…</option>
+                      </select>
+                    )}
                   </span>
                 </td>
                 <td data-label="Pris (inkl. moms)">
@@ -242,7 +267,8 @@ export default function TaskLineEditor({
                   </button>
                 </td>
               </tr>
-            ))}
+              );
+            })}
             <tr>
               <td className="td-remove td-sum-label" style={{ textAlign: "right", fontWeight: 600 }} data-label="">Sum</td>
               <td />
