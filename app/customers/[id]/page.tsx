@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { routeId } from "@/lib/route-ids";
 import { prisma } from "@/lib/db";
+import { getDownloadUrl } from "@vercel/blob";
 import { getContactById, getSubscriptionsForContact, getFixedPricesForContact, getOrdersForContact } from "@/lib/queries";
 import { CatChip, MapLink, money } from "@/components/ui";
 import RowMenu from "@/components/RowMenu";
@@ -19,7 +20,7 @@ const SKRAAFOTO_CONFIGURED = !!(process.env.DATAFORSYNINGEN_TOKEN || "").trim();
 // KS-fotos for én kunde — isoleret i egen funktion så tabellens fravær (før
 // migrationen er kørt) ikke kan crashe kundesiden.
 async function getPhotosForContact(contactId: number) {
-  return prisma.orderPhoto.findMany({
+  const rows = await prisma.orderPhoto.findMany({
     where: { contactId },
     orderBy: { createdAt: "desc" },
     include: {
@@ -27,6 +28,8 @@ async function getPhotosForContact(contactId: number) {
       order: { select: { id: true, plannedAt: true } },
     },
   });
+  // Private Blob-store: konvertér til kortsigtede download-URLs (url i DB er ikke offentlig).
+  return rows.map((p) => ({ ...p, url: getDownloadUrl(p.url) }));
 }
 
 export default async function CustomerDetail({

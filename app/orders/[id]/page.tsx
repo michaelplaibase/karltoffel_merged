@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getOrderDetail } from "@/lib/queries";
 import { prisma } from "@/lib/db";
+import { getDownloadUrl } from "@vercel/blob";
 import { routeId } from "@/lib/route-ids";
 import { deleteOrder } from "@/app/actions/orders";
 import { retryInvoice } from "@/app/actions/dinero";
@@ -37,11 +38,13 @@ const BATCH_STATUS: Record<string, { label: string; color: string }> = {
 // KS-fotos for én ordre — isoleret så tabellens fravær (før migrationen er
 // kørt) ikke kan crashe ordresiden.
 async function getOrderPhotos(orderId: number) {
-  return prisma.orderPhoto.findMany({
+  const rows = await prisma.orderPhoto.findMany({
     where: { orderId },
     orderBy: { createdAt: "desc" },
     select: { id: true, url: true, createdAt: true, uploadedBy: { select: { firstName: true, lastName: true } } },
   });
+  // Private Blob-store: konvertér til kortsigtede download-URLs (url i DB er ikke offentlig).
+  return rows.map((p) => ({ ...p, url: getDownloadUrl(p.url) }));
 }
 
 export default async function OrderDetail({ params }: { params: Promise<{ id: string }> }) {
