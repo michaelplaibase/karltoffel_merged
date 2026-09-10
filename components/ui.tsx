@@ -92,12 +92,12 @@ export function money(n: number) {
  *  nu) + ekskl.-moms i dæmpet tekst, fx "1.000 kr. (800 kr. u. moms)".
  *  Kræver priceInclKr i KRONER som gemt (TaskLine.price-konvention); efter
  *  datamigreringen/cutover skifter kun lib/vat.ts' priceBasis-flag. */
-export function PriceDual({ priceInclKr }: { priceInclKr: number }) {
+export function PriceDual({ priceInclKr, compact = false }: { priceInclKr: number; compact?: boolean }) {
   const oere = Math.round(priceInclKr * 100);
   return (
-    <span className="price-dual">
+    <span className={"price-dual" + (compact ? " price-dual-compact" : "")}>
       {money(priceInclKr)}{" "}
-      <span className="muted" style={{ whiteSpace: "nowrap" }}>
+      <span className="muted" style={{ whiteSpace: compact ? undefined : "nowrap" }}>
         ({(inclToExcl(oere) / 100).toLocaleString("da-DK")} kr. u. moms)
       </span>
     </span>

@@ -17,6 +17,15 @@ const krOreDual = (n: number) => (
     </span>
   </>
 );
+/** KPI-variant: samme dual-visning men med lille ekskl.-moms-linje (compact). */
+const krOreDualCompact = (n: number) => (
+  <span className="price-dual price-dual-compact">
+    {n.toLocaleString("da-DK", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} kr{" "}
+    <span className="muted">
+      ({(inclToExcl(Math.round(n * 100)) / 100).toLocaleString("da-DK")} kr. u. moms)
+    </span>
+  </span>
+);
 
 export const dynamic = "force-dynamic";
 
@@ -36,7 +45,7 @@ export default async function BusinessManagerDashboard({ searchParams }: { searc
       <div className="bm-kpis">
         <div className="revenue-kpi">
           <span className="revenue-kpi-label">Realiseret omsætning (inkl. moms)</span>
-          <span className="revenue-kpi-value"><PriceDual priceInclKr={data.realised.revenueInclVat} /></span>
+          <span className="revenue-kpi-value"><PriceDual priceInclKr={data.realised.revenueInclVat} compact /></span>
         </div>
         <div className="revenue-kpi">
           <span className="revenue-kpi-label">Selskabets omkostninger / md</span>

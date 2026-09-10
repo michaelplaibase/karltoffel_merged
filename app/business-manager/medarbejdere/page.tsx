@@ -12,12 +12,21 @@ const kr = (n: number) => n.toLocaleString("da-DK") + " kr";
 const krOre = (n: number) => n.toLocaleString("da-DK", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + " kr";
 /** Dual visning for krOre-beløb (inkl. primært + ekskl. i dæmpet tekst). */
 const krOreDual = (n: number) => (
-  <>
+  <span className="price-dual">
     {krOre(n)}{" "}
     <span className="muted" style={{ whiteSpace: "nowrap" }}>
       ({(inclToExcl(Math.round(n * 100)) / 100).toLocaleString("da-DK")} kr. u. moms)
     </span>
-  </>
+  </span>
+);
+/** KPI-variant: samme dual-visning men med lille ekskl.-moms-linje (compact). */
+const krOreDualCompact = (n: number) => (
+  <span className="price-dual price-dual-compact">
+    {krOre(n)}{" "}
+    <span className="muted">
+      ({(inclToExcl(Math.round(n * 100)) / 100).toLocaleString("da-DK")} kr. u. moms)
+    </span>
+  </span>
 );
 
 export const dynamic = "force-dynamic";
@@ -36,19 +45,19 @@ export default async function EmployeeCalcPage() {
       <div className="bm-kpis">
         <div className="revenue-kpi">
           <span className="revenue-kpi-label">Forventet abonnementsomsætning / md (inkl. moms)</span>
-          <span className="revenue-kpi-value">{krOreDual(subMonthlyTotal)}</span>
+          <span className="revenue-kpi-value">{krOreDualCompact(subMonthlyTotal)}</span>
         </div>
         <div className="revenue-kpi">
           <span className="revenue-kpi-label">Forventet abonnementsomsætning / år (inkl. moms)</span>
-          <span className="revenue-kpi-value">{krOreDual(subYearlyTotal)}</span>
+          <span className="revenue-kpi-value">{krOreDualCompact(subYearlyTotal)}</span>
         </div>
         <div className="revenue-kpi">
           <span className="revenue-kpi-label">Realiseret i månedens ordrer (inkl. moms)</span>
-          <span className="revenue-kpi-value"><PriceDual priceInclKr={data.realised.revenueInclVat} /></span>
+          <span className="revenue-kpi-value"><PriceDual priceInclKr={data.realised.revenueInclVat} compact /></span>
         </div>
         <div className="revenue-kpi">
           <span className="revenue-kpi-label">Realiseret år til dato (inkl. moms)</span>
-          <span className="revenue-kpi-value"><PriceDual priceInclKr={data.realised.revenueInclVatYear} /></span>
+          <span className="revenue-kpi-value"><PriceDual priceInclKr={data.realised.revenueInclVatYear} compact /></span>
         </div>
         <div className="revenue-kpi">
           <span className="revenue-kpi-label">Selskabets omkostninger / md</span>
