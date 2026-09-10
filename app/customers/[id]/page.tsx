@@ -215,8 +215,6 @@ export default async function CustomerDetail({
         </div>
       </div>
 
-      <CustomerOrdersTable orders={orders} contactId={c.id} />
-
       <div className="card">
         <div className="card-header">
           <h4 className="section-title">Aftalekalender</h4>
@@ -229,6 +227,8 @@ export default async function CustomerDetail({
           )}
         </div>
       </div>
+
+      <CustomerOrdersTable orders={orders} contactId={c.id} />
     </div>
   );
 }
