@@ -30,8 +30,9 @@ function sourceLabel(type: string, subDisplayNo?: number | null): string {
 // ---- row → view-type mappers ----------------------------------------------
 
 type TaskRow = Prisma.TaskLineGetPayload<{ include: { employee: true } }>;
-function mapTask(t: TaskRow): TaskLine {
+function mapTask(t: TaskRow, withId = false): TaskLine {
   return {
+    ...(withId ? { id: t.id } : {}),
     category: t.category,
     letter: t.letter,
     description: t.description,
@@ -72,7 +73,7 @@ function mapSubscription(s: SubRow, generationWarning: string | null = null): Su
     pk: s.id,
     contactId: s.contactId,
     deliveryAddress: s.deliveryAddress,
-    tasks: [...s.tasks].sort((a, b) => a.sort - b.sort).map(mapTask),
+    tasks: [...s.tasks].sort((a, b) => a.sort - b.sort).map((t) => mapTask(t)),
     interval: s.baseInterval,
     fixedEmployee: s.fixedEmployee,
     nextWeek: s.nextWeek ?? "",
@@ -114,7 +115,7 @@ function mapOrder(o: OrderRow): Order {
     deliveryAddress: o.deliveryAddress,
     deliveryDate: ymd(o.plannedAt),
     overdue: isOverdue(o.plannedAt, o.status),
-    tasks: [...o.tasks].sort((a, b) => a.sort - b.sort).map(mapTask),
+    tasks: [...o.tasks].sort((a, b) => a.sort - b.sort).map((t) => mapTask(t)),
     employee,
     status: o.status,
     source,
@@ -347,7 +348,7 @@ function mapFixedPrice(f: FixedRow): FixedPrice {
     contactId: f.contactId,
     contactName: f.contact.name,
     deliveryAddress: f.deliveryAddress,
-    tasks: [...f.tasks].sort((a, b) => a.sort - b.sort).map(mapTask),
+    tasks: [...f.tasks].sort((a, b) => a.sort - b.sort).map((t) => mapTask(t)),
   };
 }
 
@@ -496,7 +497,7 @@ export async function getOrderDetail(id: number): Promise<OrderDetail | null> {
       name: o.contact.name, street: o.contact.street, city: o.contact.city,
       att: o.contact.att ?? "", phone: o.contact.phone ?? "", email: o.contact.email ?? "", cvr: o.contact.cvr ?? "",
     },
-    tasks: tasks.map(mapTask),
+    tasks: tasks.map((t) => mapTask(t, true)),
     sumPrice: tasks.reduce((a, t) => a + t.price, 0),
     sumDuration: tasks.reduce((a, t) => a + t.durationMin, 0),
     invoiceDecision: o.invoiceDecision ?? "",
@@ -632,7 +633,7 @@ async function buildWeekPlan(weekMonday: string) {
     metaById.set(o.id, {
       subNo: o.subscription?.displayNo ?? null, status: o.status,
       phone: o.contact.phone ?? null,
-      tasks: [...o.tasks].sort((a, b) => a.sort - b.sort).map(mapTask),
+      tasks: [...o.tasks].sort((a, b) => a.sort - b.sort).map((t) => mapTask(t)),
       comment: o.comment ?? "", addressNote: o.addressNote ?? "",
     });
     // UDFØRTE/afgjorte ordrer (alt andet end "Afventer levering") er sket i

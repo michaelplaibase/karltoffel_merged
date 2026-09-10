@@ -30,6 +30,8 @@ import {
   bookInvoice, emailInvoice, getInvoice, findInvoiceByExternalRef, DineroApiError,
 } from "./dinero";
 import { quarterlyPeriodEndingBefore } from "./invoice-frequency";
+import { computeInvoiceTotals } from "./vat";
+import type { VatTotals } from "./vat";
 
 /** [start, end) for "d. 20. i forrige måned til d. 20. i denne måned" (UTC-dato,
  *  ingen klokkeslæt-afhængighed — ordrer er dato-baserede). `now` er typisk
@@ -143,7 +145,31 @@ async function runBatchForPeriod(args: {
   result.companies += byContact.size;
 
   for (const [contactId, contactOrders] of byContact) {
-    const sumInclVat = contactOrders.reduce((a, o) => a + o.tasks.reduce((b, t) => b + t.price, 0), 0);
+    // ─── MOMS-GARANTI (fail-closed, moms-planen trin 3) ─────────────────────────
+    // Momsen beregnes ALTID server-side HER, før nogen Dinero-faktura oprettes,
+    // via computeInvoiceTotals (lib/vat.ts — én kilde til sandhed). Hvis EN
+    // linje har en pris, men momsen ikke kan beregnes, springes HELTE
+    // kontaktens batch over (fejl i rapport + businessBatchError på ordrerne) —
+    // ALDRIG en faktura uden moms. Dette gælder også i dry-run. priceBasis
+    // 'incl' er dagens datamodell; cutover = ét flag i lib/vat.ts.
+    let totals: VatTotals;
+    try {
+      totals = computeInvoiceTotals(
+        contactOrders.flatMap((o) => o.tasks.map((t) => ({ price: t.price }))),
+      );
+    } catch (vatErr) {
+      const msg = (vatErr instanceof Error ? vatErr.message : "Moms kunne ikke beregnes").slice(0, 500);
+      console.error(`[business-invoicing:moms-garanti] kontakt #${contactId} periode=${periodStartISO}: ${msg}`);
+      result.failed++;
+      result.errors.push({ contactId, error: msg });
+      const orderIds = contactOrders.map((o) => o.id);
+      await prisma.order.updateMany({
+        where: { id: { in: orderIds } },
+        data: { businessBatchError: msg, businessBatchInvoiceStatus: "Failed" },
+      }).catch(() => {});
+      continue;
+    }
+    const sumInclVat = totals.inclTotal / 100; // øre → kr (Dinero-momskontrol sammenligner i kr)
     const ref = orderExtRefBatch(contactId, periodStartISO);
     const orderIds = contactOrders.map((o) => o.id);
 

@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { routeId } from "@/lib/route-ids";
 import { prisma } from "@/lib/db";
 import { getContactById, getSubscriptionsForContact, getFixedPricesForContact, getOrdersForContact } from "@/lib/queries";
-import { CatChip, MapLink, money } from "@/components/ui";
+import { CatChip, MapLink, PriceDual } from "@/components/ui";
 import RowMenu from "@/components/RowMenu";
 import SkraafotoCard from "@/components/SkraafotoCard";
 import CustomerOrdersTable from "@/components/CustomerOrdersTable";
@@ -160,7 +160,7 @@ export default async function CustomerDetail({
                     <td>{s.deliveryAddress}</td>
                     <td>{s.tasks.map((t, i) => <div key={i}><CatChip category={t.category} letter={t.letter} /> {t.description}</div>)}</td>
                     <td>{s.tasks.map((t, i) => <div key={i}>{t.interval}</div>)}</td>
-                    <td className="num">{s.tasks.map((t, i) => <div key={i}>{money(t.price)}</div>)}</td>
+                    <td className="num">{s.tasks.map((t, i) => <div key={i}><PriceDual priceInclKr={t.price} /></div>)}</td>
                     <td>{s.fixedEmployee}</td>
                     <td>{s.nextWeek}</td>
                   </tr>
@@ -193,7 +193,7 @@ export default async function CustomerDetail({
                     <td className="num"><Link href={`/fixed-prices/${f.id}`}>{f.id}</Link></td>
                     <td>{f.deliveryAddress}</td>
                     <td>{f.tasks.map((t, i) => <div key={i}><CatChip category={t.category} letter={t.letter} /> {t.description}</div>)}</td>
-                    <td className="num">{f.tasks.map((t, i) => <div key={i}>{money(t.price)}</div>)}</td>
+                    <td className="num">{f.tasks.map((t, i) => <div key={i}><PriceDual priceInclKr={t.price} /></div>)}</td>
                   </tr>
                 ))}
               </tbody>

@@ -10,6 +10,7 @@ import {
   CATEGORIES, chipBackground, chipTextColor, EGEN_KATEGORI, isNewCategoryName,
 } from "@/lib/categories";
 import { MOMS } from "@/lib/data";
+import { inclToExcl } from "@/lib/vat";
 import { WEEKDAYS_DA_SHORT, weekdayDigits } from "@/lib/task-weekdays";
 
 export type TaskRow = {
@@ -247,6 +248,9 @@ export default function TaskLineEditor({
         <span className="muted">Sum</span>
         <span style={{ fontWeight: 600 }}>{sum.toLocaleString("da-DK")} kr</span>
         <span style={{ fontWeight: 600 }}>{dur} min</span>
+        <span className="muted" style={{ whiteSpace: "nowrap" }}>
+          ({(inclToExcl(Math.round(sum * 100)) / 100).toLocaleString("da-DK")} kr. u. moms)
+        </span>
       </div>
       {minuteRate != null && minuteRate > 0 && (
         <small className="form-text field-help" style={{ display: "block", marginTop: 4 }}>

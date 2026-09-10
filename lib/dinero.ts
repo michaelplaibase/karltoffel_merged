@@ -37,6 +37,8 @@
 import { prisma } from "./db";
 import type { DineroConnection } from "@prisma/client";
 import { effectiveInvoiceFrequency } from "./invoice-frequency";
+import { computeInvoiceTotals } from "./vat";
+import type { VatTotals } from "./vat";
 
 // ─── Endpoints ─────────────────────────────────────────────────────────────────
 const API_BASE = "https://api.dinero.dk";
@@ -491,7 +493,32 @@ export async function issueInvoiceForOrder(
     return { ok: true, status: "Samlefaktura" };
   }
 
-  const sumInclVat = order.tasks.reduce((a, t) => a + t.price, 0);
+  // ─── MOMS-GARANTI (fail-closed, moms-planen trin 3) ─────────────────────────
+  // Momsen beregnes ALTID server-side HER ved fakturaoprettelsen via
+  // computeInvoiceTotals (lib/vat.ts — én kilde til sandhed). Hvis EN linje
+  // har en pris, men momsen ikke kan beregnes (mangler/ugyldig/negativ),
+  // afvises faktureringen: fejl i rapport/log + skip — ALDRIG en faktura
+  // uden moms. Dette gælder også i dry-run (ordren må ikke "simuleres" med
+  // en uberegnelig moms). priceBasis='incl' er dagens datamodell (priser
+  // gemmes inkl. moms indtil datamigreringen); cutover = ét flag i lib/vat.ts.
+  let totals: VatTotals;
+  try {
+    totals = computeInvoiceTotals(order.tasks.map((t) => ({ price: t.price })));
+  } catch (vatErr) {
+    const msg = (vatErr instanceof Error ? vatErr.message : "Moms kunne ikke beregnes").slice(0, 500);
+    console.error(`[dinero:moms-garanti] ordre #${orderId}: ${msg}`);
+    const cur = await prisma.order.findUnique({
+      where: { id: orderId },
+      select: { dineroInvoiceStatus: true, dineroInvoiceNumber: true },
+    });
+    const isBooked = BOOKED_STATES.has(cur?.dineroInvoiceStatus ?? "") || cur?.dineroInvoiceNumber != null;
+    await prisma.order.update({
+      where: { id: orderId },
+      data: { dineroError: msg, ...(isBooked ? {} : { dineroInvoiceStatus: "Failed" }) },
+    });
+    return { ok: false, status: isBooked ? cur?.dineroInvoiceStatus ?? "Booked" : "Failed", error: msg };
+  }
+  const sumInclVat = totals.inclTotal / 100; // øre → kr (Dinero sammenligning + dry-run-log)
 
   const cfg = await loadActiveConfig();
   if (!cfg) {

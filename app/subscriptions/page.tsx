@@ -5,7 +5,7 @@ import { getSubscriptions, getContacts } from "@/lib/queries";
 import { stopSubscription, approveSubscription } from "@/app/actions/subscriptions";
 import GenerateOrdersButton from "@/components/GenerateOrdersButton";
 import FixStaleWeeksButton from "@/components/FixStaleWeeksButton";
-import { CatChip, CustomerCell, MapLink, money } from "@/components/ui";
+import { CatChip, CustomerCell, MapLink, PriceDual } from "@/components/ui";
 import RowMenu from "@/components/RowMenu";
 import { SearchBar } from "@/components/ListControls";
 
@@ -81,7 +81,7 @@ export default async function SubscriptionsPage({ searchParams }: { searchParams
                       <td>{s.deliveryAddress}<div><MapLink address={s.deliveryAddress} /></div></td>
                       <td>{s.tasks.map((t, i) => <div key={i}><CatChip category={t.category} letter={t.letter} /> {t.description}</div>)}</td>
                       <td>{s.tasks.map((t, i) => <div key={i}>{t.interval}</div>)}</td>
-                      <td className="num">{s.tasks.map((t, i) => <div key={i}>{money(t.price)}</div>)}</td>
+                      <td className="num">{s.tasks.map((t, i) => <div key={i}><PriceDual priceInclKr={t.price} /></div>)}</td>
                       <td>{s.fixedEmployee}</td>
                       <td>
                         {nextOrderLabel(s.pk)}
