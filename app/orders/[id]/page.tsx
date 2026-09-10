@@ -8,6 +8,7 @@ import { retryInvoice } from "@/app/actions/dinero";
 import { CatChip, MapLink, PriceDual, StatusPill } from "@/components/ui";
 import ConfirmButton from "@/components/ConfirmButton";
 import EmployeePicker from "@/components/EmployeePicker";
+import DeleteOrderTaskButton from "@/components/DeleteOrderTaskButton";
 import { getEmployeeOptions } from "@/lib/queries";
 import { CLOSED_STATUSES as CLOSED_ORDER_STATUSES } from "@/lib/invoice-status";
 
@@ -122,7 +123,7 @@ export default async function OrderDetail({ params }: { params: Promise<{ id: st
         <div className="card-body tight">
           <div className="table-wrap">
             <table className="data-table">
-              <thead><tr><th>Opgavebeskrivelse</th><th>Pris (inkl. moms)</th><th>Varighed (min.)</th></tr></thead>
+              <thead><tr><th>Opgavebeskrivelse</th><th>Pris (inkl. moms)</th><th>Varighed (min.)</th><th></th></tr></thead>
               <tbody>
                 {o.tasks.map((t, i) => (
                   <tr key={i}>
@@ -132,6 +133,9 @@ export default async function OrderDetail({ params }: { params: Promise<{ id: st
                     </td>
                     <td className="num"><PriceDual priceInclKr={t.price} /></td>
                     <td className="num">{t.durationMin}</td>
+                    <td style={{ textAlign: "right", whiteSpace: "nowrap" }}>
+                      <DeleteOrderTaskButton orderId={o.id} taskIndex={i} />
+                    </td>
                   </tr>
                 ))}
                 <tr>
