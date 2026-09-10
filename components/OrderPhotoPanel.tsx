@@ -20,7 +20,9 @@ async function skalerFoerUpload(file: File): Promise<File> {
     const bitmap = await createImageBitmap(file);
     const maxSide = 1600;
     const scale = Math.min(1, maxSide / Math.max(bitmap.width, bitmap.height));
-    if (scale >= 1) return file; // allerede lille nok
+    // Konvertér ALLIGEVÉL til JPEG hvis filen er HEIC eller stor (HEIC kan ikke
+    // vises i <img> og overskrider ofte body-grænsen; JPEG 0.85 er dokumentations-rigtigt):
+    if (scale >= 1 && file.type !== "image/heic" && file.size < 3_500_000) return file;
     const canvas = document.createElement("canvas");
     canvas.width = Math.round(bitmap.width * scale);
     canvas.height = Math.round(bitmap.height * scale);

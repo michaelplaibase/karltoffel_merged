@@ -55,9 +55,11 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: true, photo: { id: photo.id, url: photo.url } });
   } catch (err) {
     console.error("[photos] upload-fejl:", err instanceof Error ? err.message : err);
+    // Fejl-detail sendes til klienten under diagnosticering (fjernes når roden er fundet)
+    const detail = err instanceof Error ? err.message.slice(0, 300) : String(err).slice(0, 300);
     const msg = err instanceof Error && String(err.message).includes("BLOB_READ_WRITE_TOKEN")
       ? "Billedlager er ikke konfigureret endnu"
-      : "Upload fejlede";
+      : `Upload fejlede — ${detail}`;
     return NextResponse.json({ error: msg }, { status: 500 });
   }
 }
