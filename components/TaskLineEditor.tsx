@@ -157,6 +157,13 @@ export default function TaskLineEditor({
                       }
                       update(i, patch);
                     }} className="form-control form-control-sm num" />
+                  {/* Pris ekskl. moms vises altid (Thomas 2026-09-10): beregnet
+                      fra den inkl.-moms-pris der tastes — afrundet til hele øre. */}
+                  {Number(r.price) > 0 && (
+                    <small className="form-text field-help">
+                      {(Number(r.price) / (1 + MOMS)).toLocaleString("da-DK", { maximumFractionDigits: 2 })} kr. ekskl. moms
+                    </small>
+                  )}
                 </td>
                 <td data-label="Varighed (min.)">
                   <input name="taskDuration" type="number" min="0" value={r.duration}
