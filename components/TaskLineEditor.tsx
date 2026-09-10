@@ -8,6 +8,7 @@
 import { useState } from "react";
 import { CATEGORIES, categoryColor } from "@/lib/categories";
 import { MOMS } from "@/lib/data";
+import { inclToExcl } from "@/lib/vat";
 import { WEEKDAYS_DA_SHORT, weekdayDigits } from "@/lib/task-weekdays";
 
 export type TaskRow = {
@@ -246,7 +247,12 @@ export default function TaskLineEditor({
             <tr>
               <td className="td-remove td-sum-label" style={{ textAlign: "right", fontWeight: 600 }} data-label="">Sum</td>
               <td />
-              <td className="num" data-label="Pris i alt" style={{ fontWeight: 600 }}>{sum.toLocaleString("da-DK")} kr</td>
+              <td className="num" data-label="Pris i alt" style={{ fontWeight: 600 }}>
+                {sum.toLocaleString("da-DK")} kr{" "}
+                <span className="muted" style={{ whiteSpace: "nowrap" }}>
+                  ({(inclToExcl(Math.round(sum * 100)) / 100).toLocaleString("da-DK")} kr. u. moms)
+                </span>
+              </td>
               <td className="num" data-label="Minutter i alt" style={{ fontWeight: 600 }}>{dur}</td>
               {sub && <td />}
               {sub && <td />}

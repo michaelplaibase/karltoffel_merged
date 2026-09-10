@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { categoryColor } from "@/lib/categories";
+import { inclToExcl } from "@/lib/vat";
 import type { Contact, TaskLine } from "@/lib/data";
 
 export function CatChip({ category, letter }: { category: string; letter: string }) {
@@ -85,4 +86,20 @@ export function TaskCell({ tasks }: { tasks: TaskLine[] }) {
 
 export function money(n: number) {
   return n.toLocaleString("da-DK") + " kr";
+}
+
+/** Dual pris-visning (moms-planen trin 2): inkl.-moms som primært beløb (som
+ *  nu) + ekskl.-moms i dæmpet tekst, fx "1.000 kr. (800 kr. u. moms)".
+ *  Kræver priceInclKr i KRONER som gemt (TaskLine.price-konvention); efter
+ *  datamigreringen/cutover skifter kun lib/vat.ts' priceBasis-flag. */
+export function PriceDual({ priceInclKr }: { priceInclKr: number }) {
+  const oere = Math.round(priceInclKr * 100);
+  return (
+    <span className="price-dual">
+      {money(priceInclKr)}{" "}
+      <span className="muted" style={{ whiteSpace: "nowrap" }}>
+        ({(inclToExcl(oere) / 100).toLocaleString("da-DK")} kr. u. moms)
+      </span>
+    </span>
+  );
 }

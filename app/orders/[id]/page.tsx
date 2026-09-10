@@ -5,7 +5,7 @@ import { prisma } from "@/lib/db";
 import { routeId } from "@/lib/route-ids";
 import { deleteOrder } from "@/app/actions/orders";
 import { retryInvoice } from "@/app/actions/dinero";
-import { CatChip, MapLink, StatusPill, money } from "@/components/ui";
+import { CatChip, MapLink, PriceDual, StatusPill } from "@/components/ui";
 import ConfirmButton from "@/components/ConfirmButton";
 import EmployeePicker from "@/components/EmployeePicker";
 import { getEmployeeOptions } from "@/lib/queries";
@@ -130,13 +130,13 @@ export default async function OrderDetail({ params }: { params: Promise<{ id: st
                       <CatChip category={t.category} letter={t.letter} /> {t.description}
                       {t.fromSubscription ? <div className="muted" style={{ fontSize: 12 }}>Dette er en opgave fra abonnementet</div> : null}
                     </td>
-                    <td className="num">{money(t.price)}</td>
+                    <td className="num"><PriceDual priceInclKr={t.price} /></td>
                     <td className="num">{t.durationMin}</td>
                   </tr>
                 ))}
                 <tr>
                   <td style={{ textAlign: "right", fontWeight: 600 }}>Sum</td>
-                  <td className="num" style={{ fontWeight: 600 }}>{money(o.sumPrice)}</td>
+                  <td className="num" style={{ fontWeight: 600 }}><PriceDual priceInclKr={o.sumPrice} /></td>
                   <td className="num" style={{ fontWeight: 600 }}>{o.sumDuration}</td>
                 </tr>
               </tbody>

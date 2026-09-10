@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { getFixedPrices } from "@/lib/queries";
 import { deleteFixedPrice } from "@/app/actions/fixed-prices";
-import { CatChip, MapLink, money } from "@/components/ui";
+import { CatChip, MapLink, PriceDual } from "@/components/ui";
 import RowMenu from "@/components/RowMenu";
 import { SearchBar, Pagination, paginate } from "@/components/ListControls";
 
@@ -47,7 +47,7 @@ export default async function FixedPricesPage({ searchParams }: { searchParams: 
                     <td className="num"><Link href={`/fixed-prices/${f.id}`}>{f.id}</Link></td>
                     <td>{f.deliveryAddress}<div><MapLink address={f.deliveryAddress} /></div></td>
                     <td>{f.tasks.map((t, i) => <div key={i}><CatChip category={t.category} letter={t.letter} /> {t.description}</div>)}</td>
-                    <td className="num">{f.tasks.map((t, i) => <div key={i}>{money(t.price)}</div>)}</td>
+                    <td className="num">{f.tasks.map((t, i) => <div key={i}><PriceDual priceInclKr={t.price} /></div>)}</td>
                   </tr>
                 ))}
               </tbody>

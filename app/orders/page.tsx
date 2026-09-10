@@ -2,7 +2,7 @@ import Link from "next/link";
 import { getOrdersPage } from "@/lib/queries";
 import { deleteOrder } from "@/app/actions/orders";
 import { todayCphISO } from "@/lib/calendar";
-import { CatChip, CustomerCell, MapLink, StatusPill, money } from "@/components/ui";
+import { CatChip, CustomerCell, MapLink, PriceDual, StatusPill } from "@/components/ui";
 import RowMenu, { type RowMenuItem } from "@/components/RowMenu";
 import { SearchBar, Pagination } from "@/components/ListControls";
 
@@ -78,7 +78,7 @@ export default async function OrdersPage({ searchParams }: { searchParams: Promi
                         {o.overdue ? <span className="badge badge-soft-warning">{o.deliveryDate}</span> : o.deliveryDate}
                       </td>
                       <td>{o.tasks.map((t, i) => <div key={i}><CatChip category={t.category} letter={t.letter} /> {t.description}</div>)}</td>
-                      <td className="num">{money(o.tasks.reduce((a, t) => a + t.price, 0))}</td>
+                      <td className="num"><PriceDual priceInclKr={o.tasks.reduce((a, t) => a + t.price, 0)} /></td>
                       <td>{o.employee}</td>
                       <td><StatusPill status={o.status} /></td>
                       <td>{o.subscriptionNo ? <Link href={`/subscriptions/${o.subscriptionNo}`}>{o.source}</Link> : o.source}</td>
