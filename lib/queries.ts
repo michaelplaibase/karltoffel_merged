@@ -471,13 +471,14 @@ export type OrderDetail = {
   employeeId: number | null;
   contact: { name: string; street: string; city: string; att: string; phone: string; email: string; cvr: string };
   tasks: TaskLine[]; sumPrice: number; sumDuration: number;
+  subscriptionId: number | null; fixedPriceId: number | null;
   invoiceDecision: string; dineroInvoiceStatus: string; dineroInvoiceNumber: number | null; dineroError: string;
 };
 
 export async function getOrderDetail(id: number): Promise<OrderDetail | null> {
   const o = await prisma.order.findUnique({
     where: { id },
-    include: { tasks: { include: { employee: true } }, subscription: true, employee: true, contact: true },
+    include: { tasks: { include: { employee: true } }, subscription: true, fixedPrice: true, employee: true, contact: true },
   });
   if (!o) return null;
   const tasks = [...o.tasks].sort((a, b) => a.sort - b.sort);
@@ -498,6 +499,8 @@ export async function getOrderDetail(id: number): Promise<OrderDetail | null> {
       att: o.contact.att ?? "", phone: o.contact.phone ?? "", email: o.contact.email ?? "", cvr: o.contact.cvr ?? "",
     },
     tasks: tasks.map((t) => mapTask(t, true)),
+    subscriptionId: o.subscriptionId ?? null,
+    fixedPriceId: o.fixedPriceId ?? null,
     sumPrice: tasks.reduce((a, t) => a + t.price, 0),
     sumDuration: tasks.reduce((a, t) => a + t.durationMin, 0),
     invoiceDecision: o.invoiceDecision ?? "",
