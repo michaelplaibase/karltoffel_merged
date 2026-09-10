@@ -121,7 +121,7 @@ export default async function CustomerDetail({
                   <div key={p.id} style={{ width: 110 }}>
                     <a href={p.url} target="_blank" rel="noopener noreferrer" title={`KS-foto${uploader ? ` · ${uploader}` : ""} · ${photoDate(p.createdAt)}`}>
                       {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={p.url} alt="KS-foto" style={{ width: 88, height: 88, objectFit: "cover", borderRadius: 6, border: "1px solid var(--line, #ddd)" }} />
+                      <img src={`/api/photos/file?id=${p.id}`} alt="KS-foto" style={{ width: 88, height: 88, objectFit: "cover", borderRadius: 6, border: "1px solid var(--line, #ddd)" }} />
                     </a>
                     <div className="muted" style={{ fontSize: 11, marginTop: 4, lineHeight: 1.4 }}>
                       {photoDate(p.createdAt)}

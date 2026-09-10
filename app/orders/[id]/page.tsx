@@ -231,9 +231,9 @@ export default async function OrderDetail({ params }: { params: Promise<{ id: st
           ) : (
             <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
               {photos.map((p) => (
-                <a key={p.id} href={p.url} target="_blank" rel="noopener noreferrer" title={`KS-foto${p.uploadedBy ? ` · ${[p.uploadedBy.firstName, p.uploadedBy.lastName].filter(Boolean).join(" ")}` : ""} · ${photoDate(p.createdAt)}`}>
+                <a key={p.id} href={`/api/photos/file?id=${p.id}`} target="_blank" rel="noopener noreferrer" title={`KS-foto${p.uploadedBy ? ` · ${[p.uploadedBy.firstName, p.uploadedBy.lastName].filter(Boolean).join(" ")}` : ""} · ${photoDate(p.createdAt)}`}>
                   {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={p.url} alt="KS-foto" style={{ width: 88, height: 88, objectFit: "cover", borderRadius: 6, border: "1px solid var(--line, #ddd)" }} />
+                  <img src={`/api/photos/file?id=${p.id}`} alt="KS-foto" style={{ width: 88, height: 88, objectFit: "cover", borderRadius: 6, border: "1px solid var(--line, #ddd)" }} />
                 </a>
               ))}
             </div>

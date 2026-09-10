@@ -7,7 +7,7 @@
 import { useRef, useState } from "react";
 import type { DayStop, DayUnplannedStop } from "@/lib/calendar";
 
-type Photo = { id: number; url: string; createdAt: string; uploadedBy?: { firstName: string; lastName: string } | null };
+type Photo = { id: number; createdAt: string; uploadedBy?: { firstName: string; lastName: string } | null };
 
 
 /** Skalér billedet i browseren FØR upload: kamera-fotos er ofte 3-8 MB, hvilket
@@ -109,11 +109,11 @@ export default function OrderPhotoPanel({ stop }: { stop: DayStop | DayUnplanned
       {photos.length > 0 && (
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 8 }}>
           {photos.map((p) => (
-            <a key={p.id} href={p.url} target="_blank" rel="noopener noreferrer"
+            <a key={p.id} href={`/api/photos/file?id=${p.id}`} target="_blank" rel="noopener noreferrer"
               title={`KS-foto${p.uploadedBy ? ` · ${p.uploadedBy.firstName} ${p.uploadedBy.lastName}` : ""}`}
               style={{ display: "block" }}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={p.url} alt="KS-foto"
+              <img src={`/api/photos/file?id=${p.id}`} alt="KS-foto"
                 style={{ width: 88, height: 88, objectFit: "cover", borderRadius: 6, border: "1px solid var(--line, #ddd)" }} />
             </a>
           ))}
