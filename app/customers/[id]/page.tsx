@@ -8,6 +8,7 @@ import { CatChip, MapLink, PriceDual } from "@/components/ui";
 import RowMenu from "@/components/RowMenu";
 import SkraafotoCard from "@/components/SkraafotoCard";
 import CustomerOrdersTable from "@/components/CustomerOrdersTable";
+import CustomerCalendar, { type CalDay } from "@/components/CustomerCalendar";
 import { stopSubscription } from "@/app/actions/subscriptions";
 import { deleteFixedPrice } from "@/app/actions/fixed-prices";
 
@@ -66,6 +67,15 @@ export default async function CustomerDetail({
   const address = [c.street, c.city].filter(Boolean).join(", ");
   const reach = [c.phone, c.email].filter(Boolean).join(" · ");
 
+  // Aftalekalender (Thomas, 2026-09-10): alle ordre-datoer (fortid + fremtid)
+  // som farvekodede dage i et års-overblik. Ren visning — ingen skrivning.
+  const calDays: CalDay[] = orders.map((o) => ({
+    date: o.deliveryDate,
+    orderIds: [o.id],
+    status: o.status,
+    employee: o.employee,
+    tasks: o.tasks.map((t) => [t.category, t.description].filter(Boolean).join(" · ")),
+  }));
   return (
     <div className="container-1140">
       <div className="toolbar" style={{ justifyContent: "space-between" }}>
@@ -106,6 +116,19 @@ export default async function CustomerDetail({
       </div>
 
       <SkraafotoCard address={address} configured={SKRAAFOTO_CONFIGURED} />
+
+      <div className="card">
+        <div className="card-header">
+          <h4 className="section-title">Aftalekalender</h4>
+        </div>
+        <div className="card-body tight">
+          {calDays.length === 0 ? (
+            <p className="muted" style={{ margin: 0 }}>Ingen planlagte eller tidligere opgaver på kunden endnu.</p>
+          ) : (
+            <CustomerCalendar days={calDays} contactName={c.name} />
+          )}
+        </div>
+      </div>
 
       <div className="card">
         <div className="card-header"><h4 className="section-title">KS-fotos</h4></div>
