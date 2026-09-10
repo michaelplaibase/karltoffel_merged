@@ -5,7 +5,7 @@
 // taskInterval/taskNextWeek in subscription mode) that the server action reads
 // with formData.getAll, aligned by index. Used by order create and the
 // subscription editor.
-import { useState } from "react";
+import { Fragment, useState } from "react";
 import {
   CATEGORIES, chipBackground, chipTextColor, EGEN_KATEGORI, isNewCategoryName,
 } from "@/lib/categories";
@@ -60,6 +60,9 @@ export default function TaskLineEditor({
   const sub = mode === "subscription";
   const empList = sub ? employees ?? [] : [];
   const showEmp = empList.length > 0;
+  // Beskrivelsesfeltet ligger som en hel bred linje UNDER opgaverækken
+  // (Thomas 2026-09-10: "aflangt i bunden") — colSpan = alle kolonner.
+  const descColSpan = 4 + (sub ? 3 : 0) + (showEmp ? 1 : 0);
   const [ownRows, setOwnRows] = useState<TaskRow[]>(initial?.length ? initial : [blank()]);
   const rows = controlledRows ?? ownRows;
   const setRows = controlledSetRows ?? setOwnRows;
@@ -92,7 +95,6 @@ export default function TaskLineEditor({
         <table className="data-table">
           <thead>
             <tr>
-              <th>Opgavebeskrivelse</th>
               <th style={{ width: 170 }}>Kategori</th>
               <th style={{ width: 140 }}>Pris (inkl. moms)</th>
               <th style={{ width: 120 }}>Varighed (min.)</th>
@@ -107,40 +109,8 @@ export default function TaskLineEditor({
             {rows.map((r, i) => {
               const egen = r.category === EGEN_KATEGORI;
               return (
-              <tr key={i}>
-                <td data-label="Opgavebeskrivelse">
-                  {/* Auto-voksende textarea i stedet for input: hele teksten
-                      er altid synlig (ombryder + linjen bliver højere), også
-                      når teksten er hentet fra databasen. Samme felt-
-                      navn/taskDescription → server action uændret.
-                      (Thomas 2026-09-10: feltet skal være lidt større — der er
-                      nu plads til tre linjer, og feltet vokser stadig frit ved
-                      længere tekst.) */}
-                  <textarea
-                    name="taskDescription" value={r.description} rows={3}
-                    onChange={(e) => {
-                      update(i, { description: e.target.value });
-                      e.target.style.height = "auto";
-                      e.target.style.height = `${e.target.scrollHeight}px`;
-                    }}
-                    ref={(el) => {
-                      if (el) { el.style.height = "auto"; el.style.height = `${el.scrollHeight}px`; }
-                    }}
-                    className="form-control form-control-sm task-desc" placeholder="Opgavebeskrivelse"
-                  />
-                  {sub && (
-                    // "Måneder på pause": skjulte felter (IKKE checkbokse) der ALTID
-                    // submittes for hver række, så formData.getAll-zippet i
-                    // server-action'en holder indeks-flugt med taskDescription.
-                    <>
-                      <input type="hidden" name="taskPauseActive" value={r.pauseActive || "0"} />
-                      <input type="hidden" name="taskPauseStart" value={r.pauseStart || ""} />
-                      <input type="hidden" name="taskPauseEnd" value={r.pauseEnd || ""} />
-                      <input type="hidden" name="taskPauseYearly" value={r.pauseYearly || "1"} />
-                    </>
-                  )}
-                  {timepris(r) > 0 && <small className="form-text field-help">Timepris {timepris(r)} kr/t</small>}
-                </td>
+              <Fragment key={i}>
+              <tr>
                 <td data-label="Kategori">
                   {/* Kategori på én linje: chip + felt flexer side om side,
                       feltet fylder resten af bredden (også på smalle skærme). */}
@@ -267,11 +237,43 @@ export default function TaskLineEditor({
                   </button>
                 </td>
               </tr>
+              <tr className="task-desc-tr">
+                <td colSpan={descColSpan} data-label="Opgavebeskrivelse">
+                  {/* Bredt beskrivelsesfelt under rækken (Thomas 2026-09-10):
+                      auto-voksende, hele teksten altid synlig. Samme felt-navn
+                      taskDescription → server action uændret (én textarea pr.
+                      række i DOM-rækkefølge = getAll-indeks matcher stadig). */}
+                  <textarea
+                    name="taskDescription" value={r.description} rows={2}
+                    onChange={(e) => {
+                      update(i, { description: e.target.value });
+                      e.target.style.height = "auto";
+                      e.target.style.height = `${e.target.scrollHeight}px`;
+                    }}
+                    ref={(el) => {
+                      if (el) { el.style.height = "auto"; el.style.height = `${el.scrollHeight}px`; }
+                    }}
+                    className="form-control form-control-sm task-desc" placeholder="Opgavebeskrivelse"
+                  />
+                  {sub && (
+                    // "Måneder på pause": skjulte felter (IKKE checkbokse) der ALTID
+                    // submittes for hver række, så formData.getAll-zippet i
+                    // server-action'en holder indeks-flugt med taskDescription.
+                    <>
+                      <input type="hidden" name="taskPauseActive" value={r.pauseActive || "0"} />
+                      <input type="hidden" name="taskPauseStart" value={r.pauseStart || ""} />
+                      <input type="hidden" name="taskPauseEnd" value={r.pauseEnd || ""} />
+                      <input type="hidden" name="taskPauseYearly" value={r.pauseYearly || "1"} />
+                    </>
+                  )}
+                  {timepris(r) > 0 && <small className="form-text field-help">Timepris {timepris(r)} kr/t</small>}
+                </td>
+              </tr>
+              </Fragment>
               );
             })}
             <tr>
-              <td className="td-remove td-sum-label" style={{ textAlign: "right", fontWeight: 600 }} data-label="">Sum</td>
-              <td />
+              <td className="td-sum-label" style={{ textAlign: "right", fontWeight: 600 }} data-label="">Sum</td>
               <td className="num" data-label="Pris i alt" style={{ fontWeight: 600 }}>{sum.toLocaleString("da-DK")} kr</td>
               <td className="num" data-label="Minutter i alt" style={{ fontWeight: 600 }}>{dur}</td>
               {sub && <td />}
