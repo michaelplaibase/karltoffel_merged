@@ -268,11 +268,21 @@ select.form-control-sm { background-position: right 10px center; padding-right: 
 /* Auto-voksende opgavebeskrivelse (TaskLineEditor): hele teksten skal kunne
    læses — feltet ombryder og gør rækken højere i stedet for at klippe af.
    (Overskrider textarea.form-control-sm's 80px min-højde fra én-linjes brug.)
-   Thomas 2026-09-10: feltet er flyttet ud af rækken og ligger nu AFLANGT
-   i bunden af hver opgavelinje (én fuld bredde-linje under opgaven) —
-   to linjer højt, vokser stadig automatisk ved længere tekst. */
-textarea.task-desc { resize: none; overflow: hidden; min-height: 58px; height: auto; line-height: 1.45; }
-.task-desc-tr > td { padding-top: 0; }
+   Thomas 2026-09-10 (runde 3): alle felter i SAMME BOKS — hvert opgave-
+   kort (.task-card) er én samlet boks med beskrivelsen øverst og felterne
+   under, ingen skillestreger. */
+textarea.task-desc { resize: none; overflow: hidden; min-height: 58px; height: auto; line-height: 1.45;
+  border: none; border-bottom: 1px solid var(--light, #e5e7eb); border-radius: 5.6px 5.6px 0 0;
+  background: transparent; display: block; width: 100%; }
+.task-card { border: 1px solid var(--light, #e5e7eb); border-radius: 8px; padding: 0; background: #fff; margin-bottom: 12px; }
+.task-card .task-desc { border-top: none; box-shadow: none; padding: 8px 12px; }
+.task-card-fields { display: flex; flex-wrap: wrap; gap: 8px 10px; align-items: flex-start; padding: 0 12px 10px; }
+.task-card-fields .task-field { display: flex; flex-direction: column; gap: 2px; flex: 0 1 auto; }
+.task-card-fields .task-field[data-label]:not([data-label=""])::before {
+  content: attr(data-label); font-size: 11px; color: var(--muted, #6b7280); font-weight: 600; }
+.task-card-fields .task-remove { justify-content: flex-end; }
+.task-card .field-help { margin: 0; }
+.task-sum-row { display: flex; gap: 18px; align-items: center; padding: 8px 2px; border-top: 1px solid var(--light, #e5e7eb); margin-top: 4px; }
 
 /* detached search bar */
 .searchbar { display: flex; gap: 8px; align-items: stretch; max-width: 540px; flex: 1; }

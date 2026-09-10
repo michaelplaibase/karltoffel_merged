@@ -91,199 +91,162 @@ export default function TaskLineEditor({
 
   return (
     <div>
-      <div className="table-wrap">
-        <table className="data-table">
-          <thead>
-            <tr>
-              <th style={{ width: 170 }}>Kategori</th>
-              <th style={{ width: 140 }}>Pris (inkl. moms)</th>
-              <th style={{ width: 120 }}>Varighed (min.)</th>
-              {sub && <th style={{ width: 190 }}>Interval</th>}
-              {sub && <th style={{ width: 110 }}>Næste gang</th>}
-              {showEmp && <th style={{ width: 160 }} title="Bind opgaven til en bestemt medarbejder">Medarbejder</th>}
-              {sub && <th style={{ width: 210 }} title="Opgaven køres kun på de valgte ugedage">Ugedage</th>}
-              <th style={{ width: 40 }} />
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map((r, i) => {
-              const egen = r.category === EGEN_KATEGORI;
-              return (
-              <Fragment key={i}>
-              <tr>
-                <td data-label="Kategori">
-                  {/* Kategori på én linje: chip + felt flexer side om side,
-                      feltet fylder resten af bredden (også på smalle skærme). */}
-                  <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                    <span className="catchip" style={{ background: chipBackground(r.category), color: chipTextColor(r.category), flexShrink: 0 }}>
-                      {(r.category[0] ?? "A").toUpperCase()}
-                    </span>
-                    {egen ? (
-                      // Egen kategori valgt: fritekstfelt i stedet for dropdown.
-                      <input
-                        type="text" value={r.category === EGEN_KATEGORI ? "" : r.category}
-                        onChange={(e) => update(i, { category: e.target.value })}
-                        className="form-control form-control-sm" style={{ flex: 1, minWidth: 0 }}
-                        placeholder="Skriv kategori…" autoFocus
-                      />
-                    ) : (
-                      <select
-                        name="taskCategory" value={r.category}
-                        onChange={(e) => update(i, { category: e.target.value })}
-                        className="form-control form-control-sm" style={{ flex: 1, minWidth: 0 }}
-                      >
-                        {CAT_NAMES.map((c) => <option key={c} value={c}>{c}</option>)}
-                        {savedCatNames.map((c) => <option key={c} value={c}>{c}</option>)}
-                        <option value={EGEN_KATEGORI}>Egen kategori…</option>
-                      </select>
-                    )}
+      {/* Hver opgave = ÉN samlet boks (Thomas 2026-09-10: "alle felter i samme
+          boks"): beskrivelsen ligger ØVERST i boksen og felterne under — ingen
+          tabel-linjer eller skillestreger imellem. Felt-navne (taskDescription,
+          taskCategory osv.) er uændrede, så server actions virker som før. */}
+      {rows.map((r, i) => {
+        const egen = r.category === EGEN_KATEGORI;
+        return (
+          <div key={i} className="task-card">
+            <textarea
+              name="taskDescription" value={r.description} rows={2}
+              onChange={(e) => {
+                update(i, { description: e.target.value });
+                e.target.style.height = "auto";
+                e.target.style.height = `${e.target.scrollHeight}px`;
+              }}
+              ref={(el) => {
+                if (el) { el.style.height = "auto"; el.style.height = `${el.scrollHeight}px`; }
+              }}
+              className="form-control form-control-sm task-desc" placeholder="Opgavebeskrivelse"
+            />
+            {sub && (
+              // "Måneder på pause": skjulte felter (IKKE checkbokse) der ALTID
+              // submittes for hver række, så formData.getAll-zippet i
+              // server-action'en holder indeks-flugt med taskDescription.
+              <>
+                <input type="hidden" name="taskPauseActive" value={r.pauseActive || "0"} />
+                <input type="hidden" name="taskPauseStart" value={r.pauseStart || ""} />
+                <input type="hidden" name="taskPauseEnd" value={r.pauseEnd || ""} />
+                <input type="hidden" name="taskPauseYearly" value={r.pauseYearly || "1"} />
+              </>
+            )}
+            <div className="task-card-fields">
+              <span className="task-field" data-label="Kategori" style={{ minWidth: 170, flex: "1 1 160px" }}>
+                <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                  <span className="catchip" style={{ background: chipBackground(r.category), color: chipTextColor(r.category), flexShrink: 0 }}>
+                    {(r.category[0] ?? "A").toUpperCase()}
                   </span>
-                </td>
-                <td data-label="Pris (inkl. moms)">
-                  <input name="taskPrice" type="number" min="0" value={r.price}
-                    onChange={(e) => {
-                      // Pris tastet → auto-beregn varighed fra minutprisen (ekskl.
-                      // moms). Tom/0/ugyldig pris rører ikke varigheden.
-                      const v = e.target.value;
-                      const n = Number(v);
-                      const patch: Partial<TaskRow> = { price: v };
-                      if (minuteRate && minuteRate > 0 && n > 0) {
-                        patch.duration = String(Math.max(1, Math.round((n / (1 + MOMS)) / minuteRate)));
-                      }
-                      update(i, patch);
-                    }} className="form-control form-control-sm num" />
-                  {/* Pris ekskl. moms vises altid (Thomas 2026-09-10): beregnet
-                      fra den inkl.-moms-pris der tastes — afrundet til hele øre. */}
-                  {Number(r.price) > 0 && (
-                    <small className="form-text field-help">
-                      {(Number(r.price) / (1 + MOMS)).toLocaleString("da-DK", { maximumFractionDigits: 2 })} kr. ekskl. moms
-                    </small>
-                  )}
-                </td>
-                <td data-label="Varighed (min.)">
-                  <input name="taskDuration" type="number" min="0" value={r.duration}
-                    onChange={(e) => update(i, { duration: e.target.value })} className="form-control form-control-sm num" />
-                  {Number(r.duration) > 0 && (
-                    <small className="form-text field-help">
-                      ≈ {(Number(r.duration) / 60).toLocaleString("da-DK", { maximumFractionDigits: 1 })} t
-                    </small>
-                  )}
-                </td>
-                {sub && (
-                  <td data-label="Interval">
-                    <select name="taskInterval" value={r.interval ?? "Hver gang"}
-                      onChange={(e) => update(i, { interval: e.target.value })} className="form-control form-control-sm">
-                      {intervalOptions(r).map((o) => <option key={o} value={o}>{o}</option>)}
-                    </select>
-                  </td>
-                )}
-                {sub && (
-                  <td data-label="Næste gang">
-                    <input name="taskNextWeek" value={r.nextWeek ?? ""} placeholder="Uge 29"
-                      onChange={(e) => update(i, { nextWeek: e.target.value })} className="form-control form-control-sm" />
-                  </td>
-                )}
-                {showEmp && (
-                  // Per-opgave medarbejder (Thomas, 2026-09-07): tom = vælges
-                  // automatisk. Feltet er en VISIBLE select med navn taskEmployee
-                  // (selects med samme name forskubber ikke getAll-zippet — de er
-                  // altid til stede pr. række, i modsætning til checkboxe).
-                  <td data-label="Medarbejder">
+                  {egen ? (
+                    // Egen kategori valgt: fritekstfelt i stedet for dropdown.
+                    <input
+                      type="text" value={r.category === EGEN_KATEGORI ? "" : r.category}
+                      onChange={(e) => update(i, { category: e.target.value })}
+                      className="form-control form-control-sm" style={{ flex: 1, minWidth: 0 }}
+                      placeholder="Skriv kategori…" autoFocus
+                    />
+                  ) : (
                     <select
-                      name="taskEmployee" value={r.employee ?? ""}
-                      onChange={(e) => update(i, { employee: e.target.value })}
-                      className="form-control form-control-sm"
+                      name="taskCategory" value={r.category}
+                      onChange={(e) => update(i, { category: e.target.value })}
+                      className="form-control form-control-sm" style={{ flex: 1, minWidth: 0 }}
                     >
-                      <option value="">Vælges automatisk</option>
-                      {empList.map((e) => <option key={e.id} value={String(e.id)}>{e.name}</option>)}
-                      {inactiveEmpIds.includes(r.employee ?? "") && (
-                        <option value={r.employee!}>Nuværende: ID {r.employee} (deaktiveret)</option>
-                      )}
+                      {CAT_NAMES.map((c) => <option key={c} value={c}>{c}</option>)}
+                      {savedCatNames.map((c) => <option key={c} value={c}>{c}</option>)}
+                      <option value={EGEN_KATEGORI}>Egen kategori…</option>
                     </select>
-                  </td>
-                )}
-                {sub && (
-                  // Ugedage: små checkbokse (mandag–søndag). De synlige bokse er
-                  // UGYLDIGE til submit (checkboxes med samme name forskubber
-                  // formData.getAll-zippet med taskDescription når nogle er tomme) —
-                  // i stedet submittes digit-strengen via et skjult felt der ALTID
-                  // sendes for hver række, som ved "Måneder på pause".
-                  <td data-label="Ugedage">
-                    <div role="group" aria-label={`Ugedage for ${r.description || "opgaven"}`} style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-                      {WEEKDAYS_DA_SHORT.map((name, day) => {
-                        const selected = (r.weekdays ?? "").includes(String(day));
-                        return (
-                          <label key={day} title={name} style={{ display: "inline-flex", alignItems: "center", gap: 2, fontSize: 12, cursor: "pointer" }}>
-                            <input
-                              type="checkbox"
-                              checked={selected}
-                              onChange={(e) => {
-                                const cur = new Set([...(r.weekdays ?? "")].map(Number).filter((d) => d >= 0 && d <= 6));
-                                if (e.target.checked) cur.add(day); else cur.delete(day);
-                                update(i, { weekdays: weekdayDigits([...cur]) ?? "" });
-                              }}
-                            />
-                            {name}
-                          </label>
-                        );
-                      })}
-                    </div>
-                    <input type="hidden" name="taskWeekdays" value={r.weekdays ?? ""} />
-                  </td>
-                )}
-                <td data-label="" className="td-remove">
-                  <button type="button" onClick={() => remove(i)} className="btn btn-light btn-sm" title="Fjern opgave">
-                    <i className="bi bi-trash" />
-                  </button>
-                </td>
-              </tr>
-              <tr className="task-desc-tr">
-                <td colSpan={descColSpan} data-label="Opgavebeskrivelse">
-                  {/* Bredt beskrivelsesfelt under rækken (Thomas 2026-09-10):
-                      auto-voksende, hele teksten altid synlig. Samme felt-navn
-                      taskDescription → server action uændret (én textarea pr.
-                      række i DOM-rækkefølge = getAll-indeks matcher stadig). */}
-                  <textarea
-                    name="taskDescription" value={r.description} rows={2}
-                    onChange={(e) => {
-                      update(i, { description: e.target.value });
-                      e.target.style.height = "auto";
-                      e.target.style.height = `${e.target.scrollHeight}px`;
-                    }}
-                    ref={(el) => {
-                      if (el) { el.style.height = "auto"; el.style.height = `${el.scrollHeight}px`; }
-                    }}
-                    className="form-control form-control-sm task-desc" placeholder="Opgavebeskrivelse"
-                  />
-                  {sub && (
-                    // "Måneder på pause": skjulte felter (IKKE checkbokse) der ALTID
-                    // submittes for hver række, så formData.getAll-zippet i
-                    // server-action'en holder indeks-flugt med taskDescription.
-                    <>
-                      <input type="hidden" name="taskPauseActive" value={r.pauseActive || "0"} />
-                      <input type="hidden" name="taskPauseStart" value={r.pauseStart || ""} />
-                      <input type="hidden" name="taskPauseEnd" value={r.pauseEnd || ""} />
-                      <input type="hidden" name="taskPauseYearly" value={r.pauseYearly || "1"} />
-                    </>
                   )}
-                  {timepris(r) > 0 && <small className="form-text field-help">Timepris {timepris(r)} kr/t</small>}
-                </td>
-              </tr>
-              </Fragment>
-              );
-            })}
-            <tr>
-              <td className="td-sum-label" style={{ textAlign: "right", fontWeight: 600 }} data-label="">Sum</td>
-              <td className="num" data-label="Pris i alt" style={{ fontWeight: 600 }}>{sum.toLocaleString("da-DK")} kr</td>
-              <td className="num" data-label="Minutter i alt" style={{ fontWeight: 600 }}>{dur}</td>
-              {sub && <td />}
-              {sub && <td />}
-              {showEmp && <td />}
-              {sub && <td />}
-              <td />
-            </tr>
-          </tbody>
-        </table>
+                </span>
+              </span>
+              <span className="task-field" data-label="Pris (inkl. moms)" style={{ minWidth: 130 }}>
+                <input name="taskPrice" type="number" min="0" value={r.price}
+                  onChange={(e) => {
+                    // Pris tastet → auto-beregn varighed fra minutprisen (ekskl.
+                    // moms). Tom/0/ugyldig pris rører ikke varigheden.
+                    const v = e.target.value;
+                    const n = Number(v);
+                    const patch: Partial<TaskRow> = { price: v };
+                    if (minuteRate && minuteRate > 0 && n > 0) {
+                      patch.duration = String(Math.max(1, Math.round((n / (1 + MOMS)) / minuteRate)));
+                    }
+                    update(i, patch);
+                  }} className="form-control form-control-sm num" />
+                {Number(r.price) > 0 && (
+                  <small className="form-text field-help">
+                    {(Number(r.price) / (1 + MOMS)).toLocaleString("da-DK", { maximumFractionDigits: 2 })} kr. ekskl. moms
+                  </small>
+                )}
+              </span>
+              <span className="task-field" data-label="Varighed (min.)" style={{ minWidth: 110 }}>
+                <input name="taskDuration" type="number" min="0" value={r.duration}
+                  onChange={(e) => update(i, { duration: e.target.value })} className="form-control form-control-sm num" />
+                {Number(r.duration) > 0 && (
+                  <small className="form-text field-help">
+                    ≈ {(Number(r.duration) / 60).toLocaleString("da-DK", { maximumFractionDigits: 1 })} t
+                  </small>
+                )}
+              </span>
+              {sub && (
+                <span className="task-field" data-label="Interval" style={{ minWidth: 150 }}>
+                  <select name="taskInterval" value={r.interval ?? "Hver gang"}
+                    onChange={(e) => update(i, { interval: e.target.value })} className="form-control form-control-sm">
+                    {intervalOptions(r).map((o) => <option key={o} value={o}>{o}</option>)}
+                  </select>
+                </span>
+              )}
+              {sub && (
+                <span className="task-field" data-label="Næste gang" style={{ minWidth: 100 }}>
+                  <input name="taskNextWeek" value={r.nextWeek ?? ""} placeholder="Uge 29"
+                    onChange={(e) => update(i, { nextWeek: e.target.value })} className="form-control form-control-sm" />
+                </span>
+              )}
+              {showEmp && (
+                // Per-opgave medarbejder: tom = vælges automatisk.
+                <span className="task-field" data-label="Medarbejder" style={{ minWidth: 150 }}>
+                  <select
+                    name="taskEmployee" value={r.employee ?? ""}
+                    onChange={(e) => update(i, { employee: e.target.value })}
+                    className="form-control form-control-sm"
+                  >
+                    <option value="">Vælges automatisk</option>
+                    {empList.map((e) => <option key={e.id} value={String(e.id)}>{e.name}</option>)}
+                    {inactiveEmpIds.includes(r.employee ?? "") && (
+                      <option value={r.employee!}>Nuværende: ID {r.employee} (deaktiveret)</option>
+                    )}
+                  </select>
+                </span>
+              )}
+              {sub && (
+                // Ugedage: små checkbokse (mandag–søndag) + skjult felt der ALTID
+                // submittes (checkboxes forskubber ellers getAll-zippet).
+                <span className="task-field" data-label="Ugedage">
+                  <div role="group" aria-label={`Ugedage for ${r.description || "opgaven"}`} style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                    {WEEKDAYS_DA_SHORT.map((name, day) => {
+                      const selected = (r.weekdays ?? "").includes(String(day));
+                      return (
+                        <label key={day} title={name} style={{ display: "inline-flex", alignItems: "center", gap: 2, fontSize: 12, cursor: "pointer" }}>
+                          <input
+                            type="checkbox"
+                            checked={selected}
+                            onChange={(e) => {
+                              const cur = new Set([...(r.weekdays ?? "")].map(Number).filter((d) => d >= 0 && d <= 6));
+                              if (e.target.checked) cur.add(day); else cur.delete(day);
+                              update(i, { weekdays: weekdayDigits([...cur]) ?? "" });
+                            }}
+                          />
+                          {name}
+                        </label>
+                      );
+                    })}
+                  </div>
+                  <input type="hidden" name="taskWeekdays" value={r.weekdays ?? ""} />
+                </span>
+              )}
+              <span className="task-field task-remove" data-label="">
+                <button type="button" onClick={() => remove(i)} className="btn btn-light btn-sm" title="Fjern opgave">
+                  <i className="bi bi-trash" />
+                </button>
+              </span>
+            </div>
+            {timepris(r) > 0 && <small className="form-text field-help" style={{ margin: "2px 12px 8px" }}>Timepris {timepris(r)} kr/t</small>}
+          </div>
+        );
+      })}
+      <div className="task-sum-row">
+        <span className="muted">Sum</span>
+        <span style={{ fontWeight: 600 }}>{sum.toLocaleString("da-DK")} kr</span>
+        <span style={{ fontWeight: 600 }}>{dur} min</span>
       </div>
       {minuteRate != null && minuteRate > 0 && (
         <small className="form-text field-help" style={{ display: "block", marginTop: 4 }}>
