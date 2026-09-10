@@ -10,7 +10,7 @@ import {
   CATEGORIES, chipBackground, chipTextColor, EGEN_KATEGORI, isNewCategoryName,
 } from "@/lib/categories";
 import { MOMS } from "@/lib/data";
-import { inclToExcl } from "@/lib/vat";
+import { inclToExcl, exclToIncl, roundHalfUp } from "@/lib/vat";
 import { WEEKDAYS_DA_SHORT, weekdayDigits } from "@/lib/task-weekdays";
 
 export type TaskRow = {
@@ -80,7 +80,33 @@ export default function TaskLineEditor({
   const update = (i: number, patch: Partial<TaskRow>) =>
     setRows((rs) => rs.map((r, j) => (j === i ? { ...r, ...patch } : r)));
   const add = () => setRows((rs) => [...rs, blank()]);
-  const remove = (i: number) => setRows((rs) => (rs.length > 1 ? rs.filter((_, j) => j !== i) : rs));
+  const remove = (i: number) => {
+    setRows((rs) => (rs.length > 1 ? rs.filter((_, j) => j !== i) : rs));
+    setExclDraft((ds) => {
+      // Ryk drafts tilbage så indekserne følger rækkerne efter sletning.
+      const next: Record<number, string> = {};
+      for (const [k, v] of Object.entries(ds)) {
+        const j = Number(k);
+        if (j < i) next[j] = v;
+        else if (j > i) next[j - 1] = v;
+      }
+      return next;
+    });
+  };
+  // Tovejs-prisfelter (Thomas 2026-09-10): ekskl.-feltet er rent UI (ingen
+  // form-name → submittes ALDRIG — formData.getAll-zipningen med taskPrice/
+  // taskDuration røres ikke). Kun TaskLine.price (inkl. moms) gemmes.
+  // "Focussed field wins": når brugeren taster i ekskl.-feltet, gemmes den
+  // rå tekst som draft pr. række-indeks, så feltet ikke om-afrundes midt i
+  // indtastningen; draften ryddes ved blur/taste i inkl.-feltet.
+  const [exclDraft, setExclDraft] = useState<Record<number, string>>({});
+  const priceOere = (v: string) => roundHalfUp((Number(v) || 0) * 100);
+  const exclDisplay = (r: TaskRow, i: number) =>
+    exclDraft[i] ?? (Number(r.price) > 0 ? String(inclToExcl(priceOere(r.price)) / 100) : "");
+  const durationForPrice = (inclKr: number) =>
+    minuteRate && minuteRate > 0 && inclKr > 0
+      ? String(Math.max(1, Math.round((inclKr / (1 + MOMS)) / minuteRate)))
+      : undefined;
 
   const sum = rows.reduce((a, r) => a + (Number(r.price) || 0), 0);
   const dur = rows.reduce((a, r) => a + (Number(r.duration) || 0), 0);
@@ -150,24 +176,61 @@ export default function TaskLineEditor({
                   )}
                 </span>
               </span>
-              <span className="task-field" data-label="Pris (inkl. moms)" style={{ minWidth: 130 }}>
-                <input name="taskPrice" type="number" min="0" value={r.price}
-                  onChange={(e) => {
-                    // Pris tastet → auto-beregn varighed fra minutprisen (ekskl.
-                    // moms). Tom/0/ugyldig pris rører ikke varigheden.
-                    const v = e.target.value;
-                    const n = Number(v);
-                    const patch: Partial<TaskRow> = { price: v };
-                    if (minuteRate && minuteRate > 0 && n > 0) {
-                      patch.duration = String(Math.max(1, Math.round((n / (1 + MOMS)) / minuteRate)));
-                    }
-                    update(i, patch);
-                  }} className="form-control form-control-sm num" />
-                {Number(r.price) > 0 && (
-                  <small className="form-text field-help">
-                    {(Number(r.price) / (1 + MOMS)).toLocaleString("da-DK", { maximumFractionDigits: 2 })} kr. ekskl. moms
-                  </small>
-                )}
+              <span className="task-field" data-label="Pris" style={{ minWidth: 190 }}>
+                {/* Tovejs-pris (Thomas 2026-09-10): ekskl.-feltet er ren UI —
+                    INGEN name-attribut, så det submittes aldrig og bryder
+                    aldrig formData.getAll-zipningen (taskPrice/taskDuration
+                    er uændrede). Tastes i ekskl. → moms lægges oveni og
+                    inkl.-feltet (taskPrice) udfyldes; tastes i inkl. →
+                    momsen trækkes fra. Varigheds-auto udløses fra inkl-
+                    værdien uanset hvilket felt der tastes i. */}
+                <span style={{ display: "flex", gap: 6 }}>
+                  <label style={{ flex: 1, minWidth: 0 }}>
+                    <span style={{ display: "block", fontSize: 11, marginBottom: 2 }}>Ekskl. moms</span>
+                    <input
+                      name="" type="number" min="0" step="0.01"
+                      value={exclDisplay(r, i)}
+                      onChange={(e) => {
+                        const v = e.target.value;
+                        if (v === "") {
+                          setExclDraft((ds) => ({ ...ds, [i]: "" }));
+                          update(i, { price: "" });
+                          return;
+                        }
+                        const inclKr = exclToIncl(priceOere(v)) / 100;
+                        setExclDraft((ds) => ({ ...ds, [i]: v }));
+                        const patch: Partial<TaskRow> = { price: String(inclKr) };
+                        const d = durationForPrice(inclKr);
+                        if (d) patch.duration = d;
+                        update(i, patch);
+                      }}
+                      onBlur={() =>
+                        setExclDraft((ds) => {
+                          const next = { ...ds };
+                          delete next[i];
+                          return next;
+                        })
+                      }
+                      className="form-control form-control-sm num" placeholder="0"
+                    />
+                  </label>
+                  <label style={{ flex: 1, minWidth: 0 }}>
+                    <span style={{ display: "block", fontSize: 11, marginBottom: 2 }}>Inkl. moms</span>
+                    <input name="taskPrice" type="number" min="0" step="0.01" value={r.price}
+                      onChange={(e) => {
+                        const v = e.target.value;
+                        setExclDraft((ds) => {
+                          const next = { ...ds };
+                          delete next[i];
+                          return next;
+                        });
+                        const patch: Partial<TaskRow> = { price: v };
+                        const d = durationForPrice(Number(v));
+                        if (d) patch.duration = d;
+                        update(i, patch);
+                      }} className="form-control form-control-sm num" placeholder="0" />
+                  </label>
+                </span>
               </span>
               <span className="task-field" data-label="Varighed (min.)" style={{ minWidth: 110 }}>
                 <input name="taskDuration" type="number" min="0" value={r.duration}
