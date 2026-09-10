@@ -5,9 +5,20 @@
 import { getSessionUser } from "@/lib/api-auth";
 import { redirect } from "next/navigation";
 import { getBusinessManager } from "@/lib/business-manager";
+import { PriceDual } from "@/components/ui";
+import { inclToExcl } from "@/lib/vat";
 
 const kr = (n: number) => n.toLocaleString("da-DK") + " kr";
 const krOre = (n: number) => n.toLocaleString("da-DK", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + " kr";
+/** Dual visning for krOre-beløb (inkl. primært + ekskl. i dæmpet tekst). */
+const krOreDual = (n: number) => (
+  <>
+    {krOre(n)}{" "}
+    <span className="muted" style={{ whiteSpace: "nowrap" }}>
+      ({(inclToExcl(Math.round(n * 100)) / 100).toLocaleString("da-DK")} kr. u. moms)
+    </span>
+  </>
+);
 
 export const dynamic = "force-dynamic";
 
@@ -25,19 +36,19 @@ export default async function EmployeeCalcPage() {
       <div className="bm-kpis">
         <div className="revenue-kpi">
           <span className="revenue-kpi-label">Forventet abonnementsomsætning / md (inkl. moms)</span>
-          <span className="revenue-kpi-value">{krOre(subMonthlyTotal)}</span>
+          <span className="revenue-kpi-value">{krOreDual(subMonthlyTotal)}</span>
         </div>
         <div className="revenue-kpi">
           <span className="revenue-kpi-label">Forventet abonnementsomsætning / år (inkl. moms)</span>
-          <span className="revenue-kpi-value">{krOre(subYearlyTotal)}</span>
+          <span className="revenue-kpi-value">{krOreDual(subYearlyTotal)}</span>
         </div>
         <div className="revenue-kpi">
           <span className="revenue-kpi-label">Realiseret i månedens ordrer (inkl. moms)</span>
-          <span className="revenue-kpi-value">{kr(data.realised.revenueInclVat)}</span>
+          <span className="revenue-kpi-value"><PriceDual priceInclKr={data.realised.revenueInclVat} /></span>
         </div>
         <div className="revenue-kpi">
           <span className="revenue-kpi-label">Realiseret år til dato (inkl. moms)</span>
-          <span className="revenue-kpi-value">{kr(data.realised.revenueInclVatYear)}</span>
+          <span className="revenue-kpi-value"><PriceDual priceInclKr={data.realised.revenueInclVatYear} /></span>
         </div>
         <div className="revenue-kpi">
           <span className="revenue-kpi-label">Selskabets omkostninger / md</span>
@@ -88,8 +99,8 @@ export default async function EmployeeCalcPage() {
                 ) : data.employees.map((e) => (
                   <tr key={e.id}>
                     <td data-label="Medarbejder">{e.navn}</td>
-                    <td data-label="Abo/md" className="num">{krOre(e.subMonthlyKr)}</td>
-                    <td data-label="Abo/år" className="num">{krOre(e.subYearlyKr)}</td>
+                    <td data-label="Abo/md" className="num">{krOreDual(e.subMonthlyKr)}</td>
+                    <td data-label="Abo/år" className="num">{krOreDual(e.subYearlyKr)}</td>
                     <td data-label="Lønmodel">{e.payModel === "akkord" ? "Akkord (est.)" : "Fast"}</td>
                     <td data-label="Løn/md" className="num">{kr(e.salaryMonthly)}</td>
                     <td data-label="Faste udgifter" className="num">{kr(e.fixedMonthlyCost)}</td>
@@ -97,7 +108,7 @@ export default async function EmployeeCalcPage() {
                     <td data-label="Kostpris/md" className="num"><b>{kr(e.totalCostMonthly)}</b></td>
                     <td data-label="Kostpris/time" className="num">{kr(e.costPerHour)}</td>
                     <td data-label="Realiseret/md (ekskl. moms)" className="num">{kr(e.realisedRevenueExMoms)}</td>
-                    <td data-label="Realiseret/år (inkl. moms)" className="num">{kr(e.realisedRevenueYear)}</td>
+                    <td data-label="Realiseret/år (inkl. moms)" className="num"><PriceDual priceInclKr={e.realisedRevenueYear} /></td>
                     <td data-label="Dækning" className="num" style={{ color: e.coverage != null && e.coverage < 0 ? "var(--danger, #C4183C)" : undefined }}>
                       {e.coverage != null ? <><b>{kr(e.coverage)}</b>{e.coveragePct != null ? ` (${e.coveragePct} %)` : ""}</> : "—"}
                     </td>

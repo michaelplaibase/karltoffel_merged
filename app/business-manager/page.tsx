@@ -4,8 +4,19 @@ import { getSessionUser } from "@/lib/api-auth";
 import { redirect } from "next/navigation";
 import { getBusinessManager } from "@/lib/business-manager";
 import ResultChart from "@/components/ResultChart";
+import { PriceDual } from "@/components/ui";
+import { inclToExcl } from "@/lib/vat";
 
 const kr = (n: number) => n.toLocaleString("da-DK") + " kr";
+/** Dual visning for beløb der formateres med decimaler (krOre): inkl. primært + ekskl. i dæmpet tekst. */
+const krOreDual = (n: number) => (
+  <>
+    {n.toLocaleString("da-DK", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} kr{" "}
+    <span className="muted" style={{ whiteSpace: "nowrap" }}>
+      ({(inclToExcl(Math.round(n * 100)) / 100).toLocaleString("da-DK")} kr. u. moms)
+    </span>
+  </>
+);
 
 export const dynamic = "force-dynamic";
 
@@ -25,7 +36,7 @@ export default async function BusinessManagerDashboard({ searchParams }: { searc
       <div className="bm-kpis">
         <div className="revenue-kpi">
           <span className="revenue-kpi-label">Realiseret omsætning (inkl. moms)</span>
-          <span className="revenue-kpi-value">{kr(data.realised.revenueInclVat)}</span>
+          <span className="revenue-kpi-value"><PriceDual priceInclKr={data.realised.revenueInclVat} /></span>
         </div>
         <div className="revenue-kpi">
           <span className="revenue-kpi-label">Selskabets omkostninger / md</span>
@@ -79,8 +90,8 @@ export default async function BusinessManagerDashboard({ searchParams }: { searc
                   {data.deviations.map((d) => (
                     <tr key={d.key}>
                       <td>{d.label}</td>
-                      <td className="num">{kr(d.budget)}</td>
-                      <td className="num">{kr(d.actual)}</td>
+                      <td className="num">{d.key === "revenue" ? <PriceDual priceInclKr={d.budget} /> : kr(d.budget)}</td>
+                      <td className="num">{d.key === "revenue" ? <PriceDual priceInclKr={d.actual} /> : kr(d.actual)}</td>
                       <td className="num" style={{ color: d.diff < 0 ? "var(--danger, #C4183C)" : "var(--success, #2e7d32)" }}>
                         {d.diff > 0 ? "+" : ""}{kr(d.diff)} ({d.diffPct > 0 ? "+" : ""}{d.diffPct} %)
                       </td>
