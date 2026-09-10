@@ -118,19 +118,6 @@ export default async function CustomerDetail({
       <SkraafotoCard address={address} configured={SKRAAFOTO_CONFIGURED} />
 
       <div className="card">
-        <div className="card-header">
-          <h4 className="section-title">Aftalekalender</h4>
-        </div>
-        <div className="card-body tight">
-          {calDays.length === 0 ? (
-            <p className="muted" style={{ margin: 0 }}>Ingen planlagte eller tidligere opgaver på kunden endnu.</p>
-          ) : (
-            <CustomerCalendar days={calDays} contactName={c.name} />
-          )}
-        </div>
-      </div>
-
-      <div className="card">
         <div className="card-header"><h4 className="section-title">KS-fotos</h4></div>
         <div className="card-body tight">
           {photos.length === 0 ? (
@@ -229,6 +216,19 @@ export default async function CustomerDetail({
       </div>
 
       <CustomerOrdersTable orders={orders} contactId={c.id} />
+
+      <div className="card">
+        <div className="card-header">
+          <h4 className="section-title">Aftalekalender</h4>
+        </div>
+        <div className="card-body tight">
+          {calDays.length === 0 ? (
+            <p className="muted" style={{ margin: 0 }}>Ingen planlagte eller tidligere opgaver på kunden endnu.</p>
+          ) : (
+            <CustomerCalendar days={calDays} contactName={c.name} />
+          )}
+        </div>
+      </div>
     </div>
   );
 }
