@@ -4,6 +4,7 @@
 // må ALDRIG blokere på rapporten (try/catch omkring alt her).
 import { prisma } from "@/lib/db";
 import { sendGmail } from "@/lib/gmail";
+import { get } from "@vercel/blob";
 import {
   genererMaanedrapportPdf, formatBesogDato, contactErIPilot,
 } from "@/lib/maanedrapport.mts";
@@ -68,13 +69,33 @@ export async function sendMaanedrapportTilKontakt(args: {
     const photos = await prisma.orderPhoto.findMany({
       where: { contactId },
       orderBy: { createdAt: "asc" },
-      select: { orderId: true, url: true },
+      select: { orderId: true, url: true, pathname: true },
     });
+    // Privat Blob-store: hent bytes server-side med SDK'ens get() (BLOB-token) og
+    // indlejr som base64 data-URI — en rå URL i PDF'en fejler (private store).
     const fotosByOrder = new Map<number, string[]>();
     for (const p of photos) {
-      const list = fotosByOrder.get(p.orderId) ?? [];
-      list.push(p.url);
-      fotosByOrder.set(p.orderId, list);
+      try {
+        const blobResult = await get(p.pathname, { access: "private" });
+        if (!blobResult || blobResult.statusCode !== 200) continue;
+        // stream → Buffer
+        const chunks: Buffer[] = [];
+        const reader = blobResult.stream.getReader();
+        for (;;) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          chunks.push(Buffer.from(value));
+        }
+        const buf = Buffer.concat(chunks);
+        const ct = blobResult.headers.get("content-type") ?? "image/jpeg";
+        const dataUri = `data:${ct};base64,${buf.toString("base64")}`;
+        const list = fotosByOrder.get(p.orderId) ?? [];
+        list.push(dataUri);
+        fotosByOrder.set(p.orderId, list);
+      } catch (e) {
+        console.error("[maanedrapport] foto-hentning fejlede:", p.pathname, e instanceof Error ? e.message : e);
+        // spring fotoet over — rapporten skal ikke fejle pga. ét billede
+      }
     }
 
     const data: RapportData = {
