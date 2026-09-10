@@ -4,8 +4,7 @@
    Bevarede funktioner: FAQ-collapse, drawer/menu, header hide-on-scroll,
    in-view-observer (BubbleInView), smooth scroll, FAQ/section/packages/statement-
    sliders init, hero-/drawer-højde, package-intro-højde, tomme <p> fjernes,
-   responsive-embed, eksterne links target=_blank, cookie-knap til CookieScript,
-   Cookies-shim (selected_package til tilbudsmotoren).
+   responsive-embed, eksterne links target=_blank,    Cookies-shim (selected_package til tilbudsmotoren).
    Fjernet fra bundlen (ikke brugt på sitet): jQuery, jQuery UI, Fancybox,
    Isotope, imagesLoaded, Leaflet, OpenLayers, Instafeed, datepicker, blogsearch,
    form-spinner (siderne har egne forms), card-video, header split-nav, offer-tooltip,
@@ -320,18 +319,6 @@ function initSliders() {
   });
 }
 
-/* ---------- CookieScript-knapper ---------- */
-function bindCookieScriptButtons() {
-  document.querySelectorAll(".cookiescript-consent-element").forEach(function (el) {
-    el.addEventListener("click", function () { if (window.CookieScript && window.CookieScript.instance) window.CookieScript.instance.show(); });
-  });
-  document.querySelectorAll("._CookieScriptReportPageCheckboxes").forEach(function (el) {
-    el.addEventListener("click", function () { if (window.CookieScript && window.CookieScript.instance) window.CookieScript.instance.show(); });
-  });
-  document.querySelectorAll("._CookieScriptReportPageSaveSettingButton").forEach(function (el) {
-    el.addEventListener("click", function () { el.classList.add("active"); });
-  });
-}
 
 /* ---------- Globalt klik-bindings (smooth scroll m.m.) ---------- */
 function bindGlobalClicks() {
@@ -363,7 +350,6 @@ function bindGlobalClicks() {
     NavigationController.init();
     collapseContent();
     bindCollapseClicks();
-    bindCookieScriptButtons();
     bindGlobalClicks();
     initSliders();
     resetHeight();
