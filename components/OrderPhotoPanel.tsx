@@ -7,7 +7,35 @@
 import { useRef, useState } from "react";
 import type { DayStop, DayUnplannedStop } from "@/lib/calendar";
 
-type Photo = { id: number; url: string; createdAt: string; uploadedBy?: { firstName: string; lastName: string } | null };
+type Photo = { id: number; createdAt: string; uploadedBy?: { firstName: string; lastName: string } | null };
+
+
+/** Skalér billedet i browseren FØR upload: kamera-fotos er ofte 3-8 MB, hvilket
+ *  overskrider Vercels request-body-grænse (~4,5 MB) og får uploaden til at fejle.
+ *  Canvas-resize til maks 1600 px + JPEG 0.85 giver typisk 200-500 KB og er
+ *  rigeligt til KS-dokumentation. */
+async function skalerFoerUpload(file: File): Promise<File> {
+  if (!file.type.startsWith("image/")) return file;
+  try {
+    const bitmap = await createImageBitmap(file);
+    const maxSide = 1600;
+    const scale = Math.min(1, maxSide / Math.max(bitmap.width, bitmap.height));
+    // Konvertér ALLIGEVÉL til JPEG hvis filen er HEIC eller stor (HEIC kan ikke
+    // vises i <img> og overskrider ofte body-grænsen; JPEG 0.85 er dokumentations-rigtigt):
+    if (scale >= 1 && file.type !== "image/heic" && file.size < 3_500_000) return file;
+    const canvas = document.createElement("canvas");
+    canvas.width = Math.round(bitmap.width * scale);
+    canvas.height = Math.round(bitmap.height * scale);
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return file;
+    ctx.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+    const blob = await new Promise<Blob | null>((res) => canvas.toBlob(res, "image/jpeg", 0.85));
+    if (!blob) return file;
+    return new File([blob], file.name.replace(/\.\w+$/, "") + ".jpg", { type: "image/jpeg" });
+  } catch {
+    return file; // fejl i skalering → prøv originalen alligevel
+  }
+}
 
 
 /** Skalér billedet i browseren FØR upload: kamera-fotos er ofte 3-8 MB, hvilket
@@ -109,11 +137,11 @@ export default function OrderPhotoPanel({ stop }: { stop: DayStop | DayUnplanned
       {photos.length > 0 && (
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 8 }}>
           {photos.map((p) => (
-            <a key={p.id} href={p.url} target="_blank" rel="noopener noreferrer"
+            <a key={p.id} href={`/api/photos/file?id=${p.id}`} target="_blank" rel="noopener noreferrer"
               title={`KS-foto${p.uploadedBy ? ` · ${p.uploadedBy.firstName} ${p.uploadedBy.lastName}` : ""}`}
               style={{ display: "block" }}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={p.url} alt="KS-foto"
+              <img src={`/api/photos/file?id=${p.id}`} alt="KS-foto"
                 style={{ width: 88, height: 88, objectFit: "cover", borderRadius: 6, border: "1px solid var(--line, #ddd)" }} />
             </a>
           ))}

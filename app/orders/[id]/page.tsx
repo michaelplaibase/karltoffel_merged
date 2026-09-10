@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getOrderDetail } from "@/lib/queries";
 import { prisma } from "@/lib/db";
+import { getDownloadUrl } from "@vercel/blob";
 import { routeId } from "@/lib/route-ids";
 import { deleteOrder } from "@/app/actions/orders";
 import { retryInvoice } from "@/app/actions/dinero";
@@ -39,11 +40,13 @@ const BATCH_STATUS: Record<string, { label: string; color: string }> = {
 // KS-fotos for én ordre — isoleret så tabellens fravær (før migrationen er
 // kørt) ikke kan crashe ordresiden.
 async function getOrderPhotos(orderId: number) {
-  return prisma.orderPhoto.findMany({
+  const rows = await prisma.orderPhoto.findMany({
     where: { orderId },
     orderBy: { createdAt: "desc" },
     select: { id: true, url: true, createdAt: true, uploadedBy: { select: { firstName: true, lastName: true } } },
   });
+  // Private Blob-store: konvertér til kortsigtede download-URLs (url i DB er ikke offentlig).
+  return rows.map((p) => ({ ...p, url: getDownloadUrl(p.url) }));
 }
 
 export default async function OrderDetail({ params }: { params: Promise<{ id: string }> }) {
@@ -234,9 +237,9 @@ export default async function OrderDetail({ params }: { params: Promise<{ id: st
           ) : (
             <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
               {photos.map((p) => (
-                <a key={p.id} href={p.url} target="_blank" rel="noopener noreferrer" title={`KS-foto${p.uploadedBy ? ` · ${[p.uploadedBy.firstName, p.uploadedBy.lastName].filter(Boolean).join(" ")}` : ""} · ${photoDate(p.createdAt)}`}>
+                <a key={p.id} href={`/api/photos/file?id=${p.id}`} target="_blank" rel="noopener noreferrer" title={`KS-foto${p.uploadedBy ? ` · ${[p.uploadedBy.firstName, p.uploadedBy.lastName].filter(Boolean).join(" ")}` : ""} · ${photoDate(p.createdAt)}`}>
                   {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={p.url} alt="KS-foto" style={{ width: 88, height: 88, objectFit: "cover", borderRadius: 6, border: "1px solid var(--line, #ddd)" }} />
+                  <img src={`/api/photos/file?id=${p.id}`} alt="KS-foto" style={{ width: 88, height: 88, objectFit: "cover", borderRadius: 6, border: "1px solid var(--line, #ddd)" }} />
                 </a>
               ))}
             </div>

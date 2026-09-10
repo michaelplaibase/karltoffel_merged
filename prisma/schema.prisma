@@ -517,3 +517,14 @@ model GiftCardOrder {
   @@index([status])
   @@index([buyerEmail])
 }
+
+model MonthlyReportLog {
+  id        Int      @id @default(autoincrement())
+  contactId Int
+  period    String   // "YYYY-MM" (dansk lokal måned)
+  sentAt    DateTime @default(now())
+  status    String   @default("sent") // sent | failed | skipped_no_email
+
+  @@unique([contactId, period])
+  @@index([period])
+}
