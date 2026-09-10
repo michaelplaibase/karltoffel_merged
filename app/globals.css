@@ -801,3 +801,10 @@ textarea.task-desc { resize: none; overflow: hidden; min-height: 58px; height: a
 .bm-tab-active { background: var(--heading, #1C140B); color: #FFF87B; }
 .bm-kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 12px; margin-bottom: 16px; }
 .bm-kpis .revenue-kpi { display: flex; flex-direction: column; gap: 4px; }
+.bm-kpis .revenue-kpi { min-width: 0; }
+.bm-kpis .revenue-kpi-value { overflow-wrap: anywhere; }
+/* Dual prisvisning: ekskl.-moms-delen — compact-variant (KPI-kort) er lille,
+   daempet, paa egen linje under hovedtallet og maa aldrig flyde ud over kortet. */
+.price-dual { display: inline-flex; flex-wrap: wrap; gap: 0 6px; align-items: baseline; }
+.price-dual .muted { min-width: 0; }
+.price-dual-compact .muted { display: block; width: 100%; font-size: 0.75rem; font-weight: 400; white-space: normal; overflow-wrap: anywhere; line-height: 1.35; }
