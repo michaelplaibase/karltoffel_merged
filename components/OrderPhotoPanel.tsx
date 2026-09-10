@@ -9,6 +9,32 @@ import type { DayStop, DayUnplannedStop } from "@/lib/calendar";
 
 type Photo = { id: number; url: string; createdAt: string; uploadedBy?: { firstName: string; lastName: string } | null };
 
+
+/** Skalér billedet i browseren FØR upload: kamera-fotos er ofte 3-8 MB, hvilket
+ *  overskrider Vercels request-body-grænse (~4,5 MB) og får uploaden til at fejle.
+ *  Canvas-resize til maks 1600 px + JPEG 0.85 giver typisk 200-500 KB og er
+ *  rigeligt til KS-dokumentation. */
+async function skalerFoerUpload(file: File): Promise<File> {
+  if (!file.type.startsWith("image/")) return file;
+  try {
+    const bitmap = await createImageBitmap(file);
+    const maxSide = 1600;
+    const scale = Math.min(1, maxSide / Math.max(bitmap.width, bitmap.height));
+    if (scale >= 1) return file; // allerede lille nok
+    const canvas = document.createElement("canvas");
+    canvas.width = Math.round(bitmap.width * scale);
+    canvas.height = Math.round(bitmap.height * scale);
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return file;
+    ctx.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+    const blob = await new Promise<Blob | null>((res) => canvas.toBlob(res, "image/jpeg", 0.85));
+    if (!blob) return file;
+    return new File([blob], file.name.replace(/\.\w+$/, "") + ".jpg", { type: "image/jpeg" });
+  } catch {
+    return file; // fejl i skalering → prøv originalen alligevel
+  }
+}
+
 export default function OrderPhotoPanel({ stop }: { stop: DayStop | DayUnplannedStop }) {
   const camRef = useRef<HTMLInputElement>(null);
   const galRef = useRef<HTMLInputElement>(null);
@@ -33,7 +59,8 @@ export default function OrderPhotoPanel({ stop }: { stop: DayStop | DayUnplanned
     if (!files?.length) return;
     setError(null);
     setBusy((b) => b + files.length);
-    for (const f of Array.from(files)) {
+    for (const f0 of Array.from(files)) {
+      const f = await skalerFoerUpload(f0);
       const form = new FormData();
       form.append("file", f);
       try {

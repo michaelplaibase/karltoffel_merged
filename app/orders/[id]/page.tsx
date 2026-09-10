@@ -5,9 +5,10 @@ import { prisma } from "@/lib/db";
 import { routeId } from "@/lib/route-ids";
 import { deleteOrder } from "@/app/actions/orders";
 import { retryInvoice } from "@/app/actions/dinero";
-import { CatChip, MapLink, StatusPill, money } from "@/components/ui";
+import { CatChip, MapLink, PriceDual, StatusPill } from "@/components/ui";
 import ConfirmButton from "@/components/ConfirmButton";
 import EmployeePicker from "@/components/EmployeePicker";
+import DeleteOrderTaskButton from "@/components/DeleteOrderTaskButton";
 import { getEmployeeOptions } from "@/lib/queries";
 import { CLOSED_STATUSES as CLOSED_ORDER_STATUSES } from "@/lib/invoice-status";
 
@@ -122,7 +123,7 @@ export default async function OrderDetail({ params }: { params: Promise<{ id: st
         <div className="card-body tight">
           <div className="table-wrap">
             <table className="data-table">
-              <thead><tr><th>Opgavebeskrivelse</th><th>Pris (inkl. moms)</th><th>Varighed (min.)</th></tr></thead>
+              <thead><tr><th>Opgavebeskrivelse</th><th>Pris (inkl. moms)</th><th>Varighed (min.)</th><th></th></tr></thead>
               <tbody>
                 {o.tasks.map((t, i) => (
                   <tr key={i}>
@@ -130,13 +131,16 @@ export default async function OrderDetail({ params }: { params: Promise<{ id: st
                       <CatChip category={t.category} letter={t.letter} /> {t.description}
                       {t.fromSubscription ? <div className="muted" style={{ fontSize: 12 }}>Dette er en opgave fra abonnementet</div> : null}
                     </td>
-                    <td className="num">{money(t.price)}</td>
+                    <td className="num"><PriceDual priceInclKr={t.price} /></td>
                     <td className="num">{t.durationMin}</td>
+                    <td style={{ textAlign: "right", whiteSpace: "nowrap" }}>
+                      <DeleteOrderTaskButton orderId={o.id} taskIndex={i} />
+                    </td>
                   </tr>
                 ))}
                 <tr>
                   <td style={{ textAlign: "right", fontWeight: 600 }}>Sum</td>
-                  <td className="num" style={{ fontWeight: 600 }}>{money(o.sumPrice)}</td>
+                  <td className="num" style={{ fontWeight: 600 }}><PriceDual priceInclKr={o.sumPrice} /></td>
                   <td className="num" style={{ fontWeight: 600 }}>{o.sumDuration}</td>
                 </tr>
               </tbody>

@@ -8,7 +8,7 @@
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import type { Order } from "@/lib/data";
-import { CatChip, StatusPill, money } from "@/components/ui";
+import { CatChip, PriceDual, StatusPill } from "@/components/ui";
 import RowMenu, { type RowMenuItem } from "@/components/RowMenu";
 import { deleteOrder } from "@/app/actions/orders";
 
@@ -84,7 +84,7 @@ function OrdersTable({ rows, sort, onSort, emptyText }: { rows: Order[]; sort: S
               <td className="num"><Link href={`/orders/${o.id}`}>{o.id}</Link></td>
               <td className="num">{o.overdue ? <span className="badge badge-soft-warning">{o.deliveryDate}</span> : o.deliveryDate}</td>
               <td>{o.tasks.map((t, i) => <div key={i}><CatChip category={t.category} letter={t.letter} /> {t.description}</div>)}</td>
-              <td className="num">{money(o.tasks.reduce((a, t) => a + t.price, 0))}</td>
+              <td className="num"><PriceDual priceInclKr={o.tasks.reduce((a, t) => a + t.price, 0)} /></td>
               <td>{o.employee}</td>
               <td><StatusPill status={o.status} /></td>
               <td>{o.subscriptionNo ? <Link href={`/subscriptions/${o.subscriptionNo}`}>{o.source}</Link> : o.source}</td>

@@ -140,6 +140,26 @@ function revalidateSchedule(orderId?: number) {
   if (orderId) revalidatePath(`/orders/${orderId}`);
 }
 
+/** Slet ÉN opgavelinje direkte fra ordresiden (Thomas, 2026-09-10): kunden
+ *  ville fx ikke have "indvendig" — linjen fjernes, så den ikke bliver
+ *  faktureret. Rører ikke ordren selv (status/dato/medarbejder), og ikke
+ *  abonnementets TaskLines (det er kopi pr. ordre — næste besøg genereres
+ *  stadig med alle opgaver). Index-nøglen (pos i den sorterede liste) bruges
+ *  som identifikator, fordi view-typen TaskLine ikke altid har DB-id. */
+export async function deleteOrderTask(orderId: number, taskIndex: number): Promise<void> {
+  await guardAction();
+  if (!Number.isInteger(taskIndex) || taskIndex < 0) return;
+  const o = await prisma.order.findUnique({
+    where: { id: orderId },
+    select: { contactId: true, tasks: { orderBy: { sort: "asc" }, select: { id: true } } },
+  });
+  if (!o || taskIndex >= o.tasks.length) return;
+  await prisma.taskLine.delete({ where: { id: o.tasks[taskIndex].id } });
+  revalidatePath("/fakturering");
+  revalidateSchedule(orderId);
+  revalidatePath(`/customers/${o.contactId}`);
+}
+
 /** Calendar context-menu "Lås helt op" (locked=false) / "Lås op, fastgør til
  *  ugedag" (locked=true — the planner pins it to its weekday). */
 export async function setOrderLock(orderId: number, locked: boolean): Promise<void> {

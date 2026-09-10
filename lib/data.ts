@@ -15,6 +15,10 @@ export type TaskLine = {
   /** Per-opgave medarbejder-navn (Thomas, 2026-09-07): sat når opgavelinjen er
    *  bundet til en bestemt medarbejder — vises på kalender-/dagsprogramkort. */
   employeeName?: string;
+  /** DB-id (sat kun på ordresidens opgavetabel, lib/queries.ts getOrderDetail):
+   *  gør det muligt at slette en enkelt opgavelinje direkte fra ordren
+   *  (Thomas, 2026-09-10 — kunden ville ikke have "indvendig"). */
+  id?: number;
 };
 
 export type Contact = {
