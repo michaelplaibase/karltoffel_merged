@@ -25,6 +25,10 @@ export type TaskRow = {
   // Per-opgave medarbejder (kun abonnementer): "" = vælges automatisk, ellers
   // bruger-id som streng. Gemmes som TaskLine.employeeId.
   employee?: string;
+  // Egen kategori (kun UI mens man skriver): teksten bores her, indtil man
+  // gemmer — ellers skifter fritekstfeltet tilbage til dropdown efter første
+  // bogstav, fordi r.category ikke længere er EGEN_KATEGORI.
+  egenKategoriTekst?: string;
 };
 
 const CAT_NAMES = Object.keys(CATEGORIES);
@@ -157,12 +161,28 @@ export default function TaskLineEditor({
                   </span>
                   {egen ? (
                     // Egen kategori valgt: fritekstfelt i stedet for dropdown.
-                    <input
-                      type="text" value={r.category === EGEN_KATEGORI ? "" : r.category}
-                      onChange={(e) => update(i, { category: e.target.value })}
-                      className="form-control form-control-sm" style={{ flex: 1, minWidth: 0 }}
-                      placeholder="Skriv kategori…" autoFocus
-                    />
+                    // Teksten bores i egenKategoriTekst (UI-tilstand) — først ved
+                    // "Egen kategori færdig" kopieres den i category, så chip og
+                    // submit fanger den. Sådan kan man skrive flere bogstaver
+                    // uden at feltet kollapser til dropdown efter ét tast.
+                    <span style={{ display: "flex", gap: 6, width: "100%" }}>
+                      <input
+                        type="text" value={r.egenKategoriTekst ?? ""}
+                        onChange={(e) => update(i, { egenKategoriTekst: e.target.value })}
+                        className="form-control form-control-sm" style={{ flex: 1, minWidth: 0 }}
+                        placeholder="Skriv kategori…" autoFocus
+                      />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const t = (r.egenKategoriTekst ?? "").trim();
+                          if (t) update(i, { category: t, egenKategoriTekst: undefined });
+                        }}
+                        className="btn btn-primary btn-sm" title="Brug denne kategori"
+                      >
+                        OK
+                      </button>
+                    </span>
                   ) : (
                     <select
                       name="taskCategory" value={r.category}
