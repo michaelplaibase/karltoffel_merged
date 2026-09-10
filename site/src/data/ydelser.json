@@ -5,8 +5,10 @@
     "pris": "199",
     "pris_erhverv": "",
     "kort_tekst": "Vinduer så rene, at naboerne lægger mærke til det (og det er okay).",
-    "billede": "/assets/img/thumb/1cab000e9b684c1490a3b6c2c423c3b045ee4d88_w1100.webp",
-    "raekkefoelge": 1
+    "billede": "/assets/img/thumb/1cab000e9b684c1490a3b6c2c423c3b045ee4d88_w1100_q78.webp",
+    "raekkefoelge": 1,
+    "billede_bredde": 1100,
+    "billede_hoejde": 618
   },
   {
     "slug": "haekklipning",
@@ -14,8 +16,10 @@
     "pris": "999",
     "pris_erhverv": "",
     "kort_tekst": "",
-    "billede": "/assets/img/thumb/7003eec2b574d33c9aba448120234c65665a4922_w1100.webp",
-    "raekkefoelge": 2
+    "billede": "/assets/img/thumb/7003eec2b574d33c9aba448120234c65665a4922_w1100_q78.webp",
+    "raekkefoelge": 2,
+    "billede_bredde": 1100,
+    "billede_hoejde": 802
   },
   {
     "slug": "ukrudtsbekaempelse",
@@ -23,8 +27,10 @@
     "pris": "499",
     "pris_erhverv": "",
     "kort_tekst": "",
-    "billede": "/assets/img/thumb/baebbae77390eceed72cfe2137c631622d7e1ce8_w1100.webp",
-    "raekkefoelge": 3
+    "billede": "/assets/img/thumb/baebbae77390eceed72cfe2137c631622d7e1ce8_w1100_q78.webp",
+    "raekkefoelge": 3,
+    "billede_bredde": 1100,
+    "billede_hoejde": 733
   },
   {
     "slug": "graespleje",
@@ -32,8 +38,10 @@
     "pris": "499",
     "pris_erhverv": "",
     "kort_tekst": "Plænen som en greenkeeper plejede den. Uden at løfte en finger.",
-    "billede": "/assets/img/thumb/d914ac7dbf94417721e994522a8b617b47d1ca85_w1100.webp",
-    "raekkefoelge": 4
+    "billede": "/assets/img/thumb/d914ac7dbf94417721e994522a8b617b47d1ca85_w1100_q78.webp",
+    "raekkefoelge": 4,
+    "billede_bredde": 1100,
+    "billede_hoejde": 733
   },
   {
     "slug": "algerens-og-algebehandling-af-fliser-tag-og-facader",
@@ -41,8 +49,10 @@
     "pris": "599",
     "pris_erhverv": "",
     "kort_tekst": "",
-    "billede": "/assets/img/thumb/3c3bcd06d678733ed42a62bff3435349438d02c0_w1100.webp",
-    "raekkefoelge": 5
+    "billede": "/assets/img/thumb/3c3bcd06d678733ed42a62bff3435349438d02c0_w1100_q78.webp",
+    "raekkefoelge": 5,
+    "billede_bredde": 1100,
+    "billede_hoejde": 733
   },
   {
     "slug": "beskaering",
@@ -50,8 +60,10 @@
     "pris": "499",
     "pris_erhverv": "",
     "kort_tekst": "",
-    "billede": "/assets/img/thumb/b33b09c3af5048b5d2d8636deae63a5e458379bd_w1100.webp",
-    "raekkefoelge": 6
+    "billede": "/assets/img/thumb/b33b09c3af5048b5d2d8636deae63a5e458379bd_w1100_q78.webp",
+    "raekkefoelge": 6,
+    "billede_bredde": 1100,
+    "billede_hoejde": 733
   },
   {
     "slug": "bortskaffelse-haveaffald",
@@ -59,8 +71,10 @@
     "pris": "499",
     "pris_erhverv": "",
     "kort_tekst": "",
-    "billede": "/assets/img/thumb/c900da258e96eecc895854fd718173c58a3bf89a_w1100.webp",
-    "raekkefoelge": 7
+    "billede": "/assets/img/thumb/c900da258e96eecc895854fd718173c58a3bf89a_w1100_q78.webp",
+    "raekkefoelge": 7,
+    "billede_bredde": 1100,
+    "billede_hoejde": 733
   },
   {
     "slug": "solcellevask",
@@ -68,8 +82,10 @@
     "pris": "399",
     "pris_erhverv": "599",
     "kort_tekst": "",
-    "billede": "/assets/img/thumb/dbc21220645410a81cfcaecfd8549aa954c8139b_w1100.webp",
-    "raekkefoelge": 8
+    "billede": "/assets/img/thumb/dbc21220645410a81cfcaecfd8549aa954c8139b_w1100_q78.webp",
+    "raekkefoelge": 8,
+    "billede_bredde": 1100,
+    "billede_hoejde": 733
   },
   {
     "slug": "fliserens",
@@ -77,8 +93,10 @@
     "pris": "1.499",
     "pris_erhverv": "599",
     "kort_tekst": "",
-    "billede": "/assets/img/thumb/0c00910c9eaaed980ec520b4ff06630600f3d39a_w1100.webp",
-    "raekkefoelge": 9
+    "billede": "/assets/img/thumb/0c00910c9eaaed980ec520b4ff06630600f3d39a_w1100_q78.webp",
+    "raekkefoelge": 9,
+    "billede_bredde": 1100,
+    "billede_hoejde": 733
   },
   {
     "slug": "tagrenderens",
@@ -86,8 +104,10 @@
     "pris": "499",
     "pris_erhverv": "599",
     "kort_tekst": "",
-    "billede": "/assets/img/thumb/9d33939e0c616cfcff62e33b10f725317e221c5a_w1100.webp",
-    "raekkefoelge": 10
+    "billede": "/assets/img/thumb/9d33939e0c616cfcff62e33b10f725317e221c5a_w1100_q78.webp",
+    "raekkefoelge": 10,
+    "billede_bredde": 1100,
+    "billede_hoejde": 950
   },
   {
     "slug": "robotplaeneklipper-service",
@@ -96,7 +116,9 @@
     "pris_erhverv": "",
     "kort_tekst": "",
     "billede": "/assets/img/thumb/b698471411b4d480c915a919713579996058a47f_w1100.webp",
-    "raekkefoelge": 11
+    "raekkefoelge": 11,
+    "billede_bredde": 1100,
+    "billede_hoejde": 733
   },
   {
     "slug": "vask-hus-garage-ned",
@@ -105,7 +127,9 @@
     "pris_erhverv": "1.499",
     "kort_tekst": "",
     "billede": "/assets/img/thumb/04750082203347c8f33804d2949a0a5779f1c0b9_w1100.webp",
-    "raekkefoelge": 12
+    "raekkefoelge": 12,
+    "billede_bredde": 1100,
+    "billede_hoejde": 732
   },
   {
     "slug": "gavekort",
@@ -113,7 +137,9 @@
     "pris": "500",
     "pris_erhverv": "",
     "kort_tekst": "",
-    "billede": "/assets/img/thumb/d45f7cdec7304b6b8d84e8162913f8f3371aff6e_w1100.webp",
-    "raekkefoelge": 13
+    "billede": "/assets/img/thumb/d45f7cdec7304b6b8d84e8162913f8f3371aff6e_w1100_q78.webp",
+    "raekkefoelge": 13,
+    "billede_bredde": 1100,
+    "billede_hoejde": 618
   }
 ]
