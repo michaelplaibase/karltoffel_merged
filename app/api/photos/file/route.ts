@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getDownloadUrl } from "@vercel/blob";
+import { get } from "@vercel/blob";
 import { requireSession } from "@/lib/api-auth";
 import { prisma } from "@/lib/db";
 
@@ -19,15 +19,23 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "Ugyldigt id" }, { status: 400 });
   }
 
-  const photo = await prisma.orderPhoto.findUnique({ where: { id }, select: { url: true } });
+  const photo = await prisma.orderPhoto.findUnique({ where: { id }, select: { pathname: true } });
   if (!photo) return NextResponse.json({ error: "Foto findes ikke" }, { status: 404 });
 
-  const upstream = await fetch(getDownloadUrl(photo.url));
-  if (!upstream.ok || !upstream.body) {
+  // Privat Blob-store: hent SERVER-SIDE med SDK'ens get() (bruger BLOB-tokenet) —
+  // en rå fetch af URL'en fejler, da private blobs kræver signatur.
+  let blobResult: Awaited<ReturnType<typeof get>> = null;
+  try {
+    blobResult = await get((photo as { pathname: string }).pathname, { access: "private" });
+  } catch (e) {
+    console.error("[photos/file] get() fejlede:", e instanceof Error ? e.message : e);
+    return NextResponse.json({ error: "Kunne ikke hente foto" }, { status: 502 });
+  }
+  if (!blobResult || !blobResult.stream) {
     return NextResponse.json({ error: "Kunne ikke hente foto" }, { status: 502 });
   }
   const headers = new Headers();
-  headers.set("content-type", upstream.headers.get("content-type") ?? "image/jpeg");
+  headers.set("content-type", (blobResult as { contentType?: string }).contentType ?? "image/jpeg");
   headers.set("cache-control", "private, max-age=3600");
-  return new NextResponse(upstream.body, { status: 200, headers });
+  return new NextResponse(blobResult.stream as unknown as ReadableStream, { status: 200, headers });
 }
