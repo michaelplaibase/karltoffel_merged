@@ -9,6 +9,7 @@ import { CatChip, MapLink, PriceDual, StatusPill } from "@/components/ui";
 import ConfirmButton from "@/components/ConfirmButton";
 import EmployeePicker from "@/components/EmployeePicker";
 import DeleteOrderTaskButton from "@/components/DeleteOrderTaskButton";
+import AddOrderTaskForm from "@/components/AddOrderTaskForm";
 import { getEmployeeOptions } from "@/lib/queries";
 import { CLOSED_STATUSES as CLOSED_ORDER_STATUSES } from "@/lib/invoice-status";
 
@@ -146,6 +147,7 @@ export default async function OrderDetail({ params }: { params: Promise<{ id: st
               </tbody>
             </table>
           </div>
+          <AddOrderTaskForm orderId={o.id} />
         </div>
       </div>
 
