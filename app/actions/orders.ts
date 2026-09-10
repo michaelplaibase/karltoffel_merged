@@ -7,6 +7,7 @@ import { guardAction } from "@/lib/api-auth";
 import { planAndPersistWeek } from "@/lib/queries";
 import { categoryColor } from "@/lib/categories";
 import { isInvoiceDecision, issueInvoiceForOrder } from "@/lib/dinero";
+import { durationFromPrice } from "@/lib/duration-recalc";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { todayCphISO, weekMondayToday } from "@/lib/calendar";
@@ -155,6 +156,50 @@ export async function deleteOrderTask(orderId: number, taskIndex: number): Promi
   });
   if (!o || taskIndex >= o.tasks.length) return;
   await prisma.taskLine.delete({ where: { id: o.tasks[taskIndex].id } });
+  revalidatePath("/fakturering");
+  revalidateSchedule(orderId);
+  revalidatePath(`/customers/${o.contactId}`);
+}
+
+/** Hurtig "ekstra opgave" fra ordresiden (Thomas, 2026-09-10): titel + pris
+ *  (inkl. moms) tastes, varighed beregnes fra minutprisen (samme formel som
+ *  timeberegneren, lib/duration-recalc.ts), og linjen gemmes på den enkelte
+ *  ordre. Hvis ordren kommer fra et abonnement ELLER en fastprisaftale,
+ *  oprettes den SAMME linje også på aftalen (kun når `saveToAgreement`),
+ *  så den følger med på alle fremtidige besøg. Kun til/fra-knappen afgør det —
+ *  man siger aldrig stille-tilsøgende aftale ved en fejl. */
+export async function addOrderTask(
+  orderId: number,
+  description: string,
+  priceInclKr: number,
+  saveToAgreement: boolean,
+): Promise<void> {
+  await guardAction();
+  const desc = description.trim();
+  if (!desc || !Number.isFinite(priceInclKr) || priceInclKr < 0) return;
+  const o = await prisma.order.findUnique({
+    where: { id: orderId },
+    select: { contactId: true, subscriptionId: true, fixedPriceId: true, tasks: { orderBy: { sort: "asc" }, select: { id: true } } },
+  });
+  if (!o) return;
+  const company = await prisma.company.findFirst({ select: { minutePriceOere: true } });
+  const durationMin = durationFromPrice(priceInclKr, company?.minutePriceOere ?? 860);
+  const category = "Ekstra opgave"; // egen kategori (lib/categories.ts) — chip får fast farve
+  const line = {
+    category, letter: "E", color: categoryColor(category),
+    description: desc, price: Math.round(priceInclKr), durationMin,
+  };
+  const sort = o.tasks.length;
+  await prisma.taskLine.create({ data: { ...line, orderId, sort } });
+  if (saveToAgreement) {
+    if (o.subscriptionId != null) {
+      const count = await prisma.taskLine.count({ where: { subscriptionId: o.subscriptionId } });
+      await prisma.taskLine.create({ data: { ...line, subscriptionId: o.subscriptionId, sort: count } });
+    } else if (o.fixedPriceId != null) {
+      const count = await prisma.taskLine.count({ where: { fixedPriceId: o.fixedPriceId } });
+      await prisma.taskLine.create({ data: { ...line, fixedPriceId: o.fixedPriceId, sort: count } });
+    }
+  }
   revalidatePath("/fakturering");
   revalidateSchedule(orderId);
   revalidatePath(`/customers/${o.contactId}`);
