@@ -4,6 +4,7 @@ import { prisma } from "@/lib/db";
 import { requireSession } from "@/lib/api-auth";
 
 export const runtime = "nodejs";
+export const maxDuration = 60;
 
 const MAX_BYTES = 10 * 1024 * 1024; // 10 MB pr. billede
 const ALLOWED = ["image/jpeg", "image/png", "image/heic", "image/webp"];
@@ -53,6 +54,7 @@ export async function POST(req: NextRequest) {
     });
     return NextResponse.json({ ok: true, photo: { id: photo.id, url: photo.url } });
   } catch (err) {
+    console.error("[photos] upload-fejl:", err instanceof Error ? err.message : err);
     const msg = err instanceof Error && String(err.message).includes("BLOB_READ_WRITE_TOKEN")
       ? "Billedlager er ikke konfigureret endnu"
       : "Upload fejlede";
