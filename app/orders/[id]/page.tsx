@@ -147,7 +147,7 @@ export default async function OrderDetail({ params }: { params: Promise<{ id: st
               </tbody>
             </table>
           </div>
-          <AddOrderTaskForm orderId={o.id} />
+          <AddOrderTaskForm orderId={o.id} hasSubscription={o.subscriptionId != null} hasFixedPrice={o.fixedPriceId != null} />
         </div>
       </div>
 

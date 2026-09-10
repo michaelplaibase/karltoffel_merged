@@ -8,6 +8,7 @@ import { planAndPersistWeek } from "@/lib/queries";
 import { categoryColor } from "@/lib/categories";
 import { isInvoiceDecision, issueInvoiceForOrder } from "@/lib/dinero";
 import { durationFromPrice } from "@/lib/duration-recalc";
+import { regenerateFutureOrders } from "@/lib/recurrence";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { todayCphISO, weekMondayToday } from "@/lib/calendar";
@@ -164,19 +165,27 @@ export async function deleteOrderTask(orderId: number, taskIndex: number): Promi
 /** Hurtig "ekstra opgave" fra ordresiden (Thomas, 2026-09-10): titel + pris
  *  (inkl. moms) tastes, varighed beregnes fra minutprisen (samme formel som
  *  timeberegneren, lib/duration-recalc.ts), og linjen gemmes på den enkelte
- *  ordre. Hvis ordren kommer fra et abonnement ELLER en fastprisaftale,
- *  oprettes den SAMME linje også på aftalen (kun når `saveToAgreement`),
- *  så den følger med på alle fremtidige besøg. Kun til/fra-knappen afgør det —
- *  man siger aldrig stille-tilsøgende aftale ved en fejl. */
+ *  ordre. To SEPARATE valg (Thomas 2026-09-10 — "enten/eller") afhænger af
+ *  hvad ordren kommer fra:
+ *  - `saveToFixedPrice`: gem også på fastprisaftalen (alle fremtidige besøg,
+ *    intet interval — fastprisaftaler har ingen rytme pr. linje).
+ *  - `saveToSubscription`: gem også på abonnementet MED interval
+ *    ("Hver gang"/"Hver 2. gang"/... som TaskLine.intervalMultiplier) og
+ *    regenerér de kommende ordrer, så den nye rytme materialiseres i
+ *    kalenderen (samme maskine som abonnements-editorens gem).
+ *  Kun den valgte aftale påvirkes; man aldrig stille-tilsøgende begge. */
 export async function addOrderTask(
   orderId: number,
   description: string,
   priceInclKr: number,
-  saveToAgreement: boolean,
+  saveToFixedPrice: boolean,
+  saveToSubscription: boolean,
+  interval: string = "Hver gang",
 ): Promise<void> {
   await guardAction();
   const desc = description.trim();
   if (!desc || !Number.isFinite(priceInclKr) || priceInclKr < 0) return;
+  if (!saveToFixedPrice && !saveToSubscription) return; // mindst ét gem-sted skal vælges
   const o = await prisma.order.findUnique({
     where: { id: orderId },
     select: { contactId: true, subscriptionId: true, fixedPriceId: true, tasks: { orderBy: { sort: "asc" }, select: { id: true } } },
@@ -191,14 +200,23 @@ export async function addOrderTask(
   };
   const sort = o.tasks.length;
   await prisma.taskLine.create({ data: { ...line, orderId, sort } });
-  if (saveToAgreement) {
-    if (o.subscriptionId != null) {
-      const count = await prisma.taskLine.count({ where: { subscriptionId: o.subscriptionId } });
-      await prisma.taskLine.create({ data: { ...line, subscriptionId: o.subscriptionId, sort: count } });
-    } else if (o.fixedPriceId != null) {
-      const count = await prisma.taskLine.count({ where: { fixedPriceId: o.fixedPriceId } });
-      await prisma.taskLine.create({ data: { ...line, fixedPriceId: o.fixedPriceId, sort: count } });
-    }
+  if (saveToFixedPrice && o.fixedPriceId != null) {
+    const count = await prisma.taskLine.count({ where: { fixedPriceId: o.fixedPriceId } });
+    await prisma.taskLine.create({ data: { ...line, fixedPriceId: o.fixedPriceId, sort: count } });
+  }
+  if (saveToSubscription && o.subscriptionId != null) {
+    const count = await prisma.taskLine.count({ where: { subscriptionId: o.subscriptionId } });
+    await prisma.taskLine.create({
+      data: { ...line, subscriptionId: o.subscriptionId, sort: count, intervalMultiplier: interval },
+    });
+    // Materialisér den nye rytme: regenerér abonnementets kommende ordrer
+    // (næste uge og frem, pending — historik og indeværende uge røres ikke).
+    await regenerateFutureOrders(o.subscriptionId);
+  } else if (saveToSubscription && o.fixedPriceId != null && o.subscriptionId == null) {
+    // Ordren kommer fra en fastprisaftale, men der blev valgt "abonnement" —
+    // fald tilbage til fastprisaftalen så valget ikke bliver en no-op.
+    const count = await prisma.taskLine.count({ where: { fixedPriceId: o.fixedPriceId } });
+    await prisma.taskLine.create({ data: { ...line, fixedPriceId: o.fixedPriceId, sort: count } });
   }
   revalidatePath("/fakturering");
   revalidateSchedule(orderId);
