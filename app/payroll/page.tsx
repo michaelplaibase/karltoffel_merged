@@ -45,11 +45,12 @@ export default async function PayrollPage({ searchParams }: { searchParams: Prom
                 <tr>
                   <th>Medarbejder</th><th>Lønmodel</th><th>Udførte ordrer</th>
                   <th>Omsætning (inkl. moms)</th><th>Grundlag (ekskl. moms)</th><th>Provision / Fast løn</th>
+                  <th>Sygedage</th><th>Feriedage</th>
                 </tr>
               </thead>
               <tbody>
                 {rows.length === 0 ? (
-                  <tr><td colSpan={6}><div className="table-empty">Ingen brugere</div></td></tr>
+                  <tr><td colSpan={8}><div className="table-empty">Ingen brugere</div></td></tr>
                 ) : rows.map((r) => (
                   <tr key={r.id}>
                     <td>{r.navn}</td>
@@ -66,6 +67,8 @@ export default async function PayrollPage({ searchParams }: { searchParams: Prom
                         ? <b>{kr(r.provision ?? 0)}</b>
                         : (r.fastLoen != null ? <><b>{kr(r.fastLoen)}</b> /md</> : "—")}
                     </td>
+                    <td className="num">{r.sygedage || "0"}</td>
+                    <td className="num">{r.feriedage || "0"}</td>
                   </tr>
                 ))}
               </tbody>
