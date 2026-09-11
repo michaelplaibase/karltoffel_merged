@@ -60,7 +60,7 @@
 		/* Datalag: "Se din pris"-klik — maelger hvor mange der naaar trin 2. */
 		try {
 			(window.dataLayer = window.dataLayer || []).push({
-				event: "haek_se_din_pris",
+				event: "ydelse_se_din_pris",
 				haek_meter: meter
 			});
 		} catch(e5){}
