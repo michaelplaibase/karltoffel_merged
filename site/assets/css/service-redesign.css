@@ -464,6 +464,8 @@
 .sp-video--playing .sp-video__tag { display: none; }
 @media print, screen and (min-width: 64em) {
 	.sp-included .sp-included__grid { align-items: center; }
+/* Video-kolonne uden video (videoer ikke leveret endnu): grid i én kolonne, tom plads skjules */
+.sp-included__grid:has(.sp-video-col:empty) { display: block; }
 }
 .main-wrap .sp-included, .sp-included {
 	padding-top: 60px !important;
