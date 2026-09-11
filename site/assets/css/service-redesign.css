@@ -536,3 +536,22 @@
 	height: auto;
 	border-radius: 24px;
 }
+
+/* Radio-valg i ydelses-heroen (Mads 2026-09-11): knapper, ikke rå tekst */
+.yp-radio-grp { display: flex; gap: 12px; margin: 0 0 16px; flex-wrap: wrap; }
+.yp-radio {
+	padding: 14px 22px;
+	border: 2px solid #4C3718;
+	border-radius: 999px;
+	background: #fff;
+	color: #4C3718;
+	font-size: 15px;
+	font-weight: 700;
+	cursor: pointer;
+	transition: background .2s, color .25s;
+}
+.yp-radio:hover, .yp-radio:focus { background: #fff65c; }
+.yp-radio.selected {
+	background: #4C3718;
+	color: #FFF87B;
+}
