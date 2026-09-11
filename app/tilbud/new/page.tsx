@@ -8,7 +8,7 @@ export const dynamic = "force-dynamic";
 async function loadContacts() {
   return prisma.contact.findMany({
     orderBy: { id: "desc" },
-    select: { id: true, name: true, companyName: true },
+    select: { id: true, name: true, companyName: true, isCompany: true },
     take: 2000,
   });
 }

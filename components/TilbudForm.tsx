@@ -7,7 +7,7 @@ import { BASE_INTERVALS, tilbudLinjeAarsbelob, tilbudAarsbelobSum } from "@/lib/
 import { bygAarshjul } from "@/lib/tilbud.mts";
 import Aarshjul from "@/components/Aarshjul";
 
-type Kontakt = { id: number; name: string; companyName: string | null };
+type Kontakt = { id: number; name: string; companyName: string | null; isCompany: boolean };
 // Medarbejder-vælger pr. linje (intern — vises ikke for kunden). SAMME
 // kildeliste som abonnements-formularen: getEmployeeOptions (aktive users).
 export type TilbudEmployeeOption = { id: number; name: string };
@@ -21,6 +21,14 @@ export default function TilbudForm({ contacts, employees, action }: {
 }) {
   const [state, formAction, pending] = useActionState(action, {});
   const [nyKunde, setNyKunde] = useState(false);
+  // Thomas, 2026-09-11 (korrektion 3): kundetype (privat vs. virksomhed) —
+  // SAMME felt som Contact-modellen (isCompany) og kunde-kartotekets
+  // KontaktForm (checkbox "Virksomhed", ikke afkrydset = Privat). Ved ny
+  // kunde gemmes valget som isCompany på kontakten (se app/actions/tilbud.ts).
+  // Ved VALG af eksisterende kunde vises kundens type låst — den kan ikke
+  // ændres her, kun i kunde-kartoteket.
+  const [nyVirksomhed, setNyVirksomhed] = useState(false);
+  const [valgtKunde, setValgtKunde] = useState<Kontakt | null>(null);
   // Thomas, 2026-09-11 (korrektion): interval vælges PR. OPGAVELINJE — samme
   // muligheder som abonnementet (BASE_INTERVALS inkl. "1 gang om året").
   // Tilbud-niveau-feltet er beholdt som STANDARD/præ-valg for nye linjer.
@@ -68,12 +76,26 @@ export default function TilbudForm({ contacts, employees, action }: {
                   </label>
                 ) : (
                   <>
-                    <select name="contactId" className="form-control" required defaultValue="">
+                    <select
+                      name="contactId"
+                      className="form-control"
+                      required
+                      defaultValue=""
+                      onChange={(e) => {
+                        const id = Number(e.target.value);
+                        setValgtKunde(contacts.find((c) => c.id === id) ?? null);
+                      }}
+                    >
                       <option value="" disabled>Vælg en kunde…</option>
                       {contacts.map((c) => (
                         <option key={c.id} value={c.id}>{c.companyName || c.name}</option>
                       ))}
                     </select>
+                    {valgtKunde ? (
+                      <small className="form-text" style={{ display: "block", marginTop: 6 }}>
+                        Kundetype: <b>{valgtKunde.isCompany ? "Virksomhed" : "Privat"}</b> (låst — ændres kun i kunde-kartoteket)
+                      </small>
+                    ) : null}
                     <label style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 6 }}>
                       <input type="checkbox" checked={nyKunde} onChange={(e) => setNyKunde(e.target.checked)} />
                       <span>Opret ny kunde i samme flow</span>
@@ -89,10 +111,22 @@ export default function TilbudForm({ contacts, employees, action }: {
                 <div className="f2">
                   <label className="col-label">Kundetype</label>
                   <div>
-                    <select name="newIsCompany" className="form-control" defaultValue="0">
-                      <option value="0">Privat</option>
-                      <option value="1">Virksomhed</option>
-                    </select>
+                    {/* SAMME mønster som kunde-kartotekets KontaktForm:
+                        checkbox "Virksomhed" — ikke afkrydset = Privat.
+                        Gemmes som isCompany på kontakten ved oprettelse. */}
+                    <label style={{ display: "inline-flex", alignItems: "center", gap: 9, fontWeight: 300 }}>
+                      <input
+                        type="checkbox"
+                        name="newIsCompany"
+                        value="1"
+                        checked={nyVirksomhed}
+                        onChange={(e) => setNyVirksomhed(e.target.checked)}
+                      />
+                      Virksomhed
+                    </label>
+                    <small className="form-text" style={{ display: "block" }}>
+                      Ikke afkrydset = privatkunde (samme isCompany-felt som kunde-kartoteket).
+                    </small>
                   </div>
                 </div>
                 <div className="f2">
@@ -225,7 +259,13 @@ export default function TilbudForm({ contacts, employees, action }: {
                         eller årshjulet). Overføres kun til opgaven, når
                         tilbuddet konverteres til abonnement. Samme kilde som
                         abonnements-formularen (aktive medarbejdere). */}
-                    {employees.length > 0 ? (
+                    {/* Thomas, 2026-09-11 (korrektion 4): medarbejder-feltet
+                        fik sin egen BREDE kolonne i .tl-row-tilbud + en synlig
+                        label — selecten er altid med, så rækkens kolonner er
+                        stabile (slet-knappen ryger aldrig ned på en ny række,
+                        selv hvis listen over medarbejdere er tom). */}
+                    <div className="tl-employee-cell">
+                      <small className="tl-field-label">Medarbejder</small>
                       <select
                         name="taskEmployee"
                         className="form-control"
@@ -238,7 +278,7 @@ export default function TilbudForm({ contacts, employees, action }: {
                           <option key={e.id} value={e.id}>{e.name}</option>
                         ))}
                       </select>
-                    ) : null}
+                    </div>
                     <button
                       type="button"
                       className="btn btn-light"

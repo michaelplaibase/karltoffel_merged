@@ -823,17 +823,31 @@ textarea.task-desc { resize: none; overflow: hidden; min-height: 58px; height: a
    så sporene kan ALDRIG blive bredere end containeren — felterne kan blive
    smallere, men intet klippes. Desktop (1280–1500px): alle 4 felter ved
    siden af hinanden med plads til placeholderne. */
+/* Thomas, 2026-09-11 (korrektion 4): medarbejder-dropdownen pr. linje var
+   for lille til at kunne læses. Rækken har nu 6 spor og medarbejder-feltet
+   har en stor andel (minmax(0, 1.2fr)) — igen med minmax(0, …) overalt, så
+   intet spor kan blive bredere end containeren (intet klippes). Feltet har
+   også en synlig, læsbar label ovenover (se TilbudForm.tsx). */
 .tl-row-tilbud {
-  grid-template-columns: minmax(0, 2.2fr) minmax(90px, 0.8fr) minmax(150px, 1fr) minmax(130px, 1fr) 40px;
+  grid-template-columns: minmax(0, 1.7fr) minmax(80px, 0.6fr) minmax(120px, 0.8fr) minmax(110px, 0.7fr) minmax(0, 1.2fr) 36px;
   min-width: 0;
 }
 .tl-row-tilbud .form-control { min-width: 0; }
+.tl-row-tilbud .tl-field-label {
+  display: block;
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #8a7a5c;
+  margin: 0 0 3px;
+}
 @media (max-width: 1100px) {
-  .tl-row-tilbud { grid-template-columns: minmax(0, 2fr) minmax(90px, 0.8fr) minmax(140px, 1fr) minmax(120px, 1fr) 36px; }
+  .tl-row-tilbud { grid-template-columns: minmax(0, 1.5fr) minmax(70px, 0.6fr) minmax(110px, 0.8fr) minmax(100px, 0.7fr) minmax(0, 1.2fr) 32px; }
 }
 @media (max-width: 860px) {
   /* Smal skærm: felter stakker pænt — titel og pris, interval og startuge,
      slet-knap til sidst. Ingen felter klippes af. */
-  .tl-row-tilbud { grid-template-columns: minmax(0, 1fr) minmax(0, 130px); row-gap: 8px; min-width: 0; }
+  .tl-row-tilbud { grid-template-columns: minmax(0, 1fr) minmax(0, 130px); row-gap: 10px; min-width: 0; }
   .tl-row-tilbud .btn { justify-self: end; grid-column: 2; }
+  .tl-row-tilbud .tl-employee-cell { grid-column: 1; }
 }
