@@ -23,6 +23,7 @@ CREATE TABLE IF NOT EXISTS "TilbudLine" (
     "tilbudId" INTEGER NOT NULL,
     "description" TEXT NOT NULL,
     "price" INTEGER NOT NULL,
+    "interval" TEXT,
     "sort" INTEGER NOT NULL DEFAULT 0,
 
     CONSTRAINT "TilbudLine_pkey" PRIMARY KEY ("id")

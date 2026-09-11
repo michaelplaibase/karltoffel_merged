@@ -43,6 +43,7 @@ const S = StyleSheet.create({
   sectionRule: { backgroundColor: FRITURE, height: 2.2, width: 150, marginTop: 3, marginBottom: 6 },
   lineRow: { flexDirection: "row", justifyContent: "space-between", fontSize: 10, marginBottom: 4 },
   lineName: { fontSize: 10, maxWidth: 380 },
+  lineFrekvens: { fontSize: 8, color: RISTET, marginTop: 2 },
   linePrice: { fontSize: 10, fontWeight: 600 },
   totalBox: { backgroundColor: FRITURE, borderRadius: 4, padding: "10pt 12pt", marginTop: 10, marginHorizontal: 20 },
   photoGrid: { flexDirection: "row", flexWrap: "wrap", gap: 6, marginTop: 6 },
@@ -101,8 +102,15 @@ function TilbudDoc({ data }: { data: TilbudPdfData }) {
         e(View, { style: S.sectionRule }),
         data.linjer.map((l, i) =>
           e(View, { key: i, style: S.lineRow, wrap: false },
-            e(Text, { style: S.lineName }, l.description),
-            e(Text, { style: S.linePrice }, kr(l.price)),
+            // Thomas, 2026-09-11 (korrektion): hver linje viser titel, pris OG
+            // frekvens — nemt og overskueligt for kunden ("Vinduespudsning —
+            // 566 kr. pr. gang — hver 6. uge"). Engangsopgaver uden interval
+            // vises uden frekvenslinje.
+            e(View, { style: { flex: 1 } },
+              e(Text, { style: S.lineName }, l.description),
+              l.interval ? e(Text, { style: S.lineFrekvens }, l.interval.toLowerCase()) : null,
+            ),
+            e(Text, { style: S.linePrice }, `${kr(l.price)} pr. gang`),
           ),
         ),
       ),

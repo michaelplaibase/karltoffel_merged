@@ -1,12 +1,12 @@
 // Tilbud-modul — rene hjælpefunktioner (ingen DB/prisma), så de kan testes
 // med node --test uden database (samme mønster som lib/maanedrapport.mts).
 import { randomBytes } from "node:crypto";
-import { aarsbelob } from "./subscription-intervals";
+import { tilbudAarsbelobSum } from "./subscription-intervals";
 
 export const TILBUD_STATUSES = ["udkast", "sendt", "accepteret", "afvist", "konverteret"] as const;
 export type TilbudStatus = (typeof TILBUD_STATUSES)[number];
 
-export type TilbudLineData = { description: string; price: number };
+export type TilbudLineData = { description: string; price: number; interval?: string | null };
 
 /** Total for tilbuddet — priser er inkl. moms (kr, heltal), samme model som
  *  den eksisterende "Send tilbud"-flow i CRM'et. */
@@ -17,6 +17,21 @@ export function tilbudTotal(lines: { price: number }[]): number {
 /** Dansk formatering af pris: 12345 → "12.345 kr." */
 export function kr(n: number): string {
   return n.toLocaleString("da-DK") + " kr.";
+}
+
+/** Thomas, 2026-09-11 (korrektion): kundevenlig frekvens-tekst pr. linje —
+ *  "Hver 6. uge" → "hver 6. uge", "1 gang om året" → "1 gang om året".
+ *  null/tom interval → null (linjen er en engangsopgave og vises uden frekvens). */
+export function frekvensTekst(interval: string | null | undefined): string | null {
+  const t = (interval ?? "").trim();
+  return t ? t.toLowerCase() : null;
+}
+
+/** Én kundevenlig linjetekst: "Vinduespudsning — 566 kr. pr. gang — hver 6. uge".
+ *  Uden interval: "Tagrender — 566 kr." (engangsopgave). */
+export function linjeKundeTekst(line: { description: string; price: number; interval?: string | null }): string {
+  const frek = frekvensTekst(line.interval);
+  return `${line.description} — ${kr(line.price)} pr. gang${frek ? ` — ${frek}` : ""}`;
 }
 
 /** Engangs-token til det offentlige accept-link /t/{token} — samme mønster som
@@ -36,12 +51,12 @@ export type TilbudPdfData = {
   titel: string;
   note: string | null;
   startWeek: string | null; // valgfri startuge — udelades hvis tom
-  baseInterval: string | null; // valgfrit interval — udelades hvis tomt
-  linjer: { description: string; price: number }[];
-  /** Årligt beløb (pris pr. gang × besøg pr. år) — KUN når intervallet er sat
-   *  (Thomas, 2026-09-11: det gamle 'samlet beløb' er fjernet fra tilbud,
-   *  PDF og accept-side; beregningen deles med abonnementet via
-   *  lib/subscription-intervals, så tallene aldrig afviger). */
+  baseInterval: string | null; // valgfrit tilbud-niveau interval — udelades hvis tomt
+  linjer: { description: string; price: number; interval: string | null }[];
+  /** Årligt beløb = SUMMEN PR. LINJE (pris × besøg pr. år for hver linje med
+   *  interval) — KUN når mindst én linje har interval (Thomas, 2026-09-11
+   *  korrektion: interval er nu pr. opgavelinje; beregningen deles med
+   *  abonnementet via lib/subscription-intervals, så tallene aldrig afviger). */
   aarsbelob: number | null;
   fotosForside: string[]; // base64 data-URIs
   fotosPerLinje: string[][]; // samme index som linjer
@@ -53,12 +68,17 @@ export type TilbudInput = {
   note: string | null;
   startWeek?: string | null;
   baseInterval?: string | null;
-  lines: { description: string; price: number }[];
+  lines: { description: string; price: number; interval?: string | null }[];
 };
 
 export function buildTilbudPdfData(input: TilbudInput): TilbudPdfData {
   const navn = input.contact.companyName || input.contact.name || "Kunden";
   const fornavn = (input.contact.att || input.contact.name || "kunde").split(" ")[0];
+  const linjer = input.lines.map((l) => ({
+    description: l.description,
+    price: l.price,
+    interval: l.interval?.trim() || null,
+  }));
   return {
     kundeNavn: navn,
     hilsenNavn: fornavn,
@@ -66,8 +86,10 @@ export function buildTilbudPdfData(input: TilbudInput): TilbudPdfData {
     note: input.note || null,
     startWeek: input.startWeek?.trim() || null,
     baseInterval: input.baseInterval?.trim() || null,
-    linjer: input.lines,
-    aarsbelob: aarsbelob(input.baseInterval, tilbudTotal(input.lines)),
+    linjer,
+    // Summen pr. linje: kun linjer med interval tæller med (linjer uden interval
+    // er engangsopgaver — vises som "engangsopgave" uden årsbeløb).
+    aarsbelob: tilbudAarsbelobSum(linjer),
     fotosForside: [],
     fotosPerLinje: input.lines.map(() => []),
   };

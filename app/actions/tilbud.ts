@@ -12,6 +12,7 @@ import { weekLabel, mondayOf, isoWeekYear } from "@/lib/weeks";
 import { isoWeek } from "@/lib/planner";
 import { parseWeekLabelParts } from "@/lib/recurrence";
 import { nyAcceptToken } from "@/lib/tilbud.mts";
+import { parseBaseIntervalWeeks } from "@/lib/subscription-intervals";
 import { sendTilbudMail } from "@/lib/tilbud-send";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
@@ -23,8 +24,11 @@ const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 function readLines(formData: FormData) {
   const descs = formData.getAll("taskDescription").map(String);
   const prices = formData.getAll("taskPrice").map((v) => Number(v) || 0);
+  // Thomas, 2026-09-11 (korrektion): valgfrit interval PR. LINJE — samme
+  // muligheder som abonnementet (BASE_INTERVALS), tom = engangsopgave.
+  const intervals = formData.getAll("taskInterval").map(String);
   return descs
-    .map((d, i) => ({ description: d.trim(), price: prices[i] || 0 }))
+    .map((d, i) => ({ description: d.trim(), price: prices[i] || 0, interval: (intervals[i] ?? "").trim() || null }))
     .filter((l) => l.description);
 }
 
@@ -89,7 +93,7 @@ export async function createTilbud(_prev: TilbudState, formData: FormData): Prom
   const created = await prisma.tilbud.create({
     data: {
       contactId, title, note, acceptToken: nyAcceptToken(), startWeek, baseInterval,
-      lines: { create: lines.map((l, i) => ({ description: l.description, price: l.price, sort: i })) },
+      lines: { create: lines.map((l, i) => ({ description: l.description, price: l.price, interval: l.interval, sort: i })) },
     },
   });
   revalidatePath("/tilbud");
@@ -135,7 +139,7 @@ export async function convertTilbudToSubscription(tilbudId: number): Promise<voi
   const tilbud = await prisma.tilbud.findUnique({
     where: { id: tilbudId },
     include: {
-      lines: { orderBy: { sort: "asc" }, select: { description: true, price: true } },
+      lines: { orderBy: { sort: "asc" }, select: { description: true, price: true, interval: true } },
       contact: { select: { id: true, street: true, city: true } },
     },
   });
@@ -157,7 +161,27 @@ export async function convertTilbudToSubscription(tilbudId: number): Promise<voi
         ? `Uge ${parts.week}, ${parts.year}`
         : (parts.week >= isoWeek(nowMonday) ? `Uge ${parts.week}, ${isoWeekYear(nowMonday)}` : weekLabel(nowMonday));
     }
-    const baseInterval = tilbud.baseInterval?.trim() || "Hver 2. uge";
+    // Thomas, 2026-09-11 (korrektion): interval er nu SAT PR. OPGAVELINJE.
+    // Hvert linje-interval følger med til den enkelte TaskLine (ikke ét fælles
+    // interval): uge-intervallet "Hver 6. uge" oversættes til abonnements-
+    // multiplikatoren "Hver 6. gang" med basis-interval "Hver uge" — samme
+    // matematik som lib/lead-calc (stepWeeks = base × multiplier). Linjer uden
+    // interval er engangsopgaver og får "Hver gang" (holdet justerer bagefter —
+    // abonnementet oprettes pending).
+    const linjeIntervaller = tilbud.lines.map((l) => l.interval?.trim() || null);
+    const harLinjeIntervaller = linjeIntervaller.some(Boolean);
+    let baseInterval: string;
+    let linjeMultiplikatorer: string[];
+    if (harLinjeIntervaller) {
+      baseInterval = "Hver uge";
+      linjeMultiplikatorer = linjeIntervaller.map((iv) => {
+        const uger = parseBaseIntervalWeeks(iv);
+        return uger != null ? `Hver ${uger}. gang` : "Hver gang";
+      });
+    } else {
+      baseInterval = tilbud.baseInterval?.trim() || "Hver 2. uge";
+      linjeMultiplikatorer = tilbud.lines.map(() => "Hver gang");
+    }
   const lines = tilbud.lines.length
     ? tilbud.lines
     : [{ description: "Serviceaftale", price: 0 }]; // sikkerhedsnet — TaskLine kræver >= 1 linje
@@ -177,14 +201,14 @@ export async function convertTilbudToSubscription(tilbudId: number): Promise<voi
           pending: true,
           active: false,
           tasks: {
-            create: lines.map((l) => ({
+            create: lines.map((l, i) => ({
               category: "Andet",
               letter: "A",
               color: categoryColor("Andet"),
               description: l.description,
               price: l.price,
               durationMin: 60,
-              intervalMultiplier: "Hver gang",
+              intervalMultiplier: linjeMultiplikatorer[i] ?? "Hver gang",
             })),
           },
         },

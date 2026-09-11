@@ -2,8 +2,8 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { getDownloadUrl } from "@vercel/blob";
-import { statusLabel, tilbudTotal } from "@/lib/tilbud.mts";
-import { aarsbelob } from "@/lib/subscription-intervals";
+import { statusLabel, tilbudTotal, linjeKundeTekst } from "@/lib/tilbud.mts";
+import { tilbudAarsbelobSum } from "@/lib/subscription-intervals";
 import { tilbudMailBesked } from "@/lib/tilbud-send";
 import { sendTilbud, markTilbudAccepted, convertTilbudToSubscription, deleteTilbud } from "@/app/actions/tilbud";
 import TilbudSendPanel from "@/components/TilbudSendPanel";
@@ -30,7 +30,9 @@ export default async function TilbudDetailPage({ params }: { params: Promise<{ i
   if (!tilbud) notFound();
 
   const total = tilbudTotal(tilbud.lines); // til staff-mailen — vises IKKE som bundlinje
-  const aarligt = aarsbelob(tilbud.baseInterval, total);
+  // Thomas, 2026-09-11 (korrektion): Årsbeløbet er summen PR. LINJE — kun
+  // linjer med interval tæller med (engangsopgaver tæller ikke).
+  const aarligt = tilbudAarsbelobSum(tilbud.lines);
   const fotos = tilbud.photos.map((p) => ({ id: p.id, lineId: p.lineId, url: getDownloadUrl(p.url) }));
   const mailBesked = tilbudMailBesked({
     hilsenNavn: (tilbud.contact.name || "kunde").split(" ")[0],
@@ -61,7 +63,7 @@ export default async function TilbudDetailPage({ params }: { params: Promise<{ i
             <div className="tasklines">
               {tilbud.lines.map((l) => (
                 <div className="tl-row" key={l.id} style={{ gridTemplateColumns: "1fr auto" }}>
-                  <span>{l.description}</span>
+                  <span>{linjeKundeTekst(l)}</span>
                   <span className="num">{kr(l.price)}</span>
                 </div>
               ))}
@@ -72,8 +74,8 @@ export default async function TilbudDetailPage({ params }: { params: Promise<{ i
             </div>
           </div>
           {tilbud.note ? <p className="form-text" style={{ whiteSpace: "pre-line" }}>{tilbud.note}</p> : null}
-          {tilbud.startWeek || tilbud.baseInterval ? (
-            <p className="page-desc">Start: {tilbud.startWeek ?? "—"} · Interval: {tilbud.baseInterval ?? "—"}</p>
+          {tilbud.startWeek ? (
+            <p className="page-desc">Start: {tilbud.startWeek}</p>
           ) : null}
         </div>
       </div>

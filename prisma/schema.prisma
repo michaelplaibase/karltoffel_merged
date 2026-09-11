@@ -422,6 +422,7 @@ model TilbudLine {
   tilbudId    Int
   description String
   price       Int
+  interval    String?  // Thomas, 2026-09-11 (korrektion): valgfrit interval PR. LINJE ("Hver 6. uge" / "1 gang om året") — samme muligheder som BASE_INTERVALS; null = engangsopgave
   sort        Int      @default(0)
   photos      TilbudPhoto[]
 

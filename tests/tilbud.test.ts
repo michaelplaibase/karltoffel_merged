@@ -1,9 +1,11 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import {
-  tilbudTotal, nyAcceptToken, buildTilbudPdfData, statusLabel, acceptTokenUdløber,
+  tilbudTotal, nyAcceptToken, buildTilbudPdfData, statusLabel, acceptTokenUdløber, linjeKundeTekst,
 } from "../lib/tilbud.mts";
-import { aarsbelob, besogPrAar, BASE_INTERVALS } from "../lib/subscription-intervals";
+import {
+  aarsbelob, besogPrAar, BASE_INTERVALS, tilbudLinjeAarsbelob, tilbudAarsbelobSum,
+} from "../lib/subscription-intervals";
 
 test("tilbudTotal summerer linjepriserne præcist", () => {
   assert.equal(tilbudTotal([{ price: 1200 }, { price: 350 }, { price: 0 }]), 1550);
@@ -24,10 +26,61 @@ test("årsbeløb: Thomas' eksempel — Hver 4. uge à 100 kr = 13 besøg = 1300 
   assert.equal(aarsbelob(null, 100), null);
 });
 
-test("BASE_INTERVALS er de præcis samme muligheder som abonnementet tilbyder", () => {
+test("BASE_INTERVALS er de præcis samme muligheder som abonnementet tilbyder + '1 gang om året'", () => {
   assert.ok(BASE_INTERVALS.includes("Hver 4. uge"));
-  assert.equal(BASE_INTERVALS.length, 16);
-  assert.ok(!BASE_INTERVALS.some((iv) => !/^Hver \d*\.? ?uge$/.test(iv.replace("Hver uge", "Hver 1. uge"))));
+  // Thomas, 2026-09-11 (korrektion): "1 gang om året" SKAL kunne vælges på
+  // tilbudslinjer (fx tagrender — kun én gang om året).
+  assert.ok(BASE_INTERVALS.includes("1 gang om året"));
+  assert.equal(BASE_INTERVALS.length, 17);
+  assert.ok(!BASE_INTERVALS.some((iv) => iv !== "1 gang om året" && !/^Hver \d*\.? ?uge$/.test(iv.replace("Hver uge", "Hver 1. uge"))));
+});
+
+test("'1 gang om året' giver præcis 1 besøg pr. år (aldrig multiplikations-fejl)", () => {
+  assert.equal(besogPrAar("1 gang om året"), 1);
+  assert.equal(aarsbelob("1 gang om året", 566), 566);
+  assert.equal(tilbudLinjeAarsbelob({ price: 566, interval: "1 gang om året" }), 566);
+});
+
+test("årsbeløb pr. linje: linjer uden interval tæller IKKE med (engangsopgaver)", () => {
+  assert.equal(tilbudLinjeAarsbelob({ price: 500, interval: null }), null);
+  assert.equal(tilbudLinjeAarsbelob({ price: 500 }), null);
+  assert.equal(tilbudLinjeAarsbelob({ price: 500, interval: "Hver 4. uge" }), 6500);
+});
+
+test("THOMAS' EKSEMPEL: 566 hver 6. uge + 566 1 gang om året → 5660 kr./år", () => {
+  // 52/6 = 8.667 → afrundet til 9 besøg pr. år (besogPrAar-afrundningen)
+  assert.equal(besogPrAar("Hver 6. uge"), 9);
+  const sum = tilbudAarsbelobSum([
+    { description: "Vinduespudsning", price: 566, interval: "Hver 6. uge" },
+    { description: "Tagrender", price: 566, interval: "1 gang om året" },
+  ]);
+  assert.equal(sum, 566 * 9 + 566 * 1); // 5094 + 566 = 5660
+  assert.equal(sum, 5660);
+});
+
+test("tilbudAarsbelobSum: blandede linjer — kun linjer med interval tæller med", () => {
+  const sum = tilbudAarsbelobSum([
+    { description: "Vinduespudsning", price: 566, interval: "Hver 6. uge" },
+    { description: "Engangsopgave", price: 999, interval: null }, // tæller IKKE med
+    { description: "Tagrender", price: 566, interval: "1 gang om året" },
+  ]);
+  assert.equal(sum, 5660);
+  // ingen linjer med interval → null (ingen årsbeløbs-bundlinje)
+  assert.equal(tilbudAarsbelobSum([{ description: "X", price: 100, interval: null }]), null);
+  assert.equal(tilbudAarsbelobSum([]), null);
+});
+
+test("linjeKundeTekst giver kundevenlig frekvenstekst pr. linje", () => {
+  assert.equal(
+    linjeKundeTekst({ description: "Vinduespudsning", price: 566, interval: "Hver 6. uge" }),
+    "Vinduespudsning — 566 kr. pr. gang — hver 6. uge",
+  );
+  assert.equal(
+    linjeKundeTekst({ description: "Tagrender", price: 566, interval: "1 gang om året" }),
+    "Tagrender — 566 kr. pr. gang — 1 gang om året",
+  );
+  // engangsopgave: ingen frekvens
+  assert.equal(linjeKundeTekst({ description: "Tagrender", price: 566 }), "Tagrender — 566 kr. pr. gang");
 });
 
 test("nyAcceptToken er URL-sikkert og unikt (engangs-token)", () => {
@@ -63,21 +116,36 @@ test("valgfri startuge/interval gennemgår til PDF-data (tomme = null)", () => {
     contact: { name: "Kunde", companyName: null, att: null },
     title: "Tilbud", note: null,
     startWeek: " Uge 29 ", baseInterval: "Hver 2. uge",
-    lines: [{ description: "Græsplæneklipning", price: 300 }],
+    lines: [{ description: "Græsplæneklipning", price: 300, interval: "Hver 2. uge" }],
   });
   assert.equal(med.startWeek, "Uge 29"); // trimmet
   assert.equal(med.baseInterval, "Hver 2. uge");
+  // Thomas' korrektion: årsbeløbet er nu summen pr. linje
   assert.equal(med.aarsbelob, 300 * 26); // pris pr. gang × besøg pr. år (deles med abonnementet)
 
   const uden = buildTilbudPdfData({
     contact: { name: "Kunde", companyName: null, att: null },
     title: "Tilbud", note: null,
     startWeek: "", baseInterval: null,
-    lines: [{ description: "Græsplæneklipning", price: 300 }],
+    lines: [{ description: "Græsplæneklipning", price: 300, interval: null }],
   });
   assert.equal(uden.startWeek, null); // tomme felter udelades af PDF'en
   assert.equal(uden.baseInterval, null);
   assert.equal(uden.aarsbelob, null); // ingen bundbeløb uden interval
+});
+
+test("buildTilbudPdfData: to linjer med forskellige intervaller → korrekt årsbeløb (sum pr. linje)", () => {
+  const d = buildTilbudPdfData({
+    contact: { name: "Kunde", companyName: null, att: null },
+    title: "Tilbud", note: null,
+    lines: [
+      { description: "Vinduespudsning", price: 566, interval: "Hver 6. uge" },
+      { description: "Tagrender", price: 566, interval: "1 gang om året" },
+    ],
+  });
+  assert.equal(d.linjer[0].interval, "Hver 6. uge");
+  assert.equal(d.linjer[1].interval, "1 gang om året");
+  assert.equal(d.aarsbelob, 566 * 9 + 566); // 5094 + 566 = 5660
 });
 
 test("statusLabel dækker alle tilbudstatusser", () => {

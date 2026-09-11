@@ -3,8 +3,8 @@ import { headers } from "next/headers";
 import { prisma } from "@/lib/db";
 import { sendEmail } from "@/lib/email";
 import { underLimit, recordHit } from "@/lib/rate-limit";
-import { tilbudTotal } from "@/lib/tilbud.mts";
-import { aarsbelob } from "@/lib/subscription-intervals";
+import { tilbudTotal, linjeKundeTekst } from "@/lib/tilbud.mts";
+import { tilbudAarsbelobSum } from "@/lib/subscription-intervals";
 
 // Offentlig accept-side (Thomas, 2026-09-11): kunden klikker "Godkend tilbud" på
 // /t/{token}. Ingen login — tokenet ER autorisationen, samme mønster som
@@ -38,7 +38,7 @@ export default async function TilbudAcceptPage({
     where: { acceptToken: token },
     include: {
       contact: { select: { name: true, companyName: true } },
-      lines: { orderBy: { sort: "asc" }, select: { description: true, price: true } },
+      lines: { orderBy: { sort: "asc" }, select: { description: true, price: true, interval: true } },
     },
   });
   }
@@ -57,8 +57,10 @@ export default async function TilbudAcceptPage({
   }
   if (!tilbud) notFound();
 
-  const total = tilbudTotal(tilbud.lines); // pris pr. gang — input til årsbeløbet
-  const aarligt = aarsbelob(tilbud.baseInterval, total);
+  const total = tilbudTotal(tilbud.lines); // pris pr. gang — input til staff-mailen
+  // Thomas, 2026-09-11 (korrektion): Årsbeløbet = summen PR. LINJE — kun
+  // linjer med interval tæller med; linjer uden interval er engangsopgaver.
+  const aarligt = tilbudAarsbelobSum(tilbud.lines);
   let accepted = tilbud.status === "accepteret" || tilbud.status === "konverteret";
 
   // Primitiver til server actionen (den kan ikke close over en evt. null tilbud)
@@ -107,16 +109,24 @@ export default async function TilbudAcceptPage({
 
       <div style={{ marginTop: 18 }}>
         {tilbud.lines.map((l, i) => (
-          <div key={i} style={{ display: "flex", justifyContent: "space-between", padding: "7px 0", borderBottom: "1px solid #e8e0c8" }}>
-            <span>{l.description}</span>
-            <b>{kr(l.price)}</b>
+          <div key={i} style={{ padding: "7px 0", borderBottom: "1px solid #e8e0c8" }}>
+            <div style={{ display: "flex", justifyContent: "space-between" }}>
+              <span>{l.description}</span>
+              <b>{kr(l.price)}</b>
+            </div>
+            {/* Thomas, 2026-09-11 (korrektion): frekvens vises pr. linje — let
+                læsbar kundevenlig form ("hver 6. uge" / "1 gang om året");
+                engangsopgaver vises uden frekvenslinje. */}
+            {l.interval ? (
+              <small style={{ color: "#8A6931" }}>{l.interval.toLowerCase()}</small>
+            ) : null}
           </div>
         ))}
-        {tilbud.startWeek || tilbud.baseInterval ? (
-          <p style={{ marginTop: 10, fontWeight: 600 }}>
-            {[tilbud.startWeek ? `Start: ${tilbud.startWeek}` : null, tilbud.baseInterval ? `Interval: ${tilbud.baseInterval}` : null].filter(Boolean).join(" · ")}
-          </p>
+        {tilbud.startWeek ? (
+          <p style={{ marginTop: 10, fontWeight: 600 }}>Start: {tilbud.startWeek}</p>
         ) : null}
+        {/* Thomas, 2026-09-11 (korrektion): Årligt beløb = summen pr. linje
+            (pris × besøg pr. år for hver linje med interval). */}
         {/* Thomas, 2026-09-11: 'samlet beløb' fjernet — ÅRLIGT beløb når intervallet er sat. */}
         {aarligt != null ? (
           <div style={{ background: "#FFF87B", borderRadius: 6, padding: "12px 14px", marginTop: 10 }}>

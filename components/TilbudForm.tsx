@@ -3,7 +3,7 @@
 import { useActionState, useState } from "react";
 import Link from "next/link";
 import type { TilbudState } from "@/app/actions/tilbud";
-import { BASE_INTERVALS, aarsbelob } from "@/lib/subscription-intervals";
+import { BASE_INTERVALS, tilbudLinjeAarsbelob, tilbudAarsbelobSum } from "@/lib/subscription-intervals";
 
 type Kontakt = { id: number; name: string; companyName: string | null };
 
@@ -15,12 +15,19 @@ export default function TilbudForm({ contacts, action }: {
 }) {
   const [state, formAction, pending] = useActionState(action, {});
   const [nyKunde, setNyKunde] = useState(false);
-  const [linjer, setLinjer] = useState<{ description: string; price: number }[]>([{ description: "", price: 0 }]);
-  const [interval, setInterval] = useState("");
-  const total = linjer.reduce((a, l) => a + (Number(l.price) || 0), 0);
-  const aarligt = aarsbelob(interval, total); // null når interval er tom
+  // Thomas, 2026-09-11 (korrektion): interval vælges PR. OPGAVELINJE — samme
+  // muligheder som abonnementet (BASE_INTERVALS inkl. "1 gang om året").
+  // Tilbud-niveau-feltet er beholdt som STANDARD/præ-valg for nye linjer.
+  const [linjer, setLinjer] = useState<{ description: string; price: number; interval: string }[]>([
+    { description: "", price: 0, interval: "" },
+  ]);
+  const [standardInterval, setStandardInterval] = useState("");
+  // Årsbeløb pr. linje + summen af linjerne med interval (engangsopgaver uden
+  // interval tæller ikke med — samme beregning som abonnementet).
+  const linjeAar = linjer.map(tilbudLinjeAarsbelob);
+  const aarligt = tilbudAarsbelobSum(linjer);
 
-  const opdaterLinje = (i: number, felt: "description" | "price", vaerdi: string) => {
+  const opdaterLinje = (i: number, felt: "description" | "price" | "interval", vaerdi: string) => {
     setLinjer((prev) => prev.map((l, j) => (j === i ? { ...l, [felt]: felt === "price" ? Number(vaerdi) || 0 : vaerdi } : l)));
   };
 
@@ -112,17 +119,26 @@ export default function TilbudForm({ contacts, action }: {
               </div>
             </div>
             <div className="f2">
-              <label className="col-label">Interval (valgfri)</label>
+              <label className="col-label">Standard-interval for nye linjer (valgfri)</label>
               <div>
-                {/* SAMME muligheder som abonnements-oprettelsen — konstanterne
-                    deles (lib/subscription-intervals), så de aldrig afviger. */}
+                {/* Thomas, 2026-09-11 (korrektion): intervallet vælges pr.
+                    opgavelinje herunder — dette felt er kun et præ-valg, som nye
+                    linjer starter med. SAMME muligheder som abonnements-
+                    oprettelsen — konstanterne deles (lib/subscription-intervals),
+                    så de aldrig afviger. */}
                 <select
                   name="baseInterval"
                   className="form-control"
-                  value={interval}
-                  onChange={(e) => setInterval(e.target.value)}
+                  value={standardInterval}
+                  onChange={(e) => {
+                    const v = e.target.value;
+                    setStandardInterval(v);
+                    // Nye linjer arver standard-intervallet (valgfrit — kan
+                    // ændres pr. linje).
+                    setLinjer((prev) => prev.map((l) => (l.interval ? l : { ...l, interval: v })));
+                  }}
                 >
-                  <option value="">Ikke sat (vælges ved konvertering)</option>
+                  <option value="">Ikke sat (vælges pr. linje)</option>
                   {BASE_INTERVALS.map((iv) => (
                     <option key={iv} value={iv}>{iv}</option>
                   ))}
@@ -134,7 +150,7 @@ export default function TilbudForm({ contacts, action }: {
               <label className="col-label">Opgaver og priser</label>
               <div className="tasklines">
                 {linjer.map((l, i) => (
-                  <div className="tl-row" key={i} style={{ gridTemplateColumns: "1fr 140px auto" }}>
+                  <div className="tl-row" key={i} style={{ gridTemplateColumns: "1fr 120px 200px auto" }}>
                     <input
                       name="taskDescription"
                       className="form-control"
@@ -151,22 +167,43 @@ export default function TilbudForm({ contacts, action }: {
                       onChange={(e) => opdaterLinje(i, "price", e.target.value)}
                       placeholder="Pris"
                     />
+                    {/* Valgfrit interval PR. LINJE — samme muligheder som
+                        abonnementet (genbrugt BASE_INTERVALS). */}
+                    <select
+                      name="taskInterval"
+                      className="form-control"
+                      value={l.interval}
+                      onChange={(e) => opdaterLinje(i, "interval", e.target.value)}
+                      aria-label="Interval"
+                    >
+                      <option value="">Engangsopgave</option>
+                      {BASE_INTERVALS.map((iv) => (
+                        <option key={iv} value={iv}>{iv}</option>
+                      ))}
+                    </select>
                     <button
                       type="button"
                       className="btn btn-light"
                       onClick={() => setLinjer((prev) => (prev.length > 1 ? prev.filter((_, j) => j !== i) : prev))}
                       aria-label="Fjern linje"
                     >✕</button>
+                    {/* Årsbeløb PR. LINJE — kun linjer med interval tæller med. */}
+                    {linjeAar[i] != null ? (
+                      <small className="form-text" style={{ gridColumn: "1 / -1", marginTop: -4 }}>
+                        Årligt: {kr(linjeAar[i] as number)} ({l.interval.toLowerCase()})
+                      </small>
+                    ) : null}
                   </div>
                 ))}
-                <button type="button" className="btn btn-outline-primary" onClick={() => setLinjer((p) => [...p, { description: "", price: 0 }])}>
+                <button type="button" className="btn btn-outline-primary" onClick={() => setLinjer((p) => [...p, { description: "", price: 0, interval: standardInterval }])}>
                   + Tilføj opgave
                 </button>
-                {/* Thomas, 2026-09-11: intet 'samlet beløb' — i stedet det
-                    ÅRLIGE beløb når intervallet er sat (pris pr. gang × besøg
-                    pr. år, samme beregning som abonnementet). */}
+                {/* Thomas, 2026-09-11 (korrektion): Årsbeløbet er nu SUMMEN PR.
+                    LINJE — hver linje med interval bidrager med pris × besøg pr.
+                    år (52/uge-interval; 1 for "1 gang om året"). Linjer uden
+                    interval er engangsopgaver og tæller ikke med. */}
                 {aarligt != null ? (
-                  <div className="tl-sum"><span>Årligt beløb (inkl. moms)</span><b>{kr(aarligt)}</b></div>
+                  <div className="tl-sum"><span>Årligt beløb (inkl. moms) — sum af linjerne med interval</span><b>{kr(aarligt)}</b></div>
                 ) : null}
               </div>
             </div>
