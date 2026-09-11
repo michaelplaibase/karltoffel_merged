@@ -5,13 +5,15 @@
 // pr. kanal pr. måned; CAC = forbrug pr. kanal ÷ antal nye kunder fra kanalen.
 import { prisma } from "./db";
 import { MOMS } from "./data";
+import { parseBaseIntervalWeeks } from "./subscription-intervals";
 
 const WEEKS_PER_YEAR = 52;
 const MONTHS_PER_YEAR = 12;
 
 function parseBaseInterval(label: string): number {
-  const m = label.match(/Hver\s+(\d+)\.\s*uge/i);
-  return m ? Math.max(1, Number(m[1])) : 1;
+  // Deles med tilbud-årsbeløbet (lib/subscription-intervals) — samme parser,
+  // så tal aldrig kan afvige mellem abonnement og tilbud.
+  return parseBaseIntervalWeeks(label, 1) ?? 1;
 }
 function parseMultiplier(label: string | null): number {
   if (!label) return 1;

@@ -4,6 +4,7 @@ import { prisma } from "@/lib/db";
 import { sendEmail } from "@/lib/email";
 import { underLimit, recordHit } from "@/lib/rate-limit";
 import { tilbudTotal } from "@/lib/tilbud.mts";
+import { aarsbelob } from "@/lib/subscription-intervals";
 
 // Offentlig accept-side (Thomas, 2026-09-11): kunden klikker "Godkend tilbud" på
 // /t/{token}. Ingen login — tokenet ER autorisationen, samme mønster som
@@ -56,7 +57,8 @@ export default async function TilbudAcceptPage({
   }
   if (!tilbud) notFound();
 
-  const total = tilbudTotal(tilbud.lines);
+  const total = tilbudTotal(tilbud.lines); // pris pr. gang — input til årsbeløbet
+  const aarligt = aarsbelob(tilbud.baseInterval, total);
   let accepted = tilbud.status === "accepteret" || tilbud.status === "konverteret";
 
   // Primitiver til server actionen (den kan ikke close over en evt. null tilbud)
@@ -83,7 +85,7 @@ export default async function TilbudAcceptPage({
         subject: `✅ ${kundeNavn} godkendte tilbuddet`,
         text:
           `${kundeNavn} har klikket "Godkend tilbud" på det offentlige link.\n\n` +
-          `Tilbud: ${titel} (samlet ${total.toLocaleString("da-DK")} kr.)\n` +
+          `Tilbud: ${titel}${aarligt != null ? ` (årligt ${aarligt.toLocaleString("da-DK")} kr.)` : ""}\n` +
           `Åbn i CRM: https://crm.karltoffel.dk/tilbud/${tId}`,
       });
     } catch (e) {
@@ -115,9 +117,12 @@ export default async function TilbudAcceptPage({
             {[tilbud.startWeek ? `Start: ${tilbud.startWeek}` : null, tilbud.baseInterval ? `Interval: ${tilbud.baseInterval}` : null].filter(Boolean).join(" · ")}
           </p>
         ) : null}
-        <div style={{ background: "#FFF87B", borderRadius: 6, padding: "12px 14px", marginTop: 10 }}>
-          <b style={{ fontSize: 17 }}>Samlet pris: {kr(total)} (inkl. moms)</b>
-        </div>
+        {/* Thomas, 2026-09-11: 'samlet beløb' fjernet — ÅRLIGT beløb når intervallet er sat. */}
+        {aarligt != null ? (
+          <div style={{ background: "#FFF87B", borderRadius: 6, padding: "12px 14px", marginTop: 10 }}>
+            <b style={{ fontSize: 17 }}>Årligt beløb: {kr(aarligt)} (inkl. moms)</b>
+          </div>
+        ) : null}
       </div>
 
       {kanGodkende ? (

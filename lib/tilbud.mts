@@ -1,6 +1,7 @@
 // Tilbud-modul — rene hjælpefunktioner (ingen DB/prisma), så de kan testes
 // med node --test uden database (samme mønster som lib/maanedrapport.mts).
 import { randomBytes } from "node:crypto";
+import { aarsbelob } from "./subscription-intervals";
 
 export const TILBUD_STATUSES = ["udkast", "sendt", "accepteret", "afvist", "konverteret"] as const;
 export type TilbudStatus = (typeof TILBUD_STATUSES)[number];
@@ -37,7 +38,11 @@ export type TilbudPdfData = {
   startWeek: string | null; // valgfri startuge — udelades hvis tom
   baseInterval: string | null; // valgfrit interval — udelades hvis tomt
   linjer: { description: string; price: number }[];
-  samlet: number;
+  /** Årligt beløb (pris pr. gang × besøg pr. år) — KUN når intervallet er sat
+   *  (Thomas, 2026-09-11: det gamle 'samlet beløb' er fjernet fra tilbud,
+   *  PDF og accept-side; beregningen deles med abonnementet via
+   *  lib/subscription-intervals, så tallene aldrig afviger). */
+  aarsbelob: number | null;
   fotosForside: string[]; // base64 data-URIs
   fotosPerLinje: string[][]; // samme index som linjer
 };
@@ -62,7 +67,7 @@ export function buildTilbudPdfData(input: TilbudInput): TilbudPdfData {
     startWeek: input.startWeek?.trim() || null,
     baseInterval: input.baseInterval?.trim() || null,
     linjer: input.lines,
-    samlet: tilbudTotal(input.lines),
+    aarsbelob: aarsbelob(input.baseInterval, tilbudTotal(input.lines)),
     fotosForside: [],
     fotosPerLinje: input.lines.map(() => []),
   };

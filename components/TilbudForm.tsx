@@ -3,6 +3,7 @@
 import { useActionState, useState } from "react";
 import Link from "next/link";
 import type { TilbudState } from "@/app/actions/tilbud";
+import { BASE_INTERVALS, aarsbelob } from "@/lib/subscription-intervals";
 
 type Kontakt = { id: number; name: string; companyName: string | null };
 
@@ -15,7 +16,9 @@ export default function TilbudForm({ contacts, action }: {
   const [state, formAction, pending] = useActionState(action, {});
   const [nyKunde, setNyKunde] = useState(false);
   const [linjer, setLinjer] = useState<{ description: string; price: number }[]>([{ description: "", price: 0 }]);
+  const [interval, setInterval] = useState("");
   const total = linjer.reduce((a, l) => a + (Number(l.price) || 0), 0);
+  const aarligt = aarsbelob(interval, total); // null når interval er tom
 
   const opdaterLinje = (i: number, felt: "description" | "price", vaerdi: string) => {
     setLinjer((prev) => prev.map((l, j) => (j === i ? { ...l, [felt]: felt === "price" ? Number(vaerdi) || 0 : vaerdi } : l)));
@@ -111,13 +114,18 @@ export default function TilbudForm({ contacts, action }: {
             <div className="f2">
               <label className="col-label">Interval (valgfri)</label>
               <div>
-                <select name="baseInterval" className="form-control" defaultValue="">
+                {/* SAMME muligheder som abonnements-oprettelsen — konstanterne
+                    deles (lib/subscription-intervals), så de aldrig afviger. */}
+                <select
+                  name="baseInterval"
+                  className="form-control"
+                  value={interval}
+                  onChange={(e) => setInterval(e.target.value)}
+                >
                   <option value="">Ikke sat (vælges ved konvertering)</option>
-                  <option value="Hver uge">Hver uge</option>
-                  <option value="Hver 2. uge">Hver 2. uge</option>
-                  <option value="Hver 3. uge">Hver 3. uge</option>
-                  <option value="Hver 4. uge">Hver 4. uge</option>
-                  <option value="Hver måned">Hver måned</option>
+                  {BASE_INTERVALS.map((iv) => (
+                    <option key={iv} value={iv}>{iv}</option>
+                  ))}
                 </select>
               </div>
             </div>
@@ -154,7 +162,12 @@ export default function TilbudForm({ contacts, action }: {
                 <button type="button" className="btn btn-outline-primary" onClick={() => setLinjer((p) => [...p, { description: "", price: 0 }])}>
                   + Tilføj opgave
                 </button>
-                <div className="tl-sum"><span>Samlet pris (inkl. moms)</span><b>{kr(total)}</b></div>
+                {/* Thomas, 2026-09-11: intet 'samlet beløb' — i stedet det
+                    ÅRLIGE beløb når intervallet er sat (pris pr. gang × besøg
+                    pr. år, samme beregning som abonnementet). */}
+                {aarligt != null ? (
+                  <div className="tl-sum"><span>Årligt beløb (inkl. moms)</span><b>{kr(aarligt)}</b></div>
+                ) : null}
               </div>
             </div>
 

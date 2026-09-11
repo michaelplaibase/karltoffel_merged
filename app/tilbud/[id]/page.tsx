@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { getDownloadUrl } from "@vercel/blob";
 import { statusLabel, tilbudTotal } from "@/lib/tilbud.mts";
+import { aarsbelob } from "@/lib/subscription-intervals";
 import { tilbudMailBesked } from "@/lib/tilbud-send";
 import { sendTilbud, markTilbudAccepted, convertTilbudToSubscription, deleteTilbud } from "@/app/actions/tilbud";
 import TilbudSendPanel from "@/components/TilbudSendPanel";
@@ -28,7 +29,8 @@ export default async function TilbudDetailPage({ params }: { params: Promise<{ i
   });
   if (!tilbud) notFound();
 
-  const total = tilbudTotal(tilbud.lines);
+  const total = tilbudTotal(tilbud.lines); // til staff-mailen — vises IKKE som bundlinje
+  const aarligt = aarsbelob(tilbud.baseInterval, total);
   const fotos = tilbud.photos.map((p) => ({ id: p.id, lineId: p.lineId, url: getDownloadUrl(p.url) }));
   const mailBesked = tilbudMailBesked({
     hilsenNavn: (tilbud.contact.name || "kunde").split(" ")[0],
@@ -63,7 +65,10 @@ export default async function TilbudDetailPage({ params }: { params: Promise<{ i
                   <span className="num">{kr(l.price)}</span>
                 </div>
               ))}
-              <div className="tl-sum"><span>Samlet pris (inkl. moms)</span><b>{kr(total)}</b></div>
+              {/* Thomas, 2026-09-11: 'samlet beløb' fjernet — ÅRLIGT beløb når intervallet er sat. */}
+              {aarligt != null ? (
+                <div className="tl-sum"><span>Årligt beløb (inkl. moms)</span><b>{kr(aarligt)}</b></div>
+              ) : null}
             </div>
           </div>
           {tilbud.note ? <p className="form-text" style={{ whiteSpace: "pre-line" }}>{tilbud.note}</p> : null}

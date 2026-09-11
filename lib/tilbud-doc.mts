@@ -78,8 +78,8 @@ function TilbudDoc({ data }: { data: TilbudPdfData }) {
         e(Text, { style: S.heroSub }, `Til ${data.kundeNavn}`),
       ),
       e(Text, { style: { marginHorizontal: 20, marginTop: 14, fontSize: 10.5, lineHeight: 1.5 } },
-        `Hej ${data.hilsenNavn}! Her er vores tilbud på opgaverne. Du kan se priserne på hver opgave ` +
-        `og den samlede pris nederst.`,
+        `Hej ${data.hilsenNavn}! Her er vores tilbud på opgaverne. Du kan se priserne på hver opgave` +
+        (data.aarsbelob != null ? ` og det årlige beløb nederst.` : `.`),
       ),
       data.startWeek || data.baseInterval
         ? e(Text, { style: { marginHorizontal: 20, marginTop: 8, fontSize: 10.5, fontWeight: 600 } },
@@ -106,9 +106,14 @@ function TilbudDoc({ data }: { data: TilbudPdfData }) {
           ),
         ),
       ),
+      // Bundlinje: ÅRLIGT beløb når intervallet er sat (Thomas, 2026-09-11 —
+      // det gamle 'samlet beløb' er fjernet). Uden interval: kun momsnoden.
       e(View, { style: S.totalBox, wrap: false },
-        e(Text, { style: { fontSize: 11, fontWeight: 600 } }, `Samlet pris: ${kr(data.samlet)} (inkl. moms)`),
-        e(Text, { style: { fontSize: 8.5, marginTop: 3, color: RISTET } }, "Alle priser er inkl. moms. Tilbuddet er gældende i 30 dage."),
+        data.aarsbelob != null
+          ? e(Text, { style: { fontSize: 11, fontWeight: 600 } }, `Årligt beløb: ${kr(data.aarsbelob)} (inkl. moms)`)
+          : null,
+        e(Text, { style: { fontSize: 8.5, marginTop: data.aarsbelob != null ? 3 : 0, color: RISTET } },
+          "Alle priser er inkl. moms. Tilbuddet er gældende i 30 dage."),
       ),
       e(View, { style: { backgroundColor: MULD, borderRadius: 4, padding: 12, margin: "12pt 20pt 0 20pt" }, wrap: false },
         e(Text, { style: { fontFamily: "Snaga", fontSize: 11, color: FRITURE } }, "Vil du sige ja?"),
