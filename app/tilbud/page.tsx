@@ -3,6 +3,7 @@ import { prisma } from "@/lib/db";
 import { statusLabel } from "@/lib/tilbud.mts";
 
 export const metadata = { title: "Tilbud · Karltoffel Business Manager" };
+export const dynamic = "force-dynamic";
 
 const kr = (n: number) => n.toLocaleString("da-DK") + " kr.";
 

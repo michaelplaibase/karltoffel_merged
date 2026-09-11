@@ -9,6 +9,7 @@ import TilbudSendPanel from "@/components/TilbudSendPanel";
 import TilbudPhotoPanel from "@/components/TilbudPhotoPanel";
 
 export const metadata = { title: "Tilbud · Karltoffel Business Manager" };
+export const dynamic = "force-dynamic";
 
 const kr = (n: number) => n.toLocaleString("da-DK") + " kr.";
 

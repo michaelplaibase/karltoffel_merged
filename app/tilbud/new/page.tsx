@@ -3,6 +3,7 @@ import { createTilbud } from "@/app/actions/tilbud";
 import TilbudForm from "@/components/TilbudForm";
 
 export const metadata = { title: "Nyt tilbud · Karltoffel Business Manager" };
+export const dynamic = "force-dynamic";
 
 export default async function NyTilbudPage() {
   const contacts = await prisma.contact.findMany({
