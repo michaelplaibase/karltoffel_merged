@@ -2,11 +2,13 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { routeId } from "@/lib/route-ids";
 import { prisma } from "@/lib/db";
+import { getDownloadUrl } from "@vercel/blob";
 import { getContactById, getSubscriptionsForContact, getFixedPricesForContact, getOrdersForContact } from "@/lib/queries";
 import { CatChip, MapLink, PriceDual } from "@/components/ui";
 import RowMenu from "@/components/RowMenu";
 import SkraafotoCard from "@/components/SkraafotoCard";
 import CustomerOrdersTable from "@/components/CustomerOrdersTable";
+import CustomerCalendar, { type CalDay } from "@/components/CustomerCalendar";
 import { stopSubscription } from "@/app/actions/subscriptions";
 import { deleteFixedPrice } from "@/app/actions/fixed-prices";
 
@@ -19,7 +21,7 @@ const SKRAAFOTO_CONFIGURED = !!(process.env.DATAFORSYNINGEN_TOKEN || "").trim();
 // KS-fotos for én kunde — isoleret i egen funktion så tabellens fravær (før
 // migrationen er kørt) ikke kan crashe kundesiden.
 async function getPhotosForContact(contactId: number) {
-  return prisma.orderPhoto.findMany({
+  const rows = await prisma.orderPhoto.findMany({
     where: { contactId },
     orderBy: { createdAt: "desc" },
     include: {
@@ -27,6 +29,8 @@ async function getPhotosForContact(contactId: number) {
       order: { select: { id: true, plannedAt: true } },
     },
   });
+  // Private Blob-store: konvertér til kortsigtede download-URLs (url i DB er ikke offentlig).
+  return rows.map((p) => ({ ...p, url: getDownloadUrl(p.url) }));
 }
 
 export default async function CustomerDetail({
@@ -63,6 +67,15 @@ export default async function CustomerDetail({
   const address = [c.street, c.city].filter(Boolean).join(", ");
   const reach = [c.phone, c.email].filter(Boolean).join(" · ");
 
+  // Aftalekalender (Thomas, 2026-09-10): alle ordre-datoer (fortid + fremtid)
+  // som farvekodede dage i et års-overblik. Ren visning — ingen skrivning.
+  const calDays: CalDay[] = orders.map((o) => ({
+    date: o.deliveryDate,
+    orderIds: [o.id],
+    status: o.status,
+    employee: o.employee,
+    tasks: o.tasks.map((t) => [t.category, t.description].filter(Boolean).join(" · ")),
+  }));
   return (
     <div className="container-1140">
       <div className="toolbar" style={{ justifyContent: "space-between" }}>
@@ -118,7 +131,7 @@ export default async function CustomerDetail({
                   <div key={p.id} style={{ width: 110 }}>
                     <a href={p.url} target="_blank" rel="noopener noreferrer" title={`KS-foto${uploader ? ` · ${uploader}` : ""} · ${photoDate(p.createdAt)}`}>
                       {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={p.url} alt="KS-foto" style={{ width: 88, height: 88, objectFit: "cover", borderRadius: 6, border: "1px solid var(--line, #ddd)" }} />
+                      <img src={`/api/photos/file?id=${p.id}`} alt="KS-foto" style={{ width: 88, height: 88, objectFit: "cover", borderRadius: 6, border: "1px solid var(--line, #ddd)" }} />
                     </a>
                     <div className="muted" style={{ fontSize: 11, marginTop: 4, lineHeight: 1.4 }}>
                       {photoDate(p.createdAt)}
@@ -199,6 +212,19 @@ export default async function CustomerDetail({
               </tbody>
             </table>
           </div>
+        </div>
+      </div>
+
+      <div className="card">
+        <div className="card-header">
+          <h4 className="section-title">Aftalekalender</h4>
+        </div>
+        <div className="card-body tight">
+          {calDays.length === 0 ? (
+            <p className="muted" style={{ margin: 0 }}>Ingen planlagte eller tidligere opgaver på kunden endnu.</p>
+          ) : (
+            <CustomerCalendar days={calDays} contactName={c.name} />
+          )}
         </div>
       </div>
 

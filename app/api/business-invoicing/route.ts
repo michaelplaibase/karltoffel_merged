@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { runBusinessBatchInvoicing } from "@/lib/business-invoicing";
+import { runMaanedrapporter } from "@/lib/maanedrapport-send";
 import { getSessionUser, unauthorized, forbidden } from "@/lib/api-auth";
 
 // Erhvervs-samlefaktura — kører d. 20. hver måned (se vercel.json), fakturerer
@@ -25,5 +26,16 @@ export async function GET(req: Request) {
   }
 
   const result = await runBusinessBatchInvoicing(new Date());
-  return NextResponse.json(result);
+
+  // Månedrapporter (Thomas 2026-09-09): efter samlefakturaerne — KUN erhverv,
+  // pilot-gated via MAANEDSRAPPORT_PILOT_CONTACTS (tom = alle). Rapport-fejl
+  // må ALDRIG påvirke faktureringen, derfor egen try/catch.
+  let maanedrapportOut: Awaited<ReturnType<typeof runMaanedrapporter>> | { error: string } = { sent: 0, skipped_no_email: 0, skipped_pilot: 0, failed: 0 };
+  try {
+    maanedrapportOut = await runMaanedrapporter(new Date());
+  } catch (e) {
+    maanedrapportOut = { error: e instanceof Error ? e.message : "Månedrapport-kørsel fejlede" };
+  }
+
+  return NextResponse.json({ ...result, maanedrapporter: maanedrapportOut });
 }

@@ -8,7 +8,8 @@
 // returneres { ok:true, simulated:true } — intet sendes før nøglerne er sat.
 import { createSign } from "node:crypto";
 
-export type SendGmailInput = { to: string; subject: string; text: string; html?: string; replyTo?: string };
+export type GmailAttachment = { filename: string; contentBase64: string; contentType?: string };
+export type SendGmailInput = { to: string; subject: string; text: string; html?: string; replyTo?: string; attachments?: GmailAttachment[] };
 export type SendGmailResult = { ok: boolean; simulated?: boolean; id?: string; error?: string };
 
 const IMPERSONATE = process.env.GMAIL_IMPERSONATE?.trim() || "hej@karltoffel.dk";
@@ -49,19 +50,42 @@ function buildRawMessage(input: SendGmailInput): string {
     return Buffer.from(body).toString("base64url");
   }
 
-  const body = [
-    ...headers,
-    `Content-Type: multipart/alternative; boundary="${boundary}"`,
+  const altBoundary = boundary + "-alt";
+  const altPart = [
+    `Content-Type: multipart/alternative; boundary="${altBoundary}"`,
     "",
-    `--${boundary}`,
+    `--${altBoundary}`,
     `Content-Type: text/plain; charset="UTF-8"`,
     "",
     input.text,
-    `--${boundary}`,
+    `--${altBoundary}`,
     `Content-Type: text/html; charset="UTF-8"`,
     "",
     input.html,
-    `--${boundary}--`,
+    `--${altBoundary}--`,
+  ].join("\r\n");
+
+  if (!input.attachments?.length) {
+    const body = [...headers, "", altPart].join("\r\n");
+    return Buffer.from(body).toString("base64url");
+  }
+  const attBoundary = boundary + "-att";
+  const attParts = input.attachments.flatMap((a) => [
+    `--${attBoundary}`,
+    `Content-Type: ${a.contentType ?? "application/octet-stream"}; name="${a.filename}"`,
+    "Content-Transfer-Encoding: base64",
+    `Content-Disposition: attachment; filename="${a.filename}"`,
+    "",
+    a.contentBase64.replace(/(.{76})/g, "$1\r\n"),
+  ]);
+  const body = [
+    ...headers,
+    `Content-Type: multipart/mixed; boundary="${attBoundary}"`,
+    "",
+    `--${attBoundary}`,
+    altPart,
+    ...attParts,
+    `--${attBoundary}--`,
   ].join("\r\n");
   return Buffer.from(body).toString("base64url");
 }

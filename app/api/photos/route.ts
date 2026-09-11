@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { put } from "@vercel/blob";
+import { put, getDownloadUrl } from "@vercel/blob";
 import { prisma } from "@/lib/db";
 import { requireSession } from "@/lib/api-auth";
 
@@ -37,8 +37,10 @@ export async function POST(req: NextRequest) {
 
   try {
     const ext = file.name.includes(".") ? file.name.split(".").pop()!.toLowerCase() : "jpg";
+    // Storen er PRIVATE (Vercel Blob-fejl: "Cannot use public access on a private
+    // store") — gem derfor som private og giv klienten en kortsigtede download-URL.
     const blob = await put(`ks/order-${orderId}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`, file, {
-      access: "public",
+      access: "private",
       addRandomSuffix: true,
     });
 
@@ -52,12 +54,14 @@ export async function POST(req: NextRequest) {
         kind: "ks",
       },
     });
-    return NextResponse.json({ ok: true, photo: { id: photo.id, url: photo.url } });
+    return NextResponse.json({ ok: true, photo: { id: photo.id, url: getDownloadUrl(blob.url) } });
   } catch (err) {
     console.error("[photos] upload-fejl:", err instanceof Error ? err.message : err);
+    // Fejl-detail sendes til klienten under diagnosticering (fjernes når roden er fundet)
+    const detail = err instanceof Error ? err.message.slice(0, 300) : String(err).slice(0, 300);
     const msg = err instanceof Error && String(err.message).includes("BLOB_READ_WRITE_TOKEN")
       ? "Billedlager er ikke konfigureret endnu"
-      : "Upload fejlede";
+      : `Upload fejlede — ${detail}`;
     return NextResponse.json({ error: msg }, { status: 500 });
   }
 }
@@ -71,10 +75,12 @@ export async function GET(req: NextRequest) {
   if (!Number.isInteger(orderId) || orderId <= 0) {
     return NextResponse.json({ error: "Ugyldigt ordre-id" }, { status: 400 });
   }
-  const photos = await prisma.orderPhoto.findMany({
+  const rows = await prisma.orderPhoto.findMany({
     where: { orderId },
     orderBy: { createdAt: "desc" },
     select: { id: true, url: true, createdAt: true, uploadedBy: { select: { firstName: true, lastName: true } } },
   });
+  // Private store: DB-url er ikke offentlig — konvertér til kortsigtede download-URLs.
+  const photos = rows.map((p) => ({ ...p, url: getDownloadUrl(p.url) }));
   return NextResponse.json({ photos });
 }
