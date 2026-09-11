@@ -65,6 +65,7 @@ export const TOP_NAV: NavMenu[] = [
     items: [
       { label: "Emner", en: "Leads", href: "/leads" },
       { label: "Kunder", en: "Customers", href: "/customers" },
+      { label: "Tilbud", en: "Quotes", href: "/tilbud" },
       { label: "Abonnementer", en: "Subscriptions", href: "/subscriptions" },
       { label: "Fastprisaftaler", en: "Fixed-price agreements", href: "/fixed-prices" },
       { label: "Ordrer", en: "Orders", href: "/orders" },

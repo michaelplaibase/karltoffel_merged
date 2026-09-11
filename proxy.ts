@@ -18,6 +18,7 @@ const MEDARBEJDER_ALLOWED = [
   "/leads",
   "/customers",
   "/subscriptions",
+  "/tilbud",
   "/fixed-prices",
   "/orders",
   "/reports/day-pdf",
@@ -54,5 +55,5 @@ export async function proxy(req: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/((?!login|api|_next/static|_next/image|favicon.ico).*)"],
+  matcher: ["/((?!login|api|t($|/)|_next/static|_next/image|favicon.ico).*)"],
 };

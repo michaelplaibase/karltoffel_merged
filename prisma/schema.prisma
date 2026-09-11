@@ -193,6 +193,7 @@ model Contact {
   dineroContactGuid            String? @unique
   photos        OrderPhoto[]
   subscriptions Subscription[]
+  tilbud        Tilbud[]
   fixedPrices   FixedPriceAgreement[]
   orders        Order[]
   leads         Lead[]
@@ -384,6 +385,64 @@ model QuoteToken {
   choice    String?   // "accept" | "maybe" | "decline" — sat når token forbruges
 
   @@index([leadId])
+}
+
+// Tilbud-modul (Thomas, 2026-09-11): et tilbud til en eksisterende kunde med
+// opgavelinjer (navn + pris), fotos pr. linje eller på hele tilbuddet, og to
+// acceptveje: manuelt ("kunde har accepteret") eller via offentligt link
+// /t/{acceptToken} hvor kunden klikker "Godkend tilbud". Konverteres til
+// abonnement med ét klik (genbruger abonnements-flowet).
+model Tilbud {
+  id            Int       @id @default(autoincrement())
+  contact       Contact   @relation(fields: [contactId], references: [id])
+  contactId     Int
+  title         String    @default("Tilbud")
+  note          String?   // intro-tekst på tilbud + i mailen
+  startWeek     String?   // valgfri startuge ("Uge 29" / "Uge 29, 2026") — på PDF + forudfylder abonnements-konvertering
+  baseInterval  String?   // valgfrit interval ("Hver 2. uge") — på PDF + forudfylder abonnementets basis-interval
+  status        String    @default("udkast") // udkast | sendt | accepteret | afvist | konverteret
+  sentAt        DateTime?
+  sentTo        String?
+  acceptToken   String    @unique // offentligt link: /t/{token} — engangs, som QuoteToken
+  acceptedAt    DateTime?
+  acceptMethod  String?   // "link" | "manuelt"
+  convertedSubscriptionId Int?
+  lines         TilbudLine[]
+  photos        TilbudPhoto[]
+  createdAt     DateTime  @default(now())
+
+  @@index([contactId])
+}
+
+// Én opgavelinje på et tilbud: beskrivelse + pris (inkl. moms, kr) — samme
+// prismodel som eksisterende "Send tilbud" i CRM'et.
+model TilbudLine {
+  id          Int      @id @default(autoincrement())
+  tilbud      Tilbud   @relation(fields: [tilbudId], references: [id])
+  tilbudId    Int
+  description String
+  price       Int
+  sort        Int      @default(0)
+  photos      TilbudPhoto[]
+
+  @@index([tilbudId])
+}
+
+// Fotos på et tilbud — samme private Blob-store som KS-fotos og månedsrapport.
+// lineId null = foto på hele tilbuddet (forside/dokumentation), ellers bundet
+// til én opgavelinje.
+model TilbudPhoto {
+  id        Int         @id @default(autoincrement())
+  tilbud    Tilbud      @relation(fields: [tilbudId], references: [id])
+  tilbudId  Int
+  line      TilbudLine? @relation(fields: [lineId], references: [id])
+  lineId    Int?
+  url       String
+  pathname  String
+  createdAt DateTime    @default(now())
+
+  @@index([tilbudId])
+  @@index([lineId])
 }
 
 // Tombstone: en bruger har SLETTET en abonnements-ordre for denne uge — natte-
