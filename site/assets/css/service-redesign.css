@@ -528,3 +528,11 @@
 	background-position: center;
 }
 .yp-check input[type="checkbox"]:focus-visible { outline: 2px solid #AE8642; }
+
+/* Included-sektionen: højre kolonne = video (hvis leveret) ellers Karltoffel-vogn-billedet (Mads 2026-09-11) */
+.sp-included__media img {
+	display: block;
+	width: 100%;
+	height: auto;
+	border-radius: 24px;
+}
