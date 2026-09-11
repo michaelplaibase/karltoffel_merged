@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import {
-  tilbudTotal, nyAcceptToken, buildTilbudPdfData, statusLabel, acceptTokenUdløber, linjeKundeTekst,
+  tilbudTotal, nyAcceptToken, buildTilbudPdfData, statusLabel, acceptTokenUdløber, linjeKundeTekst, linjeStartugeTekst,
 } from "../lib/tilbud.mts";
 import {
   aarsbelob, besogPrAar, BASE_INTERVALS, tilbudLinjeAarsbelob, tilbudAarsbelobSum,
@@ -154,4 +154,42 @@ test("statusLabel dækker alle tilbudstatusser", () => {
   }
   assert.equal(statusLabel("accepteret"), "Accepteret");
   assert.equal(statusLabel("konverteret"), "Konverteret til abonnement");
+});
+
+// Thomas, 2026-09-11 (korrektion 2): valgfri STARTUGE PR. OPGAVELINJE.
+test("linjeStartugeTekst: 'Uge 29' → 'Starter uge 29' — tom/null → null", () => {
+  assert.equal(linjeStartugeTekst("Uge 29"), "Starter uge 29");
+  assert.equal(linjeStartugeTekst("Uge 29, 2026"), "Starter uge 29, 2026");
+  assert.equal(linjeStartugeTekst(" Uge 29 "), "Starter uge 29"); // trimmes
+  assert.equal(linjeStartugeTekst(null), null);
+  assert.equal(linjeStartugeTekst(""), null);
+  assert.equal(linjeStartugeTekst(undefined), null);
+});
+
+test("linjeKundeTekst viser startuge diskret på linjen — kun når den er sat", () => {
+  assert.equal(
+    linjeKundeTekst({ description: "Vinduespudsning", price: 566, interval: "Hver 6. uge", startWeek: "Uge 29" }),
+    "Vinduespudsning — 566 kr. pr. gang — hver 6. uge — Starter uge 29",
+  );
+  // ingen startuge → intet ekstra vist (samme tekst som før korrektionen)
+  assert.equal(
+    linjeKundeTekst({ description: "Tagrender", price: 566 }),
+    "Tagrender — 566 kr. pr. gang",
+  );
+});
+
+test("buildTilbudPdfData: startuge pr. linje gennemgår til PDF-data (tomme = null)", () => {
+  const d = buildTilbudPdfData({
+    contact: { name: "Kunde", companyName: null, att: null },
+    title: "Tilbud", note: null,
+    startWeek: "Uge 40", baseInterval: null,
+    lines: [
+      { description: "Vinduespudsning", price: 566, interval: "Hver 6. uge", startWeek: "Uge 29" },
+      { description: "Tagrender", price: 566, interval: null, startWeek: "" },
+    ],
+  });
+  assert.equal(d.linjer[0].startWeek, "Uge 29");
+  assert.equal(d.linjer[1].startWeek, null); // tom → intet vist på linjen
+  // startuge påvirker IKKE årsbeløbet (kun opstartstidspunkt)
+  assert.equal(d.aarsbelob, 566 * 9); // kun vinduespudsning tæller med
 });

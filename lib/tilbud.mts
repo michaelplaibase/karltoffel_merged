@@ -6,7 +6,7 @@ import { tilbudAarsbelobSum } from "./subscription-intervals";
 export const TILBUD_STATUSES = ["udkast", "sendt", "accepteret", "afvist", "konverteret"] as const;
 export type TilbudStatus = (typeof TILBUD_STATUSES)[number];
 
-export type TilbudLineData = { description: string; price: number; interval?: string | null };
+export type TilbudLineData = { description: string; price: number; interval?: string | null; startWeek?: string | null };
 
 /** Total for tilbuddet — priser er inkl. moms (kr, heltal), samme model som
  *  den eksisterende "Send tilbud"-flow i CRM'et. */
@@ -27,11 +27,20 @@ export function frekvensTekst(interval: string | null | undefined): string | nul
   return t ? t.toLowerCase() : null;
 }
 
+/** Thomas, 2026-09-11 (korrektion 2): diskret startuge-tekst pr. linje —
+ *  "Starter uge 29" (lowercase "uge" som frekvensen). null/tom → null. */
+export function linjeStartugeTekst(startWeek: string | null | undefined): string | null {
+  const t = (startWeek ?? "").trim();
+  return t ? `Starter ${t.charAt(0).toLowerCase()}${t.slice(1)}` : null;
+}
+
 /** Én kundevenlig linjetekst: "Vinduespudsning — 566 kr. pr. gang — hver 6. uge".
- *  Uden interval: "Tagrender — 566 kr." (engangsopgave). */
-export function linjeKundeTekst(line: { description: string; price: number; interval?: string | null }): string {
+ *  Uden interval: "Tagrender — 566 kr." (engangsopgave). Med startuge:
+ *  "... — starter uge 29" (diskret, kun når linjen har en startuge). */
+export function linjeKundeTekst(line: { description: string; price: number; interval?: string | null; startWeek?: string | null }): string {
   const frek = frekvensTekst(line.interval);
-  return `${line.description} — ${kr(line.price)} pr. gang${frek ? ` — ${frek}` : ""}`;
+  const start = linjeStartugeTekst(line.startWeek);
+  return `${line.description} — ${kr(line.price)} pr. gang${frek ? ` — ${frek}` : ""}${start ? ` — ${start}` : ""}`;
 }
 
 /** Engangs-token til det offentlige accept-link /t/{token} — samme mønster som
@@ -52,7 +61,7 @@ export type TilbudPdfData = {
   note: string | null;
   startWeek: string | null; // valgfri startuge — udelades hvis tom
   baseInterval: string | null; // valgfrit tilbud-niveau interval — udelades hvis tomt
-  linjer: { description: string; price: number; interval: string | null }[];
+  linjer: { description: string; price: number; interval: string | null; startWeek: string | null }[];
   /** Årligt beløb = SUMMEN PR. LINJE (pris × besøg pr. år for hver linje med
    *  interval) — KUN når mindst én linje har interval (Thomas, 2026-09-11
    *  korrektion: interval er nu pr. opgavelinje; beregningen deles med
@@ -68,7 +77,7 @@ export type TilbudInput = {
   note: string | null;
   startWeek?: string | null;
   baseInterval?: string | null;
-  lines: { description: string; price: number; interval?: string | null }[];
+  lines: { description: string; price: number; interval?: string | null; startWeek?: string | null }[];
 };
 
 export function buildTilbudPdfData(input: TilbudInput): TilbudPdfData {
@@ -78,6 +87,9 @@ export function buildTilbudPdfData(input: TilbudInput): TilbudPdfData {
     description: l.description,
     price: l.price,
     interval: l.interval?.trim() || null,
+    // Thomas, 2026-09-11 (korrektion 2): valgfri startuge pr. linje — vises
+    // diskret på linjen ("Starter uge 29"); tom = intet vist.
+    startWeek: l.startWeek?.trim() || null,
   }));
   return {
     kundeNavn: navn,

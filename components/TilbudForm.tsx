@@ -18,16 +18,20 @@ export default function TilbudForm({ contacts, action }: {
   // Thomas, 2026-09-11 (korrektion): interval vælges PR. OPGAVELINJE — samme
   // muligheder som abonnementet (BASE_INTERVALS inkl. "1 gang om året").
   // Tilbud-niveau-feltet er beholdt som STANDARD/præ-valg for nye linjer.
-  const [linjer, setLinjer] = useState<{ description: string; price: number; interval: string }[]>([
-    { description: "", price: 0, interval: "" },
+  // Thomas, 2026-09-11 (korrektion 2): også en valgfri STARTUGE PR. OPGAVELINJE
+  // — samme format som tilbud-niveau startuge ('Uge 29' / 'Uge 29, 2026').
+  const [linjer, setLinjer] = useState<{ description: string; price: number; interval: string; startWeek: string }[]>([
+    { description: "", price: 0, interval: "", startWeek: "" },
   ]);
   const [standardInterval, setStandardInterval] = useState("");
+  // Ny linje arver tilbud-niveau startugen som standard, hvis den er udfyldt.
+  const [standardStartWeek, setStandardStartWeek] = useState("");
   // Årsbeløb pr. linje + summen af linjerne med interval (engangsopgaver uden
   // interval tæller ikke med — samme beregning som abonnementet).
   const linjeAar = linjer.map(tilbudLinjeAarsbelob);
   const aarligt = tilbudAarsbelobSum(linjer);
 
-  const opdaterLinje = (i: number, felt: "description" | "price" | "interval", vaerdi: string) => {
+  const opdaterLinje = (i: number, felt: "description" | "price" | "interval" | "startWeek", vaerdi: string) => {
     setLinjer((prev) => prev.map((l, j) => (j === i ? { ...l, [felt]: felt === "price" ? Number(vaerdi) || 0 : vaerdi } : l)));
   };
 
@@ -114,8 +118,21 @@ export default function TilbudForm({ contacts, action }: {
             <div className="f2">
               <label className="col-label">Startuge (valgfri)</label>
               <div>
-                <input name="startWeek" className="form-control" placeholder="Fx Uge 29 eller Uge 29, 2026" />
-                <small className="form-text">Kommer med på tilbuddet og forudfylder abonnementet, hvis kunden siger ja.</small>
+                <input
+                  name="startWeek"
+                  className="form-control"
+                  placeholder="Fx Uge 29 eller Uge 29, 2026"
+                  value={standardStartWeek}
+                  onChange={(e) => {
+                    const v = e.target.value;
+                    setStandardStartWeek(v);
+                    // Thomas, 2026-09-11 (korrektion 2): nye/udfyldte linjer kan
+                    // arve tilbud-niveau startugen som standard — tomme linje-
+                    // startuger udfyldes, kan stadig rettes pr. linje.
+                    setLinjer((prev) => prev.map((l) => (l.startWeek ? l : { ...l, startWeek: v })));
+                  }}
+                />
+                <small className="form-text">Kommer med på tilbuddet og forudfylder abonnementet, hvis kunden siger ja — kan også sættes pr. opgavelinje herunder.</small>
               </div>
             </div>
             <div className="f2">
@@ -150,7 +167,7 @@ export default function TilbudForm({ contacts, action }: {
               <label className="col-label">Opgaver og priser</label>
               <div className="tasklines">
                 {linjer.map((l, i) => (
-                  <div className="tl-row" key={i} style={{ gridTemplateColumns: "1fr 120px 200px auto" }}>
+                  <div className="tl-row" key={i} style={{ gridTemplateColumns: "1fr 120px 200px 150px auto" }}>
                     <input
                       name="taskDescription"
                       className="form-control"
@@ -181,6 +198,18 @@ export default function TilbudForm({ contacts, action }: {
                         <option key={iv} value={iv}>{iv}</option>
                       ))}
                     </select>
+                    {/* Thomas, 2026-09-11 (korrektion 2): valgfri STARTUGE PR.
+                        LINJE — samme format som tilbud-niveau ('Uge 29' /
+                        'Uge 29, 2026'); tom = arver tilbud-niveau startugen
+                        ved konvertering. Påvirker IKKE årsbeløbet. */}
+                    <input
+                      name="taskStartWeek"
+                      className="form-control"
+                      value={l.startWeek}
+                      onChange={(e) => opdaterLinje(i, "startWeek", e.target.value)}
+                      placeholder="Startuge (valgfri)"
+                      aria-label="Startuge (valgfri)"
+                    />
                     <button
                       type="button"
                       className="btn btn-light"
@@ -195,7 +224,7 @@ export default function TilbudForm({ contacts, action }: {
                     ) : null}
                   </div>
                 ))}
-                <button type="button" className="btn btn-outline-primary" onClick={() => setLinjer((p) => [...p, { description: "", price: 0, interval: standardInterval }])}>
+                <button type="button" className="btn btn-outline-primary" onClick={() => setLinjer((p) => [...p, { description: "", price: 0, interval: standardInterval, startWeek: standardStartWeek }])}>
                   + Tilføj opgave
                 </button>
                 {/* Thomas, 2026-09-11 (korrektion): Årsbeløbet er nu SUMMEN PR.

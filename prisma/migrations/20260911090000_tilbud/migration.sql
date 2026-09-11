@@ -52,6 +52,11 @@ EXCEPTION WHEN duplicate_object THEN null; END $$;
 DO $$ BEGIN
     ALTER TABLE "TilbudLine" ADD CONSTRAINT "TilbudLine_tilbudId_fkey" FOREIGN KEY ("tilbudId") REFERENCES "Tilbud"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 EXCEPTION WHEN duplicate_object THEN null; END $$;
+
+-- Thomas, 2026-09-11 (korrektion 2): valgfri STARTUGE PR. OPGAVELINJE — samme
+-- format som tilbud-niveau startuge ('Uge 29' / 'Uge 29, 2026'). Idempotent
+-- (ADD COLUMN IF NOT EXISTS), så migrationen kan køre igen sikkert.
+ALTER TABLE "TilbudLine" ADD COLUMN IF NOT EXISTS "startWeek" TEXT;
 DO $$ BEGIN
     ALTER TABLE "TilbudPhoto" ADD CONSTRAINT "TilbudPhoto_tilbudId_fkey" FOREIGN KEY ("tilbudId") REFERENCES "Tilbud"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 EXCEPTION WHEN duplicate_object THEN null; END $$;

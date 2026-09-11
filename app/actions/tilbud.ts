@@ -20,6 +20,8 @@ import { redirect } from "next/navigation";
 export type TilbudState = { error?: string; message?: string };
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+// Samme format som tilbud-niveau startuge ('Uge 29' / 'Uge 29, 2026').
+const UGE_RE = /^Uge\s+\d{1,2}(,\s*\d{4})?$/i;
 
 function readLines(formData: FormData) {
   const descs = formData.getAll("taskDescription").map(String);
@@ -27,8 +29,16 @@ function readLines(formData: FormData) {
   // Thomas, 2026-09-11 (korrektion): valgfrit interval PR. LINJE — samme
   // muligheder som abonnementet (BASE_INTERVALS), tom = engangsopgave.
   const intervals = formData.getAll("taskInterval").map(String);
+  // Thomas, 2026-09-11 (korrektion 2): valgfri STARTUGE PR. LINJE — samme
+  // format som tilbud-niveau startuge; tom = arver tilbud-niveau startugen.
+  const startWeeks = formData.getAll("taskStartWeek").map(String);
   return descs
-    .map((d, i) => ({ description: d.trim(), price: prices[i] || 0, interval: (intervals[i] ?? "").trim() || null }))
+    .map((d, i) => ({
+      description: d.trim(),
+      price: prices[i] || 0,
+      interval: (intervals[i] ?? "").trim() || null,
+      startWeek: (startWeeks[i] ?? "").trim() || null,
+    }))
     .filter((l) => l.description);
 }
 
@@ -60,6 +70,13 @@ export async function createTilbud(_prev: TilbudState, formData: FormData): Prom
   const baseInterval = baseIntervalRaw || null;
   const lines = readLines(formData);
   if (!lines.length) return { error: "Tilføj mindst én opgavelinje med en pris." };
+  // Thomas, 2026-09-11 (korrektion 2): valider startuge pr. linje med samme
+  // format som tilbud-niveau startuge.
+  for (const l of lines) {
+    if (l.startWeek && !UGE_RE.test(l.startWeek)) {
+      return { error: `Startuge for '${l.description}' skal skrives som fx 'Uge 29' eller 'Uge 29, 2026' — eller lades tom.` };
+    }
+  }
 
   let contactId = Number(formData.get("contactId")) || 0;
   if (!contactId && formData.get("newCustomer") === "1") {
@@ -93,7 +110,7 @@ export async function createTilbud(_prev: TilbudState, formData: FormData): Prom
   const created = await prisma.tilbud.create({
     data: {
       contactId, title, note, acceptToken: nyAcceptToken(), startWeek, baseInterval,
-      lines: { create: lines.map((l, i) => ({ description: l.description, price: l.price, interval: l.interval, sort: i })) },
+      lines: { create: lines.map((l, i) => ({ description: l.description, price: l.price, interval: l.interval, startWeek: l.startWeek, sort: i })) },
     },
   });
   revalidatePath("/tilbud");
@@ -139,7 +156,7 @@ export async function convertTilbudToSubscription(tilbudId: number): Promise<voi
   const tilbud = await prisma.tilbud.findUnique({
     where: { id: tilbudId },
     include: {
-      lines: { orderBy: { sort: "asc" }, select: { description: true, price: true, interval: true } },
+      lines: { orderBy: { sort: "asc" }, select: { description: true, price: true, interval: true, startWeek: true } },
       contact: { select: { id: true, street: true, city: true } },
     },
   });
@@ -150,17 +167,25 @@ export async function convertTilbudToSubscription(tilbudId: number): Promise<voi
   const contact = tilbud.contact;
   const deliveryAddress = contact.city ? `${contact.street}, ${contact.city}` : contact.street;
   // Thomas, 2026-09-11: hvis tilbuddet har startuge/interval udfyldt, forudfyller
-    // de abonnementet — ellers som hidtil (nuværende uge + default-interval).
-    // Årløs uge der er passeret = start nu (samme semantik som normalizeWeekLabel
-    // i subscriptions.ts); fremtidig uge skrives med eksplicit år.
-    const parts = parseWeekLabelParts(tilbud.startWeek ?? "");
-    const nowMonday = mondayOf(new Date()).toISOString().slice(0, 10);
-    let startWeek = weekLabel(nowMonday);
-    if (parts) {
-      startWeek = parts.year != null
-        ? `Uge ${parts.week}, ${parts.year}`
-        : (parts.week >= isoWeek(nowMonday) ? `Uge ${parts.week}, ${isoWeekYear(nowMonday)}` : weekLabel(nowMonday));
-    }
+  // de abonnementet — ellers som hidtil (nuværende uge + default-interval).
+  // Årløs uge der er passeret = start nu (samme semantik som normalizeWeekLabel
+  // i subscriptions.ts); fremtidig uge skrives med eksplicit år.
+  const normalizeStartWeek = (label: string | null): string | null => {
+    const parts = parseWeekLabelParts(label ?? "");
+    if (!parts) return null;
+    return parts.year != null
+      ? `Uge ${parts.week}, ${parts.year}`
+      : (parts.week >= isoWeek(nowMonday) ? `Uge ${parts.week}, ${isoWeekYear(nowMonday)}` : weekLabel(nowMonday));
+  };
+  const nowMonday = mondayOf(new Date()).toISOString().slice(0, 10);
+  let startWeek = weekLabel(nowMonday);
+  const tilbudStartWeek = normalizeStartWeek(tilbud.startWeek);
+  if (tilbudStartWeek) startWeek = tilbudStartWeek;
+  // Thomas, 2026-09-11 (korrektion 2): startuge er også SAT PR. OPGAVELINJE.
+  // Linjens startuge følger med til den enkelte TaskLine (samme normalisering
+  // som abonnementets startuge); linjer UDEN startuge falder tilbage til
+  // tilbud-niveau startugen — som før.
+  const linjeStartUger = tilbud.lines.map((l) => normalizeStartWeek(l.startWeek) ?? tilbudStartWeek ?? null);
     // Thomas, 2026-09-11 (korrektion): interval er nu SAT PR. OPGAVELINJE.
     // Hvert linje-interval følger med til den enkelte TaskLine (ikke ét fælles
     // interval): uge-intervallet "Hver 6. uge" oversættes til abonnements-
@@ -209,6 +234,7 @@ export async function convertTilbudToSubscription(tilbudId: number): Promise<voi
               price: l.price,
               durationMin: 60,
               intervalMultiplier: linjeMultiplikatorer[i] ?? "Hver gang",
+              startWeek: linjeStartUger[i] ?? null,
             })),
           },
         },

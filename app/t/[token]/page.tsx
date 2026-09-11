@@ -3,7 +3,7 @@ import { headers } from "next/headers";
 import { prisma } from "@/lib/db";
 import { sendEmail } from "@/lib/email";
 import { underLimit, recordHit } from "@/lib/rate-limit";
-import { tilbudTotal, linjeKundeTekst } from "@/lib/tilbud.mts";
+import { tilbudTotal, linjeKundeTekst, linjeStartugeTekst } from "@/lib/tilbud.mts";
 import { tilbudAarsbelobSum } from "@/lib/subscription-intervals";
 
 // Offentlig accept-side (Thomas, 2026-09-11): kunden klikker "Godkend tilbud" på
@@ -38,7 +38,7 @@ export default async function TilbudAcceptPage({
     where: { acceptToken: token },
     include: {
       contact: { select: { name: true, companyName: true } },
-      lines: { orderBy: { sort: "asc" }, select: { description: true, price: true, interval: true } },
+      lines: { orderBy: { sort: "asc" }, select: { description: true, price: true, interval: true, startWeek: true } },
     },
   });
   }
@@ -119,6 +119,11 @@ export default async function TilbudAcceptPage({
                 engangsopgaver vises uden frekvenslinje. */}
             {l.interval ? (
               <small style={{ color: "#8A6931" }}>{l.interval.toLowerCase()}</small>
+            ) : null}
+            {/* Thomas, 2026-09-11 (korrektion 2): diskret startuge pr. linje
+                ("Starter uge 29") — kun når linjen har en startuge. */}
+            {l.startWeek ? (
+              <small style={{ color: "#8A6931", display: "block" }}>{linjeStartugeTekst(l.startWeek)}</small>
             ) : null}
           </div>
         ))}

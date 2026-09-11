@@ -37,7 +37,7 @@ export async function byggTilbudPdfData(tilbudId: number): Promise<TilbudPdfData
     where: { id: tilbudId },
     include: {
       contact: { select: { name: true, companyName: true, att: true } },
-      lines: { orderBy: { sort: "asc" }, select: { id: true, description: true, price: true, interval: true } },
+      lines: { orderBy: { sort: "asc" }, select: { id: true, description: true, price: true, interval: true, startWeek: true } },
       photos: { orderBy: { createdAt: "asc" }, select: { lineId: true, pathname: true } },
     },
   });

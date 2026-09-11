@@ -423,6 +423,7 @@ model TilbudLine {
   description String
   price       Int
   interval    String?  // Thomas, 2026-09-11 (korrektion): valgfrit interval PR. LINJE ("Hver 6. uge" / "1 gang om året") — samme muligheder som BASE_INTERVALS; null = engangsopgave
+  startWeek   String?  // Thomas, 2026-09-11 (korrektion 2): valgfri STARTUGE PR. LINJE ("Uge 29" / "Uge 29, 2026") — samme format som tilbud-niveau startuge; null = arver/bruger tilbud-niveau startuge ved konvertering
   sort        Int      @default(0)
   photos      TilbudPhoto[]
 

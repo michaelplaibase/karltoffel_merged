@@ -109,6 +109,9 @@ function TilbudDoc({ data }: { data: TilbudPdfData }) {
             e(View, { style: { flex: 1 } },
               e(Text, { style: S.lineName }, l.description),
               l.interval ? e(Text, { style: S.lineFrekvens }, l.interval.toLowerCase()) : null,
+              // Thomas, 2026-09-11 (korrektion 2): diskret startuge pr. linje
+              // ("Starter uge 29") — kun når linjen har en startuge.
+              l.startWeek ? e(Text, { style: S.lineFrekvens }, `Starter ${l.startWeek.charAt(0).toLowerCase()}${l.startWeek.slice(1)}`) : null,
             ),
             e(Text, { style: S.linePrice }, `${kr(l.price)} pr. gang`),
           ),
