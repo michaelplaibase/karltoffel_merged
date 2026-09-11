@@ -42,9 +42,9 @@
 		<script>
 window.KARLTOFFEL = window.KARLTOFFEL || {};
 window.KARLTOFFEL.ydelsePris = {"ydelse": "Vinduesvask", "tittel": "Se prisen på dine vinduer", "lead_txt": "Indtast antal ruder og se dit prisestimat med det samme.", "prisFn": "(f.udvendig||0)*17 + (f.indvendig||0)*24.87", "prisNote": "function(f){ return 'Estimat for ' + f.udvendig + ' ruder udvendig' + (f.indvendig ? ' og ' + f.indvendig + ' indvendig' : '') + '. Endelig pris afhænger af tilgængelighed og opgaven.'; }", "servicesFn": "[{id:'vinduer',navn:'Udvendig vinduesvask',wm:'Udvendig vinduesvask pr glas',qty:f.udvendig,enhed:'glas',pris:17},{id:'vinduerind',navn:'Vinduespudsning indeni huset',wm:'Indendørs vinduespudsning pr glas',qty:(f.indvendig||0),enhed:'glas',pris:24.87}]", "source": "vinduesvask-pris-hero"};
-window.KARLTOFFEL.ydelsePris.felter = [{"id": "udvendig", "label": "Antal ruder udvendig", "ph": "f.eks. 12"}, {"id": "indvendig", "label": "Antal ruder indvendig (valgfri)", "ph": "f.eks. 8", "valgfri": true}];
-window.KARLTOFFEL.ydelsePris.prisFn = function(f){ return (f.udvendig||0)*17 + (f.indvendig||0)*24.87; };
-window.KARLTOFFEL.ydelsePris.prisNoteFn = function(f){ return 'Estimat for ' + f.udvendig + ' ruder udvendig' + (f.indvendig ? ' og ' + f.indvendig + ' indvendig' : '') + '. Endelig pris afhænger af tilgængelighed og opgaven.'; };
-window.KARLTOFFEL.ydelsePris.servicesFn = function(f){ return [{id:'vinduer',navn:'Udvendig vinduesvask',wm:'Udvendig vinduesvask pr glas',qty:f.udvendig,enhed:'glas',pris:17},{id:'vinduerind',navn:'Vinduespudsning indeni huset',wm:'Indendørs vinduespudsning pr glas',qty:(f.indvendig||0),enhed:'glas',pris:24.87}]; };
+window.KARLTOFFEL.ydelsePris.felter = [{"id": "antal", "label": "Antal ruder", "ph": "f.eks. 12"}, {"id": "ogsaainde", "label": "Vask også indvendig", "type": "check"}];
+window.KARLTOFFEL.ydelsePris.prisFn = function(f){ return f.antal*17 + (f.ogsaainde ? f.antal*24.87 : 0); };
+window.KARLTOFFEL.ydelsePris.prisNoteFn = function(f){ return 'Estimat for ' + f.antal + ' ruder' + (f.ogsaainde ? ' — vasket både udvendig og indvendig' : ' udvendig') + '. Endelig pris afhænger af tilgængelighed og opgaven.'; };
+window.KARLTOFFEL.ydelsePris.servicesFn = function(f){ var sv=[{id:'vinduer',navn:'Udvendig vinduesvask',wm:'Udvendig vinduesvask pr glas',qty:f.antal,enhed:'glas',pris:17}]; if(f.ogsaainde) sv.push({id:'vinduerind',navn:'Vinduespudsning indeni huset',wm:'Indendørs vinduespudsning pr glas',qty:f.antal,enhed:'glas',pris:24.87}); return sv; };
 		</script>
-		<script src="/assets/js/ydelse-pris.js?v=3" defer></script>
+		<script src="/assets/js/ydelse-pris.js?v=4" defer></script>

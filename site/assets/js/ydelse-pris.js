@@ -33,6 +33,10 @@
 		(C.felter || []).forEach(function(f){
 			var el = document.getElementById("yp-felt-" + f.id);
 			if(!el) return;
+			if(f.type === "check"){
+				out[f.id] = !!el.checked;
+				return;
+			}
 			if(f.type === "radio"){
 				var sel = el.querySelector(".yp-radio.selected");
 				out[f.id] = sel ? sel.getAttribute("data-val") : "";

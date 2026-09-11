@@ -486,3 +486,38 @@
 	box-sizing: border-box;
 }
 .hp-valgfri { font-weight: 400; text-transform: none; letter-spacing: 0; }
+
+/* Tilvalg-checkboks i ydelses-heroen (Mads 2026-09-11: "Vask også indvendig") */
+.yp-check {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	margin: 0 0 16px;
+	font-size: 15px;
+	font-weight: 700;
+	color: #4C3718;
+	cursor: pointer;
+}
+.yp-check input[type="checkbox"] {
+	width: 22px;
+	height: 22px;
+	margin: 0;
+	padding: 0;
+	border: 2px solid #4C3718;
+	border-radius: 6px;
+	background: #fff;
+	accent-color: #4C3718;
+	cursor: pointer;
+	flex: 0 0 auto;
+	-webkit-appearance: none;
+	appearance: none;
+	display: inline-block;
+}
+.yp-check input[type="checkbox"]:checked {
+	background-color: #4C3718;
+	background-image: url("data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M20 6L9 17l-5-5' stroke='%23FFF87B' stroke-width='3' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+	background-size: 16px;
+	background-repeat: no-repeat;
+	background-position: center;
+}
+.yp-check input[type="checkbox"]:focus-visible { outline: 2px solid #AE8642; }
