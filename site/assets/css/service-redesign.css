@@ -294,9 +294,10 @@
 /* Hero: tekst venstre + formular hoejre. Scopet til kontakt-heroens id,
    sa skabelonens generiske .sp-hero__grid-regel (420px-kolonne, align start)
    ikke kolliderer. inner flattes med display:contents. */
-#section-id-kontakt-hero .sp-hero__grid { display: block; }
+#section-id-kontakt-hero .sp-hero__grid, #section-id-pakker-hero .sp-hero__grid { display: block; }
 @media print, screen and (min-width: 64em) {
-	#section-id-kontakt-hero .sp-hero__grid {
+	#section-id-kontakt-hero .sp-hero__grid,
+	#section-id-pakker-hero .sp-hero__grid {
 		display: grid;
 		grid-template-columns: minmax(0, 1.1fr) minmax(0, 480px);
 		gap: 64px;
