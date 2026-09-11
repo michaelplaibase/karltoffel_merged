@@ -53,26 +53,46 @@ export default function CustomerCalendar({ days, contactName }: { days: CalDay[]
   const sel = selected ? byDate.get(selected) : undefined;
 
   const dates = useMemo(() => [...byDate.keys()].sort(), [byDate]);
-  const minYear = dates.length ? Number(dates[0].slice(0, 4)) : new Date().getUTCFullYear();
-  const [year, setYear] = useState(minYear);
+  // Rullevindue på 12 måneder (Thomas, 2026-09-10: "man skal kunne se 1 år frem")
+  // i stedet for faste kalenderår — man kan altid scrolle 12 måneder frem og tilbage.
+  const now = new Date();
+  const [startYM, setStartYM] = useState(() => `${now.getFullYear()}-${pad(now.getMonth() + 1)}`);
+  const startY = Number(startYM.slice(0, 4));
+  const startM = Number(startYM.slice(5, 7)) - 1;
 
   const grids = useMemo(() => {
-    const out: { month: string; weeks: (number | null)[][] }[] = [];
-    for (let m0 = 0; m0 < 12; m0++) {
-      const first = new Date(Date.UTC(year, m0, 1));
+    const out: { month: string; year: number; weeks: (number | null)[][] }[] = [];
+    for (let i = 0; i < 12; i++) {
+      const m0 = startM + i;
+      const y = startY + Math.floor(m0 / 12);
+      const mm = ((m0 % 12) + 12) % 12;
+      const first = new Date(Date.UTC(y, mm, 1));
       const startOffset = (first.getUTCDay() + 6) % 7; // man = 0
-      const dim = new Date(Date.UTC(year, m0 + 1, 0)).getUTCDate();
+      const dim = new Date(Date.UTC(y, mm + 1, 0)).getUTCDate();
       const cells: (number | null)[] = Array(startOffset).fill(null);
       for (let d = 1; d <= dim; d++) cells.push(d);
       while (cells.length % 7 !== 0) cells.push(null);
       const weeks: (number | null)[][] = [];
-      for (let i = 0; i < cells.length; i += 7) weeks.push(cells.slice(i, i + 7));
-      out.push({ month: MONTHS[m0], weeks });
+      for (let k = 0; k < cells.length; k += 7) weeks.push(cells.slice(k, k + 7));
+      out.push({ month: MONTHS[mm], year: y, weeks });
     }
     return out;
-  }, [year]);
+  }, [startY, startM]);
 
-  const yearDays = days.filter((d) => d.date.startsWith(String(year)));
+  const shift = (months: number) => {
+    const m0 = startM + months;
+    const y = startY + Math.floor(m0 / 12);
+    const mm = ((m0 % 12) + 12) % 12;
+    setStartYM(`${y}-${pad(mm + 1)}`);
+  };
+  const atThisMonth = startYM === `${now.getFullYear()}-${pad(now.getMonth() + 1)}`;
+
+  const daysInWindow = dates.filter((d) => {
+    const yy = Number(d.slice(0, 4));
+    const mm = Number(d.slice(5, 7));
+    const idx = (yy * 12 + mm - 1) - (startY * 12 + startM);
+    return idx >= 0 && idx < 12;
+  });
   const legend = [
     { c: "#FFF0B3", t: "Opgave planlagt" },
     { c: "#DDF3E5", t: "Opgave færdigmeldt" },
@@ -83,11 +103,13 @@ export default function CustomerCalendar({ days, contactName }: { days: CalDay[]
     <div>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 10, marginBottom: 14 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <button className="btn btn-light btn-sm" onClick={() => setYear(year - 1)} aria-label="Forrige år">« {year - 1}</button>
-          <h4 className="section-title" style={{ margin: 0, fontSize: 20 }}>{year} — {contactName}</h4>
-          <button className="btn btn-light btn-sm" onClick={() => setYear(year + 1)} aria-label="Næste år">{year + 1} »</button>
-          {String(new Date().getFullYear()) !== String(year) ? (
-            <button className="btn btn-outline-primary btn-sm" onClick={() => setYear(new Date().getFullYear())}>I år</button>
+          <button className="btn btn-light btn-sm" onClick={() => shift(-12)} aria-label="12 måneder tilbage">« 12 mdr</button>
+          <h4 className="section-title" style={{ margin: 0, fontSize: 20 }}>
+            {grids[0].month.charAt(0).toUpperCase() + grids[0].month.slice(1)} {startY} – {grids[11].month.charAt(0).toUpperCase() + grids[11].month.slice(1)} {grids[11].year} — {contactName}
+          </h4>
+          <button className="btn btn-light btn-sm" onClick={() => shift(12)} aria-label="12 måneder frem">12 mdr »</button>
+          {!atThisMonth ? (
+            <button className="btn btn-outline-primary btn-sm" onClick={() => setStartYM(`${now.getFullYear()}-${pad(now.getMonth() + 1)}`)}>I dag</button>
           ) : null}
         </div>
         <div style={{ display: "flex", gap: 14, flexWrap: "wrap", fontSize: 12.5 }}>
@@ -102,8 +124,8 @@ export default function CustomerCalendar({ days, contactName }: { days: CalDay[]
 
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(230px, 1fr))", gap: 14 }}>
         {grids.map((g) => (
-          <div key={g.month} className="cal2-month">
-            <div style={{ fontWeight: 700, fontSize: 14, marginBottom: 6 }}>{g.month.charAt(0).toUpperCase() + g.month.slice(1)}</div>
+          <div key={`${g.year}-${g.month}`} className="cal2-month">
+            <div style={{ fontWeight: 700, fontSize: 14, marginBottom: 6 }}>{g.month.charAt(0).toUpperCase() + g.month.slice(1)} {g.year}</div>
             <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 11.5, tableLayout: "fixed" }}>
               <thead>
                 <tr>
@@ -113,13 +135,13 @@ export default function CustomerCalendar({ days, contactName }: { days: CalDay[]
               </thead>
               <tbody>
                 {g.weeks.map((week, wi) => {
-                  const weekNo = isoWeekNumber(year, MONTHS.indexOf(g.month), week.find((c) => c !== null) ?? 1);
+                  const weekNo = isoWeekNumber(g.year, MONTHS.indexOf(g.month), week.find((c) => c !== null) ?? 1);
                   return (
                     <tr key={wi}>
                       <td style={{ textAlign: "right", paddingRight: 5, color: "#999", fontSize: 10 }}>{weekNo}</td>
                       {week.map((cell, ci) => {
                         if (cell === null) return <td key={ci} style={{ padding: 0, height: 22 }} />;
-                        const date = `${year}-${pad(MONTHS.indexOf(g.month) + 1)}-${pad(cell)}`;
+                        const date = `${g.year}-${pad(MONTHS.indexOf(g.month) + 1)}-${pad(cell)}`;
                         const ds = byDate.get(date);
                         const bg = dayColor(ds);
                         const isToday = date === new Date().toISOString().slice(0, 10);
@@ -154,7 +176,7 @@ export default function CustomerCalendar({ days, contactName }: { days: CalDay[]
       </div>
 
       <p className="muted" style={{ fontSize: 12, marginTop: 12, marginBottom: 0 }}>
-        Klik på en farvet dato i kalenderen ovenfor for at se opgaverne for den dag · {yearDays.length} planlagte datoer i {year}
+        Klik på en farvet dato i kalenderen ovenfor for at se opgaverne for den dag · {daysInWindow.length} datoer med opgaver i de viste 12 måneder
       </p>
 
       {sel ? (
