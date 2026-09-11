@@ -143,3 +143,27 @@
 	box-shadow: 0 8px 22px rgba(0,0,0,.18);
 }
 .section--type-cta .button:hover, .section--type-cta .button:focus { background: #fff65c; transform: translateY(-2px); }
+/* Gavekort-rubrik under Bland selv (Mads 2026-09-11) — samme udtryk, anden farve (Spire-groen) */
+.pp-col-bland { display: flex; flex-direction: column; gap: 24px; min-width: 0; }
+.pp-col-bland .pp-card--bland { flex: 0 0 auto; }
+.pp-card--gavekort { background: #616711; color: #FFFFF0; flex: 1 1 auto; }
+.pp-card--gavekort .pp-card__eyebrow--lys { color: #FFF87B; }
+.pp-card--gavekort h3 { color: #FFF87B; }
+.pp-card__sub--lys { color: #FFFFF0; }
+.pp-card__cta--gul {
+	display: block;
+	width: 100%;
+	box-sizing: border-box;
+	padding: 14px 18px;
+	border-radius: 999px;
+	background: #FFF87B;
+	color: #4C3718;
+	font-family: snaga-unicase-display, sans-serif;
+	font-weight: 900;
+	font-size: 15px;
+	text-transform: uppercase;
+	text-decoration: none;
+	cursor: pointer;
+	transition: background .25s, transform .25s;
+}
+.pp-card__cta--gul:hover, .pp-card__cta--gul:focus { background: #fff65c; transform: translateY(-2px); }
