@@ -291,15 +291,19 @@
 .sp-faq-grid:not(:has(.sp-faq-grid__quote)) { display: block; }
 
 /* ---------- kontakt-side (2026-09-11) ---------- */
-/* Hero: tekst venstre + formular hoejre (som erhverv-callback-moenstret) */
-.sp-hero__grid-inner {
-	display: grid;
-	grid-template-columns: 1fr;
-	gap: 32px;
-	align-items: center;
-}
+/* Hero: tekst venstre + formular hoejre. Scopet til kontakt-heroens id,
+   sa skabelonens generiske .sp-hero__grid-regel (420px-kolonne, align start)
+   ikke kolliderer. inner flattes med display:contents. */
+#section-id-kontakt-hero .sp-hero__grid { display: block; }
 @media print, screen and (min-width: 64em) {
-	.sp-hero__grid-inner { grid-template-columns: minmax(0, 1.1fr) minmax(0, .9fr); gap: 64px; }
+	#section-id-kontakt-hero .sp-hero__grid {
+		display: grid;
+		grid-template-columns: minmax(0, 1.1fr) minmax(0, 480px);
+		gap: 64px;
+		align-items: center;
+		padding-top: 96px;
+		padding-bottom: 96px;
+	}
 }
 .sp-form--kontakt { margin-top: 0; }
 .ko-status { margin-top: 12px; font-size: 14px; font-weight: 700; }
