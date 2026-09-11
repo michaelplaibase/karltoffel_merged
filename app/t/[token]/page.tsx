@@ -31,13 +31,29 @@ export default async function TilbudAcceptPage({
   if (!underLimit(`tilbud:${ip}`, 300)) notFound();
   recordHit(`tilbud:${ip}`, 60_000);
 
-  const tilbud = await prisma.tilbud.findUnique({
+  let tilbud: Awaited<ReturnType<typeof loadTilbud>> = null;
+  async function loadTilbud() {
+    return prisma.tilbud.findUnique({
     where: { acceptToken: token },
     include: {
       contact: { select: { name: true, companyName: true } },
       lines: { orderBy: { sort: "asc" }, select: { description: true, price: true } },
     },
   });
+  }
+  try {
+    tilbud = await loadTilbud();
+  } catch {
+    // Databasen mangler fx Tilbud-tabelerne (preview-database før merge) — vis venlig fejl, ikke crash.
+    return (
+      <div className="container-640">
+        <div className="card"><div className="card-body">
+          <h1 className="page-title">Tilbuddet er ikke klar endnu</h1>
+          <p>Vi kigger på det — prøv igen om lidt, eller kontakt os på hej@karltoffel.dk.</p>
+        </div></div>
+      </div>
+    );
+  }
   if (!tilbud) notFound();
 
   const total = tilbudTotal(tilbud.lines);
