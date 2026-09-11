@@ -202,15 +202,16 @@
 }
 
 /* ---------- Skal du være heldig Karltoffel ---------- */
-.sp-lucky {
+#section-id-sp-lucky {
 	position: relative;
-	background: #4C3718;
-	color: #FFFFF0;
-	background-image: linear-gradient(rgba(76,55,24,.55), rgba(76,55,24,.55)), url("/assets/img/thumb/ed3e8e439709df85a416b00f5d0854532212dde4_w1600.webp");
+	background-color: #4C3718;
+	background-image: linear-gradient(rgba(76,55,24,.78), rgba(76,55,24,.78)), url("/assets/img/thumb/7c77e75a933c2940f28a0f1404b7a2ad72837aa6_w1600_q78.webp");
 	background-size: cover;
-	background-position: center;
+	background-position: center right;
 }
-.sp-lucky__text { max-width: 620px; }
+#section-id-sp-lucky .section__background { background: transparent; }
+.sp-lucky__text { max-width: 620px; position: relative; z-index: 1; }
+.sp-lucky__text p { color: #FFFFF0; text-shadow: 0 1px 6px rgba(28,20,11,.55); }
 .sp-lucky h2 {
 	margin: 0 0 16px;
 	font-family: snaga-unicase-display, sans-serif;
@@ -399,7 +400,7 @@
 	border-radius: 24px;
 	background: #1C140B;
 	aspect-ratio: 720 / 1280;
-	max-width: 420px;
+	max-width: 360px;
 	width: 100%;
 	margin: 0 auto;
 }
@@ -463,9 +464,12 @@
 .sp-video--playing .sp-video__tag { display: none; }
 @media print, screen and (min-width: 64em) {
 	.sp-included .sp-included__grid { align-items: center; }
-	.sp-included { padding-top: 120px; padding-bottom: 120px; }
-	.sp-included__main .sp-checklist li { margin-bottom: 26px; }
 }
+.main-wrap .sp-included, .sp-included {
+	padding-top: 120px !important;
+	padding-bottom: 120px !important;
+}
+.sp-included__main .sp-checklist li { margin-bottom: 26px; }
 
 /* besked-felt (mail-varianten af hæk-heroen) */
 .hp-form textarea {
