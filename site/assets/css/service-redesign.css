@@ -466,8 +466,8 @@
 	.sp-included .sp-included__grid { align-items: center; }
 }
 .main-wrap .sp-included, .sp-included {
-	padding-top: 120px !important;
-	padding-bottom: 120px !important;
+	padding-top: 60px !important;
+	padding-bottom: 60px !important;
 }
 .sp-included__main .sp-checklist li { margin-bottom: 26px; }
 
