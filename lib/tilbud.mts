@@ -1,7 +1,7 @@
 // Tilbud-modul — rene hjælpefunktioner (ingen DB/prisma), så de kan testes
 // med node --test uden database (samme mønster som lib/maanedrapport.mts).
 import { randomBytes } from "node:crypto";
-import { tilbudAarsbelobSum } from "./subscription-intervals";
+import { tilbudAarsbelobSum, besogPrAar } from "./subscription-intervals";
 
 export const TILBUD_STATUSES = ["udkast", "sendt", "accepteret", "afvist", "konverteret"] as const;
 export type TilbudStatus = (typeof TILBUD_STATUSES)[number];
@@ -105,6 +105,61 @@ export function buildTilbudPdfData(input: TilbudInput): TilbudPdfData {
     fotosForside: [],
     fotosPerLinje: input.lines.map(() => []),
   };
+}
+
+// ─── Årshjul (Thomas, 2026-09-11): alle opgaverne over året pr. uge ─────────
+// Ud fra linjernes startuge + interval beregnes alle besøg i løbet af 12
+// måneder (fx Vindue hver 4. uge fra uge 29 → uge 29, 33, 37, …; Tagrender
+// "1 gang om året" i uge 38). Samme besøgs-matematik som årsbeløbet
+// (besogPrAar) — spredt jevnt: uge = startuge + round(52/besøg) × i.
+// Sendes SAMMEN MED TILBUDET: vises i formularen, på detaljesiden, i PDF'en
+// (lib/tilbud-doc.mts) og på accept-siden (app/t/[token]).
+
+/** 'Uge 29' / 'Uge 29, 2026' → 29. Ugyldig/manglende → null. */
+export function parseUgeNr(startWeek: string | null | undefined): number | null {
+  const m = (startWeek ?? "").match(/Uge\s*(\d{1,2})/i);
+  if (!m) return null;
+  const n = Number(m[1]);
+  return n >= 1 && n <= 53 ? n : null;
+}
+
+/** Kort initial-tegn til årshjulet: "Vinduespudsning" → "V", "Tagrender +
+ *  nedløbskontrol" → "TN" (to første ord, første bogstav, versal). */
+export function kortNavn(titel: string): string {
+  const ord = (titel ?? "").trim().split(/[\s,]+/).filter((o) => /[a-zæøå]/i.test(o));
+  if (!ord.length) return "?";
+  return ord.slice(0, 2).map((o) => o.charAt(0).toUpperCase()).join("");
+}
+
+export type AarshjulOpgave = { titel: string; kort: string; /** besøget falder i næste år (uger > 52) */ naesteAar?: boolean };
+export type AarshjulUge = { uge: number; opgaver: AarshjulOpgave[] };
+
+/** Byg årshjulet: [{uge, opgaver:[{titel, kort}]}] sorteret pr. uge (1–52).
+ *  Besøg = besogPrAar(interval) (samme afrunding som årsbeløbet — "1 gang om
+ *  året" → 1 besøg). Uden interval behandles linjen som EN engangsopgave på
+ *  startugen. Linjer uden startuge kan ikke placeres og udelades. Besøg der
+ *  ruller over uge 52 markeres naesteAar (årstalskift-note i UI/PDF). */
+export function bygAarshjul(
+  linjer: { description: string; interval?: string | null; startWeek?: string | null }[],
+): AarshjulUge[] {
+  const perUge = new Map<number, AarshjulOpgave[]>();
+  for (const l of linjer) {
+    const start = parseUgeNr(l.startWeek);
+    const titel = (l.description ?? "").trim();
+    if (start == null || !titel) continue;
+    const besog = besogPrAar(l.interval) ?? 1;
+    const step = Math.max(1, Math.round(52 / besog));
+    for (let i = 0; i < besog; i++) {
+      const raa = start + step * i;
+      const uge = ((raa - 1) % 52) + 1; // wrap over 52 → samme uge næste år
+      const liste = perUge.get(uge) ?? [];
+      liste.push({ titel: l.description, kort: kortNavn(l.description), naesteAar: raa > 52 || undefined });
+      perUge.set(uge, liste);
+    }
+  }
+  return [...perUge.entries()]
+    .sort((a, b) => a[0] - b[0])
+    .map(([uge, opgaver]) => ({ uge, opgaver }));
 }
 
 /** Teknisk acceptetiket for status — bruges i lister og mails til staff. */

@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import {
   tilbudTotal, nyAcceptToken, buildTilbudPdfData, statusLabel, acceptTokenUdløber, linjeKundeTekst, linjeStartugeTekst,
+  bygAarshjul, parseUgeNr, kortNavn,
 } from "../lib/tilbud.mts";
 import {
   aarsbelob, besogPrAar, BASE_INTERVALS, tilbudLinjeAarsbelob, tilbudAarsbelobSum,
@@ -154,6 +155,72 @@ test("statusLabel dækker alle tilbudstatusser", () => {
   }
   assert.equal(statusLabel("accepteret"), "Accepteret");
   assert.equal(statusLabel("konverteret"), "Konverteret til abonnement");
+});
+
+// ─── ÅRSHJUL (Thomas, 2026-09-11): alle besøgene over året pr. uge ──────────
+test("parseUgeNr: 'Uge 29'/'Uge 29, 2026' → 29 — ugyldig → null", () => {
+  assert.equal(parseUgeNr("Uge 29"), 29);
+  assert.equal(parseUgeNr("Uge 29, 2026"), 29);
+  assert.equal(parseUgeNr("uge 5"), 5);
+  assert.equal(parseUgeNr(null), null);
+  assert.equal(parseUgeNr(""), null);
+  assert.equal(parseUgeNr("Uge 99"), null);
+  assert.equal(parseUgeNr("Snart"), null);
+});
+
+test("kortNavn: 'Vinduespudsning' → 'V', 'Tagrender + nedløbskontrol' → 'TN'", () => {
+  assert.equal(kortNavn("Vinduespudsning"), "V");
+  assert.equal(kortNavn("Tagrender + nedløbskontrol"), "TN");
+  assert.equal(kortNavn(""), "?");
+});
+
+test("ÅRSHJUL Thomas' eksempel: Vindue hver 4. uge fra uge 29 + Tagrender uge 38", () => {
+  const hjul = bygAarshjul([
+    { description: "Vinduespudsning", interval: "Hver 4. uge", startWeek: "Uge 29" },
+    { description: "Tagrender", interval: "1 gang om året", startWeek: "Uge 38" },
+  ]);
+  // Vindue: 13 besøg (52/4), træder 4 uger ad gangen fra uge 29 —
+  // uge 29, 33, 37, 41, 45, 49, derefter ruller over 52 (→ næste år: 1, 5, …)
+  const vinduesUger = hjul.filter((u) => u.opgaver.some((o) => o.titel === "Vinduespudsning")).map((u) => u.uge);
+  assert.equal(vinduesUger.length, 13);
+  // 13 besøg, træder 4 uger ad gangen fra uge 29; efter uge 49 ruller over
+  // 52 → næste år (uge 1, 5, …). Ugerne kommer sorteret stigende.
+  assert.deepEqual(vinduesUger, [1, 5, 9, 13, 17, 21, 25, 29, 33, 37, 41, 45, 49]);
+  // Tagrender: præcis 1 besøg i uge 38
+  const tagUge = hjul.find((u) => u.opgaver.some((o) => o.titel === "Tagrender"));
+  assert.equal(tagUge?.uge, 38);
+  assert.equal(tagUge?.opgaver.length, 1);
+  // kort-initialer med i hvert besøg
+  const v29 = hjul.find((u) => u.uge === 29);
+  assert.equal(v29?.opgaver[0].kort, "V");
+  // naesteAar er sat på besøg efter årsskiftet (raa > 52)
+  assert.ok(hjul.find((u) => u.uge === 1)?.opgaver[0].naesteAar);
+  assert.ok(!v29?.opgaver[0].naesteAar);
+});
+
+test("bygAarshjul: engangsopgave (uden interval) placeres på sin startuge; linjer uden startuge udelades", () => {
+  const hjul = bygAarshjul([
+    { description: "Trappevask", interval: null, startWeek: "Uge 12" },
+    { description: "Uden startuge", interval: "Hver 2. uge", startWeek: null },
+    { description: "", interval: "Hver uge", startWeek: "Uge 3" },
+  ]);
+  assert.equal(hjul.length, 1);
+  assert.equal(hjul[0].uge, 12);
+  assert.equal(hjul[0].opgaver.length, 1);
+  assert.equal(hjul[0].opgaver[0].titel, "Trappevask");
+  assert.equal(hjul[0].opgaver[0].naesteAar, undefined);
+});
+
+test("bygAarshjul: uger er sorteret stigende og samler opgaver på samme uge", () => {
+  const hjul = bygAarshjul([
+    { description: "Vinduespudsning", interval: "Hver 4. uge", startWeek: "Uge 29" },
+    { description: "Sten-søm", interval: null, startWeek: "Uge 29" },
+  ]);
+  const uger = hjul.map((u) => u.uge);
+  assert.deepEqual([...uger].sort((a, b) => a - b), uger);
+  const u29 = hjul.find((u) => u.uge === 29);
+  assert.equal(u29?.opgaver.length, 2); // vindue + sten-søm samme uge
+  assert.equal(bygAarshjul([]).length, 0);
 });
 
 // Thomas, 2026-09-11 (korrektion 2): valgfri STARTUGE PR. OPGAVELINJE.

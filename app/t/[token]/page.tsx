@@ -3,7 +3,8 @@ import { headers } from "next/headers";
 import { prisma } from "@/lib/db";
 import { sendEmail } from "@/lib/email";
 import { underLimit, recordHit } from "@/lib/rate-limit";
-import { tilbudTotal, linjeKundeTekst, linjeStartugeTekst } from "@/lib/tilbud.mts";
+import { tilbudTotal, linjeKundeTekst, linjeStartugeTekst, bygAarshjul } from "@/lib/tilbud.mts";
+import Aarshjul from "@/components/Aarshjul";
 import { tilbudAarsbelobSum } from "@/lib/subscription-intervals";
 
 // Offentlig accept-side (Thomas, 2026-09-11): kunden klikker "Godkend tilbud" på
@@ -139,6 +140,10 @@ export default async function TilbudAcceptPage({
           </div>
         ) : null}
       </div>
+
+      {/* Thomas, 2026-09-11: ÅRSHJUL — kunden ser hele årets plan (alle
+          opgavernes besøg pr. uge) SAMMEN MED TILBUDET. */}
+      <Aarshjul uger={bygAarshjul(tilbud.lines)} />
 
       {kanGodkende ? (
         <form action={godkendAction} style={{ marginTop: 20 }}>

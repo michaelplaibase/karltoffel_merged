@@ -6,6 +6,7 @@
 import { Document, Page, Text, View, StyleSheet, Image, Font, pdf } from "@react-pdf/renderer";
 import { SNAGA_BLACK, HANKEN_REGULAR, HANKEN_SEMIBOLD } from "./maanedrapport-fonts";
 import type { TilbudPdfData } from "./tilbud.mts";
+import { bygAarshjul } from "./tilbud.mts";
 
 import * as ReactNS from "react";
 const e = ReactNS.createElement;
@@ -66,6 +67,32 @@ function photoGridEl(fotos: string[]) {
   );
 }
 
+// Årshjul-afsnit (Thomas, 2026-09-11): hele årets besøg pr. uge som simple
+// gul- chips med opgave-initialer — [] når ingen linjer kan placeres.
+function aarshjulAfsnit(linjer: TilbudPdfData["linjer"]) {
+  const uger = bygAarshjul(linjer);
+  if (!uger.length) return [];
+  const naesteAar = uger.some((u) => u.opgaver.some((o) => o.naesteAar));
+  return [
+    e(View, { style: S.section, wrap: false },
+      e(Text, { style: S.sectionTitle }, "Årshjul — årets besøg pr. uge"),
+      e(View, { style: S.sectionRule }),
+      e(Text, { style: { fontSize: 8.5, color: RISTET, marginBottom: 5 } },
+        "Bogstaverne er opgavernes initialer." +
+        (naesteAar ? " (→) = besøg, der falder i det følgende år (ugerne ruller over 52)." : "")),
+      e(View, { style: { flexDirection: "row", flexWrap: "wrap", gap: 5 } },
+        uger.map((u) =>
+          e(View, { key: u.uge, style: { backgroundColor: FRITURE, borderRadius: 3, padding: "4pt 6pt", maxWidth: "30%" } },
+            e(Text, { style: { fontSize: 8.5, fontWeight: 600, fontFamily: "Hanken" } }, `Uge ${u.uge}`),
+            e(Text, { style: { fontSize: 9, color: JORDNAER, fontWeight: 600, marginTop: 1 } },
+              u.opgaver.map((o) => o.kort + (o.naesteAar ? "→" : "")).join(" · ")),
+          ),
+        ),
+      ),
+    ),
+  ];
+}
+
 function TilbudDoc({ data }: { data: TilbudPdfData }) {
   const antalFotos = data.fotosForside.length + data.fotosPerLinje.reduce((n, f) => n + f.length, 0);
   return e(Document, null,
@@ -117,6 +144,10 @@ function TilbudDoc({ data }: { data: TilbudPdfData }) {
           ),
         ),
       ),
+      // ÅRSHJUL (Thomas, 2026-09-11): hele årets besøg pr. uge — sendes SAMMEN
+      // MED TILBUDET. Simpel tabel pr. uge med opgave-initialer; samme data
+      // (bygAarshjul) som formularen og accept-siden, så tallene aldrig afviger.
+      ...aarshjulAfsnit(data.linjer),
       // Bundlinje: ÅRLIGT beløb når intervallet er sat (Thomas, 2026-09-11 —
       // det gamle 'samlet beløb' er fjernet). Uden interval: kun momsnoden.
       e(View, { style: S.totalBox, wrap: false },

@@ -808,3 +808,22 @@ textarea.task-desc { resize: none; overflow: hidden; min-height: 58px; height: a
 .price-dual { display: inline-flex; flex-wrap: wrap; gap: 0 6px; align-items: baseline; }
 .price-dual .muted { min-width: 0; }
 .price-dual-compact .muted { display: block; width: 100%; font-size: 0.75rem; font-weight: 400; white-space: normal; overflow-wrap: anywhere; line-height: 1.35; }
+
+/* ── Tilbud-formularen (Thomas, 2026-09-11 feedback): opgave-linjerne var
+   klemte og blev klippet af i højre side ("Startuge (valg…" ragede ud over
+   kanten). Opgave-sektionen spænder nu over fuld kort-bredde og linjerækken
+   bruger en responsiv grid: bred titel-kolonne + felter med ordentlig
+   bredde; på smal skærm stakker felterne to pr. række i stedet for at
+   klippe af. intet overflow-x, intet klip. */
+.tl-row-tilbud {
+  grid-template-columns: minmax(200px, 1fr) minmax(110px, 130px) minmax(180px, 220px) minmax(150px, 180px) 40px;
+}
+@media (max-width: 1100px) {
+  .tl-row-tilbud { grid-template-columns: minmax(160px, 1fr) 110px 180px 160px 36px; }
+}
+@media (max-width: 860px) {
+  /* Smal skærm: felter stakker pænt — titel og pris, interval og startuge,
+     slet-knap til sidst. Ingen felter klippes af. */
+  .tl-row-tilbud { grid-template-columns: 1fr 130px; row-gap: 8px; min-width: 0; }
+  .tl-row-tilbud .btn { justify-self: end; grid-column: 2; }
+}

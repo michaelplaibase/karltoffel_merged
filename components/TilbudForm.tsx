@@ -4,6 +4,8 @@ import { useActionState, useState } from "react";
 import Link from "next/link";
 import type { TilbudState } from "@/app/actions/tilbud";
 import { BASE_INTERVALS, tilbudLinjeAarsbelob, tilbudAarsbelobSum } from "@/lib/subscription-intervals";
+import { bygAarshjul } from "@/lib/tilbud.mts";
+import Aarshjul from "@/components/Aarshjul";
 
 type Kontakt = { id: number; name: string; companyName: string | null };
 
@@ -36,7 +38,11 @@ export default function TilbudForm({ contacts, action }: {
   };
 
   return (
-    <div className="container-1140" style={{ maxWidth: 900 }}>
+    // Thomas, 2026-09-11 (feedback): formularen var for klem — opgave-linjerne
+    // (pris/interval/startuge) blev klippet af i højre side. Bredere container
+    // + opgave-sektionen spænder over FULDT kort-bredde (se globals.css:
+    // .tl-row-tilbud + responsive breakpoints, stakker pænt på smal skærm).
+    <div className="container-1140" style={{ maxWidth: 1100 }}>
       <div className="toolbar" style={{ justifyContent: "space-between" }}>
         <div>
           <h1 className="page-title" style={{ margin: 0 }}>Nyt tilbud</h1>
@@ -163,11 +169,11 @@ export default function TilbudForm({ contacts, action }: {
               </div>
             </div>
 
-            <div className="f2">
+            <div className="f2" style={{ gridColumn: "1 / -1" }}>
               <label className="col-label">Opgaver og priser</label>
               <div className="tasklines">
                 {linjer.map((l, i) => (
-                  <div className="tl-row" key={i} style={{ gridTemplateColumns: "1fr 120px 200px 150px auto" }}>
+                  <div className="tl-row tl-row-tilbud" key={i}>
                     <input
                       name="taskDescription"
                       className="form-control"
@@ -235,6 +241,14 @@ export default function TilbudForm({ contacts, action }: {
                   <div className="tl-sum"><span>Årligt beløb (inkl. moms) — sum af linjerne med interval</span><b>{kr(aarligt)}</b></div>
                 ) : null}
               </div>
+            </div>
+
+            {/* Thomas, 2026-09-11: ÅRSHJUL — live forhåndsvisning af alle besøg
+                over året pr. uge (startuge + interval, samme matematik som
+                PDF'en og accept-siden). Viser kun, når mindst én linje kan
+                placeres (har startuge + titel). */}
+            <div style={{ gridColumn: "1 / -1" }}>
+              <Aarshjul uger={bygAarshjul(linjer)} overskrift="Årshjul — sådan ser kundens år ud" />
             </div>
 
             <hr className="section-hr" />

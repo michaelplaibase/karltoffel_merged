@@ -2,7 +2,8 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { getDownloadUrl } from "@vercel/blob";
-import { statusLabel, tilbudTotal, linjeKundeTekst } from "@/lib/tilbud.mts";
+import { statusLabel, tilbudTotal, linjeKundeTekst, bygAarshjul } from "@/lib/tilbud.mts";
+import Aarshjul from "@/components/Aarshjul";
 import { tilbudAarsbelobSum } from "@/lib/subscription-intervals";
 import { tilbudMailBesked } from "@/lib/tilbud-send";
 import { sendTilbud, markTilbudAccepted, convertTilbudToSubscription, deleteTilbud } from "@/app/actions/tilbud";
@@ -77,6 +78,9 @@ export default async function TilbudDetailPage({ params }: { params: Promise<{ i
           {tilbud.startWeek ? (
             <p className="page-desc">Start: {tilbud.startWeek}</p>
           ) : null}
+          {/* Thomas, 2026-09-11: ÅRSHJUL — alle opgavernes besøg over året pr.
+              uge (startuge + interval). Følger med i PDF'en og på accept-siden. */}
+          <Aarshjul uger={bygAarshjul(tilbud.lines)} />
         </div>
       </div>
 
