@@ -62,6 +62,7 @@ model User {
   fixedMonthlyCost Int?     // faste udgifter pr. md (fx voucher, transport)
   orders           Order[]
   timeEntries      TimeEntry[]
+  absences         Absence[]
   vehicles         Vehicle[]
   taskLines        TaskLine[]
 
@@ -422,6 +423,24 @@ model HolidayWeek {
   id         Int      @id @default(autoincrement())
   startWeek  DateTime // Monday ISO date
   endWeek    DateTime
+}
+
+// Fraværsregistrering pr. medarbejder: sygdom (én dag, gælder straks) og
+// ferie (ansøgning — skal godkendes af en admin før den planlægger kalenderen).
+model Absence {
+  id        Int      @id @default(autoincrement())
+  user      User     @relation(fields: [userId], references: [id])
+  userId    Int
+  type      String   // "sygdom" | "ferie"
+  date      DateTime // dagen (midnat UTC)
+  status    String   @default("pending") // sygdom: "registered"; ferie: pending | approved | rejected
+  decidedBy Int?     // admin-id der godkendte/afviste ferie
+  decidedAt DateTime?
+  note      String?  // fri tekst fra medarbejderen
+  createdAt DateTime @default(now())
+
+  @@unique([userId, type, date])
+  @@index([date])
 }
 
 // Inbound sales lead from the public website form / webhook (POST /api/leads).

@@ -21,6 +21,7 @@ const MEDARBEJDER_ALLOWED = [
   "/fixed-prices",
   "/orders",
   "/reports/day-pdf",
+  "/fravaer",
   "/account",
   "/change-password",
   "/logout",

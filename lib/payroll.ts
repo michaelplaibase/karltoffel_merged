@@ -14,6 +14,8 @@ export type PayrollRow = {
   provision: number | null;  // akkord: omsætning EKSKL. moms × pct
   fastLoen: number | null;   // fast: manuelt månedsbeløb
   fixedMonthlyCost: number | null; // faste udgifter pr. md (fx voucher, transport)
+  sygedage: number;          // registrerede sygedage i perioden
+  feriedage: number;         // godkendte feriedage i perioden
 };
 
 export type Payroll = { fromISO: string; toISO: string; rows: PayrollRow[] };
@@ -54,6 +56,18 @@ export async function getPayroll(fromISO?: string, toISO?: string): Promise<Payr
     agg.set(eid, cur);
   }
 
+  // Fravær i perioden: sygdom (registreret) og godkendt ferie — tælles pr. dag.
+  const absences = await prisma.absence.findMany({
+    where: { date: { gte: fromD, lte: toD }, OR: [{ type: "sygdom" }, { status: "approved" }] },
+    select: { userId: true, type: true },
+  });
+  const sick = new Map<number, number>();
+  const holidayDays = new Map<number, number>();
+  for (const ab of absences) {
+    const m = ab.type === "sygdom" ? sick : holidayDays;
+    m.set(ab.userId, (m.get(ab.userId) ?? 0) + 1);
+  }
+
   const rows: PayrollRow[] = users.map((u) => {
     const a = agg.get(u.id) ?? { antal: 0, oms: 0 };
     const model = u.payModel === "akkord" ? "akkord" : "fast";
@@ -70,6 +84,8 @@ export async function getPayroll(fromISO?: string, toISO?: string): Promise<Payr
       provision: model === "akkord" ? Math.round((omsEx * pct) / 100) : null,
       fastLoen: model === "fast" ? u.monthlySalary : null,
       fixedMonthlyCost: u.fixedMonthlyCost,
+      sygedage: sick.get(u.id) ?? 0,
+      feriedage: holidayDays.get(u.id) ?? 0,
     };
   });
 
