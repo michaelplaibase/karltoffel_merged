@@ -8,7 +8,10 @@ export const dynamic = "force-dynamic";
 const kr = (n: number) => n.toLocaleString("da-DK") + " kr.";
 
 export default async function TilbudPage() {
-  const tilbud = await prisma.tilbud.findMany({
+  let tilbud: Awaited<ReturnType<typeof prisma.tilbud.findMany>> = [];
+  let dbFejl = false;
+  try {
+    tilbud = await prisma.tilbud.findMany({
     orderBy: { createdAt: "desc" },
     include: {
       contact: { select: { id: true, name: true, companyName: true } },
@@ -16,6 +19,9 @@ export default async function TilbudPage() {
     },
     take: 200,
   });
+  } catch {
+    dbFejl = true;
+  }
 
   return (
     <div className="container-1140">
@@ -35,7 +41,9 @@ export default async function TilbudPage() {
                 <tr><th>Titel</th><th>Kunde</th><th>Linjer</th><th>Total</th><th>Status</th><th>Oprettet</th></tr>
               </thead>
               <tbody>
-                {tilbud.length === 0 ? (
+                {dbFejl ? (
+                  <tr><td colSpan={6} style={{ color: "#8A6931" }}>Tilbud-tabel mangler i preview-databasen — oprettes automatisk, når modulet sættes live.</td></tr>
+                ) : tilbud.length === 0 ? (
                   <tr><td colSpan={6}>Ingen tilbud endnu — opret det første.</td></tr>
                 ) : (
                   tilbud.map((t) => {
