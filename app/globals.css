@@ -815,15 +815,25 @@ textarea.task-desc { resize: none; overflow: hidden; min-height: 58px; height: a
    bruger en responsiv grid: bred titel-kolonne + felter med ordentlig
    bredde; på smal skærm stakker felterne to pr. række i stedet for at
    klippe af. intet overflow-x, intet klip. */
+/* Thomas, 2026-09-11 (korrektion 3): rækken KUNNE stadig klippes, fordi
+   '1fr' betyder minmax(auto, 1fr) — input/select-felternes intrinsiske
+   min-bredde (default input-size + select-tekstens længde) kunne tvinge
+   sporene bredere end containeren, og .tasklines' overflow:hidden klippede
+   så 'Startuge (valg…' af i højre side. Alle spor bruger nu minmax(0, …),
+   så sporene kan ALDRIG blive bredere end containeren — felterne kan blive
+   smallere, men intet klippes. Desktop (1280–1500px): alle 4 felter ved
+   siden af hinanden med plads til placeholderne. */
 .tl-row-tilbud {
-  grid-template-columns: minmax(200px, 1fr) minmax(110px, 130px) minmax(180px, 220px) minmax(150px, 180px) 40px;
+  grid-template-columns: minmax(0, 2.2fr) minmax(90px, 0.8fr) minmax(150px, 1fr) minmax(130px, 1fr) 40px;
+  min-width: 0;
 }
+.tl-row-tilbud .form-control { min-width: 0; }
 @media (max-width: 1100px) {
-  .tl-row-tilbud { grid-template-columns: minmax(160px, 1fr) 110px 180px 160px 36px; }
+  .tl-row-tilbud { grid-template-columns: minmax(0, 2fr) minmax(90px, 0.8fr) minmax(140px, 1fr) minmax(120px, 1fr) 36px; }
 }
 @media (max-width: 860px) {
   /* Smal skærm: felter stakker pænt — titel og pris, interval og startuge,
      slet-knap til sidst. Ingen felter klippes af. */
-  .tl-row-tilbud { grid-template-columns: 1fr 130px; row-gap: 8px; min-width: 0; }
+  .tl-row-tilbud { grid-template-columns: minmax(0, 1fr) minmax(0, 130px); row-gap: 8px; min-width: 0; }
   .tl-row-tilbud .btn { justify-self: end; grid-column: 2; }
 }

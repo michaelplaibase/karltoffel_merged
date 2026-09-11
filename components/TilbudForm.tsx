@@ -177,7 +177,7 @@ export default function TilbudForm({ contacts, action }: {
                     <input
                       name="taskDescription"
                       className="form-control"
-                      placeholder={i === 0 ? "Fx Tagrenderens + nedløbskontrol" : ""}
+                      placeholder={i === 0 ? "Fx tagrender + nedløb" : ""}
                       value={l.description}
                       onChange={(e) => opdaterLinje(i, "description", e.target.value)}
                     />
@@ -213,7 +213,7 @@ export default function TilbudForm({ contacts, action }: {
                       className="form-control"
                       value={l.startWeek}
                       onChange={(e) => opdaterLinje(i, "startWeek", e.target.value)}
-                      placeholder="Startuge (valgfri)"
+                      placeholder="Startuge"
                       aria-label="Startuge (valgfri)"
                     />
                     <button
