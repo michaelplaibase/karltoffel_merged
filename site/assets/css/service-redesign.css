@@ -294,10 +294,11 @@
 /* Hero: tekst venstre + formular hoejre. Scopet til kontakt-heroens id,
    sa skabelonens generiske .sp-hero__grid-regel (420px-kolonne, align start)
    ikke kolliderer. inner flattes med display:contents. */
-#section-id-kontakt-hero .sp-hero__grid, #section-id-pakker-hero .sp-hero__grid { display: block; }
+#section-id-kontakt-hero .sp-hero__grid, #section-id-pakker-hero .sp-hero__grid, #haek-hero-grid { display: block; }
 @media print, screen and (min-width: 64em) {
 	#section-id-kontakt-hero .sp-hero__grid,
-	#section-id-pakker-hero .sp-hero__grid {
+	#section-id-pakker-hero .sp-hero__grid,
+	#haek-hero-grid {
 		display: grid;
 		grid-template-columns: minmax(0, 1.1fr) minmax(0, 480px);
 		gap: 64px;
@@ -309,6 +310,8 @@
 	}
 }
 .sp-form--kontakt { margin-top: 0; }
+/* Felt-fokus: altid hvid baggrund (Mads 2026-09-11) */
+.hp-form input:focus, .hp-form textarea:focus { background: #ffffff; outline: 2px solid #AE8642; }
 /* Lige luft rundt om ring-op-formularen (Mads 2026-09-11) */
 #section-id-kontakt-hero .sp-hero__grid { padding-bottom: 96px; }
 /* Lige luft om FAQ'en (Mads 2026-09-11): mindre top, mere bund */
