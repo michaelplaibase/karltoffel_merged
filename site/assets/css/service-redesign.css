@@ -301,7 +301,9 @@
 		grid-template-columns: minmax(0, 1.1fr) minmax(0, 480px);
 		gap: 64px;
 		align-items: center;
-		padding-top: 96px;
+		/* headeren ligger fast oven paa heroen (81px) — plus 96px synlig luft,
+		   sa afstanden fra menuens bund til kortet = afstanden under kortet */
+		padding-top: 177px;
 		padding-bottom: 96px;
 	}
 }
