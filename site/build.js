@@ -109,7 +109,7 @@ function renderSide(page) {
       ? ERHVERV_MOTOR
       : MOTOR_TPL.replaceAll('{{SUB_TEKST}}', page.motor.sub_tekst));
     const post = chunk(page.fil, 'post.html');
-    if (post) parts.push(post.replaceAll('[[FAQ]]', renderFaq(page)));
+    if (post) parts.push(post.replaceAll('[[FAQ]]', renderFaq(page)).replaceAll('[[YDELSeskort]]', renderKort(page)));
   }
   const ftrChunk = chunk(page.fil, 'footer.html');
   let fp;

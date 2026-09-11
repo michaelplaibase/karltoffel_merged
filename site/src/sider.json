@@ -833,17 +833,67 @@
    "sti": "/p/pakker-priser",
    "fil": "p/pakker-priser",
    "head": {
-    "title": "Karltoffels Årshjul - Karltoffel",
-    "description": "Huset og haven slider året rundt. Det gør vi så. Karltoffels Årshjul viser, hvad der skal ordnes – og hvornår. Mindre bøvl. Mere overskud.",
+    "title": "Pakker og priser - Karltoffel",
+    "description": "Vælg Villapakken eller Sommerhuspakken — eller sammensæt selv præcis de opgaver, du vil have ordnet. Få et estimat på prisen uden bøvl.",
     "noindex_top": false,
     "floating_linje": "\t\t<link rel=\"stylesheet\" href=\"/assets/css/floating-cta.css?v=1\">\n",
-    "pixel": "<!-- Meta Pixel Code -->\n<script>!function(f,b,e,v,n,t,s)\n{if(f.fbq)return;n=f.fbq=function(){n.callMethod?\nn.callMethod.apply(n,arguments):n.queue.push(arguments)};\nif(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';\nn.queue=[];t=b.createElement(e);t.async=!0;\nt.src=v;s=b.getElementsByTagName(e)[0];\ns.parentNode.insertBefore(t,s)}(window, document,'script',\n'https://connect.facebook.net/en_US/fbevents.js');\nfbq('init', '1574687980856727');\nfbq('track', 'PageView');\n</script>\n<noscript><img height=\"1\" width=\"1\" style=\"display:none\"\nsrc=\"https://www.facebook.com/tr?id=1574687980856727&amp;ev=PageView&amp;noscript=1\"\n/></noscript>\n<!-- End Meta Pixel Code -->\n",
-    "og_html": "\n\t<link rel=\"canonical\" href=\"https://karltoffel.dk/p/pakker-priser\">\n\t<meta property=\"og:title\" content=\"Karltoffels Årshjul - Karltoffel\">\n\t<meta property=\"og:description\" content=\"Huset og haven slider året rundt. Det gør vi så. Karltoffels Årshjul viser, hvad der skal ordnes – og hvornår. Mindre bøvl. Mere overskud.\">\n\t<meta property=\"og:url\" content=\"https://karltoffel.dk/p/pakker-priser\">\n\n\t"
+    "pixel": "<!-- Meta Pixel Code -->\n<script>!function(f,b,e,v,n,t,s)\n{if(f.fbq)return;n=f.fbq=function(){n.callMethod?\nn.callMethod.apply(n,arguments):n.queue.push(arguments)};\nif(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';\nn.queue=[];t=b.createElement(e);t.async=!0;\nt.src=v;s=b.getElementsByTagName(e)[0];\ns.parentNode.insertBefore(t,s)}(window, document,'script',\n'https://connect.facebook.net/en_US/fbevents.js');\nfbq('init', '1574687980856727');\nfbq('track', 'PageView');\n</script>\n<noscript><img height=\"1\" width=\"1\" style=\"display:none\"\nsrc=\"https://www.facebook.com/tr?id=1574687980856727&amp;ev=PageView&amp;noscript=1\"\n/></noscript>\n<!-- End Meta Pixel Code -->\n\t<link rel=\"stylesheet\" href=\"/assets/css/tilbudsmotor.css?v=42\">\n",
+    "og_html": "\n\t<link rel=\"canonical\" href=\"https://karltoffel.dk/p/pakker-priser\">\n\t<meta property=\"og:title\" content=\"Pakker og priser - Karltoffel\">\n\t<meta property=\"og:description\" content=\"Vælg Villapakken eller Sommerhuspakken — eller sammensæt selv præcis de opgaver, du vil have ordnet. Få et estimat på prisen uden bøvl.\">\n\t<meta property=\"og:url\" content=\"https://karltoffel.dk/p/pakker-priser\">\n\n\t"
    },
    "body_tag": "<body class=\"\" data-link=\"/p/pakker-priser\">",
    "header": {
     "fixed": true,
     "nav_active": "/p/pakker-priser",
+    "cta_href": "/p/kontakt"
+   },
+   "footer": {
+    "cta_href": "/p/kontakt",
+    "em_paragraf": false,
+    "social": "alle"
+   },
+   "motor": {
+    "type": "standard",
+    "sub_tekst": "Tast din adresse. Så graver vi tallene frem og giver dig et estimat på prisen, mens du venter."
+   },
+   "ydelseskort": {
+    "kort": [
+     "vinduesvask",
+     "haekklipning",
+     "ukrudtsbekaempelse",
+     "graespleje",
+     "algerens-og-algebehandling-af-fliser-tag-og-facader",
+     "beskaering",
+     "bortskaffelse-haveaffald",
+     "solcellevask",
+     "fliserens",
+     "tagrenderens",
+     "robotplaeneklipper-service",
+     "vask-hus-garage-ned"
+    ],
+    "kontekst": "privat",
+    "vis_kort_tekst": false
+   },
+   "faq": false,
+   "faq_ekstra_fil": null,
+   "floating_cta": "/p/kontakt",
+   "noindex": false,
+   "i_sitemap": true
+  },
+  {
+   "sti": "/p/aarshjul",
+   "fil": "p/aarshjul",
+   "head": {
+    "title": "Karltoffels Årshjul - Karltoffel",
+    "description": "Årets have- og husrunde, måned for måned. Se hvad vi klarer i haven og omkring huset gennem hele året – så du slipper for bøvlen.",
+    "noindex_top": false,
+    "floating_linje": "\t\t<link rel=\"stylesheet\" href=\"/assets/css/floating-cta.css?v=1\">\n",
+    "pixel": "<!-- Meta Pixel Code -->\n<script>!function(f,b,e,v,n,t,s)\n{if(f.fbq)return;n=f.fbq=function(){n.callMethod?\nn.callMethod.apply(n,arguments):n.queue.push(arguments)};\nif(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';\nn.queue=[];t=b.createElement(e);t.async=!0;\nt.src=v;s=b.getElementsByTagName(e)[0];\ns.parentNode.insertBefore(t,s)}(window, document,'script',\n'https://connect.facebook.net/en_US/fbevents.js');\nfbq('init', '1574687980856727');\nfbq('track', 'PageView');\n</script>\n<noscript><img height=\"1\" width=\"1\" style=\"display:none\"\nsrc=\"https://www.facebook.com/tr?id=1574687980856727&amp;ev=PageView&amp;noscript=1\"\n/></noscript>\n<!-- End Meta Pixel Code -->\n",
+    "og_html": "\n\t<link rel=\"canonical\" href=\"https://karltoffel.dk/p/aarshjul\">\n\t<meta property=\"og:title\" content=\"Karltoffels Årshjul - Karltoffel\">\n\t<meta property=\"og:description\" content=\"Huset og haven slider året rundt. Det gør vi så. Karltoffels Årshjul viser, hvad der skal ordnes – og hvornår. Mindre bøvl. Mere overskud.\">\n\t<meta property=\"og:url\" content=\"https://karltoffel.dk/p/aarshjul\">\n\n\t"
+   },
+   "body_tag": "<body class=\"\" data-link=\"/p/aarshjul\">",
+   "header": {
+    "fixed": true,
+    "nav_active": "/p/aarshjul",
     "cta_href": "/p/kontakt"
    },
    "footer": {
