@@ -249,10 +249,7 @@
     "em_paragraf": false,
     "social": "alle"
    },
-   "motor": {
-    "type": "standard",
-    "sub_tekst": "Tast din adresse. Så graver vi tallene frem og giver dig et estimat på prisen, mens du venter."
-   },
+   "motor": null,
    "ydelseskort": null,
    "faq": true,
    "faq_ekstra_fil": "c/det-vi-ordner/haekklipning/faq-ekstra.html",

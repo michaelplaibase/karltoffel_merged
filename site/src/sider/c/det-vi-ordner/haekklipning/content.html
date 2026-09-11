@@ -1,15 +1,4 @@
-
-
-		
-							
-
-
-					
-
-								
-
-
-	<div class="section section--type-hero section--theme-secondary section--padding-bottom-none section--padding-top-none sp-hero" id="section-id-article-338">
+<div class="section section--type-hero section--theme-secondary section--padding-bottom-none section--padding-top-none sp-hero" id="section-id-article-338">
 		<div class="section__background"></div>
 		<div class="section__anchor" id="section-article"></div>
 		<div class="sp-hero__bg">
@@ -21,22 +10,49 @@
 					/assets/img/thumb/7003eec2b574d33c9aba448120234c65665a4922_w600.webp 600w"
 				sizes="100vw" width="2000" height="1459">
 		</div>
-		<div class="grid-container sp-hero__grid">
+		<div class="grid-container sp-hero__grid" id="haek-hero-grid">
 			<div class="sp-hero__text" data-in-view-scope>
 				<h1>Hækklipning<br>Fra 999 kr</h1>
-				<p class="sp-hero__lead">Klippet, ryddet og kørt væk - så du kan bruge weekenden på noget bedre end en hæk og en stige.</p>
-				Vi klipper, rydder op og fjerner alt affaldet. Ringer du eller skriver du til os, kontakter vi dig i åbningstiden med en fast pris og aftaler en dag, der passer dig. Du betaler først, når hækken står, som den skal. <span class="sp-hero__more">Scroll ned og se priser, hvad der er med, og hvordan det foregår.</span></p>
+				<p class="sp-hero__lead">Vi klipper hækken, rydder op og tager afklippet med. Du betaler først bagefter.</p>
+				<p>Hos Karltoffel slipper du for bøvlet med hækken, så du kan bruge tiden på noget andet.</p>
+				<p>Indtast antal meter og få et prisestimat med det samme. Vi kontakter dig med den endelige pris.</p>
 			</div>
-</div>
-		<div class="sp-usp" role="list">
-			<div class="grid-container">
-				<ul>
-					<li role="listitem">✓ Betaling først når arbejdet er gjort</li>
-					<li role="listitem">✓ Ingen binding</li>
-					<li role="listitem">✓ Servicefradrag op til 26 %</li>
-				</ul>
-			</div>
+			<aside class="sp-form hp-form" aria-label="Se prisen på din hæk">
+				<h2 class="sp-form__title">Se prisen på din hæk</h2>
+				<p class="sp-form__lead">Indtast cirka antal meter hæk og se dit prisestimat med det samme.</p>
+				<form id="haek-pris-form" class="sp-form__fields" novalidate>
+					<div id="hp-step1">
+						<label for="hp-meter">Antal meter hæk</label>
+						<input id="hp-meter" name="meter" type="text" inputmode="numeric" placeholder="F.eks. 65" autocomplete="off">
+						<button type="submit" class="sp-form__submit" id="hp-submit"><span id="hp-knap-tekst">Se din pris</span> <span class="hp-knap-arrow" aria-hidden="true">→</span></button>
+						<p class="hp-err" id="hp-err1" hidden></p>
+						<p class="sp-form__note">Ingen kontaktoplysninger før du har set prisen · Uforpligtende</p>
+						<hr class="sp-form__rule">
+						<p class="sp-form__call">Ring hellere selv? <a href="tel:+4522223833"><strong>22 22 38 33</strong></a> <span>man-fre 8-16</span></p>
+					</div>
+					<div id="hp-step2" hidden>
+						<div class="hp-pris-boks" id="hp-pris-boks"></div>
+						<label for="hp-navn">Navn</label>
+						<input id="hp-navn" name="navn" type="text" autocomplete="name">
+						<div id="hp-tlf-felt">
+							<label for="hp-telefon">Telefon</label>
+							<input id="hp-telefon" name="telefon" type="tel" autocomplete="tel" inputmode="tel">
+						</div>
+						<div id="hp-mailfelt" hidden>
+							<label for="hp-mail">Mailadresse</label>
+							<input id="hp-mail" name="email" type="email" autocomplete="email">
+							<label for="hp-besked">Beskriv din opgave <span class="hp-valgfri">(valgfri — hjælper os med at give dig den rigtige pris)</span></label>
+							<textarea id="hp-besked" name="besked" rows="3" maxlength="900" placeholder="F.eks. hækkens højde, hvor mange sider der skal klippes, eller andet vi skal vide."></textarea>
+						</div>
+						<button type="button" class="hp-mail-link" id="hp-mail-link">Jeg vil hellere kontaktes på mail</button>
+						<button type="submit" class="sp-form__submit" id="hp-submit2"><span id="hp-knap-tekst-2">Ja tak - ring mig op</span> <span class="hp-knap-arrow" aria-hidden="true">→</span></button>
+						<p class="hp-err" id="hp-err2" hidden></p>
+						<p class="sp-form__note">Vi bekræfter prisen og aftaler detaljerne med dig. Du betaler først, når hækken er klippet.</p>
+						<hr class="sp-form__rule">
+						<p class="sp-form__call">Ring hellere selv? <a href="tel:+4522223833"><strong>22 22 38 33</strong></a> <span>man-fre 8-16</span></p>
+					</div>
+					<div id="hp-status" role="status" aria-live="polite" class="hp-status" hidden></div>
+				</form>
+			</aside>
 		</div>
 	</div>
-
-	

@@ -323,3 +323,126 @@
 .ko-status[data-error="false"] { color: #616711; }
 .sp-hero__text { color: #FFFFF0; }
 .sp-hero__text h1 { color: #FFF87B; }
+
+/* ---------- hækklipning pilot (Opgave C, Mads 2026-09-11) ---------- */
+/* 2-trins prismotor i heroen */
+.hp-form { margin-top: 0; }
+.hp-steps { position: relative; }
+.hp-err {
+	margin: 10px 0 0;
+	font-size: 13px;
+	font-weight: 700;
+	color: #8A2b0e;
+}
+.hp-meter {
+	width: 100%;
+	height: 48px;
+	margin: 0 0 16px;
+	padding: 0 14px;
+	border: 1px solid #c9c3b4;
+	border-radius: 10px;
+	background: #fff;
+	font-size: 16px;
+	color: #4C3718;
+	-webkit-appearance: none;
+	appearance: none;
+	box-sizing: border-box;
+}
+.hp-pris-boks {
+	margin: 0 0 18px;
+	padding: 20px 18px;
+	border-radius: 14px;
+	background: #4C3718;
+	color: #FFFFF0;
+}
+.hp-pris-boks .hp-pris {
+	margin: 0 0 8px;
+	font-family: snaga-unicase-display, sans-serif;
+	font-weight: 900;
+	font-size: 30px;
+	color: #FFF87B;
+}
+.hp-pris-boks .hp-pris-note { font-size: 13px; line-height: 1.5; margin: 0 0 10px; }
+.hp-pris-boks .hp-ret {
+	padding: 0;
+	border: 0;
+	background: none;
+	color: #FFF87B;
+	font-size: 13px;
+	font-weight: 700;
+	text-decoration: underline;
+	cursor: pointer;
+}
+.hp-mail-link {
+	display: inline-block;
+	margin: 0 0 14px;
+	border: 0;
+	background: none;
+	padding: 0;
+	color: #4C3718;
+	font-size: 13px;
+	font-weight: 700;
+	text-decoration: underline;
+	cursor: pointer;
+}
+.hp-status { margin-top: 12px; font-size: 14px; font-weight: 700; }
+.hp-status[data-error="true"] { color: #8A2b0e; }
+.hp-status:not([data-error="true"]) { color: #616711; }
+
+.sp-video {
+	position: relative;
+	overflow: hidden;
+	border-radius: 24px;
+	background: #1C140B;
+	aspect-ratio: 720 / 1280;
+	max-width: 420px;
+	margin: 0 auto;
+}
+.sp-video video {
+	position: absolute;
+	inset: 0;
+	width: 100%;
+	height: 100%;
+	object-fit: cover;
+	display: block;
+}
+.sp-video__play {
+	position: absolute;
+	left: 50%;
+	bottom: 24px;
+	transform: translateX(-50%);
+	display: inline-flex;
+	align-items: center;
+	gap: 10px;
+	padding: 14px 26px;
+	border: 0;
+	border-radius: 999px;
+	background: #FFF87B;
+	color: #4C3718;
+	font-family: snaga-unicase-display, sans-serif;
+	font-weight: 900;
+	font-size: 15px;
+	text-transform: uppercase;
+	cursor: pointer;
+	z-index: 2;
+	box-shadow: 0 8px 22px rgba(0,0,0,.35);
+	transition: background .25s, transform .25s;
+}
+.sp-video__play:hover, .sp-video__play:focus { background: #fff65c; transform: translateX(-50%) translateY(-2px); }
+.sp-video--playing .sp-video__play { display: none; }
+
+/* besked-felt (mail-varianten af hæk-heroen) */
+.hp-form textarea {
+	width: 100%;
+	margin: 0 0 16px;
+	padding: 12px 14px;
+	border: 1px solid #c9c3b4;
+	border-radius: 10px;
+	background: #fff;
+	font-family: "Hanken Grotesk", sans-serif;
+	font-size: 15px;
+	color: #4C3718;
+	resize: vertical;
+	box-sizing: border-box;
+}
+.hp-valgfri { font-weight: 400; text-transform: none; letter-spacing: 0; }
