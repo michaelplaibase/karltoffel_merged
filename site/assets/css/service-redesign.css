@@ -392,6 +392,7 @@
 .hp-status[data-error="true"] { color: #8A2b0e; }
 .hp-status:not([data-error="true"]) { color: #616711; }
 
+.sp-video-col { display: flex; flex-direction: column; }
 .sp-video {
 	position: relative;
 	overflow: hidden;
@@ -399,6 +400,7 @@
 	background: #1C140B;
 	aspect-ratio: 720 / 1280;
 	max-width: 420px;
+	width: 100%;
 	margin: 0 auto;
 }
 .sp-video video {
@@ -409,30 +411,61 @@
 	object-fit: cover;
 	display: block;
 }
+.sp-video__tag {
+	position: absolute;
+	left: 50%;
+	top: 58%;
+	transform: translateX(-50%);
+	z-index: 2;
+	color: #FFFFF0;
+	font-size: 14px;
+	font-weight: 700;
+	text-shadow: 0 1px 8px rgba(0,0,0,.6);
+	pointer-events: none;
+}
 .sp-video__play {
 	position: absolute;
 	left: 50%;
-	bottom: 24px;
+	top: 68%;
 	transform: translateX(-50%);
 	display: inline-flex;
 	align-items: center;
-	gap: 10px;
-	padding: 14px 26px;
+	justify-content: center;
+	width: 64px;
+	height: 64px;
+	padding: 0;
 	border: 0;
-	border-radius: 999px;
+	border-radius: 50%;
 	background: #FFF87B;
 	color: #4C3718;
-	font-family: snaga-unicase-display, sans-serif;
-	font-weight: 900;
-	font-size: 15px;
-	text-transform: uppercase;
 	cursor: pointer;
 	z-index: 2;
 	box-shadow: 0 8px 22px rgba(0,0,0,.35);
 	transition: background .25s, transform .25s;
 }
-.sp-video__play:hover, .sp-video__play:focus { background: #fff65c; transform: translateX(-50%) translateY(-2px); }
-.sp-video--playing .sp-video__play { display: none; }
+.sp-video__play:hover, .sp-video__play:focus { background: #fff65c; transform: translateX(-50%) scale(1.05); }
+.sp-video__play svg { margin-left: 3px; }
+.sp-video__meta {
+	position: absolute;
+	left: 0;
+	right: 0;
+	top: calc(68% + 52px);
+	z-index: 2;
+	text-align: center;
+	color: #FFFFF0;
+	pointer-events: none;
+	text-shadow: 0 1px 8px rgba(0,0,0,.6);
+}
+.sp-video__title { display: block; font-size: 18px; font-weight: 800; }
+.sp-video__sub { display: block; font-size: 13px; margin-top: 2px; }
+.sp-video--playing .sp-video__play,
+.sp-video--playing .sp-video__meta,
+.sp-video--playing .sp-video__tag { display: none; }
+@media print, screen and (min-width: 64em) {
+	.sp-included .sp-included__grid { align-items: center; }
+	.sp-included { padding-top: 120px; padding-bottom: 120px; }
+	.sp-included__main .sp-checklist li { margin-bottom: 26px; }
+}
 
 /* besked-felt (mail-varianten af hæk-heroen) */
 .hp-form textarea {
