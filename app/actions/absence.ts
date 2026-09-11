@@ -5,7 +5,7 @@ import { revalidatePath } from "next/cache";
 import { getSessionUser } from "@/lib/api-auth";
 import { prisma } from "@/lib/db";
 import {
-  registerAbsence, approveAbsence, rejectAbsence, parseAbsenceDate,
+  registerAbsencePeriod, approveAbsence, rejectAbsence, parseAbsenceDate,
   type AbsenceType, type RegisterAbsenceResult,
 } from "@/lib/absence";
 
@@ -15,12 +15,19 @@ async function guard(): Promise<{ id: number; isAdmin: boolean }> {
   return { id: me.id, isAdmin: me.isAdmin };
 }
 
-/** Medarbejder (eller admin) melder sygdom/ferie for én dato. */
-export async function registerAbsenceAction(type: AbsenceType, dateISO: string, note: string): Promise<RegisterAbsenceResult> {
+/** Medarbejder (eller admin) melder sygdom/ferie for én dato eller en periode (inklusiv). */
+export async function registerAbsenceAction(
+  type: AbsenceType,
+  dateISO: string,
+  note: string,
+  toDateISO?: string,
+): Promise<RegisterAbsenceResult> {
   const me = await guard();
   const date = parseAbsenceDate(dateISO);
   if (!date) return { ok: false, message: "Vælg en gyldig dato." };
-  const res = await registerAbsence(me.id, type, date, note.trim() || undefined);
+  const toDate = toDateISO ? parseAbsenceDate(toDateISO) : undefined;
+  if (toDateISO && !toDate) return { ok: false, message: "Slutdatoen er ugyldig." };
+  const res = await registerAbsencePeriod(me.id, type, date, toDate ?? undefined, note.trim() || undefined);
   revalidatePath("/fravaer");
   revalidatePath("/calendar");
   revalidatePath("/daycalendar");
@@ -47,20 +54,23 @@ export async function rejectAbsenceAction(absenceId: number): Promise<RegisterAb
   return res;
 }
 
-/** Admin: registrér fravær på vegne af en medarbejder (web-formular). */
+/** Admin: registrér fravær på vegne af en medarbejder (web-formular, periode mulig). */
 export async function registerForEmployeeAction(formData: FormData): Promise<void> {
   const me = await guard();
   if (!me.isAdmin) redirect("/");
   const userId = Number(formData.get("userId"));
   const type = String(formData.get("type")) as AbsenceType;
   const dateISO = String(formData.get("date") ?? "");
+  const toDateISO = String(formData.get("toDate") ?? "").trim();
   const note = String(formData.get("note") ?? "");
   if (!Number.isInteger(userId) || (type !== "sygdom" && type !== "ferie")) return;
   const date = parseAbsenceDate(dateISO);
   if (!date) return;
+  const toDate = toDateISO ? parseAbsenceDate(toDateISO) : undefined;
+  if (toDateISO && !toDate) return;
   const u = await prisma.user.findUnique({ where: { id: userId }, select: { active: true } });
   if (!u?.active) return;
-  await registerAbsence(userId, type, date, note.trim() || undefined);
+  await registerAbsencePeriod(userId, type, date, toDate ?? undefined, note.trim() || undefined);
   revalidatePath("/fravaer");
   revalidatePath("/calendar");
   revalidatePath("/daycalendar");

@@ -70,8 +70,12 @@ export function RegisterForEmployee({ employees }: { employees: { id: number; na
               </select>
             </label>
             <label>
-              Dato<br />
+              Dato (ferie: fra-dato)<br />
               <input type="date" name="date" required className="form-control form-control-sm" />
+            </label>
+            <label>
+              Til dato (valgfri, ved ferie)<br />
+              <input type="date" name="toDate" className="form-control form-control-sm" />
             </label>
             <label style={{ flex: 1, minWidth: 180 }}>
               Besked (valgfri)<br />

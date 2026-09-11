@@ -88,6 +88,64 @@ export async function moveOrdersAwayFrom(userId: number, date: Date): Promise<nu
 export type RegisterAbsenceResult = { ok: boolean; message: string };
 
 /**
+ * Registrér fravær for en PERIODE (inklusiv): dag for dag fra `from` til `to`
+ * (to default = from, dvs. én dag). Sygdom → "registered" + straks-planlægning
+ * pr. dag. Ferie → "pending" (ansøgning; admin godkender). Eksisterende
+ * registreringer samme dato/type ændres IKKE (idempotent) — kun nyoprettede
+ * dage tæller med og flytter opgaver + udsender e-mail.
+ */
+export async function registerAbsencePeriod(
+  userId: number,
+  type: AbsenceType,
+  from: Date,
+  to?: Date,
+  note?: string,
+): Promise<RegisterAbsenceResult> {
+  const user = await prisma.user.findUnique({ where: { id: userId }, select: { firstName: true, lastName: true, active: true } });
+  if (!user?.active) return { ok: false, message: "Brugeren findes ikke eller er deaktiveret." };
+
+  const status: AbsenceStatus = type === "sygdom" ? "registered" : "pending";
+  const end = to ?? from;
+  if (end.getTime() < from.getTime()) return { ok: false, message: "Slutdatoen må ikke være før startdatoen." };
+
+  let created = 0;
+  let movedTotal = 0;
+  for (let d = new Date(from); d.getTime() <= end.getTime(); d = new Date(d.getTime() + 864e5)) {
+    const res = await prisma.absence.upsert({
+      where: { userId_type_date: { userId, type, date: d } },
+      create: { userId, type, date: new Date(d), status, note: note ?? null },
+      update: {}, // eksisterende registrering samme dato ændres ikke
+    });
+    // upsert returnerer rækken — kun NYOPRETTET tæller (createdAt ≈ nu)
+    if (Date.now() - res.createdAt.getTime() < 5000) {
+      created += 1;
+      if (type === "sygdom") movedTotal += await moveOrdersAwayFrom(userId, d);
+    }
+  }
+
+  const navn = `${user.firstName} ${user.lastName}`.trim();
+  const periode = daDate(from) === daDate(end) ? daDate(from) : `${daDate(from)} — ${daDate(end)}`;
+  await notifyStaff(
+    type === "sygdom" ? `Sygdom meldt: ${navn} — ${periode}` : `Ferieansøgning: ${navn} — ${periode}`,
+    type === "sygdom"
+      ? `${navn} har meldt sig syg: ${periode}.${note ? `\n\nBesked: ${note}` : ""}${
+          movedTotal ? `\n\n${movedTotal} planlagt(e) opgave(r) er automatisk flyttet til andre dage.` : ""
+        }`
+      : `${navn} har ansøgt om ferie: ${periode} (${created} dag(e)).${note ? `\n\nBesked: ${note}` : ""}\n\nGodkend/afvis under Funktioner → Fravær i CRM'en.`,
+  );
+
+  return {
+    ok: true,
+    message:
+      type === "sygdom"
+        ? `Sygdom registreret: ${periode}. Kontoret er sendt en e-mail.${movedTotal ? ` ${movedTotal} opgave(r) flyttet automatisk.` : ""}`
+        : created === 0
+          ? `Alle dage i perioden er allerede registreret — intet ændret.`
+          : `Ferieansøgning sendt: ${periode} (${created} dag(e)). Kontoret er sendt en e-mail — du hører, når den er godkendt.`,
+  };
+}
+
+/**
  * Registrér fravær. Sygdom → status "registered" + straks-planlægning.
  * Ferie → status "pending" (ansøgning; admin godkender).
  */

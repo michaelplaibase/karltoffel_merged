@@ -11,6 +11,7 @@ const DA_DAG = new Intl.DateTimeFormat("da-DK", { weekday: "long", day: "numeric
 export function RegisterForm({ isAdmin }: { isAdmin: boolean }) {
   const [type, setType] = useState<"sygdom" | "ferie">("sygdom");
   const [date, setDate] = useState("");
+  const [toDate, setToDate] = useState("");
   const [note, setNote] = useState("");
   const [msg, setMsg] = useState<Msg>(null);
   const [pending, start] = useTransition();
@@ -18,7 +19,7 @@ export function RegisterForm({ isAdmin }: { isAdmin: boolean }) {
   const submit = () => {
     if (!date) { setMsg({ ok: false, text: "Vælg først en dato." }); return; }
     start(async () => {
-      const r = await registerAbsenceAction(type, date, note);
+      const r = await registerAbsenceAction(type, date, note, toDate || undefined);
       setMsg({ ok: r.ok, text: r.message });
       if (r.ok) { setNote(""); }
     });
@@ -31,15 +32,21 @@ export function RegisterForm({ isAdmin }: { isAdmin: boolean }) {
         <div className="toolbar" style={{ gap: 10, alignItems: "flex-end", flexWrap: "wrap" }}>
           <label>
             Type<br />
-            <select className="form-control form-control-sm" value={type} onChange={(e) => setType(e.target.value as "sygdom" | "ferie")}>
+            <select className="form-control form-control-sm" value={type} onChange={(e) => { setType(e.target.value as "sygdom" | "ferie"); setToDate(""); }}>
               <option value="sygdom">Sygdom (gælder straks)</option>
               <option value="ferie">Ferie (ansøgning — skal godkendes)</option>
             </select>
           </label>
           <label>
-            Dato<br />
-            <input type="date" className="form-control form-control-sm" value={date} onChange={(e) => setDate(e.target.value)} />
+            {type === "ferie" ? "Fra dato" : "Dato"}<br />
+            <input type="date" className="form-control form-control-sm" value={date} onChange={(e) => { setDate(e.target.value); if (toDate && e.target.value && toDate < e.target.value) setToDate(e.target.value); }} />
           </label>
+          {type === "ferie" && (
+            <label>
+              Til dato (valgfri)<br />
+              <input type="date" className="form-control form-control-sm" value={toDate} min={date || undefined} onChange={(e) => setToDate(e.target.value)} />
+            </label>
+          )}
           <label style={{ flex: 1, minWidth: 200 }}>
             Besked (valgfri)<br />
             <input className="form-control form-control-sm" value={note} onChange={(e) => setNote(e.target.value)} placeholder={type === "sygdom" ? "Fx løber jeg snart rundt igen" : "Fx sommerferie"} />
@@ -54,6 +61,7 @@ export function RegisterForm({ isAdmin }: { isAdmin: boolean }) {
         {type === "ferie" && !isAdmin && (
           <p className="muted" style={{ marginTop: 8, fontSize: 13 }}>
             Ferie er en ansøgning — den planlægger kalenderen først, når kontoret har godkendt den.
+            Udfyld "Til dato", hvis du ønsker flere dage i træk (fx en hel ferieuge).
           </p>
         )}
       </div>
