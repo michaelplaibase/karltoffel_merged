@@ -26,7 +26,7 @@
 
 .pp-card {
 	border-radius: 20px;
-	padding: 28px 24px;
+	padding: 36px 32px 40px;
 	background: #ffffff;
 	color: #4C3718;
 	display: flex;
@@ -43,26 +43,27 @@
 }
 .pp-card__eyebrow--dark { color: #4C3718; }
 .pp-card h3 {
-	margin: 0 0 6px;
+	margin: 0 0 10px;
 	font-family: snaga-unicase-display, sans-serif;
 	font-weight: 900;
 	font-size: 26px;
 	text-transform: uppercase;
 	color: #4C3718;
 }
-.pp-card__sub { font-size: 14px; margin: 0 0 18px; }
+.pp-card__sub { font-size: 15px; margin: 0 0 28px; }
 .pp-card__listtitle {
-	margin: 0 0 8px;
+	margin: 0 0 14px;
 	font-size: 12px;
 	font-weight: 700;
 	text-transform: uppercase;
 	letter-spacing: .08em;
 	color: #8A6931;
 }
-.pp-card ul { list-style: none; margin: 0; padding: 0; font-size: 14px; }
-.pp-card ul li { margin: 0 0 8px; }
-.pp-card__buy { margin-top: auto; border-top: 1px solid rgba(76,55,24,.2); padding-top: 16px; }
-.pp-card__buylabel { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; color: #8A6931; margin: 0 0 8px; }
+.pp-card ul { list-style: none; margin: 0; padding: 0; font-size: 15px; }
+.pp-card ul li { border-bottom: 1px solid rgba(76,55,24,.12); }
+.pp-card ul li { margin: 0; padding: 12px 0; }
+.pp-card__buy { margin-top: auto; border-top: 1px solid rgba(76,55,24,.2); padding-top: 22px; }
+.pp-card__buylabel { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; color: #8A6931; margin: 0 0 12px; }
 .pp-card__cta {
 	display: block;
 	width: 100%;
@@ -84,9 +85,9 @@
 .pp-card__cta--dark { background: #4C3718; color: #FFF87B; text-align: center; }
 .pp-card__cta--dark:hover, .pp-card__cta--dark:focus { background: #3a2b12; }
 .pp-arrow { float: right; }
-.pp-card__faqq { font-size: 12px; margin: 12px 0 2px; color: #6b5c3d; }
-.pp-card__pris { font-weight: 700; margin: 0; }
-.pp-card__small { font-size: 14px; margin: 14px 0 0; }
+.pp-card__faqq { font-size: 13px; margin: 18px 0 4px; color: #6b5c3d; }
+.pp-card__pris { font-weight: 700; font-size: 17px; margin: 0; }
+.pp-card__small { font-size: 15px; margin: 18px 0 0; }
 
 /* Bland selv: chips + udfold */
 .pp-bland-chips { display: flex; align-items: center; gap: 8px; margin: 18px 0 0; flex-wrap: wrap; }
@@ -109,7 +110,7 @@
 	justify-content: space-between;
 	gap: 12px;
 	width: 100%;
-	margin-top: 18px;
+	margin-top: 24px;
 	padding: 12px 16px;
 	border: 2px solid #4C3718;
 	border-radius: 10px;
@@ -120,13 +121,13 @@
 	cursor: pointer;
 }
 .pp-bland-toggle__icon { font-size: 20px; line-height: 1; }
-.pp-bland-liste { margin-top: 14px; }
+.pp-bland-liste { margin-top: 18px; }
 .pp-bland-liste ul {
 	list-style: none; margin: 0; padding: 0;
 	border-top: 1px solid rgba(76,55,24,.25);
 	font-size: 14px;
 }
-.pp-bland-liste li { padding: 9px 0; border-bottom: 1px solid rgba(76,55,24,.15); }
+.pp-bland-liste li { padding: 12px 0; border-bottom: 1px solid rgba(76,55,24,.15); }
 
 /* Gul USP-linje under heroen (samme som ydelsessiderne) */
 #section-id-pakker-hero + .sp-usp { position: relative; }
