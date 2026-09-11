@@ -17,13 +17,45 @@
 				srcset="/assets/img/thumb/bfecbbced698bfa82928e101c850dabd471dd3da_w2000_q78.webp 2000w"
 				sizes="100vw" width="2000" height="1125">
 		</div>
-		<div class="grid-container sp-hero__grid">
+		<div class="grid-container sp-hero__grid" id="haek-hero-grid">
 			<div class="sp-hero__text" data-in-view-scope>
 				<h1>Fliserens<br>Fra 1.499 kr</h1>
-				<p class="sp-hero__lead">Fliser, der ligner nye - uden en eneste time med højtryksrenser i hånden.</p>
-				Vi fjerner alger, mos og sod og behandler fliserne, så grønsken holder længere væk. Kontakt os, så ringer vi til dig i åbningstiden med prisen på dine fliser og aftaler en dag. Du betaler først, når arbejdet er gjort. <span class="sp-hero__more">Se priser, hvordan vi arbejder, og hvad du får herunder.</span></p>
-			</div>
+
+					<p>Vi renser fliserne for alger, mos og snavs og rydder op efter os. Du betaler først bagefter.</p>
+					<p>Hos Karltoffel slipper du for timer med højtryksrenseren, så du kan bruge terrassen til det, den er lavet til.</p>
+					<p>Læg dine kontaktoplysninger, så kontakter vi dig og aftaler opgaven og prisen.</p>
+
+				</div>
+<aside class="sp-form hp-form" aria-label="Kontakt os om Fliserens">
+				<h2 class="sp-form__title">Kontakt os om Fliserens</h2>
+				<p class="sp-form__lead">Læg dit navn og nummer, så ringer vi dig op og aftaler opgaven.</p>
+				<form id="ydelse-pris-form" class="sp-form__fields" novalidate>
+					<div id="yp-step1">
+						<label for="yp-navn">Navn</label>
+						<input id="yp-navn" name="navn" type="text" autocomplete="name">
+						<div id="yp-tlf-felt">
+							<label for="yp-telefon">Telefon</label>
+							<input id="yp-telefon" name="telefon" type="tel" autocomplete="tel" inputmode="tel">
+						</div>
+						<button type="submit" class="sp-form__submit" id="yp-submit2"><span id="yp-knap-tekst-2">Ja tak - ring mig op</span> <span class="hp-knap-arrow" aria-hidden="true">→</span></button>
+						<button type="button" class="hp-mail-link" id="yp-mail-link">Jeg vil hellere kontaktes på mail</button>
+						<div id="yp-mailfelt" hidden>
+							<label for="yp-mail">Mailadresse</label>
+							<input id="yp-mail" name="email" type="email" autocomplete="email">
+							<label for="yp-besked">Beskriv din opgave <span class="hp-valgfri">(valgfri — hjælper os med at give dig den rigtige pris)</span></label>
+							<textarea id="yp-besked" name="besked" rows="3" maxlength="900" placeholder="F.eks. areal, adgang eller andet vi skal vide."></textarea>
+						</div>
+						<p class="hp-err" id="yp-err2" hidden></p>
+						<div id="yp-status" role="status" aria-live="polite" class="hp-status" hidden></div>
+						<p class="sp-form__note">Uforpligtende. Vi aftaler opgaven og prisen med dig.</p>
+						<hr class="sp-form__rule">
+						<p class="sp-form__call">Ring hellere selv? <a href="tel:+4522223833"><strong>22 22 38 33</strong></a> <span>man-fre 8-16</span></p>
+					</div>
+					<div id="yp-kontakt"></div>
+				</form>
+			</aside>
 </div>
+
 		<div class="sp-usp" role="list">
 			<div class="grid-container">
 				<ul>

@@ -21,13 +21,56 @@
 					/assets/img/thumb/1cab000e9b684c1490a3b6c2c423c3b045ee4d88_w600.webp 600w"
 				sizes="100vw" width="2000" height="1125">
 		</div>
-		<div class="grid-container sp-hero__grid">
+		<div class="grid-container sp-hero__grid" id="haek-hero-grid">
 			<div class="sp-hero__text" data-in-view-scope>
 				<h1>Vinduesvask<br>Fra 199 kr</h1>
-				<p class="sp-hero__lead">Skarpe vinduer - uden du skal røre en avis, en stige eller en spand vand.</p>
-				Vi vasker både inde og ude, stiger op, hvor det er højt, og efterlader vinduerne uden striber. Send dine oplysninger, så ringer vi til dig i åbningstiden med en fast pris og aftaler en dag, der passer dig. Du betaler først, når vinduerne står skarpe. <span class="sp-hero__more">Læs videre herunder for priser, hvad der er med, og hvordan det foregår.</span></p>
-			</div>
+
+					<p>Vi vasker dine vinduer, rammer og sålbænke udvendigt. Du betaler først bagefter.</p>
+					<p>Hos Karltoffel slipper du for spande, skrabere og beskidte ruder, så du kan nyde udsigten og bruge tiden på noget andet.</p>
+					<p>Indtast antal ruder og vælg, om vi også skal vaske indvendigt. Få et prisestimat med det samme. Vi kontakter dig med den endelige pris.</p>
+
+				</div>
+<aside class="sp-form hp-form" aria-label="Se prisen på dine vinduer">
+				<h2 class="sp-form__title">Se prisen på dine vinduer</h2>
+				<p class="sp-form__lead">Indtast antal ruder og se dit prisestimat med det samme.</p>
+				<form id="ydelse-pris-form" class="sp-form__fields" novalidate>
+					<div id="yp-step1">
+						<div class="yp-felt"><label for="yp-felt-antal">Antal ruder</label><input id="yp-felt-antal" type="text" inputmode="numeric" placeholder="f.eks. 12" autocomplete="off"></div>
+						<label class="yp-check"><input type="checkbox" id="yp-felt-ogsaainde"> Vask også indvendig</label>
+						<button type="submit" class="sp-form__submit" id="yp-submit"><span id="yp-knap-tekst">Se din pris</span> <span class="hp-knap-arrow" aria-hidden="true">→</span></button>
+						<p class="hp-err" id="yp-err1" hidden>Tast et tal større end 0 — eller brug "Ring hellere selv" nedenunder.</p>
+						<p class="sp-form__note">Ingen kontaktoplysninger før du har set prisen · Uforpligtende</p>
+						<hr class="sp-form__rule">
+						<p class="sp-form__call">Ring hellere selv? <a href="tel:+4522223833"><strong>22 22 38 33</strong></a> <span>man-fre 8-16</span></p>
+					</div>
+					<div id="yp-step2" hidden>
+						<div class="hp-pris-boks" id="yp-pris-boks"></div>
+						<div id="yp-kontakt">
+							<label for="yp-navn">Navn</label>
+							<input id="yp-navn" name="navn" type="text" autocomplete="name">
+							<div id="yp-tlf-felt">
+								<label for="yp-telefon">Telefon</label>
+								<input id="yp-telefon" name="telefon" type="tel" autocomplete="tel" inputmode="tel">
+							</div>
+							<button type="button" class="hp-mail-link" id="yp-mail-link">Jeg vil hellere kontaktes på mail</button>
+							<div id="yp-mailfelt" hidden>
+								<label for="yp-mail">Mailadresse</label>
+								<input id="yp-mail" name="email" type="email" autocomplete="email">
+								<label for="yp-besked">Beskriv din opgave <span class="hp-valgfri">(valgfri — hjælper os med at give dig den rigtige pris)</span></label>
+								<textarea id="yp-besked" name="besked" rows="3" maxlength="900" placeholder="F.eks. mål, adgang eller andet vi skal vide."></textarea>
+							</div>
+							<button type="submit" class="sp-form__submit" id="yp-submit2"><span id="yp-knap-tekst-2">Ja tak - ring mig op</span> <span class="hp-knap-arrow" aria-hidden="true">→</span></button>
+							<p class="hp-err" id="yp-err2" hidden></p>
+							<p class="sp-form__note">Vi bekræfter prisen og aftaler detaljerne med dig. Du betaler først, når arbejdet er gjort.</p>
+							<hr class="sp-form__rule">
+							<p class="sp-form__call">Ring hellere selv? <a href="tel:+4522223833"><strong>22 22 38 33</strong></a> <span>man-fre 8-16</span></p>
+						</div>
+						<div id="yp-status" role="status" aria-live="polite" class="hp-status" hidden></div>
+					</div>
+				</form>
+			</aside>
 </div>
+
 		<div class="sp-usp" role="list">
 			<div class="grid-container">
 				<ul>

@@ -1,0 +1,169 @@
+/* Pakker & priser (2026-09-11, Mads) — Sektion 2 "Hvad skal vi ordne hos dig?" */
+
+.pp-eyebrow {
+	margin: 0 0 8px;
+	font-size: 13px;
+	font-weight: 700;
+	text-transform: uppercase;
+	letter-spacing: .1em;
+	color: #8A6931;
+}
+#section-id-pakker-pakker h2 {
+	font-family: snaga-unicase-display, sans-serif;
+	font-weight: 900;
+	font-size: clamp(30px, 5vw, 44px);
+	line-height: 1;
+	text-transform: uppercase;
+	color: #4C3718;
+	margin: 0 0 10px;
+}
+.pp-sub { max-width: 560px; margin: 0 0 32px; color: #4C3718; }
+
+.pp-grid { display: grid; grid-template-columns: 1fr; gap: 24px; align-items: start; }
+@media print, screen and (min-width: 64em) {
+	.pp-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 28px; }
+}
+
+.pp-card {
+	border-radius: 20px;
+	padding: 36px 32px 40px;
+	background: #ffffff;
+	color: #4C3718;
+	display: flex;
+	flex-direction: column;
+}
+.pp-card--bland { background: #FFF87B; }
+.pp-card__eyebrow {
+	margin: 0 0 2px;
+	font-size: 12px;
+	font-weight: 700;
+	text-transform: uppercase;
+	letter-spacing: .08em;
+	color: #8A6931;
+}
+.pp-card__eyebrow--dark { color: #4C3718; }
+.pp-card h3 {
+	margin: 0 0 10px;
+	font-family: snaga-unicase-display, sans-serif;
+	font-weight: 900;
+	font-size: 26px;
+	text-transform: uppercase;
+	color: #4C3718;
+}
+.pp-card__sub { font-size: 15px; margin: 0 0 28px; }
+.pp-card__listtitle {
+	margin: 0 0 14px;
+	font-size: 12px;
+	font-weight: 700;
+	text-transform: uppercase;
+	letter-spacing: .08em;
+	color: #8A6931;
+}
+.pp-card ul { list-style: none; margin: 0; padding: 0; font-size: 15px; }
+.pp-card ul li { border-bottom: 1px solid rgba(76,55,24,.12); }
+.pp-card ul li { margin: 0; padding: 12px 0; }
+.pp-card__buy { margin-top: auto; border-top: 1px solid rgba(76,55,24,.2); padding-top: 22px; }
+.pp-card__buylabel { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; color: #8A6931; margin: 0 0 12px; }
+.pp-card__cta {
+	display: block;
+	width: 100%;
+	box-sizing: border-box;
+	padding: 14px 18px;
+	border-radius: 999px;
+	background: #FFF87B;
+	color: #4C3718;
+	font-family: snaga-unicase-display, sans-serif;
+	font-weight: 900;
+	font-size: 15px;
+	text-transform: uppercase;
+	text-decoration: none;
+	text-align: left;
+	cursor: pointer;
+	transition: background .25s, transform .25s;
+}
+.pp-card__cta:hover, .pp-card__cta:focus { background: #fff65c; transform: translateY(-2px); }
+.pp-card__cta--dark { background: #4C3718; color: #FFF87B; text-align: center; }
+.pp-card__cta--dark:hover, .pp-card__cta--dark:focus { background: #3a2b12; }
+.pp-arrow { float: right; }
+.pp-card__faqq { font-size: 13px; margin: 18px 0 4px; color: #6b5c3d; }
+.pp-card__pris { font-weight: 700; font-size: 17px; margin: 0; }
+.pp-card__small { font-size: 15px; margin: 18px 0 0; }
+
+/* Bland selv: chips + udfold */
+.pp-bland-chips { display: flex; align-items: center; gap: 8px; margin: 18px 0 0; flex-wrap: wrap; }
+.pp-chip {
+	display: inline-block;
+	padding: 10px 16px;
+	background: #FFFFF0;
+	border-radius: 12px;
+	font-weight: 700;
+	font-size: 14px;
+	color: #4C3718;
+	transform: rotate(-1.5deg);
+}
+.pp-chip:nth-child(3) { transform: rotate(1.2deg); }
+.pp-chip:nth-child(5) { transform: rotate(-.8deg); }
+.pp-plus { font-weight: 900; color: #4C3718; }
+.pp-bland-toggle {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 12px;
+	width: 100%;
+	margin-top: 24px;
+	padding: 12px 16px;
+	border: 2px solid #4C3718;
+	border-radius: 10px;
+	background: transparent;
+	color: #4C3718;
+	font-size: 14px;
+	font-weight: 700;
+	cursor: pointer;
+}
+.pp-bland-toggle__icon { font-size: 20px; line-height: 1; }
+.pp-bland-liste { margin-top: 18px; }
+.pp-bland-liste ul {
+	list-style: none; margin: 0; padding: 0;
+	border-top: 1px solid rgba(76,55,24,.25);
+	font-size: 14px;
+}
+.pp-bland-liste li { padding: 12px 0; border-bottom: 1px solid rgba(76,55,24,.15); }
+
+/* Gul USP-linje under heroen (samme som ydelsessiderne) */
+#section-id-pakker-hero + .sp-usp { position: relative; }
+
+/* Slut-CTA: gul pill-knap */
+.section--type-cta .button {
+	background: #FFF87B;
+	color: #4C3718;
+	padding: 16px 40px;
+	border-radius: 999px;
+	min-height: 56px;
+	font-size: 16px;
+	box-shadow: 0 8px 22px rgba(0,0,0,.18);
+}
+.section--type-cta .button:hover, .section--type-cta .button:focus { background: #fff65c; transform: translateY(-2px); }
+/* Gavekort-rubrik under Bland selv (Mads 2026-09-11) — samme udtryk, anden farve (Spire-groen) */
+.pp-col-bland { display: flex; flex-direction: column; gap: 24px; min-width: 0; }
+.pp-col-bland .pp-card--bland { flex: 0 0 auto; }
+.pp-card--gavekort { background: #616711; color: #FFFFF0; flex: 1 1 auto; }
+.pp-card--gavekort .pp-card__eyebrow--lys { color: #FFF87B; }
+.pp-card--gavekort h3 { color: #FFF87B; }
+.pp-card__sub--lys { color: #FFFFF0; }
+.pp-card__cta--gul {
+	display: block;
+	width: 100%;
+	box-sizing: border-box;
+	padding: 14px 18px;
+	border-radius: 999px;
+	background: #FFF87B;
+	color: #4C3718;
+	font-family: snaga-unicase-display, sans-serif;
+	font-weight: 900;
+	font-size: 15px;
+	text-transform: uppercase;
+	text-decoration: none;
+	cursor: pointer;
+	transition: background .25s, transform .25s;
+}
+.pp-card__cta--gul:hover, .pp-card__cta--gul:focus { background: #fff65c; transform: translateY(-2px); }

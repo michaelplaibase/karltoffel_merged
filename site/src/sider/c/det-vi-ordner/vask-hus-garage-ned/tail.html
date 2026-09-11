@@ -9,7 +9,7 @@
 	
 
 
-			<script>window.KARLTOFFEL=window.KARLTOFFEL||{};window.KARLTOFFEL.tilbudsmotorPage={service:"algeflis",source:"vask-hus-garage-ned"};</script>
+			
 		<script src="/assets/js/tilbudsmotor.config.js?v=9"></script>
 		<script src="/assets/js/tilbudsmotor.js?v=59"></script>
 		<script>
@@ -39,3 +39,12 @@
 })();
 		</script>
 		
+		<script>
+window.KARLTOFFEL = window.KARLTOFFEL || {};
+window.KARLTOFFEL.ydelsePris = {"ydelse": "Facadevask", "tittel": "Se prisen på din facadevask", "lead_txt": "Indtast ca. m² facade (hus + garage), og se dit prisestimat.", "prisFn": "Math.max(7.80*f.m2,850)", "prisNote": "function(f){ return 'Estimat for ' + f.m2 + ' m² facade (hus og garage). Algerens og algebehandling af belægning kan tilføjes — vi bekrefter på opkaldet.'; }", "servicesFn": "[{id:'algeflis',navn:'Algebehandling af belægning',wm:'Algebehandling af belægning',qty:f.m2,enhed:'m² fliser',pris:7.80}]", "source": "vask-hus-garage-ned-pris-hero"};
+window.KARLTOFFEL.ydelsePris.felter = [{"id": "m2", "label": "Ca. m² facade", "ph": "f.eks. 150"}];
+window.KARLTOFFEL.ydelsePris.prisFn = function(f){ return Math.max(7.80*f.m2,850); };
+window.KARLTOFFEL.ydelsePris.prisNoteFn = function(f){ return 'Estimat for ' + f.m2 + ' m² facade (hus og garage). Algerens og algebehandling af belægning kan tilføjes — vi bekrefter på opkaldet.'; };
+window.KARLTOFFEL.ydelsePris.servicesFn = function(f){ return [{id:'algeflis',navn:'Algebehandling af belægning',wm:'Algebehandling af belægning',qty:f.m2,enhed:'m² fliser',pris:7.80}]; };
+		</script>
+		<script src="/assets/js/ydelse-pris.js?v=5" defer></script>

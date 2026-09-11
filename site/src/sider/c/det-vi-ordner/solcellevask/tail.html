@@ -9,7 +9,7 @@
 	
 
 
-			<script>window.KARLTOFFEL=window.KARLTOFFEL||{};window.KARLTOFFEL.tilbudsmotorPage={service:"solcelle",source:"solcellevask"};</script>
+			
 		<script src="/assets/js/tilbudsmotor.config.js?v=9"></script>
 		<script src="/assets/js/tilbudsmotor.js?v=59"></script>
 		<script>
@@ -39,3 +39,12 @@
 })();
 		</script>
 		
+		<script>
+window.KARLTOFFEL = window.KARLTOFFEL || {};
+window.KARLTOFFEL.ydelsePris = {"ydelse": "Solcellevask", "tittel": "Se prisen på din solcellevask", "lead_txt": "Indtast antal paneler, og se dit prisestimat.", "prisFn": "Math.max(40*f.paneler,250)", "prisNote": "function(f){ return 'Estimat for ' + f.paneler + ' solcellepaneler. Endelig pris afhænger af tagets hældning og adgang.'; }", "servicesFn": "[{id:'solcelle',navn:'Solcellevask',wm:'Solcellevask pr panel',qty:f.paneler,enhed:'paneler',pris:40}]", "source": "solcellevask-pris-hero"};
+window.KARLTOFFEL.ydelsePris.felter = [{"id": "paneler", "label": "Antal paneler", "ph": "f.eks. 20"}];
+window.KARLTOFFEL.ydelsePris.prisFn = function(f){ return Math.max(40*f.paneler,250); };
+window.KARLTOFFEL.ydelsePris.prisNoteFn = function(f){ return 'Estimat for ' + f.paneler + ' solcellepaneler. Endelig pris afhænger af tagets hældning og adgang.'; };
+window.KARLTOFFEL.ydelsePris.servicesFn = function(f){ return [{id:'solcelle',navn:'Solcellevask',wm:'Solcellevask pr panel',qty:f.paneler,enhed:'paneler',pris:40}]; };
+		</script>
+		<script src="/assets/js/ydelse-pris.js?v=5" defer></script>

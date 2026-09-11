@@ -9,7 +9,7 @@
 	
 
 
-			<script>window.KARLTOFFEL=window.KARLTOFFEL||{};window.KARLTOFFEL.tilbudsmotorPage={service:"alge",source:"algerens-og-algebehandling-af-fliser-tag-og-facader"};</script>
+			
 		<script src="/assets/js/tilbudsmotor.config.js?v=9"></script>
 		<script src="/assets/js/tilbudsmotor.js?v=59"></script>
 		<script>
@@ -39,3 +39,12 @@
 })();
 		</script>
 		
+		<script>
+window.KARLTOFFEL = window.KARLTOFFEL || {};
+window.KARLTOFFEL.ydelsePris = {"ydelse": "Algerens", "tittel": "Se prisen på din algerens", "lead_txt": "Indtast m² tag og/eller m² belægning — det er nok at udfylde det ene.", "prisFn": "Math.max((f.tag||0)*9.80,950) + (f.bel ? Math.max(7.80*f.bel,850) : 0)", "prisNote": "function(f){ var d=[]; if(f.tag) d.push(f.tag + ' m² tag'); if(f.bel) d.push(f.bel + ' m² belægning'); return 'Estimat for ' + d.join(' og ') + '. Minimumspriser: tag 950 kr, belægning 850 kr. Endelig pris afhænger af algebelastning og adgang.'; }", "servicesFn": "var sv=[]; if(f.tag) sv.push({id:'alge',navn:'Algebehandling af tag',wm:'Algebehandling af tag',qty:f.tag,enhed:'m² tag',pris:9.80}); if(f.bel) sv.push({id:'algeflis',navn:'Algebehandling af belægning',wm:'Algebehandling af belægning',qty:f.bel,enhed:'m² fliser',pris:7.80}); return sv;", "source": "algerens-pris-hero"};
+window.KARLTOFFEL.ydelsePris.felter = [{"id": "tag", "label": "Ca. m² tagflade", "ph": "f.eks. 120"}, {"id": "bel", "label": "Ca. m² belægning (valgfri hvis tag er udfyldt)", "ph": "f.eks. 60"}];
+window.KARLTOFFEL.ydelsePris.prisFn = function(f){ return Math.max((f.tag||0)*9.80,950) + (f.bel ? Math.max(7.80*f.bel,850) : 0); };
+window.KARLTOFFEL.ydelsePris.prisNoteFn = function(f){ var d=[]; if(f.tag) d.push(f.tag + ' m² tag'); if(f.bel) d.push(f.bel + ' m² belægning'); return 'Estimat for ' + d.join(' og ') + '. Minimumspriser: tag 950 kr, belægning 850 kr. Endelig pris afhænger af algebelastning og adgang.'; };
+window.KARLTOFFEL.ydelsePris.servicesFn = function(f){ var sv=[]; if(f.tag) sv.push({id:'alge',navn:'Algebehandling af tag',wm:'Algebehandling af tag',qty:f.tag,enhed:'m² tag',pris:9.80}); if(f.bel) sv.push({id:'algeflis',navn:'Algebehandling af belægning',wm:'Algebehandling af belægning',qty:f.bel,enhed:'m² fliser',pris:7.80}); return sv; };
+		</script>
+		<script src="/assets/js/ydelse-pris.js?v=5" defer></script>

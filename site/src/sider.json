@@ -1,902 +1,949 @@
 {
-  "dagens_dato": "2026-09-09",
-  "sider": [
-    {
-      "sti": "/404.html",
-      "fil": "404",
-      "head": {
-        "title": "404 - Siden findes ikke - Karltoffel",
-        "description": "Denne side findes desværre ikke. Prøv forsiden, find vores ydelser eller få et tilbud på mindre bøvl.",
-        "noindex_top": false,
-        "floating_linje": "\t\t<link rel=\"stylesheet\" href=\"/assets/css/floating-cta.css?v=1\">\n",
-        "pixel": "<!-- Meta Pixel Code -->\n<script>!function(f,b,e,v,n,t,s)\n{if(f.fbq)return;n=f.fbq=function(){n.callMethod?\nn.callMethod.apply(n,arguments):n.queue.push(arguments)};\nif(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';\nn.queue=[];t=b.createElement(e);t.async=!0;\nt.src=v;s=b.getElementsByTagName(e)[0];\ns.parentNode.insertBefore(t,s)}(window, document,'script',\n'https://connect.facebook.net/en_US/fbevents.js');\nfbq('init', '1574687980856727');\nfbq('track', 'PageView');\n</script>\n<noscript><img height=\"1\" width=\"1\" style=\"display:none\"\nsrc=\"https://www.facebook.com/tr?id=1574687980856727&amp;ev=PageView&amp;noscript=1\"\n/></noscript>\n<!-- End Meta Pixel Code -->\n",
-        "og_html": "\n\t<meta property=\"og:title\" content=\"404 - Siden findes ikke - Karltoffel\">\n\t<meta property=\"og:description\" content=\"Denne side findes desværre ikke. Prøv forsiden, find vores ydelser eller få et tilbud på mindre bøvl.\">\n\t<meta property=\"og:url\" content=\"https://karltoffel.dk/404\">\n\t<meta property=\"og:image\" content=\"https://karltoffel.dk/assets/img/design/share_q78.webp\">\n\n\t"
-      },
-      "body_tag": "<body class=\"\" data-link=\"/404\">",
-      "header": {
-        "fixed": true,
-        "nav_active": "",
-        "cta_href": "/#tilbudsmotor"
-      },
-      "footer": {
-        "cta_href": "/#tilbudsmotor",
-        "em_paragraf": false,
-        "social": "kun-facebook"
-      },
-      "motor": null,
-      "ydelseskort": null,
-      "faq": false,
-      "faq_ekstra_fil": null,
-      "floating_cta": "/#tilbudsmotor",
-      "noindex": true,
-      "i_sitemap": false
-    },
-    {
-      "sti": "/c/det-vi-ordner/algerens-og-algebehandling-af-fliser-tag-og-facader",
-      "fil": "c/det-vi-ordner/algerens-og-algebehandling-af-fliser-tag-og-facader",
-      "head": {
-        "title": "Algerens - Karltoffel",
-        "description": "Algerens Alger kommer snigende. Først som en let grøn belægning. Senere som glatte fliser, misfarvede overflader og udearealer, der får boligen til...",
-        "noindex_top": false,
-        "floating_linje": "\t\t\t\t<link rel=\"stylesheet\" href=\"/assets/css/floating-cta.css?v=1\">\n",
-        "pixel": "<!-- Meta Pixel Code -->\n<script>!function(f,b,e,v,n,t,s)\n{if(f.fbq)return;n=f.fbq=function(){n.callMethod?\nn.callMethod.apply(n,arguments):n.queue.push(arguments)};\nif(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';\nn.queue=[];t=b.createElement(e);t.async=!0;\nt.src=v;s=b.getElementsByTagName(e)[0];\ns.parentNode.insertBefore(t,s)}(window, document,'script',\n'https://connect.facebook.net/en_US/fbevents.js');\nfbq('init', '1574687980856727');\nfbq('track', 'PageView');\n</script>\n<noscript><img height=\"1\" width=\"1\" style=\"display:none\"\nsrc=\"https://www.facebook.com/tr?id=1574687980856727&amp;ev=PageView&amp;noscript=1\"\n/></noscript>\n<!-- End Meta Pixel Code -->\n<script src=\"/assets/js/meta-events.js?v=2\" defer data-forms='[{\"selector\": \".sp-form__fields\", \"content_name\": \"algerens-og-algebehandling-af-fliser-tag-og-facader-hero\"}]'></script>\n\t<link rel=\"stylesheet\" href=\"/assets/css/tilbudsmotor.css?v=41\">\n",
-        "og_html": "\n\t<link rel=\"canonical\" href=\"https://karltoffel.dk/c/det-vi-ordner/algerens-og-algebehandling-af-fliser-tag-og-facader\">\n\t<meta property=\"og:title\" content=\"Algerens - Karltoffel\">\n\t<meta property=\"og:description\" content=\"Algerens Alger kommer snigende. Først som en let grøn belægning. Senere som glatte fliser, misfarvede overflader og udearealer, der får boligen til...\">\n\t<meta property=\"og:url\" content=\"https://karltoffel.dk/c/det-vi-ordner/algerens-og-algebehandling-af-fliser-tag-og-facader\">\n\t<meta property=\"og:image\" content=\"https://karltoffel.dk/assets/img/thumb/3c3bcd06d678733ed42a62bff3435349438d02c0_w2000_q78.webp\">\n\n\t"
-      },
-      "body_tag": "<body class=\"\" data-link=\"/c/det-vi-ordner/algerens-og-algebehandling-af-fliser-tag-og-facader\">",
-      "header": {
-        "fixed": true,
-        "nav_active": "",
-        "cta_href": "#tilbudsmotor"
-      },
-      "footer": {
-        "cta_href": "#tilbudsmotor",
-        "em_paragraf": false,
-        "social": "alle"
-      },
-      "motor": {
-        "type": "standard",
-        "sub_tekst": "Tast din adresse. Så graver vi tallene frem og giver dig et estimat på prisen, mens du venter."
-      },
-      "ydelseskort": null,
-      "faq": true,
-      "faq_ekstra_fil": "c/det-vi-ordner/algerens-og-algebehandling-af-fliser-tag-og-facader/faq-ekstra.html",
-      "floating_cta": "#tilbudsmotor",
-      "noindex": false,
-      "i_sitemap": true
-    },
-    {
-      "sti": "/c/det-vi-ordner/beskaering",
-      "fil": "c/det-vi-ordner/beskaering",
-      "head": {
-        "title": "Beskæring - Karltoffel",
-        "description": "Beskæring Planter, buske og træer vokser ikke efter kalenderen. Pludselig fylder hækken lidt for meget. Buskene breder sig ind over stien. Eller træ...",
-        "noindex_top": false,
-        "floating_linje": "\t\t\t\t<link rel=\"stylesheet\" href=\"/assets/css/floating-cta.css?v=1\">\n",
-        "pixel": "<!-- Meta Pixel Code -->\n<script>!function(f,b,e,v,n,t,s)\n{if(f.fbq)return;n=f.fbq=function(){n.callMethod?\nn.callMethod.apply(n,arguments):n.queue.push(arguments)};\nif(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';\nn.queue=[];t=b.createElement(e);t.async=!0;\nt.src=v;s=b.getElementsByTagName(e)[0];\ns.parentNode.insertBefore(t,s)}(window, document,'script',\n'https://connect.facebook.net/en_US/fbevents.js');\nfbq('init', '1574687980856727');\nfbq('track', 'PageView');\n</script>\n<noscript><img height=\"1\" width=\"1\" style=\"display:none\"\nsrc=\"https://www.facebook.com/tr?id=1574687980856727&amp;ev=PageView&amp;noscript=1\"\n/></noscript>\n<!-- End Meta Pixel Code -->\n<script src=\"/assets/js/meta-events.js?v=2\" defer data-forms='[{\"selector\": \".sp-form__fields\", \"content_name\": \"beskaering-hero\"}]'></script>\n\t<link rel=\"stylesheet\" href=\"/assets/css/tilbudsmotor.css?v=41\">\n",
-        "og_html": "\n\t<link rel=\"canonical\" href=\"https://karltoffel.dk/c/det-vi-ordner/beskaering\">\n\t<meta property=\"og:title\" content=\"Beskæring - Karltoffel\">\n\t<meta property=\"og:description\" content=\"Beskæring Planter, buske og træer vokser ikke efter kalenderen. Pludselig fylder hækken lidt for meget. Buskene breder sig ind over stien. Eller træ...\">\n\t<meta property=\"og:url\" content=\"https://karltoffel.dk/c/det-vi-ordner/beskaering\">\n\t<meta property=\"og:image\" content=\"https://karltoffel.dk/assets/img/thumb/b33b09c3af5048b5d2d8636deae63a5e458379bd_w2000_q78.webp\">\n\n\t"
-      },
-      "body_tag": "<body class=\"\" data-link=\"/c/det-vi-ordner/beskaering\">",
-      "header": {
-        "fixed": true,
-        "nav_active": "",
-        "cta_href": "#tilbudsmotor"
-      },
-      "footer": {
-        "cta_href": "#tilbudsmotor",
-        "em_paragraf": false,
-        "social": "alle"
-      },
-      "motor": {
-        "type": "standard",
-        "sub_tekst": "Tast din adresse. Så graver vi tallene frem og giver dig et estimat på prisen, mens du venter."
-      },
-      "ydelseskort": null,
-      "faq": true,
-      "faq_ekstra_fil": "c/det-vi-ordner/beskaering/faq-ekstra.html",
-      "floating_cta": "#tilbudsmotor",
-      "noindex": false,
-      "i_sitemap": true
-    },
-    {
-      "sti": "/c/det-vi-ordner/bortskaffelse-haveaffald",
-      "fil": "c/det-vi-ordner/bortskaffelse-haveaffald",
-      "head": {
-        "title": "Haveaffald - Karltoffel",
-        "description": "Haveaffald Det er sjældent selve havearbejdet, der er det værste. Det er oprydningen bagefter. Efter hækklipning, beskæring, lugning eller andre hav...",
-        "noindex_top": false,
-        "floating_linje": "\t\t\t\t<link rel=\"stylesheet\" href=\"/assets/css/floating-cta.css?v=1\">\n",
-        "pixel": "<!-- Meta Pixel Code -->\n<script>!function(f,b,e,v,n,t,s)\n{if(f.fbq)return;n=f.fbq=function(){n.callMethod?\nn.callMethod.apply(n,arguments):n.queue.push(arguments)};\nif(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';\nn.queue=[];t=b.createElement(e);t.async=!0;\nt.src=v;s=b.getElementsByTagName(e)[0];\ns.parentNode.insertBefore(t,s)}(window, document,'script',\n'https://connect.facebook.net/en_US/fbevents.js');\nfbq('init', '1574687980856727');\nfbq('track', 'PageView');\n</script>\n<noscript><img height=\"1\" width=\"1\" style=\"display:none\"\nsrc=\"https://www.facebook.com/tr?id=1574687980856727&amp;ev=PageView&amp;noscript=1\"\n/></noscript>\n<!-- End Meta Pixel Code -->\n<script src=\"/assets/js/meta-events.js?v=2\" defer data-forms='[{\"selector\": \".sp-form__fields\", \"content_name\": \"bortskaffelse-haveaffald-hero\"}]'></script>\n\t<link rel=\"stylesheet\" href=\"/assets/css/tilbudsmotor.css?v=41\">\n",
-        "og_html": "\n\t<link rel=\"canonical\" href=\"https://karltoffel.dk/c/det-vi-ordner/bortskaffelse-haveaffald\">\n\t<meta property=\"og:title\" content=\"Haveaffald - Karltoffel\">\n\t<meta property=\"og:description\" content=\"Haveaffald Det er sjældent selve havearbejdet, der er det værste. Det er oprydningen bagefter. Efter hækklipning, beskæring, lugning eller andre hav...\">\n\t<meta property=\"og:url\" content=\"https://karltoffel.dk/c/det-vi-ordner/bortskaffelse-haveaffald\">\n\t<meta property=\"og:image\" content=\"https://karltoffel.dk/assets/img/thumb/c900da258e96eecc895854fd718173c58a3bf89a_w2000_q78.webp\">\n\n\t"
-      },
-      "body_tag": "<body class=\"\" data-link=\"/c/det-vi-ordner/bortskaffelse-haveaffald\">",
-      "header": {
-        "fixed": true,
-        "nav_active": "",
-        "cta_href": "#tilbudsmotor"
-      },
-      "footer": {
-        "cta_href": "#tilbudsmotor",
-        "em_paragraf": false,
-        "social": "alle"
-      },
-      "motor": {
-        "type": "standard",
-        "sub_tekst": "Tast din adresse. Så graver vi tallene frem og giver dig et estimat på prisen, mens du venter."
-      },
-      "ydelseskort": null,
-      "faq": true,
-      "faq_ekstra_fil": "c/det-vi-ordner/bortskaffelse-haveaffald/faq-ekstra.html",
-      "floating_cta": "#tilbudsmotor",
-      "noindex": false,
-      "i_sitemap": true
-    },
-    {
-      "sti": "/c/det-vi-ordner/fliserens",
-      "fil": "c/det-vi-ordner/fliserens",
-      "head": {
-        "title": "Fliserens - Karltoffel",
-        "description": "Fliserens og imprægnering Over tid bliver fliserne belagt med alger, sod og skidt fra oven.  Rene fliser ændrer husets udtryk fuldstændig. Vi kører...",
-        "noindex_top": false,
-        "floating_linje": "\t\t\t\t<link rel=\"stylesheet\" href=\"/assets/css/floating-cta.css?v=1\">\n",
-        "pixel": "<!-- Meta Pixel Code -->\n<script>!function(f,b,e,v,n,t,s)\n{if(f.fbq)return;n=f.fbq=function(){n.callMethod?\nn.callMethod.apply(n,arguments):n.queue.push(arguments)};\nif(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';\nn.queue=[];t=b.createElement(e);t.async=!0;\nt.src=v;s=b.getElementsByTagName(e)[0];\ns.parentNode.insertBefore(t,s)}(window, document,'script',\n'https://connect.facebook.net/en_US/fbevents.js');\nfbq('init', '1574687980856727');\nfbq('track', 'PageView');\n</script>\n<noscript><img height=\"1\" width=\"1\" style=\"display:none\"\nsrc=\"https://www.facebook.com/tr?id=1574687980856727&amp;ev=PageView&amp;noscript=1\"\n/></noscript>\n<!-- End Meta Pixel Code -->\n<script src=\"/assets/js/meta-events.js?v=2\" defer data-forms='[{\"selector\": \".sp-form__fields\", \"content_name\": \"fliserens-hero\"}]'></script>\n\t<link rel=\"stylesheet\" href=\"/assets/css/tilbudsmotor.css?v=41\">\n",
-        "og_html": "\n\t<link rel=\"canonical\" href=\"https://karltoffel.dk/c/det-vi-ordner/fliserens\">\n\t<meta property=\"og:title\" content=\"Fliserens - Karltoffel\">\n\t<meta property=\"og:description\" content=\"Fliserens og imprægnering Over tid bliver fliserne belagt med alger, sod og skidt fra oven.  Rene fliser ændrer husets udtryk fuldstændig. Vi kører...\">\n\t<meta property=\"og:url\" content=\"https://karltoffel.dk/c/det-vi-ordner/fliserens\">\n\t<meta property=\"og:image\" content=\"https://karltoffel.dk/assets/img/design/share_q78.webp\">\n\n\t"
-      },
-      "body_tag": "<body class=\"\" data-link=\"/c/det-vi-ordner/fliserens\">",
-      "header": {
-        "fixed": true,
-        "nav_active": "",
-        "cta_href": "#tilbudsmotor"
-      },
-      "footer": {
-        "cta_href": "#tilbudsmotor",
-        "em_paragraf": false,
-        "social": "alle"
-      },
-      "motor": {
-        "type": "standard",
-        "sub_tekst": "Tast din adresse. Så graver vi tallene frem og giver dig et estimat på prisen, mens du venter."
-      },
-      "ydelseskort": null,
-      "faq": true,
-      "faq_ekstra_fil": null,
-      "floating_cta": "#tilbudsmotor",
-      "noindex": false,
-      "i_sitemap": true
-    },
-    {
-      "sti": "/c/det-vi-ordner/gavekort",
-      "fil": "c/det-vi-ordner/gavekort",
-      "head": {
-        "title": "Giv en lørdag tilbage — Gavekort fra Karltoffel",
-        "description": "Giv mindre bøvl i gave Nogle gaver bliver pakket ud og glemt. Andre gør hverdagen lidt lettere. Med et gavekort til Karltoffel giver du en gave, som...",
-        "noindex_top": false,
-        "floating_linje": "\t\t\t<link rel=\"stylesheet\" href=\"/assets/css/floating-cta.css?v=1\">\n",
-        "pixel": "<!-- Meta Pixel Code -->\n<script>!function(f,b,e,v,n,t,s)\n{if(f.fbq)return;n=f.fbq=function(){n.callMethod?\nn.callMethod.apply(n,arguments):n.queue.push(arguments)};\nif(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';\nn.queue=[];t=b.createElement(e);t.async=!0;\nt.src=v;s=b.getElementsByTagName(e)[0];\ns.parentNode.insertBefore(t,s)}(window, document,'script',\n'https://connect.facebook.net/en_US/fbevents.js');\nfbq('init', '1574687980856727');\nfbq('track', 'PageView');\n</script>\n<noscript><img height=\"1\" width=\"1\" style=\"display:none\"\nsrc=\"https://www.facebook.com/tr?id=1574687980856727&amp;ev=PageView&amp;noscript=1\"\n/></noscript>\n<!-- End Meta Pixel Code -->\n",
-        "og_html": "\n\t<link rel=\"canonical\" href=\"/c/det-vi-ordner/gavekort\">\n\t<meta property=\"og:title\" content=\"Gavekort til en heldig Karltoffel - Karltoffel\">\n\t<meta property=\"og:description\" content=\"Giv mindre bøvl i gave Nogle gaver bliver pakket ud og glemt. Andre gør hverdagen lidt lettere. Med et gavekort til Karltoffel giver du en gave, som...\">\n\t<meta property=\"og:url\" content=\"https://karltoffel.dk/c/det-vi-ordner/gavekort\">\n\t<meta property=\"og:image\" content=\"https://karltoffel.dk/assets/img/design/share_q78.webp\">\n\n\t"
-      },
-      "body_tag": "<body class=\"\" data-link=\"/c/det-vi-ordner/gavekort\">",
-      "header": {
-        "fixed": true,
-        "nav_active": "/c/det-vi-ordner/gavekort",
-        "cta_href": "/#tilbudsmotor"
-      },
-      "footer": {
-        "cta_href": "/#tilbudsmotor",
-        "em_paragraf": false,
-        "social": "alle"
-      },
-      "motor": null,
-      "ydelseskort": null,
-      "faq": true,
-      "faq_ekstra_fil": null,
-      "faq_custom": true,
-      "floating_cta": "/#tilbudsmotor",
-      "noindex": false,
-      "i_sitemap": true
-    },
-    {
-      "sti": "/c/det-vi-ordner/graespleje",
-      "fil": "c/det-vi-ordner/graespleje",
-      "head": {
-        "title": "Greenkeeper Græspleje - Karltoffel",
-        "description": "Græspleje Drømmer du om en grønnere, tættere og sundere græsplæne? De fleste vil gerne have en flot plæne, men de færreste har lyst til at bruge...",
-        "noindex_top": false,
-        "floating_linje": "\t\t\t\t<link rel=\"stylesheet\" href=\"/assets/css/floating-cta.css?v=1\">\n",
-        "pixel": "<!-- Meta Pixel Code -->\n<script>!function(f,b,e,v,n,t,s)\n{if(f.fbq)return;n=f.fbq=function(){n.callMethod?\nn.callMethod.apply(n,arguments):n.queue.push(arguments)};\nif(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';\nn.queue=[];t=b.createElement(e);t.async=!0;\nt.src=v;s=b.getElementsByTagName(e)[0];\ns.parentNode.insertBefore(t,s)}(window, document,'script',\n'https://connect.facebook.net/en_US/fbevents.js');\nfbq('init', '1574687980856727');\nfbq('track', 'PageView');\n</script>\n<noscript><img height=\"1\" width=\"1\" style=\"display:none\"\nsrc=\"https://www.facebook.com/tr?id=1574687980856727&amp;ev=PageView&amp;noscript=1\"\n/></noscript>\n<!-- End Meta Pixel Code -->\n<script src=\"/assets/js/meta-events.js?v=2\" defer data-forms='[{\"selector\": \".sp-form__fields\", \"content_name\": \"graespleje-hero\"}]'></script>\n\t<link rel=\"stylesheet\" href=\"/assets/css/tilbudsmotor.css?v=41\">\n",
-        "og_html": "\n\t<link rel=\"canonical\" href=\"https://karltoffel.dk/c/det-vi-ordner/graespleje\">\n\t<meta property=\"og:title\" content=\"Greenkeeper Græspleje - Karltoffel\">\n\t<meta property=\"og:description\" content=\"Græspleje Drømmer du om en grønnere, tættere og sundere græsplæne? De fleste vil gerne have en flot plæne, men de færreste har lyst til at bruge...\">\n\t<meta property=\"og:url\" content=\"https://karltoffel.dk/c/det-vi-ordner/graespleje\">\n\t<meta property=\"og:image\" content=\"https://karltoffel.dk/assets/img/thumb/d914ac7dbf94417721e994522a8b617b47d1ca85_w2000_q78.webp\">\n\n\t"
-      },
-      "body_tag": "<body class=\"\" data-link=\"/c/det-vi-ordner/graespleje\">",
-      "header": {
-        "fixed": true,
-        "nav_active": "",
-        "cta_href": "#tilbudsmotor"
-      },
-      "footer": {
-        "cta_href": "#tilbudsmotor",
-        "em_paragraf": false,
-        "social": "alle"
-      },
-      "motor": {
-        "type": "standard",
-        "sub_tekst": "Tast din adresse. Så graver vi tallene frem og giver dig et estimat på prisen, mens du venter."
-      },
-      "ydelseskort": null,
-      "faq": true,
-      "faq_ekstra_fil": "c/det-vi-ordner/graespleje/faq-ekstra.html",
-      "floating_cta": "#tilbudsmotor",
-      "noindex": false,
-      "i_sitemap": true
-    },
-    {
-      "sti": "/c/det-vi-ordner/haekklipning",
-      "fil": "c/det-vi-ordner/haekklipning",
-      "head": {
-        "title": "Hækklipning - Karltoffel",
-        "description": "Hækklipning En velklippet hæk gør en stor forskel for helhedsindtrykket af haven. Men hækklipning er også en af de opgaver, som hurtigt kan tage en...",
-        "noindex_top": false,
-        "floating_linje": "\t\t\t\t<link rel=\"stylesheet\" href=\"/assets/css/floating-cta.css?v=1\">\n",
-        "pixel": "<!-- Meta Pixel Code -->\n<script>!function(f,b,e,v,n,t,s)\n{if(f.fbq)return;n=f.fbq=function(){n.callMethod?\nn.callMethod.apply(n,arguments):n.queue.push(arguments)};\nif(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';\nn.queue=[];t=b.createElement(e);t.async=!0;\nt.src=v;s=b.getElementsByTagName(e)[0];\ns.parentNode.insertBefore(t,s)}(window, document,'script',\n'https://connect.facebook.net/en_US/fbevents.js');\nfbq('init', '1574687980856727');\nfbq('track', 'PageView');\n</script>\n<noscript><img height=\"1\" width=\"1\" style=\"display:none\"\nsrc=\"https://www.facebook.com/tr?id=1574687980856727&amp;ev=PageView&amp;noscript=1\"\n/></noscript>\n<!-- End Meta Pixel Code -->\n<script src=\"/assets/js/meta-events.js?v=2\" defer data-forms='[{\"selector\": \".sp-form__fields\", \"content_name\": \"haekklipning-hero\"}]'></script>\n\t<link rel=\"stylesheet\" href=\"/assets/css/tilbudsmotor.css?v=41\">\n",
-        "og_html": "\n\t<link rel=\"canonical\" href=\"https://karltoffel.dk/c/det-vi-ordner/haekklipning\">\n\t<meta property=\"og:title\" content=\"Hækklipning - Karltoffel\">\n\t<meta property=\"og:description\" content=\"Hækklipning En velklippet hæk gør en stor forskel for helhedsindtrykket af haven. Men hækklipning er også en af de opgaver, som hurtigt kan tage en...\">\n\t<meta property=\"og:url\" content=\"https://karltoffel.dk/c/det-vi-ordner/haekklipning\">\n\t<meta property=\"og:image\" content=\"https://karltoffel.dk/assets/img/thumb/7003eec2b574d33c9aba448120234c65665a4922_w2000_q78.webp\">\n\n\t"
-      },
-      "body_tag": "<body class=\"\" data-link=\"/c/det-vi-ordner/haekklipning\">",
-      "header": {
-        "fixed": true,
-        "nav_active": "",
-        "cta_href": "#tilbudsmotor"
-      },
-      "footer": {
-        "cta_href": "#tilbudsmotor",
-        "em_paragraf": false,
-        "social": "alle"
-      },
-      "motor": {
-        "type": "standard",
-        "sub_tekst": "Tast din adresse. Så graver vi tallene frem og giver dig et estimat på prisen, mens du venter."
-      },
-      "ydelseskort": null,
-      "faq": true,
-      "faq_ekstra_fil": "c/det-vi-ordner/haekklipning/faq-ekstra.html",
-      "floating_cta": "#tilbudsmotor",
-      "noindex": false,
-      "i_sitemap": true
-    },
-    {
-      "sti": "/c/det-vi-ordner/robotplaeneklipper-service",
-      "fil": "c/det-vi-ordner/robotplaeneklipper-service",
-      "head": {
-        "title": "Robotplæneklipper-service - Karltoffel",
-        "description": "Robotplæneklipper-service Robotplæneklipperen gør hverdagen nemmere. Lige indtil knivene bliver sløve, hjulene fyldes med græs, eller maskinen begy...",
-        "noindex_top": false,
-        "floating_linje": "\t\t\t\t<link rel=\"stylesheet\" href=\"/assets/css/floating-cta.css?v=1\">\n",
-        "pixel": "<!-- Meta Pixel Code -->\n<script>!function(f,b,e,v,n,t,s)\n{if(f.fbq)return;n=f.fbq=function(){n.callMethod?\nn.callMethod.apply(n,arguments):n.queue.push(arguments)};\nif(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';\nn.queue=[];t=b.createElement(e);t.async=!0;\nt.src=v;s=b.getElementsByTagName(e)[0];\ns.parentNode.insertBefore(t,s)}(window, document,'script',\n'https://connect.facebook.net/en_US/fbevents.js');\nfbq('init', '1574687980856727');\nfbq('track', 'PageView');\n</script>\n<noscript><img height=\"1\" width=\"1\" style=\"display:none\"\nsrc=\"https://www.facebook.com/tr?id=1574687980856727&amp;ev=PageView&amp;noscript=1\"\n/></noscript>\n<!-- End Meta Pixel Code -->\n<script src=\"/assets/js/meta-events.js?v=2\" defer data-forms='[{\"selector\": \".sp-form__fields\", \"content_name\": \"robotplaeneklipper-service-hero\"}]'></script>\n\t<link rel=\"stylesheet\" href=\"/assets/css/tilbudsmotor.css?v=41\">\n",
-        "og_html": "\n\t<link rel=\"canonical\" href=\"https://karltoffel.dk/c/det-vi-ordner/robotplaeneklipper-service\">\n\t<meta property=\"og:title\" content=\"Robotplæneklipper-service - Karltoffel\">\n\t<meta property=\"og:description\" content=\"Robotplæneklipper-service Robotplæneklipperen gør hverdagen nemmere. Lige indtil knivene bliver sløve, hjulene fyldes med græs, eller maskinen begy...\">\n\t<meta property=\"og:url\" content=\"https://karltoffel.dk/c/det-vi-ordner/robotplaeneklipper-service\">\n\t<meta property=\"og:image\" content=\"https://karltoffel.dk/assets/img/design/share_q78.webp\">\n\n\t"
-      },
-      "body_tag": "<body class=\"\" data-link=\"/c/det-vi-ordner/robotplaeneklipper-service\">",
-      "header": {
-        "fixed": true,
-        "nav_active": "",
-        "cta_href": "#tilbudsmotor"
-      },
-      "footer": {
-        "cta_href": "#tilbudsmotor",
-        "em_paragraf": false,
-        "social": "alle"
-      },
-      "motor": {
-        "type": "standard",
-        "sub_tekst": "Tast din adresse. Så graver vi tallene frem og giver dig et estimat på prisen, mens du venter."
-      },
-      "ydelseskort": null,
-      "faq": true,
-      "faq_ekstra_fil": "c/det-vi-ordner/robotplaeneklipper-service/faq-ekstra.html",
-      "floating_cta": "#tilbudsmotor",
-      "noindex": false,
-      "i_sitemap": true
-    },
-    {
-      "sti": "/c/det-vi-ordner/solcellevask",
-      "fil": "c/det-vi-ordner/solcellevask",
-      "head": {
-        "title": "Solcellevask - Karltoffel",
-        "description": "Solcellevask Solceller fungerer bedst, når de er rene. Over tid samler der sig pollen, støv, alger, fugleklatter og andet snavs på panelerne. Det kan...",
-        "noindex_top": false,
-        "floating_linje": "\t\t\t\t<link rel=\"stylesheet\" href=\"/assets/css/floating-cta.css?v=1\">\n",
-        "pixel": "<!-- Meta Pixel Code -->\n<script>!function(f,b,e,v,n,t,s)\n{if(f.fbq)return;n=f.fbq=function(){n.callMethod?\nn.callMethod.apply(n,arguments):n.queue.push(arguments)};\nif(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';\nn.queue=[];t=b.createElement(e);t.async=!0;\nt.src=v;s=b.getElementsByTagName(e)[0];\ns.parentNode.insertBefore(t,s)}(window, document,'script',\n'https://connect.facebook.net/en_US/fbevents.js');\nfbq('init', '1574687980856727');\nfbq('track', 'PageView');\n</script>\n<noscript><img height=\"1\" width=\"1\" style=\"display:none\"\nsrc=\"https://www.facebook.com/tr?id=1574687980856727&amp;ev=PageView&amp;noscript=1\"\n/></noscript>\n<!-- End Meta Pixel Code -->\n<script src=\"/assets/js/meta-events.js?v=2\" defer data-forms='[{\"selector\": \".sp-form__fields\", \"content_name\": \"solcellevask-hero\"}]'></script>\n\t<link rel=\"stylesheet\" href=\"/assets/css/tilbudsmotor.css?v=41\">\n",
-        "og_html": "\n\t<link rel=\"canonical\" href=\"https://karltoffel.dk/c/det-vi-ordner/solcellevask\">\n\t<meta property=\"og:title\" content=\"Solcellevask - Karltoffel\">\n\t<meta property=\"og:description\" content=\"Solcellevask Solceller fungerer bedst, når de er rene. Over tid samler der sig pollen, støv, alger, fugleklatter og andet snavs på panelerne. Det kan...\">\n\t<meta property=\"og:url\" content=\"https://karltoffel.dk/c/det-vi-ordner/solcellevask\">\n\t<meta property=\"og:image\" content=\"https://karltoffel.dk/assets/img/thumb/dbc21220645410a81cfcaecfd8549aa954c8139b_w2000_q78.webp\">\n\n\t"
-      },
-      "body_tag": "<body class=\"\" data-link=\"/c/det-vi-ordner/solcellevask\">",
-      "header": {
-        "fixed": true,
-        "nav_active": "",
-        "cta_href": "#tilbudsmotor"
-      },
-      "footer": {
-        "cta_href": "#tilbudsmotor",
-        "em_paragraf": false,
-        "social": "alle"
-      },
-      "motor": {
-        "type": "standard",
-        "sub_tekst": "Tast din adresse. Så graver vi tallene frem og giver dig et estimat på prisen, mens du venter."
-      },
-      "ydelseskort": null,
-      "faq": true,
-      "faq_ekstra_fil": null,
-      "floating_cta": "#tilbudsmotor",
-      "noindex": false,
-      "i_sitemap": true
-    },
-    {
-      "sti": "/c/det-vi-ordner/tagrenderens",
-      "fil": "c/det-vi-ordner/tagrenderens",
-      "head": {
-        "title": "Tagrenderens - Karltoffel",
-        "description": "Tagrenderens Tagrender og nedløbsrør virker kun, hvis de bliver renset. Vi anbefaler én årlig rens, så vandet ikke ophober sig omkring dit hus elle...",
-        "noindex_top": false,
-        "floating_linje": "\t\t\t\t<link rel=\"stylesheet\" href=\"/assets/css/floating-cta.css?v=1\">\n",
-        "pixel": "<!-- Meta Pixel Code -->\n<script>!function(f,b,e,v,n,t,s)\n{if(f.fbq)return;n=f.fbq=function(){n.callMethod?\nn.callMethod.apply(n,arguments):n.queue.push(arguments)};\nif(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';\nn.queue=[];t=b.createElement(e);t.async=!0;\nt.src=v;s=b.getElementsByTagName(e)[0];\ns.parentNode.insertBefore(t,s)}(window, document,'script',\n'https://connect.facebook.net/en_US/fbevents.js');\nfbq('init', '1574687980856727');\nfbq('track', 'PageView');\n</script>\n<noscript><img height=\"1\" width=\"1\" style=\"display:none\"\nsrc=\"https://www.facebook.com/tr?id=1574687980856727&amp;ev=PageView&amp;noscript=1\"\n/></noscript>\n<!-- End Meta Pixel Code -->\n<script src=\"/assets/js/meta-events.js?v=2\" defer data-forms='[{\"selector\": \".sp-form__fields\", \"content_name\": \"tagrenderens-hero\"}]'></script>\n\t<link rel=\"stylesheet\" href=\"/assets/css/tilbudsmotor.css?v=41\">\n",
-        "og_html": "\n\t<link rel=\"canonical\" href=\"https://karltoffel.dk/c/det-vi-ordner/tagrenderens\">\n\t<meta property=\"og:title\" content=\"Tagrenderens - Karltoffel\">\n\t<meta property=\"og:description\" content=\"Tagrenderens Tagrender og nedløbsrør virker kun, hvis de bliver renset. Vi anbefaler én årlig rens, så vandet ikke ophober sig omkring dit hus elle...\">\n\t<meta property=\"og:url\" content=\"https://karltoffel.dk/c/det-vi-ordner/tagrenderens\">\n\t<meta property=\"og:image\" content=\"https://karltoffel.dk/assets/img/design/share_q78.webp\">\n\n\t"
-      },
-      "body_tag": "<body class=\"\" data-link=\"/c/det-vi-ordner/tagrenderens\">",
-      "header": {
-        "fixed": true,
-        "nav_active": "",
-        "cta_href": "#tilbudsmotor"
-      },
-      "footer": {
-        "cta_href": "#tilbudsmotor",
-        "em_paragraf": false,
-        "social": "alle"
-      },
-      "motor": {
-        "type": "standard",
-        "sub_tekst": "Tast din adresse. Så graver vi tallene frem og giver dig et estimat på prisen, mens du venter."
-      },
-      "ydelseskort": null,
-      "faq": true,
-      "faq_ekstra_fil": null,
-      "floating_cta": "#tilbudsmotor",
-      "noindex": false,
-      "i_sitemap": true
-    },
-    {
-      "sti": "/c/det-vi-ordner/ukrudtsbekaempelse",
-      "fil": "c/det-vi-ordner/ukrudtsbekaempelse",
-      "head": {
-        "title": "Ukrudtsbekæmpelse - Karltoffel",
-        "description": "Ukrudtsbekæmpelse Ukrudt har det med at dukke op igen og igen. Mellem fliserne i indkørslen. Langs fortovet. På terrassen. I gårdspladsen. Og uanset...",
-        "noindex_top": false,
-        "floating_linje": "\t\t\t\t<link rel=\"stylesheet\" href=\"/assets/css/floating-cta.css?v=1\">\n",
-        "pixel": "<!-- Meta Pixel Code -->\n<script>!function(f,b,e,v,n,t,s)\n{if(f.fbq)return;n=f.fbq=function(){n.callMethod?\nn.callMethod.apply(n,arguments):n.queue.push(arguments)};\nif(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';\nn.queue=[];t=b.createElement(e);t.async=!0;\nt.src=v;s=b.getElementsByTagName(e)[0];\ns.parentNode.insertBefore(t,s)}(window, document,'script',\n'https://connect.facebook.net/en_US/fbevents.js');\nfbq('init', '1574687980856727');\nfbq('track', 'PageView');\n</script>\n<noscript><img height=\"1\" width=\"1\" style=\"display:none\"\nsrc=\"https://www.facebook.com/tr?id=1574687980856727&amp;ev=PageView&amp;noscript=1\"\n/></noscript>\n<!-- End Meta Pixel Code -->\n<script src=\"/assets/js/meta-events.js?v=2\" defer data-forms='[{\"selector\": \".sp-form__fields\", \"content_name\": \"ukrudtsbekaempelse-hero\"}]'></script>\n\t<link rel=\"stylesheet\" href=\"/assets/css/tilbudsmotor.css?v=41\">\n",
-        "og_html": "\n\t<link rel=\"canonical\" href=\"https://karltoffel.dk/c/det-vi-ordner/ukrudtsbekaempelse\">\n\t<meta property=\"og:title\" content=\"Ukrudtsbekæmpelse - Karltoffel\">\n\t<meta property=\"og:description\" content=\"Ukrudtsbekæmpelse Ukrudt har det med at dukke op igen og igen. Mellem fliserne i indkørslen. Langs fortovet. På terrassen. I gårdspladsen. Og uanset...\">\n\t<meta property=\"og:url\" content=\"https://karltoffel.dk/c/det-vi-ordner/ukrudtsbekaempelse\">\n\t<meta property=\"og:image\" content=\"https://karltoffel.dk/assets/img/thumb/baebbae77390eceed72cfe2137c631622d7e1ce8_w2000_q78.webp\">\n\n\t"
-      },
-      "body_tag": "<body class=\"\" data-link=\"/c/det-vi-ordner/ukrudtsbekaempelse\">",
-      "header": {
-        "fixed": true,
-        "nav_active": "",
-        "cta_href": "#tilbudsmotor"
-      },
-      "footer": {
-        "cta_href": "#tilbudsmotor",
-        "em_paragraf": false,
-        "social": "alle"
-      },
-      "motor": {
-        "type": "standard",
-        "sub_tekst": "Tast din adresse. Så graver vi tallene frem og giver dig et estimat på prisen, mens du venter."
-      },
-      "ydelseskort": null,
-      "faq": true,
-      "faq_ekstra_fil": "c/det-vi-ordner/ukrudtsbekaempelse/faq-ekstra.html",
-      "floating_cta": "#tilbudsmotor",
-      "noindex": false,
-      "i_sitemap": true
-    },
-    {
-      "sti": "/c/det-vi-ordner/vask-hus-garage-ned",
-      "fil": "c/det-vi-ordner/vask-hus-garage-ned",
-      "head": {
-        "title": "Facadevask - Karltoffel",
-        "description": "Facadevask og nedvask af hus og garage. Vi fjerner alger, snavs og grønsken fra top til bund, så facaden står ren - uden bøvl for dig.",
-        "noindex_top": false,
-        "floating_linje": "\t\t\t\t<link rel=\"stylesheet\" href=\"/assets/css/floating-cta.css?v=1\">\n",
-        "pixel": "<!-- Meta Pixel Code -->\n<script>!function(f,b,e,v,n,t,s)\n{if(f.fbq)return;n=f.fbq=function(){n.callMethod?\nn.callMethod.apply(n,arguments):n.queue.push(arguments)};\nif(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';\nn.queue=[];t=b.createElement(e);t.async=!0;\nt.src=v;s=b.getElementsByTagName(e)[0];\ns.parentNode.insertBefore(t,s)}(window, document,'script',\n'https://connect.facebook.net/en_US/fbevents.js');\nfbq('init', '1574687980856727');\nfbq('track', 'PageView');\n</script>\n<noscript><img height=\"1\" width=\"1\" style=\"display:none\"\nsrc=\"https://www.facebook.com/tr?id=1574687980856727&amp;ev=PageView&amp;noscript=1\"\n/></noscript>\n<!-- End Meta Pixel Code -->\n<script src=\"/assets/js/meta-events.js?v=2\" defer data-forms='[{\"selector\": \".sp-form__fields\", \"content_name\": \"vask-hus-garage-ned-hero\"}]'></script>\n\t<link rel=\"stylesheet\" href=\"/assets/css/tilbudsmotor.css?v=41\">\n",
-        "og_html": "\n\t<link rel=\"canonical\" href=\"https://karltoffel.dk/c/det-vi-ordner/vask-hus-garage-ned\">\n\t<meta property=\"og:title\" content=\"Facadevask - Karltoffel\">\n\t<meta property=\"og:description\" content=\"Facadevask og nedvask af hus og garage. Vi fjerner alger, snavs og grønsken fra top til bund, så facaden står ren - uden bøvl for dig.\">\n\t<meta property=\"og:url\" content=\"https://karltoffel.dk/c/det-vi-ordner/vask-hus-garage-ned\">\n\t<meta property=\"og:image\" content=\"https://karltoffel.dk/assets/img/design/share_q78.webp\">\n\n\t"
-      },
-      "body_tag": "<body class=\"\" data-link=\"/c/det-vi-ordner/vask-hus-garage-ned\">",
-      "header": {
-        "fixed": true,
-        "nav_active": "",
-        "cta_href": "#tilbudsmotor"
-      },
-      "footer": {
-        "cta_href": "#tilbudsmotor",
-        "em_paragraf": false,
-        "social": "alle"
-      },
-      "motor": {
-        "type": "standard",
-        "sub_tekst": "Tast din adresse. Så graver vi tallene frem og giver dig et estimat på prisen, mens du venter."
-      },
-      "ydelseskort": null,
-      "faq": true,
-      "faq_ekstra_fil": null,
-      "floating_cta": "#tilbudsmotor",
-      "noindex": false,
-      "i_sitemap": true
-    },
-    {
-      "sti": "/c/det-vi-ordner/vinduesvask",
-      "fil": "c/det-vi-ordner/vinduesvask",
-      "head": {
-        "title": "Vinduesvask - Karltoffel",
-        "description": "Vinduesvask til heldige kartofler Rene vinduer gør en stor forskel for både hjemmet og arbejdspladsen. Men det er ikke altid nok kun at få pudset vi...",
-        "noindex_top": false,
-        "floating_linje": "\t\t\t\t<link rel=\"stylesheet\" href=\"/assets/css/floating-cta.css?v=1\">\n",
-        "pixel": "<!-- Meta Pixel Code -->\n<script>!function(f,b,e,v,n,t,s)\n{if(f.fbq)return;n=f.fbq=function(){n.callMethod?\nn.callMethod.apply(n,arguments):n.queue.push(arguments)};\nif(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';\nn.queue=[];t=b.createElement(e);t.async=!0;\nt.src=v;s=b.getElementsByTagName(e)[0];\ns.parentNode.insertBefore(t,s)}(window, document,'script',\n'https://connect.facebook.net/en_US/fbevents.js');\nfbq('init', '1574687980856727');\nfbq('track', 'PageView');\n</script>\n<noscript><img height=\"1\" width=\"1\" style=\"display:none\"\nsrc=\"https://www.facebook.com/tr?id=1574687980856727&amp;ev=PageView&amp;noscript=1\"\n/></noscript>\n<!-- End Meta Pixel Code -->\n<script src=\"/assets/js/meta-events.js?v=2\" defer data-forms='[{\"selector\": \".sp-form__fields\", \"content_name\": \"vinduesvask-hero\"}]'></script>\n\t<link rel=\"stylesheet\" href=\"/assets/css/tilbudsmotor.css?v=41\">\n",
-        "og_html": "\n\t<link rel=\"canonical\" href=\"https://karltoffel.dk/c/det-vi-ordner/vinduesvask\">\n\t<meta property=\"og:title\" content=\"Vinduesvask - Karltoffel\">\n\t<meta property=\"og:description\" content=\"Vinduesvask til heldige kartofler Rene vinduer gør en stor forskel for både hjemmet og arbejdspladsen. Men det er ikke altid nok kun at få pudset vi...\">\n\t<meta property=\"og:url\" content=\"https://karltoffel.dk/c/det-vi-ordner/vinduesvask\">\n\t<meta property=\"og:image\" content=\"https://karltoffel.dk/assets/img/thumb/1cab000e9b684c1490a3b6c2c423c3b045ee4d88_w2000_q78.webp\">\n\n\t"
-      },
-      "body_tag": "<body class=\"\" data-link=\"/c/det-vi-ordner/vinduesvask\">",
-      "header": {
-        "fixed": true,
-        "nav_active": "",
-        "cta_href": "#tilbudsmotor"
-      },
-      "footer": {
-        "cta_href": "#tilbudsmotor",
-        "em_paragraf": false,
-        "social": "alle"
-      },
-      "motor": {
-        "type": "standard",
-        "sub_tekst": "Tast din adresse. Så graver vi tallene frem og giver dig et estimat på prisen, mens du venter."
-      },
-      "ydelseskort": null,
-      "faq": true,
-      "faq_ekstra_fil": "c/det-vi-ordner/vinduesvask/faq-ekstra.html",
-      "floating_cta": "#tilbudsmotor",
-      "noindex": false,
-      "i_sitemap": true
-    },
-    {
-      "sti": "/",
-      "fil": "_rod",
-      "head": {
-        "title": "Fast hus- og haveservice til heldige kartofler - Karltoffel",
-        "description": "Vi holder løbende hus og have skarpt, så du kan bruge tiden på noget sjovere.",
-        "noindex_top": false,
-        "floating_linje": "\t\t<link rel=\"stylesheet\" href=\"/assets/css/floating-cta.css?v=1\">\n",
-        "pixel": "<!-- Meta Pixel Code -->\n<script>!function(f,b,e,v,n,t,s)\n{if(f.fbq)return;n=f.fbq=function(){n.callMethod?\nn.callMethod.apply(n,arguments):n.queue.push(arguments)};\nif(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';\nn.queue=[];t=b.createElement(e);t.async=!0;\nt.src=v;s=b.getElementsByTagName(e)[0];\ns.parentNode.insertBefore(t,s)}(window, document,'script',\n'https://connect.facebook.net/en_US/fbevents.js');\nfbq('init', '1574687980856727');\nfbq('track', 'PageView');\n</script>\n<noscript><img height=\"1\" width=\"1\" style=\"display:none\"\nsrc=\"https://www.facebook.com/tr?id=1574687980856727&amp;ev=PageView&amp;noscript=1\"\n/></noscript>\n<!-- End Meta Pixel Code -->\n",
-        "og_html": "\n\t<link rel=\"canonical\" href=\"https://karltoffel.dk/\">\n\t<meta property=\"og:title\" content=\"Fast hus- og haveservice til heldige kartofler - Karltoffel\">\n\t<meta property=\"og:description\" content=\"Vi holder løbende hus og have skarpt, så du kan bruge tiden på noget sjovere.\">\n\t<meta property=\"og:url\" content=\"https://karltoffel.dk/\">\n\n\t"
-      },
-      "body_tag": "<body class=\"index\" data-link=\"/\">",
-      "header": {
-        "fixed": true,
-        "nav_active": "",
-        "cta_href": "/#tilbudsmotor"
-      },
-      "footer": {
-        "cta_href": "/#tilbudsmotor",
-        "em_paragraf": true,
-        "social": "alle"
-      },
-      "motor": {
-        "type": "standard",
-        "sub_tekst": "Tast din adresse. Så graver vi tallene frem og giver dig et estimat på prisen, mens du venter."
-      },
-      "ydelseskort": {
-        "kort": [
-          "vinduesvask",
-          "haekklipning",
-          "ukrudtsbekaempelse",
-          "graespleje",
-          "algerens-og-algebehandling-af-fliser-tag-og-facader",
-          "beskaering",
-          "bortskaffelse-haveaffald",
-          "solcellevask",
-          "fliserens",
-          "tagrenderens",
-          "robotplaeneklipper-service",
-          "vask-hus-garage-ned",
-          "gavekort"
-        ],
-        "kontekst": "privat",
-        "vis_kort_tekst": true
-      },
-      "faq": true,
-      "faq_ekstra_fil": null,
-      "floating_cta": "/#tilbudsmotor",
-      "noindex": false,
-      "i_sitemap": true
-    },
-    {
-      "sti": "/p/cookiepolitik",
-      "fil": "p/cookiepolitik",
-      "head": {
-        "title": "Cookiepolitik - Karltoffel",
-        "description": "Information om brugen af cookies på hjemmesiden, herunder formål, typer af cookies og vejledning til sletning af gemte data.",
-        "noindex_top": false,
-        "floating_linje": "\t\t<link rel=\"stylesheet\" href=\"/assets/css/floating-cta.css?v=1\">\n",
-        "pixel": "<!-- Meta Pixel Code -->\n<script>!function(f,b,e,v,n,t,s)\n{if(f.fbq)return;n=f.fbq=function(){n.callMethod?\nn.callMethod.apply(n,arguments):n.queue.push(arguments)};\nif(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';\nn.queue=[];t=b.createElement(e);t.async=!0;\nt.src=v;s=b.getElementsByTagName(e)[0];\ns.parentNode.insertBefore(t,s)}(window, document,'script',\n'https://connect.facebook.net/en_US/fbevents.js');\nfbq('init', '1574687980856727');\nfbq('track', 'PageView');\n</script>\n<noscript><img height=\"1\" width=\"1\" style=\"display:none\"\nsrc=\"https://www.facebook.com/tr?id=1574687980856727&amp;ev=PageView&amp;noscript=1\"\n/></noscript>\n<!-- End Meta Pixel Code -->\n",
-        "og_html": "\n\t<link rel=\"canonical\" href=\"https://karltoffel.dk/p/cookiepolitik\">\n\t<meta property=\"og:title\" content=\"Cookiepolitik - Karltoffel\">\n\t<meta property=\"og:description\" content=\"Information om brugen af cookies på hjemmesiden, herunder formål, typer af cookies og vejledning til sletning af gemte data.\">\n\t<meta property=\"og:url\" content=\"https://karltoffel.dk/p/cookiepolitik\">\n\n\t"
-      },
-      "body_tag": "<body class=\"\" data-link=\"/p/cookiepolitik\">",
-      "header": {
-        "fixed": false,
-        "nav_active": "",
-        "cta_href": "/#tilbudsmotor"
-      },
-      "footer": {
-        "cta_href": "/#tilbudsmotor",
-        "em_paragraf": false,
-        "social": "alle"
-      },
-      "motor": null,
-      "ydelseskort": null,
-      "faq": false,
-      "faq_ekstra_fil": null,
-      "floating_cta": "/#tilbudsmotor",
-      "noindex": false,
-      "i_sitemap": true
-    },
-    {
-      "sti": "/p/det-vi-ordner",
-      "fil": "p/det-vi-ordner",
-      "head": {
-        "title": "Det vi ordner - Karltoffel",
-        "description": "Der er nok at se til i hverdagen. Derfor står vi klar til at hjælpe med de opgaver, du ikke selv har tid til, lyst til eller mulighed for at klare. Enkelt, ordentligt og uden unødigt bøvl.  Både på abonnement og som enkeltydelser.",
-        "noindex_top": false,
-        "floating_linje": "\t\t<link rel=\"stylesheet\" href=\"/assets/css/floating-cta.css?v=1\">\n",
-        "pixel": "<!-- Meta Pixel Code -->\n<script>!function(f,b,e,v,n,t,s)\n{if(f.fbq)return;n=f.fbq=function(){n.callMethod?\nn.callMethod.apply(n,arguments):n.queue.push(arguments)};\nif(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';\nn.queue=[];t=b.createElement(e);t.async=!0;\nt.src=v;s=b.getElementsByTagName(e)[0];\ns.parentNode.insertBefore(t,s)}(window, document,'script',\n'https://connect.facebook.net/en_US/fbevents.js');\nfbq('init', '1574687980856727');\nfbq('track', 'PageView');\n</script>\n<noscript><img height=\"1\" width=\"1\" style=\"display:none\"\nsrc=\"https://www.facebook.com/tr?id=1574687980856727&amp;ev=PageView&amp;noscript=1\"\n/></noscript>\n<!-- End Meta Pixel Code -->\n",
-        "og_html": "\n\t<link rel=\"canonical\" href=\"https://karltoffel.dk/p/det-vi-ordner\">\n\t<meta property=\"og:title\" content=\"Det vi ordner - Karltoffel\">\n\t<meta property=\"og:description\" content=\"Der er nok at se til i hverdagen. Derfor står vi klar til at hjælpe med de opgaver, du ikke selv har tid til, lyst til eller mulighed for at klare. Enkelt, ordentligt og uden unødigt bøvl.  Både på abonnement og som enkeltydelser.\">\n\t<meta property=\"og:url\" content=\"https://karltoffel.dk/p/det-vi-ordner\">\n\n\t"
-      },
-      "body_tag": "<body class=\"\" data-link=\"/p/det-vi-ordner\">",
-      "header": {
-        "fixed": true,
-        "nav_active": "/p/det-vi-ordner",
-        "cta_href": "/#tilbudsmotor"
-      },
-      "footer": {
-        "cta_href": "/#tilbudsmotor",
-        "em_paragraf": false,
-        "social": "alle"
-      },
-      "motor": null,
-      "ydelseskort": {
-        "kort": [
-          "vinduesvask",
-          "haekklipning",
-          "ukrudtsbekaempelse",
-          "graespleje",
-          "algerens-og-algebehandling-af-fliser-tag-og-facader",
-          "beskaering",
-          "bortskaffelse-haveaffald",
-          "solcellevask",
-          "fliserens",
-          "tagrenderens",
-          "robotplaeneklipper-service",
-          "vask-hus-garage-ned",
-          "gavekort"
-        ],
-        "kontekst": "privat",
-        "vis_kort_tekst": false
-      },
-      "faq": false,
-      "faq_ekstra_fil": null,
-      "floating_cta": "/#tilbudsmotor",
-      "noindex": false,
-      "i_sitemap": true
-    },
-    {
-      "sti": "/p/ejendomsservice",
-      "fil": "p/ejendomsservice",
-      "head": {
-        "title": "Ejendomsservice – samlet vedligehold af ejendom og udearealer | Karltoffel",
-        "description": "Ejendomsservice med fast vedligeholdelsesplan: bygning, udearealer og viceværtopgaver samlet ét sted. Ring 2222 3833 og få et tilbud på jeres ejendom.",
-        "noindex_top": false,
-        "floating_linje": "\t\t<link rel=\"stylesheet\" href=\"/assets/css/floating-cta.css?v=1\">\n",
-        "pixel": "<!-- Meta Pixel Code -->\n<script>!function(f,b,e,v,n,t,s)\n{if(f.fbq)return;n=f.fbq=function(){n.callMethod?\nn.callMethod.apply(n,arguments):n.queue.push(arguments)};\nif(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';\nn.queue=[];t=b.createElement(e);t.async=!0;\nt.src=v;s=b.getElementsByTagName(e)[0];\ns.parentNode.insertBefore(t,s)}(window, document,'script',\n'https://connect.facebook.net/en_US/fbevents.js');\nfbq('init', '1574687980856727');\nfbq('track', 'PageView');\n</script>\n<noscript><img height=\"1\" width=\"1\" style=\"display:none\"\nsrc=\"https://www.facebook.com/tr?id=1574687980856727&amp;ev=PageView&amp;noscript=1\"\n/></noscript>\n<!-- End Meta Pixel Code -->\n",
-        "og_html": "\n\t<link rel=\"canonical\" href=\"https://karltoffel.dk/p/ejendomsservice\">\n\t<meta property=\"og:title\" content=\"Ejendomsservice – samlet vedligehold af ejendom og udearealer | Karltoffel\">\n\t<meta property=\"og:description\" content=\"Ejendomsservice med fast vedligeholdelsesplan: bygning, udearealer og viceværtopgaver samlet ét sted. Ring 2222 3833 og få et tilbud på jeres ejendom.\">\n\t<meta property=\"og:url\" content=\"https://karltoffel.dk/p/ejendomsservice\">\n\t<meta property=\"og:image\" content=\"https://karltoffel.dk/assets/img/thumb/75c3eeccc26ae78c97931a059f470f0af4d04696_w2000_q78.webp\">\n\t"
-      },
-      "body_tag": "<body class=\"\" data-link=\"/p/ejendomsservice\">",
-      "header": {
-        "fixed": true,
-        "nav_active": "",
-        "cta_href": "/#tilbudsmotor"
-      },
-      "footer": {
-        "cta_href": "/#tilbudsmotor",
-        "em_paragraf": false,
-        "social": "alle"
-      },
-      "motor": null,
-      "ydelseskort": {
-        "kort": [
-          "vask-hus-garage-ned",
-          "fliserens",
-          "algerens-og-algebehandling-af-fliser-tag-og-facader",
-          "tagrenderens",
-          "solcellevask",
-          "vinduesvask",
-          "bortskaffelse-haveaffald",
-          "beskaering"
-        ],
-        "kontekst": "erhverv",
-        "vis_kort_tekst": false
-      },
-      "faq": false,
-      "faq_ekstra_fil": null,
-      "floating_cta": "/#tilbudsmotor",
-      "noindex": false,
-      "i_sitemap": true
-    },
-    {
-      "sti": "/p/erhverv",
-      "fil": "p/erhverv",
-      "head": {
-        "title": "Erhverv - Karltoffel",
-        "description": "Du kender det sikkert. På arbejdet passer bygningen og udendørsarealerne sig selv. Derfor har vi også gjort det nemt for dig at tage Karltoffel med på arbejde, så du ikke skal koncentrere dig om andet end dit arbejde når du er der.",
-        "noindex_top": false,
-        "floating_linje": "\t\t<link rel=\"stylesheet\" href=\"/assets/css/floating-cta.css?v=1\">\n",
-        "pixel": "<!-- Meta Pixel Code -->\n<script>!function(f,b,e,v,n,t,s)\n{if(f.fbq)return;n=f.fbq=function(){n.callMethod?\nn.callMethod.apply(n,arguments):n.queue.push(arguments)};\nif(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';\nn.queue=[];t=b.createElement(e);t.async=!0;\nt.src=v;s=b.getElementsByTagName(e)[0];\ns.parentNode.insertBefore(t,s)}(window, document,'script',\n'https://connect.facebook.net/en_US/fbevents.js');\nfbq('init', '1574687980856727');\nfbq('track', 'PageView');\n</script>\n<noscript><img height=\"1\" width=\"1\" style=\"display:none\"\nsrc=\"https://www.facebook.com/tr?id=1574687980856727&amp;ev=PageView&amp;noscript=1\"\n/></noscript>\n<!-- End Meta Pixel Code -->\n",
-        "og_html": "\n\t<link rel=\"canonical\" href=\"https://karltoffel.dk/p/erhverv\">\n\t<meta property=\"og:title\" content=\"Erhverv - Karltoffel\">\n\t<meta property=\"og:description\" content=\"Du kender det sikkert. På arbejdet passer bygningen og udendørsarealerne sig selv. Derfor har vi også gjort det nemt for dig at tage Karltoffel med på arbejde, så du ikke skal koncentrere dig om andet end dit arbejde når du er der.\">\n\t<meta property=\"og:url\" content=\"https://karltoffel.dk/p/erhverv\">\n\n\t"
-      },
-      "body_tag": "<body class=\"\" data-link=\"/p/erhverv\">",
-      "header": {
-        "fixed": true,
-        "nav_active": "/p/erhverv",
-        "cta_href": "#tilbudsmotor"
-      },
-      "footer": {
-        "cta_href": "#tilbudsmotor",
-        "em_paragraf": false,
-        "social": "alle"
-      },
-      "motor": {
-        "type": "erhverv"
-      },
-      "ydelseskort": null,
-      "faq": true,
-      "faq_ekstra_fil": null,
-      "faq_custom": true,
-      "floating_cta": "/#tilbudsmotor",
-      "noindex": false,
-      "i_sitemap": true
-    },
-    {
-      "sti": "/p/haekklipning-landing",
-      "fil": "p/haekklipning-landing",
-      "head": {
-        "title": "Hækklipning – fast pris og alt affaldet kørt væk | Karltoffel",
-        "description": "Hækklipning fra 999 kr: klippet, ryddet og alt afklippet kørt væk. Fast pris inden vi starter, og du betaler først, når hækken står, som den skal. Ring 2222 3833.",
-        "noindex_top": false,
-        "floating_linje": "\t\t<link rel=\"stylesheet\" href=\"/assets/css/floating-cta.css?v=1\">\n",
-        "pixel": "<!-- Meta Pixel Code -->\n<script>!function(f,b,e,v,n,t,s)\n{if(f.fbq)return;n=f.fbq=function(){n.callMethod?\nn.callMethod.apply(n,arguments):n.queue.push(arguments)};\nif(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';\nn.queue=[];t=b.createElement(e);t.async=!0;\nt.src=v;s=b.getElementsByTagName(e)[0];\ns.parentNode.insertBefore(t,s)}(window, document,'script',\n'https://connect.facebook.net/en_US/fbevents.js');\nfbq('init', '1574687980856727');\nfbq('track', 'PageView');\n</script>\n<noscript><img height=\"1\" width=\"1\" style=\"display:none\"\nsrc=\"https://www.facebook.com/tr?id=1574687980856727&amp;ev=PageView&amp;noscript=1\"\n/></noscript>\n<!-- End Meta Pixel Code -->\n<script src=\"/assets/js/meta-events.js?v=2\" defer data-forms='[{\"selector\": \".sp-form__fields\", \"index\": 0, \"content_name\": \"haekklipning-landing-hero\"}, {\"selector\": \".sp-form__fields\", \"index\": 1, \"content_name\": \"haekklipning-landing-bund\"}]'></script>\n",
-        "og_html": "\n\t<link rel=\"canonical\" href=\"https://karltoffel.dk/p/haekklipning-landing\">\n\t<meta property=\"og:title\" content=\"Hækklipning – fast pris og alt affaldet kørt væk | Karltoffel\">\n\t<meta property=\"og:description\" content=\"Hækklipning fra 999 kr: klippet, ryddet og alt afklippet kørt væk. Fast pris inden vi starter, og du betaler først, når hækken står, som den skal. Ring 2222 3833.\">\n\t<meta property=\"og:url\" content=\"https://karltoffel.dk/p/haekklipning-landing\">\n\t<meta property=\"og:image\" content=\"https://karltoffel.dk/assets/img/thumb/e2a541dff09c05bfe2957c4875f7dfe5e570401c_w2000_q78.webp\">\n\t"
-      },
-      "body_tag": "<body class=\"\" data-link=\"/p/haekklipning-landing\">",
-      "header": {
-        "fixed": true,
-        "nav_active": "",
-        "cta_href": "/#tilbudsmotor"
-      },
-      "footer": {
-        "cta_href": "/#tilbudsmotor",
-        "em_paragraf": false,
-        "social": "alle"
-      },
-      "motor": null,
-      "ydelseskort": null,
-      "faq": false,
-      "faq_ekstra_fil": null,
-      "floating_cta": "/#tilbudsmotor",
-      "noindex": false,
-      "i_sitemap": false
-    },
-    {
-      "sti": "/p/handelsbetingelser",
-      "fil": "p/handelsbetingelser",
-      "head": {
-        "title": "Handelsbetingelser - Karltoffel",
-        "description": "Handelsbetingelser for Karltoffel Senest opdateret: 16/06-2026 1. Generelt Disse handelsbetingelser gælder for alle ydelser leveret af Karltoffel. Ved...",
-        "noindex_top": false,
-        "floating_linje": "\t\t<link rel=\"stylesheet\" href=\"/assets/css/floating-cta.css?v=1\">\n",
-        "pixel": "<!-- Meta Pixel Code -->\n<script>!function(f,b,e,v,n,t,s)\n{if(f.fbq)return;n=f.fbq=function(){n.callMethod?\nn.callMethod.apply(n,arguments):n.queue.push(arguments)};\nif(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';\nn.queue=[];t=b.createElement(e);t.async=!0;\nt.src=v;s=b.getElementsByTagName(e)[0];\ns.parentNode.insertBefore(t,s)}(window, document,'script',\n'https://connect.facebook.net/en_US/fbevents.js');\nfbq('init', '1574687980856727');\nfbq('track', 'PageView');\n</script>\n<noscript><img height=\"1\" width=\"1\" style=\"display:none\"\nsrc=\"https://www.facebook.com/tr?id=1574687980856727&amp;ev=PageView&amp;noscript=1\"\n/></noscript>\n<!-- End Meta Pixel Code -->\n",
-        "og_html": "\n\t<link rel=\"canonical\" href=\"https://karltoffel.dk/p/handelsbetingelser\">\n\t<meta property=\"og:title\" content=\"Handelsbetingelser - Karltoffel\">\n\t<meta property=\"og:description\" content=\"Handelsbetingelser for Karltoffel Senest opdateret: 16/06-2026 1. Generelt Disse handelsbetingelser gælder for alle ydelser leveret af Karltoffel. Ved...\">\n\t<meta property=\"og:url\" content=\"https://karltoffel.dk/p/handelsbetingelser\">\n\n\t"
-      },
-      "body_tag": "<body class=\"\" data-link=\"/p/handelsbetingelser\">",
-      "header": {
-        "fixed": false,
-        "nav_active": "",
-        "cta_href": "/#tilbudsmotor"
-      },
-      "footer": {
-        "cta_href": "/#tilbudsmotor",
-        "em_paragraf": false,
-        "social": "alle"
-      },
-      "motor": null,
-      "ydelseskort": null,
-      "faq": false,
-      "faq_ekstra_fil": null,
-      "floating_cta": "/#tilbudsmotor",
-      "noindex": false,
-      "i_sitemap": true
-    },
-    {
-      "sti": "/p/haveservice-horsens",
-      "fil": "p/haveservice-horsens",
-      "head": {
-        "title": "Haveservice i Horsens – havemand og hjælp til havearbejde | Karltoffel",
-        "description": "Haveservice i Horsens, Vejle og Skanderborg: hækklipning, græsplæne, ukrudt og havearbejde ordnet fast og uden bøvl. Ring 2222 3833 og få et tilbud på din have.",
-        "noindex_top": false,
-        "floating_linje": "\t\t<link rel=\"stylesheet\" href=\"/assets/css/floating-cta.css?v=1\">\n",
-        "pixel": "<!-- Meta Pixel Code -->\n<script>!function(f,b,e,v,n,t,s)\n{if(f.fbq)return;n=f.fbq=function(){n.callMethod?\nn.callMethod.apply(n,arguments):n.queue.push(arguments)};\nif(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';\nn.queue=[];t=b.createElement(e);t.async=!0;\nt.src=v;s=b.getElementsByTagName(e)[0];\ns.parentNode.insertBefore(t,s)}(window, document,'script',\n'https://connect.facebook.net/en_US/fbevents.js');\nfbq('init', '1574687980856727');\nfbq('track', 'PageView');\n</script>\n<noscript><img height=\"1\" width=\"1\" style=\"display:none\"\nsrc=\"https://www.facebook.com/tr?id=1574687980856727&amp;ev=PageView&amp;noscript=1\"\n/></noscript>\n<!-- End Meta Pixel Code -->\n",
-        "og_html": "\n\t<link rel=\"canonical\" href=\"https://karltoffel.dk/p/haveservice-horsens\">\n\t<meta property=\"og:title\" content=\"Haveservice i Horsens – havemand og hjælp til havearbejde | Karltoffel\">\n\t<meta property=\"og:description\" content=\"Haveservice i Horsens, Vejle og Skanderborg: hækklipning, græsplæne, ukrudt og havearbejde ordnet fast og uden bøvl. Ring 2222 3833 og få et tilbud på din have.\">\n\t<meta property=\"og:url\" content=\"https://karltoffel.dk/p/haveservice-horsens\">\n\t<meta property=\"og:image\" content=\"https://karltoffel.dk/assets/img/thumb/e2a541dff09c05bfe2957c4875f7dfe5e570401c_w2000_q78.webp\">\n\t"
-      },
-      "body_tag": "<body class=\"\" data-link=\"/p/haveservice-horsens\">",
-      "header": {
-        "fixed": true,
-        "nav_active": "",
-        "cta_href": "/#tilbudsmotor"
-      },
-      "footer": {
-        "cta_href": "/#tilbudsmotor",
-        "em_paragraf": false,
-        "social": "alle"
-      },
-      "motor": null,
-      "ydelseskort": {
-        "kort": [
-          "haekklipning",
-          "graespleje",
-          "ukrudtsbekaempelse",
-          "beskaering",
-          "bortskaffelse-haveaffald",
-          "vinduesvask",
-          "algerens-og-algebehandling-af-fliser-tag-og-facader",
-          "tagrenderens"
-        ],
-        "kontekst": "erhverv",
-        "vis_kort_tekst": false
-      },
-      "faq": false,
-      "faq_ekstra_fil": null,
-      "floating_cta": "/#tilbudsmotor",
-      "noindex": false,
-      "i_sitemap": true
-    },
-    {
-      "sti": "/p/om-karltoffel",
-      "fil": "p/om-karltoffel",
-      "head": {
-        "title": "Om Karltoffel - Karltoffel",
-        "description": "Vi hjælper boligejere med at holde hus og have pænt året rundt – uden at det kræver tid, planlægning eller dårlig samvittighed. ",
-        "noindex_top": false,
-        "floating_linje": "\t\t<link rel=\"stylesheet\" href=\"/assets/css/floating-cta.css?v=1\">\n",
-        "pixel": "<!-- Meta Pixel Code -->\n<script>!function(f,b,e,v,n,t,s)\n{if(f.fbq)return;n=f.fbq=function(){n.callMethod?\nn.callMethod.apply(n,arguments):n.queue.push(arguments)};\nif(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';\nn.queue=[];t=b.createElement(e);t.async=!0;\nt.src=v;s=b.getElementsByTagName(e)[0];\ns.parentNode.insertBefore(t,s)}(window, document,'script',\n'https://connect.facebook.net/en_US/fbevents.js');\nfbq('init', '1574687980856727');\nfbq('track', 'PageView');\n</script>\n<noscript><img height=\"1\" width=\"1\" style=\"display:none\"\nsrc=\"https://www.facebook.com/tr?id=1574687980856727&amp;ev=PageView&amp;noscript=1\"\n/></noscript>\n<!-- End Meta Pixel Code -->\n",
-        "og_html": "\n\t<link rel=\"canonical\" href=\"https://karltoffel.dk/p/om-karltoffel\">\n\t<meta property=\"og:title\" content=\"Om Karltoffel - Karltoffel\">\n\t<meta property=\"og:description\" content=\"Vi hjælper boligejere med at holde hus og have pænt året rundt – uden at det kræver tid, planlægning eller dårlig samvittighed. \">\n\t<meta property=\"og:url\" content=\"https://karltoffel.dk/p/om-karltoffel\">\n\n\t"
-      },
-      "body_tag": "<body class=\"\" data-link=\"/p/om-karltoffel\">",
-      "header": {
-        "fixed": true,
-        "nav_active": "/p/om-karltoffel",
-        "cta_href": "/#tilbudsmotor"
-      },
-      "footer": {
-        "cta_href": "/#tilbudsmotor",
-        "em_paragraf": false,
-        "social": "alle"
-      },
-      "motor": null,
-      "ydelseskort": null,
-      "faq": false,
-      "faq_ekstra_fil": null,
-      "floating_cta": "/#tilbudsmotor",
-      "noindex": false,
-      "i_sitemap": true
-    },
-    {
-      "sti": "/p/pakker-priser",
-      "fil": "p/pakker-priser",
-      "head": {
-        "title": "Karltoffels Årshjul - Karltoffel",
-        "description": "Huset og haven slider året rundt. Det gør vi så. Karltoffels Årshjul viser, hvad der skal ordnes – og hvornår. Mindre bøvl. Mere overskud.",
-        "noindex_top": false,
-        "floating_linje": "\t\t<link rel=\"stylesheet\" href=\"/assets/css/floating-cta.css?v=1\">\n",
-        "pixel": "<!-- Meta Pixel Code -->\n<script>!function(f,b,e,v,n,t,s)\n{if(f.fbq)return;n=f.fbq=function(){n.callMethod?\nn.callMethod.apply(n,arguments):n.queue.push(arguments)};\nif(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';\nn.queue=[];t=b.createElement(e);t.async=!0;\nt.src=v;s=b.getElementsByTagName(e)[0];\ns.parentNode.insertBefore(t,s)}(window, document,'script',\n'https://connect.facebook.net/en_US/fbevents.js');\nfbq('init', '1574687980856727');\nfbq('track', 'PageView');\n</script>\n<noscript><img height=\"1\" width=\"1\" style=\"display:none\"\nsrc=\"https://www.facebook.com/tr?id=1574687980856727&amp;ev=PageView&amp;noscript=1\"\n/></noscript>\n<!-- End Meta Pixel Code -->\n",
-        "og_html": "\n\t<link rel=\"canonical\" href=\"https://karltoffel.dk/p/pakker-priser\">\n\t<meta property=\"og:title\" content=\"Karltoffels Årshjul - Karltoffel\">\n\t<meta property=\"og:description\" content=\"Huset og haven slider året rundt. Det gør vi så. Karltoffels Årshjul viser, hvad der skal ordnes – og hvornår. Mindre bøvl. Mere overskud.\">\n\t<meta property=\"og:url\" content=\"https://karltoffel.dk/p/pakker-priser\">\n\n\t"
-      },
-      "body_tag": "<body class=\"\" data-link=\"/p/pakker-priser\">",
-      "header": {
-        "fixed": true,
-        "nav_active": "/p/pakker-priser",
-        "cta_href": "/#tilbudsmotor"
-      },
-      "footer": {
-        "cta_href": "/#tilbudsmotor",
-        "em_paragraf": false,
-        "social": "alle"
-      },
-      "motor": null,
-      "ydelseskort": null,
-      "faq": false,
-      "faq_ekstra_fil": null,
-      "floating_cta": "/#tilbudsmotor",
-      "noindex": false,
-      "i_sitemap": true
-    },
-    {
-      "sti": "/p/vicevaertsservice",
-      "fil": "p/vicevaertsservice",
-      "head": {
-        "title": "Viceværtservice – fast vicevært til ejendom og arbejdsplads | Karltoffel",
-        "description": "Viceværtservice med faste besøg: småreparationer, tilsyn, udearealer og de praktiske opgaver, der ellers hober sig op. Ring 2222 3833 og få et tilbud.",
-        "noindex_top": false,
-        "floating_linje": "\t\t<link rel=\"stylesheet\" href=\"/assets/css/floating-cta.css?v=1\">\n",
-        "pixel": "<!-- Meta Pixel Code -->\n<script>!function(f,b,e,v,n,t,s)\n{if(f.fbq)return;n=f.fbq=function(){n.callMethod?\nn.callMethod.apply(n,arguments):n.queue.push(arguments)};\nif(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';\nn.queue=[];t=b.createElement(e);t.async=!0;\nt.src=v;s=b.getElementsByTagName(e)[0];\ns.parentNode.insertBefore(t,s)}(window, document,'script',\n'https://connect.facebook.net/en_US/fbevents.js');\nfbq('init', '1574687980856727');\nfbq('track', 'PageView');\n</script>\n<noscript><img height=\"1\" width=\"1\" style=\"display:none\"\nsrc=\"https://www.facebook.com/tr?id=1574687980856727&amp;ev=PageView&amp;noscript=1\"\n/></noscript>\n<!-- End Meta Pixel Code -->\n",
-        "og_html": "\n\t<link rel=\"canonical\" href=\"https://karltoffel.dk/p/vicevaertsservice\">\n\t<meta property=\"og:title\" content=\"Viceværtservice – fast vicevært til ejendom og arbejdsplads | Karltoffel\">\n\t<meta property=\"og:description\" content=\"Viceværtservice med faste besøg: småreparationer, tilsyn, udearealer og de praktiske opgaver, der ellers hober sig op. Ring 2222 3833 og få et tilbud.\">\n\t<meta property=\"og:url\" content=\"https://karltoffel.dk/p/vicevaertsservice\">\n\t<meta property=\"og:image\" content=\"https://karltoffel.dk/assets/img/thumb/75c3eeccc26ae78c97931a059f470f0af4d04696_w2000_q78.webp\">\n\t"
-      },
-      "body_tag": "<body class=\"\" data-link=\"/p/vicevaertsservice\">",
-      "header": {
-        "fixed": true,
-        "nav_active": "",
-        "cta_href": "/#tilbudsmotor"
-      },
-      "footer": {
-        "cta_href": "/#tilbudsmotor",
-        "em_paragraf": false,
-        "social": "alle"
-      },
-      "motor": null,
-      "ydelseskort": {
-        "kort": [
-          "vask-hus-garage-ned",
-          "fliserens",
-          "algerens-og-algebehandling-af-fliser-tag-og-facader",
-          "tagrenderens",
-          "solcellevask",
-          "vinduesvask"
-        ],
-        "kontekst": "erhverv",
-        "vis_kort_tekst": false
-      },
-      "faq": false,
-      "faq_ekstra_fil": null,
-      "floating_cta": "/#tilbudsmotor",
-      "noindex": false,
-      "i_sitemap": true
-    },
-    {
-      "sti": "/tak",
-      "fil": "tak",
-      "head": {
-        "title": "Tak for dit svar - Karltoffel",
-        "description": "Tak for dit svar på dit tilbud fra Karltoffel.",
-        "noindex_top": true,
-        "floating_linje": "",
-        "pixel": "",
-        "og_html": "\n\t"
-      },
-      "body_tag": "<body class=\"\" data-link=\"/tak\">",
-      "header": {
-        "fixed": true,
-        "nav_active": "",
-        "cta_href": "/#tilbudsmotor"
-      },
-      "footer": {
-        "cta_href": "/#tilbudsmotor",
-        "em_paragraf": false,
-        "social": "alle"
-      },
-      "header_custom": true,
-      "motor": null,
-      "ydelseskort": null,
-      "faq": false,
-      "faq_ekstra_fil": null,
-      "floating_cta": null,
-      "noindex": true,
-      "i_sitemap": false
-    }
-  ]
+ "dagens_dato": "2026-09-09",
+ "sider": [
+  {
+   "sti": "/404.html",
+   "fil": "404",
+   "head": {
+    "title": "404 - Siden findes ikke - Karltoffel",
+    "description": "Denne side findes desværre ikke. Prøv forsiden, find vores ydelser eller få et tilbud på mindre bøvl.",
+    "noindex_top": false,
+    "floating_linje": "\t\t<link rel=\"stylesheet\" href=\"/assets/css/floating-cta.css?v=1\">\n",
+    "pixel": "<!-- Meta Pixel Code -->\n<script>!function(f,b,e,v,n,t,s)\n{if(f.fbq)return;n=f.fbq=function(){n.callMethod?\nn.callMethod.apply(n,arguments):n.queue.push(arguments)};\nif(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';\nn.queue=[];t=b.createElement(e);t.async=!0;\nt.src=v;s=b.getElementsByTagName(e)[0];\ns.parentNode.insertBefore(t,s)}(window, document,'script',\n'https://connect.facebook.net/en_US/fbevents.js');\nfbq('init', '1574687980856727');\nfbq('track', 'PageView');\n</script>\n<noscript><img height=\"1\" width=\"1\" style=\"display:none\"\nsrc=\"https://www.facebook.com/tr?id=1574687980856727&amp;ev=PageView&amp;noscript=1\"\n/></noscript>\n<!-- End Meta Pixel Code -->\n",
+    "og_html": "\n\t<meta property=\"og:title\" content=\"404 - Siden findes ikke - Karltoffel\">\n\t<meta property=\"og:description\" content=\"Denne side findes desværre ikke. Prøv forsiden, find vores ydelser eller få et tilbud på mindre bøvl.\">\n\t<meta property=\"og:url\" content=\"https://karltoffel.dk/404\">\n\t<meta property=\"og:image\" content=\"https://karltoffel.dk/assets/img/design/share_q78.webp\">\n\n\t"
+   },
+   "body_tag": "<body class=\"\" data-link=\"/404\">",
+   "header": {
+    "fixed": true,
+    "nav_active": "",
+    "cta_href": "/p/kontakt"
+   },
+   "footer": {
+    "cta_href": "/p/kontakt",
+    "em_paragraf": false,
+    "social": "kun-facebook"
+   },
+   "motor": null,
+   "ydelseskort": null,
+   "faq": false,
+   "faq_ekstra_fil": null,
+   "floating_cta": "/p/kontakt",
+   "noindex": true,
+   "i_sitemap": false
+  },
+  {
+   "sti": "/c/det-vi-ordner/algerens-og-algebehandling-af-fliser-tag-og-facader",
+   "fil": "c/det-vi-ordner/algerens-og-algebehandling-af-fliser-tag-og-facader",
+   "head": {
+    "title": "Algerens - Karltoffel",
+    "description": "Algerens Alger kommer snigende. Først som en let grøn belægning. Senere som glatte fliser, misfarvede overflader og udearealer, der får boligen til...",
+    "noindex_top": false,
+    "floating_linje": "\t\t\t\t<link rel=\"stylesheet\" href=\"/assets/css/floating-cta.css?v=1\">\n",
+    "pixel": "<!-- Meta Pixel Code -->\n<script>!function(f,b,e,v,n,t,s)\n{if(f.fbq)return;n=f.fbq=function(){n.callMethod?\nn.callMethod.apply(n,arguments):n.queue.push(arguments)};\nif(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';\nn.queue=[];t=b.createElement(e);t.async=!0;\nt.src=v;s=b.getElementsByTagName(e)[0];\ns.parentNode.insertBefore(t,s)}(window, document,'script',\n'https://connect.facebook.net/en_US/fbevents.js');\nfbq('init', '1574687980856727');\nfbq('track', 'PageView');\n</script>\n<noscript><img height=\"1\" width=\"1\" style=\"display:none\"\nsrc=\"https://www.facebook.com/tr?id=1574687980856727&amp;ev=PageView&amp;noscript=1\"\n/></noscript>\n<!-- End Meta Pixel Code -->\n\t<link rel=\"stylesheet\" href=\"/assets/css/tilbudsmotor.css?v=41\">\n",
+    "og_html": "\n\t<link rel=\"canonical\" href=\"https://karltoffel.dk/c/det-vi-ordner/algerens-og-algebehandling-af-fliser-tag-og-facader\">\n\t<meta property=\"og:title\" content=\"Algerens - Karltoffel\">\n\t<meta property=\"og:description\" content=\"Algerens Alger kommer snigende. Først som en let grøn belægning. Senere som glatte fliser, misfarvede overflader og udearealer, der får boligen til...\">\n\t<meta property=\"og:url\" content=\"https://karltoffel.dk/c/det-vi-ordner/algerens-og-algebehandling-af-fliser-tag-og-facader\">\n\t<meta property=\"og:image\" content=\"https://karltoffel.dk/assets/img/thumb/3c3bcd06d678733ed42a62bff3435349438d02c0_w2000_q78.webp\">\n\n\t"
+   },
+   "body_tag": "<body class=\"\" data-link=\"/c/det-vi-ordner/algerens-og-algebehandling-af-fliser-tag-og-facader\">",
+   "header": {
+    "fixed": true,
+    "nav_active": "",
+    "cta_href": "/p/kontakt"
+   },
+   "footer": {
+    "cta_href": "/p/kontakt",
+    "em_paragraf": false,
+    "social": "alle"
+   },
+   "motor": null,
+   "ydelseskort": null,
+   "faq": true,
+   "faq_ekstra_fil": "c/det-vi-ordner/algerens-og-algebehandling-af-fliser-tag-og-facader/faq-ekstra.html",
+   "floating_cta": "/p/kontakt",
+   "noindex": false,
+   "i_sitemap": true
+  },
+  {
+   "sti": "/c/det-vi-ordner/beskaering",
+   "fil": "c/det-vi-ordner/beskaering",
+   "head": {
+    "title": "Beskæring - Karltoffel",
+    "description": "Beskæring Planter, buske og træer vokser ikke efter kalenderen. Pludselig fylder hækken lidt for meget. Buskene breder sig ind over stien. Eller træ...",
+    "noindex_top": false,
+    "floating_linje": "\t\t\t\t<link rel=\"stylesheet\" href=\"/assets/css/floating-cta.css?v=1\">\n",
+    "pixel": "<!-- Meta Pixel Code -->\n<script>!function(f,b,e,v,n,t,s)\n{if(f.fbq)return;n=f.fbq=function(){n.callMethod?\nn.callMethod.apply(n,arguments):n.queue.push(arguments)};\nif(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';\nn.queue=[];t=b.createElement(e);t.async=!0;\nt.src=v;s=b.getElementsByTagName(e)[0];\ns.parentNode.insertBefore(t,s)}(window, document,'script',\n'https://connect.facebook.net/en_US/fbevents.js');\nfbq('init', '1574687980856727');\nfbq('track', 'PageView');\n</script>\n<noscript><img height=\"1\" width=\"1\" style=\"display:none\"\nsrc=\"https://www.facebook.com/tr?id=1574687980856727&amp;ev=PageView&amp;noscript=1\"\n/></noscript>\n<!-- End Meta Pixel Code -->\n\t<link rel=\"stylesheet\" href=\"/assets/css/tilbudsmotor.css?v=41\">\n",
+    "og_html": "\n\t<link rel=\"canonical\" href=\"https://karltoffel.dk/c/det-vi-ordner/beskaering\">\n\t<meta property=\"og:title\" content=\"Beskæring - Karltoffel\">\n\t<meta property=\"og:description\" content=\"Beskæring Planter, buske og træer vokser ikke efter kalenderen. Pludselig fylder hækken lidt for meget. Buskene breder sig ind over stien. Eller træ...\">\n\t<meta property=\"og:url\" content=\"https://karltoffel.dk/c/det-vi-ordner/beskaering\">\n\t<meta property=\"og:image\" content=\"https://karltoffel.dk/assets/img/thumb/b33b09c3af5048b5d2d8636deae63a5e458379bd_w2000_q78.webp\">\n\n\t"
+   },
+   "body_tag": "<body class=\"\" data-link=\"/c/det-vi-ordner/beskaering\">",
+   "header": {
+    "fixed": true,
+    "nav_active": "",
+    "cta_href": "/p/kontakt"
+   },
+   "footer": {
+    "cta_href": "/p/kontakt",
+    "em_paragraf": false,
+    "social": "alle"
+   },
+   "motor": null,
+   "ydelseskort": null,
+   "faq": true,
+   "faq_ekstra_fil": "c/det-vi-ordner/beskaering/faq-ekstra.html",
+   "floating_cta": "/p/kontakt",
+   "noindex": false,
+   "i_sitemap": true
+  },
+  {
+   "sti": "/c/det-vi-ordner/bortskaffelse-haveaffald",
+   "fil": "c/det-vi-ordner/bortskaffelse-haveaffald",
+   "head": {
+    "title": "Haveaffald - Karltoffel",
+    "description": "Haveaffald Det er sjældent selve havearbejdet, der er det værste. Det er oprydningen bagefter. Efter hækklipning, beskæring, lugning eller andre hav...",
+    "noindex_top": false,
+    "floating_linje": "\t\t\t\t<link rel=\"stylesheet\" href=\"/assets/css/floating-cta.css?v=1\">\n",
+    "pixel": "<!-- Meta Pixel Code -->\n<script>!function(f,b,e,v,n,t,s)\n{if(f.fbq)return;n=f.fbq=function(){n.callMethod?\nn.callMethod.apply(n,arguments):n.queue.push(arguments)};\nif(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';\nn.queue=[];t=b.createElement(e);t.async=!0;\nt.src=v;s=b.getElementsByTagName(e)[0];\ns.parentNode.insertBefore(t,s)}(window, document,'script',\n'https://connect.facebook.net/en_US/fbevents.js');\nfbq('init', '1574687980856727');\nfbq('track', 'PageView');\n</script>\n<noscript><img height=\"1\" width=\"1\" style=\"display:none\"\nsrc=\"https://www.facebook.com/tr?id=1574687980856727&amp;ev=PageView&amp;noscript=1\"\n/></noscript>\n<!-- End Meta Pixel Code -->\n\t<link rel=\"stylesheet\" href=\"/assets/css/tilbudsmotor.css?v=41\">\n",
+    "og_html": "\n\t<link rel=\"canonical\" href=\"https://karltoffel.dk/c/det-vi-ordner/bortskaffelse-haveaffald\">\n\t<meta property=\"og:title\" content=\"Haveaffald - Karltoffel\">\n\t<meta property=\"og:description\" content=\"Haveaffald Det er sjældent selve havearbejdet, der er det værste. Det er oprydningen bagefter. Efter hækklipning, beskæring, lugning eller andre hav...\">\n\t<meta property=\"og:url\" content=\"https://karltoffel.dk/c/det-vi-ordner/bortskaffelse-haveaffald\">\n\t<meta property=\"og:image\" content=\"https://karltoffel.dk/assets/img/thumb/c900da258e96eecc895854fd718173c58a3bf89a_w2000_q78.webp\">\n\n\t"
+   },
+   "body_tag": "<body class=\"\" data-link=\"/c/det-vi-ordner/bortskaffelse-haveaffald\">",
+   "header": {
+    "fixed": true,
+    "nav_active": "",
+    "cta_href": "/p/kontakt"
+   },
+   "footer": {
+    "cta_href": "/p/kontakt",
+    "em_paragraf": false,
+    "social": "alle"
+   },
+   "motor": null,
+   "ydelseskort": null,
+   "faq": true,
+   "faq_ekstra_fil": "c/det-vi-ordner/bortskaffelse-haveaffald/faq-ekstra.html",
+   "floating_cta": "/p/kontakt",
+   "noindex": false,
+   "i_sitemap": true
+  },
+  {
+   "sti": "/c/det-vi-ordner/fliserens",
+   "fil": "c/det-vi-ordner/fliserens",
+   "head": {
+    "title": "Fliserens - Karltoffel",
+    "description": "Fliserens og imprægnering Over tid bliver fliserne belagt med alger, sod og skidt fra oven.  Rene fliser ændrer husets udtryk fuldstændig. Vi kører...",
+    "noindex_top": false,
+    "floating_linje": "\t\t\t\t<link rel=\"stylesheet\" href=\"/assets/css/floating-cta.css?v=1\">\n",
+    "pixel": "<!-- Meta Pixel Code -->\n<script>!function(f,b,e,v,n,t,s)\n{if(f.fbq)return;n=f.fbq=function(){n.callMethod?\nn.callMethod.apply(n,arguments):n.queue.push(arguments)};\nif(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';\nn.queue=[];t=b.createElement(e);t.async=!0;\nt.src=v;s=b.getElementsByTagName(e)[0];\ns.parentNode.insertBefore(t,s)}(window, document,'script',\n'https://connect.facebook.net/en_US/fbevents.js');\nfbq('init', '1574687980856727');\nfbq('track', 'PageView');\n</script>\n<noscript><img height=\"1\" width=\"1\" style=\"display:none\"\nsrc=\"https://www.facebook.com/tr?id=1574687980856727&amp;ev=PageView&amp;noscript=1\"\n/></noscript>\n<!-- End Meta Pixel Code -->\n\t<link rel=\"stylesheet\" href=\"/assets/css/tilbudsmotor.css?v=41\">\n",
+    "og_html": "\n\t<link rel=\"canonical\" href=\"https://karltoffel.dk/c/det-vi-ordner/fliserens\">\n\t<meta property=\"og:title\" content=\"Fliserens - Karltoffel\">\n\t<meta property=\"og:description\" content=\"Fliserens og imprægnering Over tid bliver fliserne belagt med alger, sod og skidt fra oven.  Rene fliser ændrer husets udtryk fuldstændig. Vi kører...\">\n\t<meta property=\"og:url\" content=\"https://karltoffel.dk/c/det-vi-ordner/fliserens\">\n\t<meta property=\"og:image\" content=\"https://karltoffel.dk/assets/img/design/share_q78.webp\">\n\n\t"
+   },
+   "body_tag": "<body class=\"\" data-link=\"/c/det-vi-ordner/fliserens\">",
+   "header": {
+    "fixed": true,
+    "nav_active": "",
+    "cta_href": "/p/kontakt"
+   },
+   "footer": {
+    "cta_href": "/p/kontakt",
+    "em_paragraf": false,
+    "social": "alle"
+   },
+   "motor": null,
+   "ydelseskort": null,
+   "faq": true,
+   "faq_ekstra_fil": null,
+   "floating_cta": "/p/kontakt",
+   "noindex": false,
+   "i_sitemap": true
+  },
+  {
+   "sti": "/c/det-vi-ordner/gavekort",
+   "fil": "c/det-vi-ordner/gavekort",
+   "head": {
+    "title": "Giv en lørdag tilbage — Gavekort fra Karltoffel",
+    "description": "Giv mindre bøvl i gave Nogle gaver bliver pakket ud og glemt. Andre gør hverdagen lidt lettere. Med et gavekort til Karltoffel giver du en gave, som...",
+    "noindex_top": false,
+    "floating_linje": "\t\t\t<link rel=\"stylesheet\" href=\"/assets/css/floating-cta.css?v=1\">\n",
+    "pixel": "<!-- Meta Pixel Code -->\n<script>!function(f,b,e,v,n,t,s)\n{if(f.fbq)return;n=f.fbq=function(){n.callMethod?\nn.callMethod.apply(n,arguments):n.queue.push(arguments)};\nif(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';\nn.queue=[];t=b.createElement(e);t.async=!0;\nt.src=v;s=b.getElementsByTagName(e)[0];\ns.parentNode.insertBefore(t,s)}(window, document,'script',\n'https://connect.facebook.net/en_US/fbevents.js');\nfbq('init', '1574687980856727');\nfbq('track', 'PageView');\n</script>\n<noscript><img height=\"1\" width=\"1\" style=\"display:none\"\nsrc=\"https://www.facebook.com/tr?id=1574687980856727&amp;ev=PageView&amp;noscript=1\"\n/></noscript>\n<!-- End Meta Pixel Code -->\n",
+    "og_html": "\n\t<link rel=\"canonical\" href=\"/c/det-vi-ordner/gavekort\">\n\t<meta property=\"og:title\" content=\"Gavekort til en heldig Karltoffel - Karltoffel\">\n\t<meta property=\"og:description\" content=\"Giv mindre bøvl i gave Nogle gaver bliver pakket ud og glemt. Andre gør hverdagen lidt lettere. Med et gavekort til Karltoffel giver du en gave, som...\">\n\t<meta property=\"og:url\" content=\"https://karltoffel.dk/c/det-vi-ordner/gavekort\">\n\t<meta property=\"og:image\" content=\"https://karltoffel.dk/assets/img/design/share_q78.webp\">\n\n\t"
+   },
+   "body_tag": "<body class=\"\" data-link=\"/c/det-vi-ordner/gavekort\">",
+   "header": {
+    "fixed": true,
+    "nav_active": "/c/det-vi-ordner/gavekort",
+    "cta_href": "/p/kontakt"
+   },
+   "footer": {
+    "cta_href": "/p/kontakt",
+    "em_paragraf": false,
+    "social": "alle"
+   },
+   "motor": null,
+   "ydelseskort": null,
+   "faq": true,
+   "faq_ekstra_fil": null,
+   "faq_custom": true,
+   "floating_cta": "/p/kontakt",
+   "noindex": false,
+   "i_sitemap": true
+  },
+  {
+   "sti": "/c/det-vi-ordner/graespleje",
+   "fil": "c/det-vi-ordner/graespleje",
+   "head": {
+    "title": "Greenkeeper Græspleje - Karltoffel",
+    "description": "Græspleje Drømmer du om en grønnere, tættere og sundere græsplæne? De fleste vil gerne have en flot plæne, men de færreste har lyst til at bruge...",
+    "noindex_top": false,
+    "floating_linje": "\t\t\t\t<link rel=\"stylesheet\" href=\"/assets/css/floating-cta.css?v=1\">\n",
+    "pixel": "<!-- Meta Pixel Code -->\n<script>!function(f,b,e,v,n,t,s)\n{if(f.fbq)return;n=f.fbq=function(){n.callMethod?\nn.callMethod.apply(n,arguments):n.queue.push(arguments)};\nif(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';\nn.queue=[];t=b.createElement(e);t.async=!0;\nt.src=v;s=b.getElementsByTagName(e)[0];\ns.parentNode.insertBefore(t,s)}(window, document,'script',\n'https://connect.facebook.net/en_US/fbevents.js');\nfbq('init', '1574687980856727');\nfbq('track', 'PageView');\n</script>\n<noscript><img height=\"1\" width=\"1\" style=\"display:none\"\nsrc=\"https://www.facebook.com/tr?id=1574687980856727&amp;ev=PageView&amp;noscript=1\"\n/></noscript>\n<!-- End Meta Pixel Code -->\n\t<link rel=\"stylesheet\" href=\"/assets/css/tilbudsmotor.css?v=41\">\n",
+    "og_html": "\n\t<link rel=\"canonical\" href=\"https://karltoffel.dk/c/det-vi-ordner/graespleje\">\n\t<meta property=\"og:title\" content=\"Greenkeeper Græspleje - Karltoffel\">\n\t<meta property=\"og:description\" content=\"Græspleje Drømmer du om en grønnere, tættere og sundere græsplæne? De fleste vil gerne have en flot plæne, men de færreste har lyst til at bruge...\">\n\t<meta property=\"og:url\" content=\"https://karltoffel.dk/c/det-vi-ordner/graespleje\">\n\t<meta property=\"og:image\" content=\"https://karltoffel.dk/assets/img/thumb/d914ac7dbf94417721e994522a8b617b47d1ca85_w2000_q78.webp\">\n\n\t"
+   },
+   "body_tag": "<body class=\"\" data-link=\"/c/det-vi-ordner/graespleje\">",
+   "header": {
+    "fixed": true,
+    "nav_active": "",
+    "cta_href": "/p/kontakt"
+   },
+   "footer": {
+    "cta_href": "/p/kontakt",
+    "em_paragraf": false,
+    "social": "alle"
+   },
+   "motor": null,
+   "ydelseskort": null,
+   "faq": true,
+   "faq_ekstra_fil": "c/det-vi-ordner/graespleje/faq-ekstra.html",
+   "floating_cta": "/p/kontakt",
+   "noindex": false,
+   "i_sitemap": true
+  },
+  {
+   "sti": "/c/det-vi-ordner/haekklipning",
+   "fil": "c/det-vi-ordner/haekklipning",
+   "head": {
+    "title": "Hækklipning - Karltoffel",
+    "description": "Hækklipning En velklippet hæk gør en stor forskel for helhedsindtrykket af haven. Men hækklipning er også en af de opgaver, som hurtigt kan tage en...",
+    "noindex_top": false,
+    "floating_linje": "\t\t\t\t<link rel=\"stylesheet\" href=\"/assets/css/floating-cta.css?v=1\">\n",
+    "pixel": "<!-- Meta Pixel Code -->\n<script>!function(f,b,e,v,n,t,s)\n{if(f.fbq)return;n=f.fbq=function(){n.callMethod?\nn.callMethod.apply(n,arguments):n.queue.push(arguments)};\nif(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';\nn.queue=[];t=b.createElement(e);t.async=!0;\nt.src=v;s=b.getElementsByTagName(e)[0];\ns.parentNode.insertBefore(t,s)}(window, document,'script',\n'https://connect.facebook.net/en_US/fbevents.js');\nfbq('init', '1574687980856727');\nfbq('track', 'PageView');\n</script>\n<noscript><img height=\"1\" width=\"1\" style=\"display:none\"\nsrc=\"https://www.facebook.com/tr?id=1574687980856727&amp;ev=PageView&amp;noscript=1\"\n/></noscript>\n<!-- End Meta Pixel Code -->\n\t<link rel=\"stylesheet\" href=\"/assets/css/tilbudsmotor.css?v=41\">\n",
+    "og_html": "\n\t<link rel=\"canonical\" href=\"https://karltoffel.dk/c/det-vi-ordner/haekklipning\">\n\t<meta property=\"og:title\" content=\"Hækklipning - Karltoffel\">\n\t<meta property=\"og:description\" content=\"Hækklipning En velklippet hæk gør en stor forskel for helhedsindtrykket af haven. Men hækklipning er også en af de opgaver, som hurtigt kan tage en...\">\n\t<meta property=\"og:url\" content=\"https://karltoffel.dk/c/det-vi-ordner/haekklipning\">\n\t<meta property=\"og:image\" content=\"https://karltoffel.dk/assets/img/thumb/7003eec2b574d33c9aba448120234c65665a4922_w2000_q78.webp\">\n\n\t"
+   },
+   "body_tag": "<body class=\"\" data-link=\"/c/det-vi-ordner/haekklipning\">",
+   "header": {
+    "fixed": true,
+    "nav_active": "",
+    "cta_href": "/p/kontakt"
+   },
+   "footer": {
+    "cta_href": "/p/kontakt",
+    "em_paragraf": false,
+    "social": "alle"
+   },
+   "motor": null,
+   "ydelseskort": null,
+   "faq": true,
+   "faq_ekstra_fil": "c/det-vi-ordner/haekklipning/faq-ekstra.html",
+   "floating_cta": "/p/kontakt",
+   "noindex": false,
+   "i_sitemap": true
+  },
+  {
+   "sti": "/c/det-vi-ordner/robotplaeneklipper-service",
+   "fil": "c/det-vi-ordner/robotplaeneklipper-service",
+   "head": {
+    "title": "Robotplæneklipper-service - Karltoffel",
+    "description": "Robotplæneklipper-service Robotplæneklipperen gør hverdagen nemmere. Lige indtil knivene bliver sløve, hjulene fyldes med græs, eller maskinen begy...",
+    "noindex_top": false,
+    "floating_linje": "\t\t\t\t<link rel=\"stylesheet\" href=\"/assets/css/floating-cta.css?v=1\">\n",
+    "pixel": "<!-- Meta Pixel Code -->\n<script>!function(f,b,e,v,n,t,s)\n{if(f.fbq)return;n=f.fbq=function(){n.callMethod?\nn.callMethod.apply(n,arguments):n.queue.push(arguments)};\nif(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';\nn.queue=[];t=b.createElement(e);t.async=!0;\nt.src=v;s=b.getElementsByTagName(e)[0];\ns.parentNode.insertBefore(t,s)}(window, document,'script',\n'https://connect.facebook.net/en_US/fbevents.js');\nfbq('init', '1574687980856727');\nfbq('track', 'PageView');\n</script>\n<noscript><img height=\"1\" width=\"1\" style=\"display:none\"\nsrc=\"https://www.facebook.com/tr?id=1574687980856727&amp;ev=PageView&amp;noscript=1\"\n/></noscript>\n<!-- End Meta Pixel Code -->\n\t<link rel=\"stylesheet\" href=\"/assets/css/tilbudsmotor.css?v=41\">\n",
+    "og_html": "\n\t<link rel=\"canonical\" href=\"https://karltoffel.dk/c/det-vi-ordner/robotplaeneklipper-service\">\n\t<meta property=\"og:title\" content=\"Robotplæneklipper-service - Karltoffel\">\n\t<meta property=\"og:description\" content=\"Robotplæneklipper-service Robotplæneklipperen gør hverdagen nemmere. Lige indtil knivene bliver sløve, hjulene fyldes med græs, eller maskinen begy...\">\n\t<meta property=\"og:url\" content=\"https://karltoffel.dk/c/det-vi-ordner/robotplaeneklipper-service\">\n\t<meta property=\"og:image\" content=\"https://karltoffel.dk/assets/img/design/share_q78.webp\">\n\n\t"
+   },
+   "body_tag": "<body class=\"\" data-link=\"/c/det-vi-ordner/robotplaeneklipper-service\">",
+   "header": {
+    "fixed": true,
+    "nav_active": "",
+    "cta_href": "/p/kontakt"
+   },
+   "footer": {
+    "cta_href": "/p/kontakt",
+    "em_paragraf": false,
+    "social": "alle"
+   },
+   "motor": null,
+   "ydelseskort": null,
+   "faq": true,
+   "faq_ekstra_fil": "c/det-vi-ordner/robotplaeneklipper-service/faq-ekstra.html",
+   "floating_cta": "/p/kontakt",
+   "noindex": false,
+   "i_sitemap": true
+  },
+  {
+   "sti": "/c/det-vi-ordner/solcellevask",
+   "fil": "c/det-vi-ordner/solcellevask",
+   "head": {
+    "title": "Solcellevask - Karltoffel",
+    "description": "Solcellevask Solceller fungerer bedst, når de er rene. Over tid samler der sig pollen, støv, alger, fugleklatter og andet snavs på panelerne. Det kan...",
+    "noindex_top": false,
+    "floating_linje": "\t\t\t\t<link rel=\"stylesheet\" href=\"/assets/css/floating-cta.css?v=1\">\n",
+    "pixel": "<!-- Meta Pixel Code -->\n<script>!function(f,b,e,v,n,t,s)\n{if(f.fbq)return;n=f.fbq=function(){n.callMethod?\nn.callMethod.apply(n,arguments):n.queue.push(arguments)};\nif(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';\nn.queue=[];t=b.createElement(e);t.async=!0;\nt.src=v;s=b.getElementsByTagName(e)[0];\ns.parentNode.insertBefore(t,s)}(window, document,'script',\n'https://connect.facebook.net/en_US/fbevents.js');\nfbq('init', '1574687980856727');\nfbq('track', 'PageView');\n</script>\n<noscript><img height=\"1\" width=\"1\" style=\"display:none\"\nsrc=\"https://www.facebook.com/tr?id=1574687980856727&amp;ev=PageView&amp;noscript=1\"\n/></noscript>\n<!-- End Meta Pixel Code -->\n\t<link rel=\"stylesheet\" href=\"/assets/css/tilbudsmotor.css?v=41\">\n",
+    "og_html": "\n\t<link rel=\"canonical\" href=\"https://karltoffel.dk/c/det-vi-ordner/solcellevask\">\n\t<meta property=\"og:title\" content=\"Solcellevask - Karltoffel\">\n\t<meta property=\"og:description\" content=\"Solcellevask Solceller fungerer bedst, når de er rene. Over tid samler der sig pollen, støv, alger, fugleklatter og andet snavs på panelerne. Det kan...\">\n\t<meta property=\"og:url\" content=\"https://karltoffel.dk/c/det-vi-ordner/solcellevask\">\n\t<meta property=\"og:image\" content=\"https://karltoffel.dk/assets/img/thumb/dbc21220645410a81cfcaecfd8549aa954c8139b_w2000_q78.webp\">\n\n\t"
+   },
+   "body_tag": "<body class=\"\" data-link=\"/c/det-vi-ordner/solcellevask\">",
+   "header": {
+    "fixed": true,
+    "nav_active": "",
+    "cta_href": "/p/kontakt"
+   },
+   "footer": {
+    "cta_href": "/p/kontakt",
+    "em_paragraf": false,
+    "social": "alle"
+   },
+   "motor": null,
+   "ydelseskort": null,
+   "faq": true,
+   "faq_ekstra_fil": null,
+   "floating_cta": "/p/kontakt",
+   "noindex": false,
+   "i_sitemap": true
+  },
+  {
+   "sti": "/c/det-vi-ordner/tagrenderens",
+   "fil": "c/det-vi-ordner/tagrenderens",
+   "head": {
+    "title": "Tagrenderens - Karltoffel",
+    "description": "Tagrenderens Tagrender og nedløbsrør virker kun, hvis de bliver renset. Vi anbefaler én årlig rens, så vandet ikke ophober sig omkring dit hus elle...",
+    "noindex_top": false,
+    "floating_linje": "\t\t\t\t<link rel=\"stylesheet\" href=\"/assets/css/floating-cta.css?v=1\">\n",
+    "pixel": "<!-- Meta Pixel Code -->\n<script>!function(f,b,e,v,n,t,s)\n{if(f.fbq)return;n=f.fbq=function(){n.callMethod?\nn.callMethod.apply(n,arguments):n.queue.push(arguments)};\nif(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';\nn.queue=[];t=b.createElement(e);t.async=!0;\nt.src=v;s=b.getElementsByTagName(e)[0];\ns.parentNode.insertBefore(t,s)}(window, document,'script',\n'https://connect.facebook.net/en_US/fbevents.js');\nfbq('init', '1574687980856727');\nfbq('track', 'PageView');\n</script>\n<noscript><img height=\"1\" width=\"1\" style=\"display:none\"\nsrc=\"https://www.facebook.com/tr?id=1574687980856727&amp;ev=PageView&amp;noscript=1\"\n/></noscript>\n<!-- End Meta Pixel Code -->\n\t<link rel=\"stylesheet\" href=\"/assets/css/tilbudsmotor.css?v=41\">\n",
+    "og_html": "\n\t<link rel=\"canonical\" href=\"https://karltoffel.dk/c/det-vi-ordner/tagrenderens\">\n\t<meta property=\"og:title\" content=\"Tagrenderens - Karltoffel\">\n\t<meta property=\"og:description\" content=\"Tagrenderens Tagrender og nedløbsrør virker kun, hvis de bliver renset. Vi anbefaler én årlig rens, så vandet ikke ophober sig omkring dit hus elle...\">\n\t<meta property=\"og:url\" content=\"https://karltoffel.dk/c/det-vi-ordner/tagrenderens\">\n\t<meta property=\"og:image\" content=\"https://karltoffel.dk/assets/img/design/share_q78.webp\">\n\n\t"
+   },
+   "body_tag": "<body class=\"\" data-link=\"/c/det-vi-ordner/tagrenderens\">",
+   "header": {
+    "fixed": true,
+    "nav_active": "",
+    "cta_href": "/p/kontakt"
+   },
+   "footer": {
+    "cta_href": "/p/kontakt",
+    "em_paragraf": false,
+    "social": "alle"
+   },
+   "motor": null,
+   "ydelseskort": null,
+   "faq": true,
+   "faq_ekstra_fil": null,
+   "floating_cta": "/p/kontakt",
+   "noindex": false,
+   "i_sitemap": true
+  },
+  {
+   "sti": "/c/det-vi-ordner/ukrudtsbekaempelse",
+   "fil": "c/det-vi-ordner/ukrudtsbekaempelse",
+   "head": {
+    "title": "Ukrudtsbekæmpelse - Karltoffel",
+    "description": "Ukrudtsbekæmpelse Ukrudt har det med at dukke op igen og igen. Mellem fliserne i indkørslen. Langs fortovet. På terrassen. I gårdspladsen. Og uanset...",
+    "noindex_top": false,
+    "floating_linje": "\t\t\t\t<link rel=\"stylesheet\" href=\"/assets/css/floating-cta.css?v=1\">\n",
+    "pixel": "<!-- Meta Pixel Code -->\n<script>!function(f,b,e,v,n,t,s)\n{if(f.fbq)return;n=f.fbq=function(){n.callMethod?\nn.callMethod.apply(n,arguments):n.queue.push(arguments)};\nif(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';\nn.queue=[];t=b.createElement(e);t.async=!0;\nt.src=v;s=b.getElementsByTagName(e)[0];\ns.parentNode.insertBefore(t,s)}(window, document,'script',\n'https://connect.facebook.net/en_US/fbevents.js');\nfbq('init', '1574687980856727');\nfbq('track', 'PageView');\n</script>\n<noscript><img height=\"1\" width=\"1\" style=\"display:none\"\nsrc=\"https://www.facebook.com/tr?id=1574687980856727&amp;ev=PageView&amp;noscript=1\"\n/></noscript>\n<!-- End Meta Pixel Code -->\n\t<link rel=\"stylesheet\" href=\"/assets/css/tilbudsmotor.css?v=41\">\n",
+    "og_html": "\n\t<link rel=\"canonical\" href=\"https://karltoffel.dk/c/det-vi-ordner/ukrudtsbekaempelse\">\n\t<meta property=\"og:title\" content=\"Ukrudtsbekæmpelse - Karltoffel\">\n\t<meta property=\"og:description\" content=\"Ukrudtsbekæmpelse Ukrudt har det med at dukke op igen og igen. Mellem fliserne i indkørslen. Langs fortovet. På terrassen. I gårdspladsen. Og uanset...\">\n\t<meta property=\"og:url\" content=\"https://karltoffel.dk/c/det-vi-ordner/ukrudtsbekaempelse\">\n\t<meta property=\"og:image\" content=\"https://karltoffel.dk/assets/img/thumb/baebbae77390eceed72cfe2137c631622d7e1ce8_w2000_q78.webp\">\n\n\t"
+   },
+   "body_tag": "<body class=\"\" data-link=\"/c/det-vi-ordner/ukrudtsbekaempelse\">",
+   "header": {
+    "fixed": true,
+    "nav_active": "",
+    "cta_href": "/p/kontakt"
+   },
+   "footer": {
+    "cta_href": "/p/kontakt",
+    "em_paragraf": false,
+    "social": "alle"
+   },
+   "motor": null,
+   "ydelseskort": null,
+   "faq": true,
+   "faq_ekstra_fil": "c/det-vi-ordner/ukrudtsbekaempelse/faq-ekstra.html",
+   "floating_cta": "/p/kontakt",
+   "noindex": false,
+   "i_sitemap": true
+  },
+  {
+   "sti": "/c/det-vi-ordner/vask-hus-garage-ned",
+   "fil": "c/det-vi-ordner/vask-hus-garage-ned",
+   "head": {
+    "title": "Facadevask - Karltoffel",
+    "description": "Facadevask og nedvask af hus og garage. Vi fjerner alger, snavs og grønsken fra top til bund, så facaden står ren - uden bøvl for dig.",
+    "noindex_top": false,
+    "floating_linje": "\t\t\t\t<link rel=\"stylesheet\" href=\"/assets/css/floating-cta.css?v=1\">\n",
+    "pixel": "<!-- Meta Pixel Code -->\n<script>!function(f,b,e,v,n,t,s)\n{if(f.fbq)return;n=f.fbq=function(){n.callMethod?\nn.callMethod.apply(n,arguments):n.queue.push(arguments)};\nif(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';\nn.queue=[];t=b.createElement(e);t.async=!0;\nt.src=v;s=b.getElementsByTagName(e)[0];\ns.parentNode.insertBefore(t,s)}(window, document,'script',\n'https://connect.facebook.net/en_US/fbevents.js');\nfbq('init', '1574687980856727');\nfbq('track', 'PageView');\n</script>\n<noscript><img height=\"1\" width=\"1\" style=\"display:none\"\nsrc=\"https://www.facebook.com/tr?id=1574687980856727&amp;ev=PageView&amp;noscript=1\"\n/></noscript>\n<!-- End Meta Pixel Code -->\n\t<link rel=\"stylesheet\" href=\"/assets/css/tilbudsmotor.css?v=41\">\n",
+    "og_html": "\n\t<link rel=\"canonical\" href=\"https://karltoffel.dk/c/det-vi-ordner/vask-hus-garage-ned\">\n\t<meta property=\"og:title\" content=\"Facadevask - Karltoffel\">\n\t<meta property=\"og:description\" content=\"Facadevask og nedvask af hus og garage. Vi fjerner alger, snavs og grønsken fra top til bund, så facaden står ren - uden bøvl for dig.\">\n\t<meta property=\"og:url\" content=\"https://karltoffel.dk/c/det-vi-ordner/vask-hus-garage-ned\">\n\t<meta property=\"og:image\" content=\"https://karltoffel.dk/assets/img/design/share_q78.webp\">\n\n\t"
+   },
+   "body_tag": "<body class=\"\" data-link=\"/c/det-vi-ordner/vask-hus-garage-ned\">",
+   "header": {
+    "fixed": true,
+    "nav_active": "",
+    "cta_href": "/p/kontakt"
+   },
+   "footer": {
+    "cta_href": "/p/kontakt",
+    "em_paragraf": false,
+    "social": "alle"
+   },
+   "motor": null,
+   "ydelseskort": null,
+   "faq": true,
+   "faq_ekstra_fil": null,
+   "floating_cta": "/p/kontakt",
+   "noindex": false,
+   "i_sitemap": true
+  },
+  {
+   "sti": "/c/det-vi-ordner/vinduesvask",
+   "fil": "c/det-vi-ordner/vinduesvask",
+   "head": {
+    "title": "Vinduesvask - Karltoffel",
+    "description": "Vinduesvask til heldige kartofler Rene vinduer gør en stor forskel for både hjemmet og arbejdspladsen. Men det er ikke altid nok kun at få pudset vi...",
+    "noindex_top": false,
+    "floating_linje": "\t\t\t\t<link rel=\"stylesheet\" href=\"/assets/css/floating-cta.css?v=1\">\n",
+    "pixel": "<!-- Meta Pixel Code -->\n<script>!function(f,b,e,v,n,t,s)\n{if(f.fbq)return;n=f.fbq=function(){n.callMethod?\nn.callMethod.apply(n,arguments):n.queue.push(arguments)};\nif(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';\nn.queue=[];t=b.createElement(e);t.async=!0;\nt.src=v;s=b.getElementsByTagName(e)[0];\ns.parentNode.insertBefore(t,s)}(window, document,'script',\n'https://connect.facebook.net/en_US/fbevents.js');\nfbq('init', '1574687980856727');\nfbq('track', 'PageView');\n</script>\n<noscript><img height=\"1\" width=\"1\" style=\"display:none\"\nsrc=\"https://www.facebook.com/tr?id=1574687980856727&amp;ev=PageView&amp;noscript=1\"\n/></noscript>\n<!-- End Meta Pixel Code -->\n\t<link rel=\"stylesheet\" href=\"/assets/css/tilbudsmotor.css?v=41\">\n",
+    "og_html": "\n\t<link rel=\"canonical\" href=\"https://karltoffel.dk/c/det-vi-ordner/vinduesvask\">\n\t<meta property=\"og:title\" content=\"Vinduesvask - Karltoffel\">\n\t<meta property=\"og:description\" content=\"Vinduesvask til heldige kartofler Rene vinduer gør en stor forskel for både hjemmet og arbejdspladsen. Men det er ikke altid nok kun at få pudset vi...\">\n\t<meta property=\"og:url\" content=\"https://karltoffel.dk/c/det-vi-ordner/vinduesvask\">\n\t<meta property=\"og:image\" content=\"https://karltoffel.dk/assets/img/thumb/1cab000e9b684c1490a3b6c2c423c3b045ee4d88_w2000_q78.webp\">\n\n\t"
+   },
+   "body_tag": "<body class=\"\" data-link=\"/c/det-vi-ordner/vinduesvask\">",
+   "header": {
+    "fixed": true,
+    "nav_active": "",
+    "cta_href": "/p/kontakt"
+   },
+   "footer": {
+    "cta_href": "/p/kontakt",
+    "em_paragraf": false,
+    "social": "alle"
+   },
+   "motor": null,
+   "ydelseskort": null,
+   "faq": true,
+   "faq_ekstra_fil": "c/det-vi-ordner/vinduesvask/faq-ekstra.html",
+   "floating_cta": "/p/kontakt",
+   "noindex": false,
+   "i_sitemap": true
+  },
+  {
+   "sti": "/",
+   "fil": "_rod",
+   "head": {
+    "title": "Fast hus- og haveservice til heldige kartofler - Karltoffel",
+    "description": "Vi holder løbende hus og have skarpt, så du kan bruge tiden på noget sjovere.",
+    "noindex_top": false,
+    "floating_linje": "\t\t<link rel=\"stylesheet\" href=\"/assets/css/floating-cta.css?v=1\">\n",
+    "pixel": "<!-- Meta Pixel Code -->\n<script>!function(f,b,e,v,n,t,s)\n{if(f.fbq)return;n=f.fbq=function(){n.callMethod?\nn.callMethod.apply(n,arguments):n.queue.push(arguments)};\nif(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';\nn.queue=[];t=b.createElement(e);t.async=!0;\nt.src=v;s=b.getElementsByTagName(e)[0];\ns.parentNode.insertBefore(t,s)}(window, document,'script',\n'https://connect.facebook.net/en_US/fbevents.js');\nfbq('init', '1574687980856727');\nfbq('track', 'PageView');\n</script>\n<noscript><img height=\"1\" width=\"1\" style=\"display:none\"\nsrc=\"https://www.facebook.com/tr?id=1574687980856727&amp;ev=PageView&amp;noscript=1\"\n/></noscript>\n<!-- End Meta Pixel Code -->\n",
+    "og_html": "\n\t<link rel=\"canonical\" href=\"https://karltoffel.dk/\">\n\t<meta property=\"og:title\" content=\"Fast hus- og haveservice til heldige kartofler - Karltoffel\">\n\t<meta property=\"og:description\" content=\"Vi holder løbende hus og have skarpt, så du kan bruge tiden på noget sjovere.\">\n\t<meta property=\"og:url\" content=\"https://karltoffel.dk/\">\n\n\t"
+   },
+   "body_tag": "<body class=\"index\" data-link=\"/\">",
+   "header": {
+    "fixed": true,
+    "nav_active": "",
+    "cta_href": "/p/kontakt"
+   },
+   "footer": {
+    "cta_href": "/p/kontakt",
+    "em_paragraf": true,
+    "social": "alle"
+   },
+   "motor": {
+    "type": "standard",
+    "sub_tekst": "Tast din adresse. Så graver vi tallene frem og giver dig et estimat på prisen, mens du venter."
+   },
+   "ydelseskort": {
+    "kort": [
+     "vinduesvask",
+     "haekklipning",
+     "ukrudtsbekaempelse",
+     "graespleje",
+     "algerens-og-algebehandling-af-fliser-tag-og-facader",
+     "beskaering",
+     "bortskaffelse-haveaffald",
+     "solcellevask",
+     "fliserens",
+     "tagrenderens",
+     "robotplaeneklipper-service",
+     "vask-hus-garage-ned",
+     "gavekort"
+    ],
+    "kontekst": "privat",
+    "vis_kort_tekst": true
+   },
+   "faq": true,
+   "faq_ekstra_fil": null,
+   "floating_cta": "/p/kontakt",
+   "noindex": false,
+   "i_sitemap": true
+  },
+  {
+   "sti": "/p/cookiepolitik",
+   "fil": "p/cookiepolitik",
+   "head": {
+    "title": "Cookiepolitik - Karltoffel",
+    "description": "Information om brugen af cookies på hjemmesiden, herunder formål, typer af cookies og vejledning til sletning af gemte data.",
+    "noindex_top": false,
+    "floating_linje": "\t\t<link rel=\"stylesheet\" href=\"/assets/css/floating-cta.css?v=1\">\n",
+    "pixel": "<!-- Meta Pixel Code -->\n<script>!function(f,b,e,v,n,t,s)\n{if(f.fbq)return;n=f.fbq=function(){n.callMethod?\nn.callMethod.apply(n,arguments):n.queue.push(arguments)};\nif(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';\nn.queue=[];t=b.createElement(e);t.async=!0;\nt.src=v;s=b.getElementsByTagName(e)[0];\ns.parentNode.insertBefore(t,s)}(window, document,'script',\n'https://connect.facebook.net/en_US/fbevents.js');\nfbq('init', '1574687980856727');\nfbq('track', 'PageView');\n</script>\n<noscript><img height=\"1\" width=\"1\" style=\"display:none\"\nsrc=\"https://www.facebook.com/tr?id=1574687980856727&amp;ev=PageView&amp;noscript=1\"\n/></noscript>\n<!-- End Meta Pixel Code -->\n",
+    "og_html": "\n\t<link rel=\"canonical\" href=\"https://karltoffel.dk/p/cookiepolitik\">\n\t<meta property=\"og:title\" content=\"Cookiepolitik - Karltoffel\">\n\t<meta property=\"og:description\" content=\"Information om brugen af cookies på hjemmesiden, herunder formål, typer af cookies og vejledning til sletning af gemte data.\">\n\t<meta property=\"og:url\" content=\"https://karltoffel.dk/p/cookiepolitik\">\n\n\t"
+   },
+   "body_tag": "<body class=\"\" data-link=\"/p/cookiepolitik\">",
+   "header": {
+    "fixed": false,
+    "nav_active": "",
+    "cta_href": "/p/kontakt"
+   },
+   "footer": {
+    "cta_href": "/p/kontakt",
+    "em_paragraf": false,
+    "social": "alle"
+   },
+   "motor": null,
+   "ydelseskort": null,
+   "faq": false,
+   "faq_ekstra_fil": null,
+   "floating_cta": "/p/kontakt",
+   "noindex": false,
+   "i_sitemap": true
+  },
+  {
+   "sti": "/p/det-vi-ordner",
+   "fil": "p/det-vi-ordner",
+   "head": {
+    "title": "Det vi ordner - Karltoffel",
+    "description": "Der er nok at se til i hverdagen. Derfor står vi klar til at hjælpe med de opgaver, du ikke selv har tid til, lyst til eller mulighed for at klare. Enkelt, ordentligt og uden unødigt bøvl.  Både på abonnement og som enkeltydelser.",
+    "noindex_top": false,
+    "floating_linje": "\t\t<link rel=\"stylesheet\" href=\"/assets/css/floating-cta.css?v=1\">\n",
+    "pixel": "<!-- Meta Pixel Code -->\n<script>!function(f,b,e,v,n,t,s)\n{if(f.fbq)return;n=f.fbq=function(){n.callMethod?\nn.callMethod.apply(n,arguments):n.queue.push(arguments)};\nif(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';\nn.queue=[];t=b.createElement(e);t.async=!0;\nt.src=v;s=b.getElementsByTagName(e)[0];\ns.parentNode.insertBefore(t,s)}(window, document,'script',\n'https://connect.facebook.net/en_US/fbevents.js');\nfbq('init', '1574687980856727');\nfbq('track', 'PageView');\n</script>\n<noscript><img height=\"1\" width=\"1\" style=\"display:none\"\nsrc=\"https://www.facebook.com/tr?id=1574687980856727&amp;ev=PageView&amp;noscript=1\"\n/></noscript>\n<!-- End Meta Pixel Code -->\n",
+    "og_html": "\n\t<link rel=\"canonical\" href=\"https://karltoffel.dk/p/det-vi-ordner\">\n\t<meta property=\"og:title\" content=\"Det vi ordner - Karltoffel\">\n\t<meta property=\"og:description\" content=\"Der er nok at se til i hverdagen. Derfor står vi klar til at hjælpe med de opgaver, du ikke selv har tid til, lyst til eller mulighed for at klare. Enkelt, ordentligt og uden unødigt bøvl.  Både på abonnement og som enkeltydelser.\">\n\t<meta property=\"og:url\" content=\"https://karltoffel.dk/p/det-vi-ordner\">\n\n\t"
+   },
+   "body_tag": "<body class=\"\" data-link=\"/p/det-vi-ordner\">",
+   "header": {
+    "fixed": true,
+    "nav_active": "/p/det-vi-ordner",
+    "cta_href": "/p/kontakt"
+   },
+   "footer": {
+    "cta_href": "/p/kontakt",
+    "em_paragraf": false,
+    "social": "alle"
+   },
+   "motor": null,
+   "ydelseskort": {
+    "kort": [
+     "vinduesvask",
+     "haekklipning",
+     "ukrudtsbekaempelse",
+     "graespleje",
+     "algerens-og-algebehandling-af-fliser-tag-og-facader",
+     "beskaering",
+     "bortskaffelse-haveaffald",
+     "solcellevask",
+     "fliserens",
+     "tagrenderens",
+     "robotplaeneklipper-service",
+     "vask-hus-garage-ned",
+     "gavekort"
+    ],
+    "kontekst": "privat",
+    "vis_kort_tekst": false
+   },
+   "faq": false,
+   "faq_ekstra_fil": null,
+   "floating_cta": "/p/kontakt",
+   "noindex": false,
+   "i_sitemap": true
+  },
+  {
+   "sti": "/p/ejendomsservice",
+   "fil": "p/ejendomsservice",
+   "head": {
+    "title": "Ejendomsservice – samlet vedligehold af ejendom og udearealer | Karltoffel",
+    "description": "Ejendomsservice med fast vedligeholdelsesplan: bygning, udearealer og viceværtopgaver samlet ét sted. Ring 2222 3833 og få et tilbud på jeres ejendom.",
+    "noindex_top": false,
+    "floating_linje": "\t\t<link rel=\"stylesheet\" href=\"/assets/css/floating-cta.css?v=1\">\n",
+    "pixel": "<!-- Meta Pixel Code -->\n<script>!function(f,b,e,v,n,t,s)\n{if(f.fbq)return;n=f.fbq=function(){n.callMethod?\nn.callMethod.apply(n,arguments):n.queue.push(arguments)};\nif(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';\nn.queue=[];t=b.createElement(e);t.async=!0;\nt.src=v;s=b.getElementsByTagName(e)[0];\ns.parentNode.insertBefore(t,s)}(window, document,'script',\n'https://connect.facebook.net/en_US/fbevents.js');\nfbq('init', '1574687980856727');\nfbq('track', 'PageView');\n</script>\n<noscript><img height=\"1\" width=\"1\" style=\"display:none\"\nsrc=\"https://www.facebook.com/tr?id=1574687980856727&amp;ev=PageView&amp;noscript=1\"\n/></noscript>\n<!-- End Meta Pixel Code -->\n",
+    "og_html": "\n\t<link rel=\"canonical\" href=\"https://karltoffel.dk/p/ejendomsservice\">\n\t<meta property=\"og:title\" content=\"Ejendomsservice – samlet vedligehold af ejendom og udearealer | Karltoffel\">\n\t<meta property=\"og:description\" content=\"Ejendomsservice med fast vedligeholdelsesplan: bygning, udearealer og viceværtopgaver samlet ét sted. Ring 2222 3833 og få et tilbud på jeres ejendom.\">\n\t<meta property=\"og:url\" content=\"https://karltoffel.dk/p/ejendomsservice\">\n\t<meta property=\"og:image\" content=\"https://karltoffel.dk/assets/img/thumb/75c3eeccc26ae78c97931a059f470f0af4d04696_w2000_q78.webp\">\n\t"
+   },
+   "body_tag": "<body class=\"\" data-link=\"/p/ejendomsservice\">",
+   "header": {
+    "fixed": true,
+    "nav_active": "",
+    "cta_href": "/p/kontakt"
+   },
+   "footer": {
+    "cta_href": "/p/kontakt",
+    "em_paragraf": false,
+    "social": "alle"
+   },
+   "motor": null,
+   "ydelseskort": {
+    "kort": [
+     "vask-hus-garage-ned",
+     "fliserens",
+     "algerens-og-algebehandling-af-fliser-tag-og-facader",
+     "tagrenderens",
+     "solcellevask",
+     "vinduesvask",
+     "bortskaffelse-haveaffald",
+     "beskaering"
+    ],
+    "kontekst": "erhverv",
+    "vis_kort_tekst": false
+   },
+   "faq": false,
+   "faq_ekstra_fil": null,
+   "floating_cta": "/p/kontakt",
+   "noindex": false,
+   "i_sitemap": true
+  },
+  {
+   "sti": "/p/erhverv",
+   "fil": "p/erhverv",
+   "head": {
+    "title": "Erhverv - Karltoffel",
+    "description": "Du kender det sikkert. På arbejdet passer bygningen og udendørsarealerne sig selv. Derfor har vi også gjort det nemt for dig at tage Karltoffel med på arbejde, så du ikke skal koncentrere dig om andet end dit arbejde når du er der.",
+    "noindex_top": false,
+    "floating_linje": "\t\t<link rel=\"stylesheet\" href=\"/assets/css/floating-cta.css?v=1\">\n",
+    "pixel": "<!-- Meta Pixel Code -->\n<script>!function(f,b,e,v,n,t,s)\n{if(f.fbq)return;n=f.fbq=function(){n.callMethod?\nn.callMethod.apply(n,arguments):n.queue.push(arguments)};\nif(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';\nn.queue=[];t=b.createElement(e);t.async=!0;\nt.src=v;s=b.getElementsByTagName(e)[0];\ns.parentNode.insertBefore(t,s)}(window, document,'script',\n'https://connect.facebook.net/en_US/fbevents.js');\nfbq('init', '1574687980856727');\nfbq('track', 'PageView');\n</script>\n<noscript><img height=\"1\" width=\"1\" style=\"display:none\"\nsrc=\"https://www.facebook.com/tr?id=1574687980856727&amp;ev=PageView&amp;noscript=1\"\n/></noscript>\n<!-- End Meta Pixel Code -->\n",
+    "og_html": "\n\t<link rel=\"canonical\" href=\"https://karltoffel.dk/p/erhverv\">\n\t<meta property=\"og:title\" content=\"Erhverv - Karltoffel\">\n\t<meta property=\"og:description\" content=\"Du kender det sikkert. På arbejdet passer bygningen og udendørsarealerne sig selv. Derfor har vi også gjort det nemt for dig at tage Karltoffel med på arbejde, så du ikke skal koncentrere dig om andet end dit arbejde når du er der.\">\n\t<meta property=\"og:url\" content=\"https://karltoffel.dk/p/erhverv\">\n\n\t"
+   },
+   "body_tag": "<body class=\"\" data-link=\"/p/erhverv\">",
+   "header": {
+    "fixed": true,
+    "nav_active": "/p/erhverv",
+    "cta_href": "/p/kontakt"
+   },
+   "footer": {
+    "cta_href": "/p/kontakt",
+    "em_paragraf": false,
+    "social": "alle"
+   },
+   "motor": {
+    "type": "erhverv"
+   },
+   "ydelseskort": null,
+   "faq": true,
+   "faq_ekstra_fil": null,
+   "faq_custom": true,
+   "floating_cta": "/p/kontakt",
+   "noindex": false,
+   "i_sitemap": true
+  },
+  {
+   "sti": "/p/haekklipning-landing",
+   "fil": "p/haekklipning-landing",
+   "head": {
+    "title": "Hækklipning – fast pris og alt affaldet kørt væk | Karltoffel",
+    "description": "Hækklipning fra 999 kr: klippet, ryddet og alt afklippet kørt væk. Fast pris inden vi starter, og du betaler først, når hækken står, som den skal. Ring 2222 3833.",
+    "noindex_top": false,
+    "floating_linje": "\t\t<link rel=\"stylesheet\" href=\"/assets/css/floating-cta.css?v=1\">\n",
+    "pixel": "<!-- Meta Pixel Code -->\n<script>!function(f,b,e,v,n,t,s)\n{if(f.fbq)return;n=f.fbq=function(){n.callMethod?\nn.callMethod.apply(n,arguments):n.queue.push(arguments)};\nif(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';\nn.queue=[];t=b.createElement(e);t.async=!0;\nt.src=v;s=b.getElementsByTagName(e)[0];\ns.parentNode.insertBefore(t,s)}(window, document,'script',\n'https://connect.facebook.net/en_US/fbevents.js');\nfbq('init', '1574687980856727');\nfbq('track', 'PageView');\n</script>\n<noscript><img height=\"1\" width=\"1\" style=\"display:none\"\nsrc=\"https://www.facebook.com/tr?id=1574687980856727&amp;ev=PageView&amp;noscript=1\"\n/></noscript>\n<!-- End Meta Pixel Code -->\n<script src=\"/assets/js/meta-events.js?v=2\" defer data-forms='[{\"selector\": \".sp-form__fields\", \"index\": 0, \"content_name\": \"haekklipning-landing-hero\"}, {\"selector\": \".sp-form__fields\", \"index\": 1, \"content_name\": \"haekklipning-landing-bund\"}]'></script>\n",
+    "og_html": "\n\t<link rel=\"canonical\" href=\"https://karltoffel.dk/p/haekklipning-landing\">\n\t<meta property=\"og:title\" content=\"Hækklipning – fast pris og alt affaldet kørt væk | Karltoffel\">\n\t<meta property=\"og:description\" content=\"Hækklipning fra 999 kr: klippet, ryddet og alt afklippet kørt væk. Fast pris inden vi starter, og du betaler først, når hækken står, som den skal. Ring 2222 3833.\">\n\t<meta property=\"og:url\" content=\"https://karltoffel.dk/p/haekklipning-landing\">\n\t<meta property=\"og:image\" content=\"https://karltoffel.dk/assets/img/thumb/e2a541dff09c05bfe2957c4875f7dfe5e570401c_w2000_q78.webp\">\n\t"
+   },
+   "body_tag": "<body class=\"\" data-link=\"/p/haekklipning-landing\">",
+   "header": {
+    "fixed": true,
+    "nav_active": "",
+    "cta_href": "/p/kontakt"
+   },
+   "footer": {
+    "cta_href": "/p/kontakt",
+    "em_paragraf": false,
+    "social": "alle"
+   },
+   "motor": null,
+   "ydelseskort": null,
+   "faq": false,
+   "faq_ekstra_fil": null,
+   "floating_cta": "/p/kontakt",
+   "noindex": false,
+   "i_sitemap": false
+  },
+  {
+   "sti": "/p/handelsbetingelser",
+   "fil": "p/handelsbetingelser",
+   "head": {
+    "title": "Handelsbetingelser - Karltoffel",
+    "description": "Handelsbetingelser for Karltoffel Senest opdateret: 16/06-2026 1. Generelt Disse handelsbetingelser gælder for alle ydelser leveret af Karltoffel. Ved...",
+    "noindex_top": false,
+    "floating_linje": "\t\t<link rel=\"stylesheet\" href=\"/assets/css/floating-cta.css?v=1\">\n",
+    "pixel": "<!-- Meta Pixel Code -->\n<script>!function(f,b,e,v,n,t,s)\n{if(f.fbq)return;n=f.fbq=function(){n.callMethod?\nn.callMethod.apply(n,arguments):n.queue.push(arguments)};\nif(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';\nn.queue=[];t=b.createElement(e);t.async=!0;\nt.src=v;s=b.getElementsByTagName(e)[0];\ns.parentNode.insertBefore(t,s)}(window, document,'script',\n'https://connect.facebook.net/en_US/fbevents.js');\nfbq('init', '1574687980856727');\nfbq('track', 'PageView');\n</script>\n<noscript><img height=\"1\" width=\"1\" style=\"display:none\"\nsrc=\"https://www.facebook.com/tr?id=1574687980856727&amp;ev=PageView&amp;noscript=1\"\n/></noscript>\n<!-- End Meta Pixel Code -->\n",
+    "og_html": "\n\t<link rel=\"canonical\" href=\"https://karltoffel.dk/p/handelsbetingelser\">\n\t<meta property=\"og:title\" content=\"Handelsbetingelser - Karltoffel\">\n\t<meta property=\"og:description\" content=\"Handelsbetingelser for Karltoffel Senest opdateret: 16/06-2026 1. Generelt Disse handelsbetingelser gælder for alle ydelser leveret af Karltoffel. Ved...\">\n\t<meta property=\"og:url\" content=\"https://karltoffel.dk/p/handelsbetingelser\">\n\n\t"
+   },
+   "body_tag": "<body class=\"\" data-link=\"/p/handelsbetingelser\">",
+   "header": {
+    "fixed": false,
+    "nav_active": "",
+    "cta_href": "/p/kontakt"
+   },
+   "footer": {
+    "cta_href": "/p/kontakt",
+    "em_paragraf": false,
+    "social": "alle"
+   },
+   "motor": null,
+   "ydelseskort": null,
+   "faq": false,
+   "faq_ekstra_fil": null,
+   "floating_cta": "/p/kontakt",
+   "noindex": false,
+   "i_sitemap": true
+  },
+  {
+   "sti": "/p/haveservice-horsens",
+   "fil": "p/haveservice-horsens",
+   "head": {
+    "title": "Haveservice i Horsens – havemand og hjælp til havearbejde | Karltoffel",
+    "description": "Haveservice i Horsens, Vejle og Skanderborg: hækklipning, græsplæne, ukrudt og havearbejde ordnet fast og uden bøvl. Ring 2222 3833 og få et tilbud på din have.",
+    "noindex_top": false,
+    "floating_linje": "\t\t<link rel=\"stylesheet\" href=\"/assets/css/floating-cta.css?v=1\">\n",
+    "pixel": "<!-- Meta Pixel Code -->\n<script>!function(f,b,e,v,n,t,s)\n{if(f.fbq)return;n=f.fbq=function(){n.callMethod?\nn.callMethod.apply(n,arguments):n.queue.push(arguments)};\nif(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';\nn.queue=[];t=b.createElement(e);t.async=!0;\nt.src=v;s=b.getElementsByTagName(e)[0];\ns.parentNode.insertBefore(t,s)}(window, document,'script',\n'https://connect.facebook.net/en_US/fbevents.js');\nfbq('init', '1574687980856727');\nfbq('track', 'PageView');\n</script>\n<noscript><img height=\"1\" width=\"1\" style=\"display:none\"\nsrc=\"https://www.facebook.com/tr?id=1574687980856727&amp;ev=PageView&amp;noscript=1\"\n/></noscript>\n<!-- End Meta Pixel Code -->\n",
+    "og_html": "\n\t<link rel=\"canonical\" href=\"https://karltoffel.dk/p/haveservice-horsens\">\n\t<meta property=\"og:title\" content=\"Haveservice i Horsens – havemand og hjælp til havearbejde | Karltoffel\">\n\t<meta property=\"og:description\" content=\"Haveservice i Horsens, Vejle og Skanderborg: hækklipning, græsplæne, ukrudt og havearbejde ordnet fast og uden bøvl. Ring 2222 3833 og få et tilbud på din have.\">\n\t<meta property=\"og:url\" content=\"https://karltoffel.dk/p/haveservice-horsens\">\n\t<meta property=\"og:image\" content=\"https://karltoffel.dk/assets/img/thumb/e2a541dff09c05bfe2957c4875f7dfe5e570401c_w2000_q78.webp\">\n\t"
+   },
+   "body_tag": "<body class=\"\" data-link=\"/p/haveservice-horsens\">",
+   "header": {
+    "fixed": true,
+    "nav_active": "",
+    "cta_href": "/p/kontakt"
+   },
+   "footer": {
+    "cta_href": "/p/kontakt",
+    "em_paragraf": false,
+    "social": "alle"
+   },
+   "motor": null,
+   "ydelseskort": {
+    "kort": [
+     "haekklipning",
+     "graespleje",
+     "ukrudtsbekaempelse",
+     "beskaering",
+     "bortskaffelse-haveaffald",
+     "vinduesvask",
+     "algerens-og-algebehandling-af-fliser-tag-og-facader",
+     "tagrenderens"
+    ],
+    "kontekst": "erhverv",
+    "vis_kort_tekst": false
+   },
+   "faq": false,
+   "faq_ekstra_fil": null,
+   "floating_cta": "/p/kontakt",
+   "noindex": false,
+   "i_sitemap": true
+  },
+  {
+   "sti": "/p/om-karltoffel",
+   "fil": "p/om-karltoffel",
+   "head": {
+    "title": "Om Karltoffel - Karltoffel",
+    "description": "Vi hjælper boligejere med at holde hus og have pænt året rundt – uden at det kræver tid, planlægning eller dårlig samvittighed. ",
+    "noindex_top": false,
+    "floating_linje": "\t\t<link rel=\"stylesheet\" href=\"/assets/css/floating-cta.css?v=1\">\n",
+    "pixel": "<!-- Meta Pixel Code -->\n<script>!function(f,b,e,v,n,t,s)\n{if(f.fbq)return;n=f.fbq=function(){n.callMethod?\nn.callMethod.apply(n,arguments):n.queue.push(arguments)};\nif(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';\nn.queue=[];t=b.createElement(e);t.async=!0;\nt.src=v;s=b.getElementsByTagName(e)[0];\ns.parentNode.insertBefore(t,s)}(window, document,'script',\n'https://connect.facebook.net/en_US/fbevents.js');\nfbq('init', '1574687980856727');\nfbq('track', 'PageView');\n</script>\n<noscript><img height=\"1\" width=\"1\" style=\"display:none\"\nsrc=\"https://www.facebook.com/tr?id=1574687980856727&amp;ev=PageView&amp;noscript=1\"\n/></noscript>\n<!-- End Meta Pixel Code -->\n",
+    "og_html": "\n\t<link rel=\"canonical\" href=\"https://karltoffel.dk/p/om-karltoffel\">\n\t<meta property=\"og:title\" content=\"Om Karltoffel - Karltoffel\">\n\t<meta property=\"og:description\" content=\"Vi hjælper boligejere med at holde hus og have pænt året rundt – uden at det kræver tid, planlægning eller dårlig samvittighed. \">\n\t<meta property=\"og:url\" content=\"https://karltoffel.dk/p/om-karltoffel\">\n\n\t"
+   },
+   "body_tag": "<body class=\"\" data-link=\"/p/om-karltoffel\">",
+   "header": {
+    "fixed": true,
+    "nav_active": "/p/om-karltoffel",
+    "cta_href": "/p/kontakt"
+   },
+   "footer": {
+    "cta_href": "/p/kontakt",
+    "em_paragraf": false,
+    "social": "alle"
+   },
+   "motor": null,
+   "ydelseskort": null,
+   "faq": false,
+   "faq_ekstra_fil": null,
+   "floating_cta": "/p/kontakt",
+   "noindex": false,
+   "i_sitemap": true
+  },
+  {
+   "sti": "/p/kontakt",
+   "fil": "p/kontakt",
+   "head": {
+    "title": "Kontakt Karltoffel - Lad os tage en snak",
+    "description": "Har du en opgave eller et spørgsmål om hus og have? Læg dit navn og nummer, så ringer vi dig op. Eller brug tilbudsmotoren og få et estimat på prisen med det samme.",
+    "noindex_top": false,
+    "floating_linje": "\t\t<link rel=\"stylesheet\" href=\"/assets/css/floating-cta.css?v=1\">\n",
+    "pixel": "<!-- Meta Pixel Code -->\n<script>!function(f,b,e,v,n,t,s)\n{if(f.fbq)return;n=f.fbq=function(){n.callMethod?\nn.callMethod.apply(n,arguments):n.queue.push(arguments)};\nif(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';\nn.queue=[];t=b.createElement(e);t.async=!0;\nt.src=v;s=b.getElementsByTagName(e)[0];\ns.parentNode.insertBefore(t,s)}(window, document,'script',\n'https://connect.facebook.net/en_US/fbevents.js');\nfbq('init', '1574687980856727');\nfbq('track', 'PageView');\n</script>\n<noscript><img height=\"1\" width=\"1\" style=\"display:none\"\nsrc=\"https://www.facebook.com/tr?id=1574687980856727&amp;ev=PageView&amp;noscript=1\"\n/></noscript>\n<!-- End Meta Pixel Code -->\n\t<link rel=\"stylesheet\" href=\"/assets/css/tilbudsmotor.css?v=42\">\n",
+    "og_html": "\n\t<link rel=\"canonical\" href=\"https://karltoffel.dk/p/kontakt\">\n\t<meta property=\"og:title\" content=\"Kontakt Karltoffel - Lad os tage en snak\">\n\t<meta property=\"og:description\" content=\"Har du en opgave eller et spørgsmål om hus og have? Læg dit navn og nummer, så ringer vi dig op. Eller brug tilbudsmotoren og få et estimat på prisen med det samme.\">\n\t<meta property=\"og:url\" content=\"https://karltoffel.dk/p/kontakt\">\n\n\t"
+   },
+   "body_tag": "<body class=\"\" data-link=\"/p/kontakt\">",
+   "header": {
+    "fixed": true,
+    "nav_active": "/p/kontakt",
+    "cta_href": "#kontakt-ringop-form"
+   },
+   "footer": {
+    "cta_href": "#kontakt-ringop-form",
+    "em_paragraf": false,
+    "social": "alle"
+   },
+   "motor": {
+    "type": "standard",
+    "sub_tekst": "Tast din adresse. Så graver vi tallene frem og giver dig et estimat på prisen, mens du venter."
+   },
+   "ydelseskort": null,
+   "faq": true,
+   "faq_ekstra_fil": null,
+   "floating_cta": "#kontakt-ringop-form",
+   "noindex": false,
+   "i_sitemap": true
+  },
+  {
+   "sti": "/p/pakker-priser",
+   "fil": "p/pakker-priser",
+   "head": {
+    "title": "Pakker og priser - Karltoffel",
+    "description": "Vælg Villapakken eller Sommerhuspakken — eller sammensæt selv præcis de opgaver, du vil have ordnet. Få et estimat på prisen uden bøvl.",
+    "noindex_top": false,
+    "floating_linje": "\t\t<link rel=\"stylesheet\" href=\"/assets/css/floating-cta.css?v=1\">\n",
+    "pixel": "<!-- Meta Pixel Code -->\n<script>!function(f,b,e,v,n,t,s)\n{if(f.fbq)return;n=f.fbq=function(){n.callMethod?\nn.callMethod.apply(n,arguments):n.queue.push(arguments)};\nif(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';\nn.queue=[];t=b.createElement(e);t.async=!0;\nt.src=v;s=b.getElementsByTagName(e)[0];\ns.parentNode.insertBefore(t,s)}(window, document,'script',\n'https://connect.facebook.net/en_US/fbevents.js');\nfbq('init', '1574687980856727');\nfbq('track', 'PageView');\n</script>\n<noscript><img height=\"1\" width=\"1\" style=\"display:none\"\nsrc=\"https://www.facebook.com/tr?id=1574687980856727&amp;ev=PageView&amp;noscript=1\"\n/></noscript>\n<!-- End Meta Pixel Code -->\n\t<link rel=\"stylesheet\" href=\"/assets/css/tilbudsmotor.css?v=42\">\n",
+    "og_html": "\n\t<link rel=\"canonical\" href=\"https://karltoffel.dk/p/pakker-priser\">\n\t<meta property=\"og:title\" content=\"Pakker og priser - Karltoffel\">\n\t<meta property=\"og:description\" content=\"Vælg Villapakken eller Sommerhuspakken — eller sammensæt selv præcis de opgaver, du vil have ordnet. Få et estimat på prisen uden bøvl.\">\n\t<meta property=\"og:url\" content=\"https://karltoffel.dk/p/pakker-priser\">\n\n\t"
+   },
+   "body_tag": "<body class=\"\" data-link=\"/p/pakker-priser\">",
+   "header": {
+    "fixed": true,
+    "nav_active": "/p/pakker-priser",
+    "cta_href": "/p/kontakt"
+   },
+   "footer": {
+    "cta_href": "/p/kontakt",
+    "em_paragraf": false,
+    "social": "alle"
+   },
+   "motor": {
+    "type": "standard",
+    "sub_tekst": "Tast din adresse. Så graver vi tallene frem og giver dig et estimat på prisen, mens du venter."
+   },
+   "ydelseskort": {
+    "kort": [
+     "vinduesvask",
+     "haekklipning",
+     "ukrudtsbekaempelse",
+     "graespleje",
+     "algerens-og-algebehandling-af-fliser-tag-og-facader",
+     "beskaering",
+     "bortskaffelse-haveaffald",
+     "solcellevask",
+     "fliserens",
+     "tagrenderens",
+     "robotplaeneklipper-service",
+     "vask-hus-garage-ned"
+    ],
+    "kontekst": "privat",
+    "vis_kort_tekst": false
+   },
+   "faq": false,
+   "faq_ekstra_fil": null,
+   "floating_cta": "/p/kontakt",
+   "noindex": false,
+   "i_sitemap": true
+  },
+  {
+   "sti": "/p/aarshjul",
+   "fil": "p/aarshjul",
+   "head": {
+    "title": "Karltoffels Årshjul - Karltoffel",
+    "description": "Årets have- og husrunde, måned for måned. Se hvad vi klarer i haven og omkring huset gennem hele året – så du slipper for bøvlen.",
+    "noindex_top": false,
+    "floating_linje": "\t\t<link rel=\"stylesheet\" href=\"/assets/css/floating-cta.css?v=1\">\n",
+    "pixel": "<!-- Meta Pixel Code -->\n<script>!function(f,b,e,v,n,t,s)\n{if(f.fbq)return;n=f.fbq=function(){n.callMethod?\nn.callMethod.apply(n,arguments):n.queue.push(arguments)};\nif(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';\nn.queue=[];t=b.createElement(e);t.async=!0;\nt.src=v;s=b.getElementsByTagName(e)[0];\ns.parentNode.insertBefore(t,s)}(window, document,'script',\n'https://connect.facebook.net/en_US/fbevents.js');\nfbq('init', '1574687980856727');\nfbq('track', 'PageView');\n</script>\n<noscript><img height=\"1\" width=\"1\" style=\"display:none\"\nsrc=\"https://www.facebook.com/tr?id=1574687980856727&amp;ev=PageView&amp;noscript=1\"\n/></noscript>\n<!-- End Meta Pixel Code -->\n",
+    "og_html": "\n\t<link rel=\"canonical\" href=\"https://karltoffel.dk/p/aarshjul\">\n\t<meta property=\"og:title\" content=\"Karltoffels Årshjul - Karltoffel\">\n\t<meta property=\"og:description\" content=\"Huset og haven slider året rundt. Det gør vi så. Karltoffels Årshjul viser, hvad der skal ordnes – og hvornår. Mindre bøvl. Mere overskud.\">\n\t<meta property=\"og:url\" content=\"https://karltoffel.dk/p/aarshjul\">\n\n\t"
+   },
+   "body_tag": "<body class=\"\" data-link=\"/p/aarshjul\">",
+   "header": {
+    "fixed": true,
+    "nav_active": "/p/aarshjul",
+    "cta_href": "/p/kontakt"
+   },
+   "footer": {
+    "cta_href": "/p/kontakt",
+    "em_paragraf": false,
+    "social": "alle"
+   },
+   "motor": null,
+   "ydelseskort": null,
+   "faq": false,
+   "faq_ekstra_fil": null,
+   "floating_cta": "/p/kontakt",
+   "noindex": false,
+   "i_sitemap": true
+  },
+  {
+   "sti": "/p/vicevaertsservice",
+   "fil": "p/vicevaertsservice",
+   "head": {
+    "title": "Viceværtservice – fast vicevært til ejendom og arbejdsplads | Karltoffel",
+    "description": "Viceværtservice med faste besøg: småreparationer, tilsyn, udearealer og de praktiske opgaver, der ellers hober sig op. Ring 2222 3833 og få et tilbud.",
+    "noindex_top": false,
+    "floating_linje": "\t\t<link rel=\"stylesheet\" href=\"/assets/css/floating-cta.css?v=1\">\n",
+    "pixel": "<!-- Meta Pixel Code -->\n<script>!function(f,b,e,v,n,t,s)\n{if(f.fbq)return;n=f.fbq=function(){n.callMethod?\nn.callMethod.apply(n,arguments):n.queue.push(arguments)};\nif(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';\nn.queue=[];t=b.createElement(e);t.async=!0;\nt.src=v;s=b.getElementsByTagName(e)[0];\ns.parentNode.insertBefore(t,s)}(window, document,'script',\n'https://connect.facebook.net/en_US/fbevents.js');\nfbq('init', '1574687980856727');\nfbq('track', 'PageView');\n</script>\n<noscript><img height=\"1\" width=\"1\" style=\"display:none\"\nsrc=\"https://www.facebook.com/tr?id=1574687980856727&amp;ev=PageView&amp;noscript=1\"\n/></noscript>\n<!-- End Meta Pixel Code -->\n",
+    "og_html": "\n\t<link rel=\"canonical\" href=\"https://karltoffel.dk/p/vicevaertsservice\">\n\t<meta property=\"og:title\" content=\"Viceværtservice – fast vicevært til ejendom og arbejdsplads | Karltoffel\">\n\t<meta property=\"og:description\" content=\"Viceværtservice med faste besøg: småreparationer, tilsyn, udearealer og de praktiske opgaver, der ellers hober sig op. Ring 2222 3833 og få et tilbud.\">\n\t<meta property=\"og:url\" content=\"https://karltoffel.dk/p/vicevaertsservice\">\n\t<meta property=\"og:image\" content=\"https://karltoffel.dk/assets/img/thumb/75c3eeccc26ae78c97931a059f470f0af4d04696_w2000_q78.webp\">\n\t"
+   },
+   "body_tag": "<body class=\"\" data-link=\"/p/vicevaertsservice\">",
+   "header": {
+    "fixed": true,
+    "nav_active": "",
+    "cta_href": "/p/kontakt"
+   },
+   "footer": {
+    "cta_href": "/p/kontakt",
+    "em_paragraf": false,
+    "social": "alle"
+   },
+   "motor": null,
+   "ydelseskort": {
+    "kort": [
+     "vask-hus-garage-ned",
+     "fliserens",
+     "algerens-og-algebehandling-af-fliser-tag-og-facader",
+     "tagrenderens",
+     "solcellevask",
+     "vinduesvask"
+    ],
+    "kontekst": "erhverv",
+    "vis_kort_tekst": false
+   },
+   "faq": false,
+   "faq_ekstra_fil": null,
+   "floating_cta": "/p/kontakt",
+   "noindex": false,
+   "i_sitemap": true
+  },
+  {
+   "sti": "/tak",
+   "fil": "tak",
+   "head": {
+    "title": "Tak for dit svar - Karltoffel",
+    "description": "Tak for dit svar på dit tilbud fra Karltoffel.",
+    "noindex_top": true,
+    "floating_linje": "",
+    "pixel": "",
+    "og_html": "\n\t"
+   },
+   "body_tag": "<body class=\"\" data-link=\"/tak\">",
+   "header": {
+    "fixed": true,
+    "nav_active": "",
+    "cta_href": "/p/kontakt"
+   },
+   "footer": {
+    "cta_href": "/p/kontakt",
+    "em_paragraf": false,
+    "social": "alle"
+   },
+   "header_custom": true,
+   "motor": null,
+   "ydelseskort": null,
+   "faq": false,
+   "faq_ekstra_fil": null,
+   "floating_cta": "/p/kontakt",
+   "noindex": true,
+   "i_sitemap": false
+  }
+ ]
 }

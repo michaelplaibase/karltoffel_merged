@@ -9,7 +9,7 @@
 	
 
 
-			<script>window.KARLTOFFEL=window.KARLTOFFEL||{};window.KARLTOFFEL.tilbudsmotorPage={service:"tagrender",source:"tagrenderens"};</script>
+			
 		<script src="/assets/js/tilbudsmotor.config.js?v=9"></script>
 		<script src="/assets/js/tilbudsmotor.js?v=59"></script>
 		<script>
@@ -39,3 +39,12 @@
 })();
 		</script>
 		
+		<script>
+window.KARLTOFFEL = window.KARLTOFFEL || {};
+window.KARLTOFFEL.ydelsePris = {"ydelse": "Tagrenderens", "tittel": "Se prisen på din tagrenderens", "lead_txt": "Indtast meter tagrende og vælg om huset er 1- eller 2-plans.", "prisFn": "(f.plans==='2-plans hus' ? 28.00 : 18.00) * f.meter", "prisNote": "function(f){ return 'Estimat for ' + f.meter + ' m tagrende, ' + (f.plans || '1-plans hus') + '. Endelig pris afhænger af adgang og opgaven.'; }", "servicesFn": "[{id:'tagrender',navn:'Tagrenderens',wm:(f.plans==='2-plans hus'?'Tagrenerens 2-plans hus':'Tagrenderens Stueplan / 1-plans hus'),qty:f.meter,enhed:'m tagrende',pris:(f.plans==='2-plans hus'?28.00:18.00)}]", "source": "tagrenderens-pris-hero"};
+window.KARLTOFFEL.ydelsePris.felter = [{"id": "meter", "label": "Ca. meter tagrende", "ph": "f.eks. 24"}, {"id": "plans", "label": "Hvilket hus?", "type": "radio", "valg": ["1-plans hus", "2-plans hus"]}];
+window.KARLTOFFEL.ydelsePris.prisFn = function(f){ return (f.plans==='2-plans hus' ? 28.00 : 18.00) * f.meter; };
+window.KARLTOFFEL.ydelsePris.prisNoteFn = function(f){ return 'Estimat for ' + f.meter + ' m tagrende, ' + (f.plans || '1-plans hus') + '. Endelig pris afhænger af adgang og opgaven.'; };
+window.KARLTOFFEL.ydelsePris.servicesFn = function(f){ return [{id:'tagrender',navn:'Tagrenderens',wm:(f.plans==='2-plans hus'?'Tagrenerens 2-plans hus':'Tagrenderens Stueplan / 1-plans hus'),qty:f.meter,enhed:'m tagrende',pris:(f.plans==='2-plans hus'?28.00:18.00)}]; };
+		</script>
+		<script src="/assets/js/ydelse-pris.js?v=5" defer></script>

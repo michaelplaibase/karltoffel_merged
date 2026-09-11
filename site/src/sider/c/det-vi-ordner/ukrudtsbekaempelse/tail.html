@@ -9,7 +9,7 @@
 	
 
 
-			<script>window.KARLTOFFEL=window.KARLTOFFEL||{};window.KARLTOFFEL.tilbudsmotorPage={service:"ukrudt_sproejt",source:"ukrudtsbekaempelse"};</script>
+			
 		<script src="/assets/js/tilbudsmotor.config.js?v=9"></script>
 		<script src="/assets/js/tilbudsmotor.js?v=59"></script>
 		<script>
@@ -39,3 +39,12 @@
 })();
 		</script>
 		
+		<script>
+window.KARLTOFFEL = window.KARLTOFFEL || {};
+window.KARLTOFFEL.ydelsePris = {"ydelse": "Ukrudtsbekæmpelse", "tittel": "Se prisen på din ukrudtsbekæmpelse", "lead_txt": "Indtast m² belægning og vælg om vi skal sprøjte eller fjerne ukrudtet.", "prisFn": "(f.metode==='Sprøjtning' ? Math.max(1.50*f.m2,150) : Math.max(4.00*f.m2,150))", "prisNote": "function(f){ return 'Estimat for ' + f.m2 + ' m² belægning, ' + (f.metode==='Sprøjtning' ? 'sprøjtning' : 'manu fjernelse') + '. Mindstepris 150 kr. Er ukrudtet fjernet for længe siden, kan prisen afvige — vi bekrefter på opkaldet.'; }", "servicesFn": "[{id:(f.metode==='Sprøjtning'?'ukrudt_sproejt':'ukrudt_fjern'),navn:(f.metode==='Sprøjtning'?'Sprøjtning af ukrudt mellem belægning':'Fjernelse af ukrudt mellem belægning'),wm:(f.metode==='Sprøjtning'?'Ukrudt bekæmpelse på belægningsarealer':null),qty:f.m2,enhed:'m² fliser',pris:(f.metode==='Sprøjtning'?1.50:4.00)}]", "source": "ukrudtsbekaempelse-pris-hero"};
+window.KARLTOFFEL.ydelsePris.felter = [{"id": "m2", "label": "Ca. antal m² belægning", "ph": "f.eks. 75"}, {"id": "metode", "label": "Hvad skal vi gøre?", "type": "radio", "valg": ["Sprøjtning", "Fjernelse"]}];
+window.KARLTOFFEL.ydelsePris.prisFn = function(f){ return (f.metode==='Sprøjtning' ? Math.max(1.50*f.m2,150) : Math.max(4.00*f.m2,150)); };
+window.KARLTOFFEL.ydelsePris.prisNoteFn = function(f){ return 'Estimat for ' + f.m2 + ' m² belægning, ' + (f.metode==='Sprøjtning' ? 'sprøjtning' : 'manu fjernelse') + '. Mindstepris 150 kr. Er ukrudtet fjernet for længe siden, kan prisen afvige — vi bekrefter på opkaldet.'; };
+window.KARLTOFFEL.ydelsePris.servicesFn = function(f){ return [{id:(f.metode==='Sprøjtning'?'ukrudt_sproejt':'ukrudt_fjern'),navn:(f.metode==='Sprøjtning'?'Sprøjtning af ukrudt mellem belægning':'Fjernelse af ukrudt mellem belægning'),wm:(f.metode==='Sprøjtning'?'Ukrudt bekæmpelse på belægningsarealer':null),qty:f.m2,enhed:'m² fliser',pris:(f.metode==='Sprøjtning'?1.50:4.00)}]; };
+		</script>
+		<script src="/assets/js/ydelse-pris.js?v=5" defer></script>
