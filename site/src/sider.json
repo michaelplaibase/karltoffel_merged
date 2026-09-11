@@ -39,7 +39,7 @@
     "description": "Algerens Alger kommer snigende. Først som en let grøn belægning. Senere som glatte fliser, misfarvede overflader og udearealer, der får boligen til...",
     "noindex_top": false,
     "floating_linje": "\t\t\t\t<link rel=\"stylesheet\" href=\"/assets/css/floating-cta.css?v=1\">\n",
-    "pixel": "<!-- Meta Pixel Code -->\n<script>!function(f,b,e,v,n,t,s)\n{if(f.fbq)return;n=f.fbq=function(){n.callMethod?\nn.callMethod.apply(n,arguments):n.queue.push(arguments)};\nif(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';\nn.queue=[];t=b.createElement(e);t.async=!0;\nt.src=v;s=b.getElementsByTagName(e)[0];\ns.parentNode.insertBefore(t,s)}(window, document,'script',\n'https://connect.facebook.net/en_US/fbevents.js');\nfbq('init', '1574687980856727');\nfbq('track', 'PageView');\n</script>\n<noscript><img height=\"1\" width=\"1\" style=\"display:none\"\nsrc=\"https://www.facebook.com/tr?id=1574687980856727&amp;ev=PageView&amp;noscript=1\"\n/></noscript>\n<!-- End Meta Pixel Code -->\n<script src=\"/assets/js/meta-events.js?v=2\" defer data-forms='[{\"selector\": \".sp-form__fields\", \"content_name\": \"algerens-og-algebehandling-af-fliser-tag-og-facader-hero\"}]'></script>\n\t<link rel=\"stylesheet\" href=\"/assets/css/tilbudsmotor.css?v=41\">\n",
+    "pixel": "<!-- Meta Pixel Code -->\n<script>!function(f,b,e,v,n,t,s)\n{if(f.fbq)return;n=f.fbq=function(){n.callMethod?\nn.callMethod.apply(n,arguments):n.queue.push(arguments)};\nif(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';\nn.queue=[];t=b.createElement(e);t.async=!0;\nt.src=v;s=b.getElementsByTagName(e)[0];\ns.parentNode.insertBefore(t,s)}(window, document,'script',\n'https://connect.facebook.net/en_US/fbevents.js');\nfbq('init', '1574687980856727');\nfbq('track', 'PageView');\n</script>\n<noscript><img height=\"1\" width=\"1\" style=\"display:none\"\nsrc=\"https://www.facebook.com/tr?id=1574687980856727&amp;ev=PageView&amp;noscript=1\"\n/></noscript>\n<!-- End Meta Pixel Code -->\n\t<link rel=\"stylesheet\" href=\"/assets/css/tilbudsmotor.css?v=41\">\n",
     "og_html": "\n\t<link rel=\"canonical\" href=\"https://karltoffel.dk/c/det-vi-ordner/algerens-og-algebehandling-af-fliser-tag-og-facader\">\n\t<meta property=\"og:title\" content=\"Algerens - Karltoffel\">\n\t<meta property=\"og:description\" content=\"Algerens Alger kommer snigende. Først som en let grøn belægning. Senere som glatte fliser, misfarvede overflader og udearealer, der får boligen til...\">\n\t<meta property=\"og:url\" content=\"https://karltoffel.dk/c/det-vi-ordner/algerens-og-algebehandling-af-fliser-tag-og-facader\">\n\t<meta property=\"og:image\" content=\"https://karltoffel.dk/assets/img/thumb/3c3bcd06d678733ed42a62bff3435349438d02c0_w2000_q78.webp\">\n\n\t"
    },
    "body_tag": "<body class=\"\" data-link=\"/c/det-vi-ordner/algerens-og-algebehandling-af-fliser-tag-og-facader\">",
@@ -53,10 +53,7 @@
     "em_paragraf": false,
     "social": "alle"
    },
-   "motor": {
-    "type": "standard",
-    "sub_tekst": "Tast din adresse. Så graver vi tallene frem og giver dig et estimat på prisen, mens du venter."
-   },
+   "motor": null,
    "ydelseskort": null,
    "faq": true,
    "faq_ekstra_fil": "c/det-vi-ordner/algerens-og-algebehandling-af-fliser-tag-og-facader/faq-ekstra.html",
@@ -72,7 +69,7 @@
     "description": "Beskæring Planter, buske og træer vokser ikke efter kalenderen. Pludselig fylder hækken lidt for meget. Buskene breder sig ind over stien. Eller træ...",
     "noindex_top": false,
     "floating_linje": "\t\t\t\t<link rel=\"stylesheet\" href=\"/assets/css/floating-cta.css?v=1\">\n",
-    "pixel": "<!-- Meta Pixel Code -->\n<script>!function(f,b,e,v,n,t,s)\n{if(f.fbq)return;n=f.fbq=function(){n.callMethod?\nn.callMethod.apply(n,arguments):n.queue.push(arguments)};\nif(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';\nn.queue=[];t=b.createElement(e);t.async=!0;\nt.src=v;s=b.getElementsByTagName(e)[0];\ns.parentNode.insertBefore(t,s)}(window, document,'script',\n'https://connect.facebook.net/en_US/fbevents.js');\nfbq('init', '1574687980856727');\nfbq('track', 'PageView');\n</script>\n<noscript><img height=\"1\" width=\"1\" style=\"display:none\"\nsrc=\"https://www.facebook.com/tr?id=1574687980856727&amp;ev=PageView&amp;noscript=1\"\n/></noscript>\n<!-- End Meta Pixel Code -->\n<script src=\"/assets/js/meta-events.js?v=2\" defer data-forms='[{\"selector\": \".sp-form__fields\", \"content_name\": \"beskaering-hero\"}]'></script>\n\t<link rel=\"stylesheet\" href=\"/assets/css/tilbudsmotor.css?v=41\">\n",
+    "pixel": "<!-- Meta Pixel Code -->\n<script>!function(f,b,e,v,n,t,s)\n{if(f.fbq)return;n=f.fbq=function(){n.callMethod?\nn.callMethod.apply(n,arguments):n.queue.push(arguments)};\nif(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';\nn.queue=[];t=b.createElement(e);t.async=!0;\nt.src=v;s=b.getElementsByTagName(e)[0];\ns.parentNode.insertBefore(t,s)}(window, document,'script',\n'https://connect.facebook.net/en_US/fbevents.js');\nfbq('init', '1574687980856727');\nfbq('track', 'PageView');\n</script>\n<noscript><img height=\"1\" width=\"1\" style=\"display:none\"\nsrc=\"https://www.facebook.com/tr?id=1574687980856727&amp;ev=PageView&amp;noscript=1\"\n/></noscript>\n<!-- End Meta Pixel Code -->\n\t<link rel=\"stylesheet\" href=\"/assets/css/tilbudsmotor.css?v=41\">\n",
     "og_html": "\n\t<link rel=\"canonical\" href=\"https://karltoffel.dk/c/det-vi-ordner/beskaering\">\n\t<meta property=\"og:title\" content=\"Beskæring - Karltoffel\">\n\t<meta property=\"og:description\" content=\"Beskæring Planter, buske og træer vokser ikke efter kalenderen. Pludselig fylder hækken lidt for meget. Buskene breder sig ind over stien. Eller træ...\">\n\t<meta property=\"og:url\" content=\"https://karltoffel.dk/c/det-vi-ordner/beskaering\">\n\t<meta property=\"og:image\" content=\"https://karltoffel.dk/assets/img/thumb/b33b09c3af5048b5d2d8636deae63a5e458379bd_w2000_q78.webp\">\n\n\t"
    },
    "body_tag": "<body class=\"\" data-link=\"/c/det-vi-ordner/beskaering\">",
@@ -86,10 +83,7 @@
     "em_paragraf": false,
     "social": "alle"
    },
-   "motor": {
-    "type": "standard",
-    "sub_tekst": "Tast din adresse. Så graver vi tallene frem og giver dig et estimat på prisen, mens du venter."
-   },
+   "motor": null,
    "ydelseskort": null,
    "faq": true,
    "faq_ekstra_fil": "c/det-vi-ordner/beskaering/faq-ekstra.html",
@@ -105,7 +99,7 @@
     "description": "Haveaffald Det er sjældent selve havearbejdet, der er det værste. Det er oprydningen bagefter. Efter hækklipning, beskæring, lugning eller andre hav...",
     "noindex_top": false,
     "floating_linje": "\t\t\t\t<link rel=\"stylesheet\" href=\"/assets/css/floating-cta.css?v=1\">\n",
-    "pixel": "<!-- Meta Pixel Code -->\n<script>!function(f,b,e,v,n,t,s)\n{if(f.fbq)return;n=f.fbq=function(){n.callMethod?\nn.callMethod.apply(n,arguments):n.queue.push(arguments)};\nif(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';\nn.queue=[];t=b.createElement(e);t.async=!0;\nt.src=v;s=b.getElementsByTagName(e)[0];\ns.parentNode.insertBefore(t,s)}(window, document,'script',\n'https://connect.facebook.net/en_US/fbevents.js');\nfbq('init', '1574687980856727');\nfbq('track', 'PageView');\n</script>\n<noscript><img height=\"1\" width=\"1\" style=\"display:none\"\nsrc=\"https://www.facebook.com/tr?id=1574687980856727&amp;ev=PageView&amp;noscript=1\"\n/></noscript>\n<!-- End Meta Pixel Code -->\n<script src=\"/assets/js/meta-events.js?v=2\" defer data-forms='[{\"selector\": \".sp-form__fields\", \"content_name\": \"bortskaffelse-haveaffald-hero\"}]'></script>\n\t<link rel=\"stylesheet\" href=\"/assets/css/tilbudsmotor.css?v=41\">\n",
+    "pixel": "<!-- Meta Pixel Code -->\n<script>!function(f,b,e,v,n,t,s)\n{if(f.fbq)return;n=f.fbq=function(){n.callMethod?\nn.callMethod.apply(n,arguments):n.queue.push(arguments)};\nif(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';\nn.queue=[];t=b.createElement(e);t.async=!0;\nt.src=v;s=b.getElementsByTagName(e)[0];\ns.parentNode.insertBefore(t,s)}(window, document,'script',\n'https://connect.facebook.net/en_US/fbevents.js');\nfbq('init', '1574687980856727');\nfbq('track', 'PageView');\n</script>\n<noscript><img height=\"1\" width=\"1\" style=\"display:none\"\nsrc=\"https://www.facebook.com/tr?id=1574687980856727&amp;ev=PageView&amp;noscript=1\"\n/></noscript>\n<!-- End Meta Pixel Code -->\n\t<link rel=\"stylesheet\" href=\"/assets/css/tilbudsmotor.css?v=41\">\n",
     "og_html": "\n\t<link rel=\"canonical\" href=\"https://karltoffel.dk/c/det-vi-ordner/bortskaffelse-haveaffald\">\n\t<meta property=\"og:title\" content=\"Haveaffald - Karltoffel\">\n\t<meta property=\"og:description\" content=\"Haveaffald Det er sjældent selve havearbejdet, der er det værste. Det er oprydningen bagefter. Efter hækklipning, beskæring, lugning eller andre hav...\">\n\t<meta property=\"og:url\" content=\"https://karltoffel.dk/c/det-vi-ordner/bortskaffelse-haveaffald\">\n\t<meta property=\"og:image\" content=\"https://karltoffel.dk/assets/img/thumb/c900da258e96eecc895854fd718173c58a3bf89a_w2000_q78.webp\">\n\n\t"
    },
    "body_tag": "<body class=\"\" data-link=\"/c/det-vi-ordner/bortskaffelse-haveaffald\">",
@@ -119,10 +113,7 @@
     "em_paragraf": false,
     "social": "alle"
    },
-   "motor": {
-    "type": "standard",
-    "sub_tekst": "Tast din adresse. Så graver vi tallene frem og giver dig et estimat på prisen, mens du venter."
-   },
+   "motor": null,
    "ydelseskort": null,
    "faq": true,
    "faq_ekstra_fil": "c/det-vi-ordner/bortskaffelse-haveaffald/faq-ekstra.html",
@@ -138,7 +129,7 @@
     "description": "Fliserens og imprægnering Over tid bliver fliserne belagt med alger, sod og skidt fra oven.  Rene fliser ændrer husets udtryk fuldstændig. Vi kører...",
     "noindex_top": false,
     "floating_linje": "\t\t\t\t<link rel=\"stylesheet\" href=\"/assets/css/floating-cta.css?v=1\">\n",
-    "pixel": "<!-- Meta Pixel Code -->\n<script>!function(f,b,e,v,n,t,s)\n{if(f.fbq)return;n=f.fbq=function(){n.callMethod?\nn.callMethod.apply(n,arguments):n.queue.push(arguments)};\nif(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';\nn.queue=[];t=b.createElement(e);t.async=!0;\nt.src=v;s=b.getElementsByTagName(e)[0];\ns.parentNode.insertBefore(t,s)}(window, document,'script',\n'https://connect.facebook.net/en_US/fbevents.js');\nfbq('init', '1574687980856727');\nfbq('track', 'PageView');\n</script>\n<noscript><img height=\"1\" width=\"1\" style=\"display:none\"\nsrc=\"https://www.facebook.com/tr?id=1574687980856727&amp;ev=PageView&amp;noscript=1\"\n/></noscript>\n<!-- End Meta Pixel Code -->\n<script src=\"/assets/js/meta-events.js?v=2\" defer data-forms='[{\"selector\": \".sp-form__fields\", \"content_name\": \"fliserens-hero\"}]'></script>\n\t<link rel=\"stylesheet\" href=\"/assets/css/tilbudsmotor.css?v=41\">\n",
+    "pixel": "<!-- Meta Pixel Code -->\n<script>!function(f,b,e,v,n,t,s)\n{if(f.fbq)return;n=f.fbq=function(){n.callMethod?\nn.callMethod.apply(n,arguments):n.queue.push(arguments)};\nif(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';\nn.queue=[];t=b.createElement(e);t.async=!0;\nt.src=v;s=b.getElementsByTagName(e)[0];\ns.parentNode.insertBefore(t,s)}(window, document,'script',\n'https://connect.facebook.net/en_US/fbevents.js');\nfbq('init', '1574687980856727');\nfbq('track', 'PageView');\n</script>\n<noscript><img height=\"1\" width=\"1\" style=\"display:none\"\nsrc=\"https://www.facebook.com/tr?id=1574687980856727&amp;ev=PageView&amp;noscript=1\"\n/></noscript>\n<!-- End Meta Pixel Code -->\n\t<link rel=\"stylesheet\" href=\"/assets/css/tilbudsmotor.css?v=41\">\n",
     "og_html": "\n\t<link rel=\"canonical\" href=\"https://karltoffel.dk/c/det-vi-ordner/fliserens\">\n\t<meta property=\"og:title\" content=\"Fliserens - Karltoffel\">\n\t<meta property=\"og:description\" content=\"Fliserens og imprægnering Over tid bliver fliserne belagt med alger, sod og skidt fra oven.  Rene fliser ændrer husets udtryk fuldstændig. Vi kører...\">\n\t<meta property=\"og:url\" content=\"https://karltoffel.dk/c/det-vi-ordner/fliserens\">\n\t<meta property=\"og:image\" content=\"https://karltoffel.dk/assets/img/design/share_q78.webp\">\n\n\t"
    },
    "body_tag": "<body class=\"\" data-link=\"/c/det-vi-ordner/fliserens\">",
@@ -152,10 +143,7 @@
     "em_paragraf": false,
     "social": "alle"
    },
-   "motor": {
-    "type": "standard",
-    "sub_tekst": "Tast din adresse. Så graver vi tallene frem og giver dig et estimat på prisen, mens du venter."
-   },
+   "motor": null,
    "ydelseskort": null,
    "faq": true,
    "faq_ekstra_fil": null,
@@ -202,7 +190,7 @@
     "description": "Græspleje Drømmer du om en grønnere, tættere og sundere græsplæne? De fleste vil gerne have en flot plæne, men de færreste har lyst til at bruge...",
     "noindex_top": false,
     "floating_linje": "\t\t\t\t<link rel=\"stylesheet\" href=\"/assets/css/floating-cta.css?v=1\">\n",
-    "pixel": "<!-- Meta Pixel Code -->\n<script>!function(f,b,e,v,n,t,s)\n{if(f.fbq)return;n=f.fbq=function(){n.callMethod?\nn.callMethod.apply(n,arguments):n.queue.push(arguments)};\nif(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';\nn.queue=[];t=b.createElement(e);t.async=!0;\nt.src=v;s=b.getElementsByTagName(e)[0];\ns.parentNode.insertBefore(t,s)}(window, document,'script',\n'https://connect.facebook.net/en_US/fbevents.js');\nfbq('init', '1574687980856727');\nfbq('track', 'PageView');\n</script>\n<noscript><img height=\"1\" width=\"1\" style=\"display:none\"\nsrc=\"https://www.facebook.com/tr?id=1574687980856727&amp;ev=PageView&amp;noscript=1\"\n/></noscript>\n<!-- End Meta Pixel Code -->\n<script src=\"/assets/js/meta-events.js?v=2\" defer data-forms='[{\"selector\": \".sp-form__fields\", \"content_name\": \"graespleje-hero\"}]'></script>\n\t<link rel=\"stylesheet\" href=\"/assets/css/tilbudsmotor.css?v=41\">\n",
+    "pixel": "<!-- Meta Pixel Code -->\n<script>!function(f,b,e,v,n,t,s)\n{if(f.fbq)return;n=f.fbq=function(){n.callMethod?\nn.callMethod.apply(n,arguments):n.queue.push(arguments)};\nif(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';\nn.queue=[];t=b.createElement(e);t.async=!0;\nt.src=v;s=b.getElementsByTagName(e)[0];\ns.parentNode.insertBefore(t,s)}(window, document,'script',\n'https://connect.facebook.net/en_US/fbevents.js');\nfbq('init', '1574687980856727');\nfbq('track', 'PageView');\n</script>\n<noscript><img height=\"1\" width=\"1\" style=\"display:none\"\nsrc=\"https://www.facebook.com/tr?id=1574687980856727&amp;ev=PageView&amp;noscript=1\"\n/></noscript>\n<!-- End Meta Pixel Code -->\n\t<link rel=\"stylesheet\" href=\"/assets/css/tilbudsmotor.css?v=41\">\n",
     "og_html": "\n\t<link rel=\"canonical\" href=\"https://karltoffel.dk/c/det-vi-ordner/graespleje\">\n\t<meta property=\"og:title\" content=\"Greenkeeper Græspleje - Karltoffel\">\n\t<meta property=\"og:description\" content=\"Græspleje Drømmer du om en grønnere, tættere og sundere græsplæne? De fleste vil gerne have en flot plæne, men de færreste har lyst til at bruge...\">\n\t<meta property=\"og:url\" content=\"https://karltoffel.dk/c/det-vi-ordner/graespleje\">\n\t<meta property=\"og:image\" content=\"https://karltoffel.dk/assets/img/thumb/d914ac7dbf94417721e994522a8b617b47d1ca85_w2000_q78.webp\">\n\n\t"
    },
    "body_tag": "<body class=\"\" data-link=\"/c/det-vi-ordner/graespleje\">",
@@ -216,10 +204,7 @@
     "em_paragraf": false,
     "social": "alle"
    },
-   "motor": {
-    "type": "standard",
-    "sub_tekst": "Tast din adresse. Så graver vi tallene frem og giver dig et estimat på prisen, mens du venter."
-   },
+   "motor": null,
    "ydelseskort": null,
    "faq": true,
    "faq_ekstra_fil": "c/det-vi-ordner/graespleje/faq-ekstra.html",
@@ -298,7 +283,7 @@
     "description": "Solcellevask Solceller fungerer bedst, når de er rene. Over tid samler der sig pollen, støv, alger, fugleklatter og andet snavs på panelerne. Det kan...",
     "noindex_top": false,
     "floating_linje": "\t\t\t\t<link rel=\"stylesheet\" href=\"/assets/css/floating-cta.css?v=1\">\n",
-    "pixel": "<!-- Meta Pixel Code -->\n<script>!function(f,b,e,v,n,t,s)\n{if(f.fbq)return;n=f.fbq=function(){n.callMethod?\nn.callMethod.apply(n,arguments):n.queue.push(arguments)};\nif(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';\nn.queue=[];t=b.createElement(e);t.async=!0;\nt.src=v;s=b.getElementsByTagName(e)[0];\ns.parentNode.insertBefore(t,s)}(window, document,'script',\n'https://connect.facebook.net/en_US/fbevents.js');\nfbq('init', '1574687980856727');\nfbq('track', 'PageView');\n</script>\n<noscript><img height=\"1\" width=\"1\" style=\"display:none\"\nsrc=\"https://www.facebook.com/tr?id=1574687980856727&amp;ev=PageView&amp;noscript=1\"\n/></noscript>\n<!-- End Meta Pixel Code -->\n<script src=\"/assets/js/meta-events.js?v=2\" defer data-forms='[{\"selector\": \".sp-form__fields\", \"content_name\": \"solcellevask-hero\"}]'></script>\n\t<link rel=\"stylesheet\" href=\"/assets/css/tilbudsmotor.css?v=41\">\n",
+    "pixel": "<!-- Meta Pixel Code -->\n<script>!function(f,b,e,v,n,t,s)\n{if(f.fbq)return;n=f.fbq=function(){n.callMethod?\nn.callMethod.apply(n,arguments):n.queue.push(arguments)};\nif(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';\nn.queue=[];t=b.createElement(e);t.async=!0;\nt.src=v;s=b.getElementsByTagName(e)[0];\ns.parentNode.insertBefore(t,s)}(window, document,'script',\n'https://connect.facebook.net/en_US/fbevents.js');\nfbq('init', '1574687980856727');\nfbq('track', 'PageView');\n</script>\n<noscript><img height=\"1\" width=\"1\" style=\"display:none\"\nsrc=\"https://www.facebook.com/tr?id=1574687980856727&amp;ev=PageView&amp;noscript=1\"\n/></noscript>\n<!-- End Meta Pixel Code -->\n\t<link rel=\"stylesheet\" href=\"/assets/css/tilbudsmotor.css?v=41\">\n",
     "og_html": "\n\t<link rel=\"canonical\" href=\"https://karltoffel.dk/c/det-vi-ordner/solcellevask\">\n\t<meta property=\"og:title\" content=\"Solcellevask - Karltoffel\">\n\t<meta property=\"og:description\" content=\"Solcellevask Solceller fungerer bedst, når de er rene. Over tid samler der sig pollen, støv, alger, fugleklatter og andet snavs på panelerne. Det kan...\">\n\t<meta property=\"og:url\" content=\"https://karltoffel.dk/c/det-vi-ordner/solcellevask\">\n\t<meta property=\"og:image\" content=\"https://karltoffel.dk/assets/img/thumb/dbc21220645410a81cfcaecfd8549aa954c8139b_w2000_q78.webp\">\n\n\t"
    },
    "body_tag": "<body class=\"\" data-link=\"/c/det-vi-ordner/solcellevask\">",
@@ -312,10 +297,7 @@
     "em_paragraf": false,
     "social": "alle"
    },
-   "motor": {
-    "type": "standard",
-    "sub_tekst": "Tast din adresse. Så graver vi tallene frem og giver dig et estimat på prisen, mens du venter."
-   },
+   "motor": null,
    "ydelseskort": null,
    "faq": true,
    "faq_ekstra_fil": null,
@@ -331,7 +313,7 @@
     "description": "Tagrenderens Tagrender og nedløbsrør virker kun, hvis de bliver renset. Vi anbefaler én årlig rens, så vandet ikke ophober sig omkring dit hus elle...",
     "noindex_top": false,
     "floating_linje": "\t\t\t\t<link rel=\"stylesheet\" href=\"/assets/css/floating-cta.css?v=1\">\n",
-    "pixel": "<!-- Meta Pixel Code -->\n<script>!function(f,b,e,v,n,t,s)\n{if(f.fbq)return;n=f.fbq=function(){n.callMethod?\nn.callMethod.apply(n,arguments):n.queue.push(arguments)};\nif(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';\nn.queue=[];t=b.createElement(e);t.async=!0;\nt.src=v;s=b.getElementsByTagName(e)[0];\ns.parentNode.insertBefore(t,s)}(window, document,'script',\n'https://connect.facebook.net/en_US/fbevents.js');\nfbq('init', '1574687980856727');\nfbq('track', 'PageView');\n</script>\n<noscript><img height=\"1\" width=\"1\" style=\"display:none\"\nsrc=\"https://www.facebook.com/tr?id=1574687980856727&amp;ev=PageView&amp;noscript=1\"\n/></noscript>\n<!-- End Meta Pixel Code -->\n<script src=\"/assets/js/meta-events.js?v=2\" defer data-forms='[{\"selector\": \".sp-form__fields\", \"content_name\": \"tagrenderens-hero\"}]'></script>\n\t<link rel=\"stylesheet\" href=\"/assets/css/tilbudsmotor.css?v=41\">\n",
+    "pixel": "<!-- Meta Pixel Code -->\n<script>!function(f,b,e,v,n,t,s)\n{if(f.fbq)return;n=f.fbq=function(){n.callMethod?\nn.callMethod.apply(n,arguments):n.queue.push(arguments)};\nif(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';\nn.queue=[];t=b.createElement(e);t.async=!0;\nt.src=v;s=b.getElementsByTagName(e)[0];\ns.parentNode.insertBefore(t,s)}(window, document,'script',\n'https://connect.facebook.net/en_US/fbevents.js');\nfbq('init', '1574687980856727');\nfbq('track', 'PageView');\n</script>\n<noscript><img height=\"1\" width=\"1\" style=\"display:none\"\nsrc=\"https://www.facebook.com/tr?id=1574687980856727&amp;ev=PageView&amp;noscript=1\"\n/></noscript>\n<!-- End Meta Pixel Code -->\n\t<link rel=\"stylesheet\" href=\"/assets/css/tilbudsmotor.css?v=41\">\n",
     "og_html": "\n\t<link rel=\"canonical\" href=\"https://karltoffel.dk/c/det-vi-ordner/tagrenderens\">\n\t<meta property=\"og:title\" content=\"Tagrenderens - Karltoffel\">\n\t<meta property=\"og:description\" content=\"Tagrenderens Tagrender og nedløbsrør virker kun, hvis de bliver renset. Vi anbefaler én årlig rens, så vandet ikke ophober sig omkring dit hus elle...\">\n\t<meta property=\"og:url\" content=\"https://karltoffel.dk/c/det-vi-ordner/tagrenderens\">\n\t<meta property=\"og:image\" content=\"https://karltoffel.dk/assets/img/design/share_q78.webp\">\n\n\t"
    },
    "body_tag": "<body class=\"\" data-link=\"/c/det-vi-ordner/tagrenderens\">",
@@ -345,10 +327,7 @@
     "em_paragraf": false,
     "social": "alle"
    },
-   "motor": {
-    "type": "standard",
-    "sub_tekst": "Tast din adresse. Så graver vi tallene frem og giver dig et estimat på prisen, mens du venter."
-   },
+   "motor": null,
    "ydelseskort": null,
    "faq": true,
    "faq_ekstra_fil": null,
@@ -364,7 +343,7 @@
     "description": "Ukrudtsbekæmpelse Ukrudt har det med at dukke op igen og igen. Mellem fliserne i indkørslen. Langs fortovet. På terrassen. I gårdspladsen. Og uanset...",
     "noindex_top": false,
     "floating_linje": "\t\t\t\t<link rel=\"stylesheet\" href=\"/assets/css/floating-cta.css?v=1\">\n",
-    "pixel": "<!-- Meta Pixel Code -->\n<script>!function(f,b,e,v,n,t,s)\n{if(f.fbq)return;n=f.fbq=function(){n.callMethod?\nn.callMethod.apply(n,arguments):n.queue.push(arguments)};\nif(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';\nn.queue=[];t=b.createElement(e);t.async=!0;\nt.src=v;s=b.getElementsByTagName(e)[0];\ns.parentNode.insertBefore(t,s)}(window, document,'script',\n'https://connect.facebook.net/en_US/fbevents.js');\nfbq('init', '1574687980856727');\nfbq('track', 'PageView');\n</script>\n<noscript><img height=\"1\" width=\"1\" style=\"display:none\"\nsrc=\"https://www.facebook.com/tr?id=1574687980856727&amp;ev=PageView&amp;noscript=1\"\n/></noscript>\n<!-- End Meta Pixel Code -->\n<script src=\"/assets/js/meta-events.js?v=2\" defer data-forms='[{\"selector\": \".sp-form__fields\", \"content_name\": \"ukrudtsbekaempelse-hero\"}]'></script>\n\t<link rel=\"stylesheet\" href=\"/assets/css/tilbudsmotor.css?v=41\">\n",
+    "pixel": "<!-- Meta Pixel Code -->\n<script>!function(f,b,e,v,n,t,s)\n{if(f.fbq)return;n=f.fbq=function(){n.callMethod?\nn.callMethod.apply(n,arguments):n.queue.push(arguments)};\nif(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';\nn.queue=[];t=b.createElement(e);t.async=!0;\nt.src=v;s=b.getElementsByTagName(e)[0];\ns.parentNode.insertBefore(t,s)}(window, document,'script',\n'https://connect.facebook.net/en_US/fbevents.js');\nfbq('init', '1574687980856727');\nfbq('track', 'PageView');\n</script>\n<noscript><img height=\"1\" width=\"1\" style=\"display:none\"\nsrc=\"https://www.facebook.com/tr?id=1574687980856727&amp;ev=PageView&amp;noscript=1\"\n/></noscript>\n<!-- End Meta Pixel Code -->\n\t<link rel=\"stylesheet\" href=\"/assets/css/tilbudsmotor.css?v=41\">\n",
     "og_html": "\n\t<link rel=\"canonical\" href=\"https://karltoffel.dk/c/det-vi-ordner/ukrudtsbekaempelse\">\n\t<meta property=\"og:title\" content=\"Ukrudtsbekæmpelse - Karltoffel\">\n\t<meta property=\"og:description\" content=\"Ukrudtsbekæmpelse Ukrudt har det med at dukke op igen og igen. Mellem fliserne i indkørslen. Langs fortovet. På terrassen. I gårdspladsen. Og uanset...\">\n\t<meta property=\"og:url\" content=\"https://karltoffel.dk/c/det-vi-ordner/ukrudtsbekaempelse\">\n\t<meta property=\"og:image\" content=\"https://karltoffel.dk/assets/img/thumb/baebbae77390eceed72cfe2137c631622d7e1ce8_w2000_q78.webp\">\n\n\t"
    },
    "body_tag": "<body class=\"\" data-link=\"/c/det-vi-ordner/ukrudtsbekaempelse\">",
@@ -378,10 +357,7 @@
     "em_paragraf": false,
     "social": "alle"
    },
-   "motor": {
-    "type": "standard",
-    "sub_tekst": "Tast din adresse. Så graver vi tallene frem og giver dig et estimat på prisen, mens du venter."
-   },
+   "motor": null,
    "ydelseskort": null,
    "faq": true,
    "faq_ekstra_fil": "c/det-vi-ordner/ukrudtsbekaempelse/faq-ekstra.html",
@@ -397,7 +373,7 @@
     "description": "Facadevask og nedvask af hus og garage. Vi fjerner alger, snavs og grønsken fra top til bund, så facaden står ren - uden bøvl for dig.",
     "noindex_top": false,
     "floating_linje": "\t\t\t\t<link rel=\"stylesheet\" href=\"/assets/css/floating-cta.css?v=1\">\n",
-    "pixel": "<!-- Meta Pixel Code -->\n<script>!function(f,b,e,v,n,t,s)\n{if(f.fbq)return;n=f.fbq=function(){n.callMethod?\nn.callMethod.apply(n,arguments):n.queue.push(arguments)};\nif(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';\nn.queue=[];t=b.createElement(e);t.async=!0;\nt.src=v;s=b.getElementsByTagName(e)[0];\ns.parentNode.insertBefore(t,s)}(window, document,'script',\n'https://connect.facebook.net/en_US/fbevents.js');\nfbq('init', '1574687980856727');\nfbq('track', 'PageView');\n</script>\n<noscript><img height=\"1\" width=\"1\" style=\"display:none\"\nsrc=\"https://www.facebook.com/tr?id=1574687980856727&amp;ev=PageView&amp;noscript=1\"\n/></noscript>\n<!-- End Meta Pixel Code -->\n<script src=\"/assets/js/meta-events.js?v=2\" defer data-forms='[{\"selector\": \".sp-form__fields\", \"content_name\": \"vask-hus-garage-ned-hero\"}]'></script>\n\t<link rel=\"stylesheet\" href=\"/assets/css/tilbudsmotor.css?v=41\">\n",
+    "pixel": "<!-- Meta Pixel Code -->\n<script>!function(f,b,e,v,n,t,s)\n{if(f.fbq)return;n=f.fbq=function(){n.callMethod?\nn.callMethod.apply(n,arguments):n.queue.push(arguments)};\nif(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';\nn.queue=[];t=b.createElement(e);t.async=!0;\nt.src=v;s=b.getElementsByTagName(e)[0];\ns.parentNode.insertBefore(t,s)}(window, document,'script',\n'https://connect.facebook.net/en_US/fbevents.js');\nfbq('init', '1574687980856727');\nfbq('track', 'PageView');\n</script>\n<noscript><img height=\"1\" width=\"1\" style=\"display:none\"\nsrc=\"https://www.facebook.com/tr?id=1574687980856727&amp;ev=PageView&amp;noscript=1\"\n/></noscript>\n<!-- End Meta Pixel Code -->\n\t<link rel=\"stylesheet\" href=\"/assets/css/tilbudsmotor.css?v=41\">\n",
     "og_html": "\n\t<link rel=\"canonical\" href=\"https://karltoffel.dk/c/det-vi-ordner/vask-hus-garage-ned\">\n\t<meta property=\"og:title\" content=\"Facadevask - Karltoffel\">\n\t<meta property=\"og:description\" content=\"Facadevask og nedvask af hus og garage. Vi fjerner alger, snavs og grønsken fra top til bund, så facaden står ren - uden bøvl for dig.\">\n\t<meta property=\"og:url\" content=\"https://karltoffel.dk/c/det-vi-ordner/vask-hus-garage-ned\">\n\t<meta property=\"og:image\" content=\"https://karltoffel.dk/assets/img/design/share_q78.webp\">\n\n\t"
    },
    "body_tag": "<body class=\"\" data-link=\"/c/det-vi-ordner/vask-hus-garage-ned\">",
@@ -411,10 +387,7 @@
     "em_paragraf": false,
     "social": "alle"
    },
-   "motor": {
-    "type": "standard",
-    "sub_tekst": "Tast din adresse. Så graver vi tallene frem og giver dig et estimat på prisen, mens du venter."
-   },
+   "motor": null,
    "ydelseskort": null,
    "faq": true,
    "faq_ekstra_fil": null,
@@ -430,7 +403,7 @@
     "description": "Vinduesvask til heldige kartofler Rene vinduer gør en stor forskel for både hjemmet og arbejdspladsen. Men det er ikke altid nok kun at få pudset vi...",
     "noindex_top": false,
     "floating_linje": "\t\t\t\t<link rel=\"stylesheet\" href=\"/assets/css/floating-cta.css?v=1\">\n",
-    "pixel": "<!-- Meta Pixel Code -->\n<script>!function(f,b,e,v,n,t,s)\n{if(f.fbq)return;n=f.fbq=function(){n.callMethod?\nn.callMethod.apply(n,arguments):n.queue.push(arguments)};\nif(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';\nn.queue=[];t=b.createElement(e);t.async=!0;\nt.src=v;s=b.getElementsByTagName(e)[0];\ns.parentNode.insertBefore(t,s)}(window, document,'script',\n'https://connect.facebook.net/en_US/fbevents.js');\nfbq('init', '1574687980856727');\nfbq('track', 'PageView');\n</script>\n<noscript><img height=\"1\" width=\"1\" style=\"display:none\"\nsrc=\"https://www.facebook.com/tr?id=1574687980856727&amp;ev=PageView&amp;noscript=1\"\n/></noscript>\n<!-- End Meta Pixel Code -->\n<script src=\"/assets/js/meta-events.js?v=2\" defer data-forms='[{\"selector\": \".sp-form__fields\", \"content_name\": \"vinduesvask-hero\"}]'></script>\n\t<link rel=\"stylesheet\" href=\"/assets/css/tilbudsmotor.css?v=41\">\n",
+    "pixel": "<!-- Meta Pixel Code -->\n<script>!function(f,b,e,v,n,t,s)\n{if(f.fbq)return;n=f.fbq=function(){n.callMethod?\nn.callMethod.apply(n,arguments):n.queue.push(arguments)};\nif(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';\nn.queue=[];t=b.createElement(e);t.async=!0;\nt.src=v;s=b.getElementsByTagName(e)[0];\ns.parentNode.insertBefore(t,s)}(window, document,'script',\n'https://connect.facebook.net/en_US/fbevents.js');\nfbq('init', '1574687980856727');\nfbq('track', 'PageView');\n</script>\n<noscript><img height=\"1\" width=\"1\" style=\"display:none\"\nsrc=\"https://www.facebook.com/tr?id=1574687980856727&amp;ev=PageView&amp;noscript=1\"\n/></noscript>\n<!-- End Meta Pixel Code -->\n\t<link rel=\"stylesheet\" href=\"/assets/css/tilbudsmotor.css?v=41\">\n",
     "og_html": "\n\t<link rel=\"canonical\" href=\"https://karltoffel.dk/c/det-vi-ordner/vinduesvask\">\n\t<meta property=\"og:title\" content=\"Vinduesvask - Karltoffel\">\n\t<meta property=\"og:description\" content=\"Vinduesvask til heldige kartofler Rene vinduer gør en stor forskel for både hjemmet og arbejdspladsen. Men det er ikke altid nok kun at få pudset vi...\">\n\t<meta property=\"og:url\" content=\"https://karltoffel.dk/c/det-vi-ordner/vinduesvask\">\n\t<meta property=\"og:image\" content=\"https://karltoffel.dk/assets/img/thumb/1cab000e9b684c1490a3b6c2c423c3b045ee4d88_w2000_q78.webp\">\n\n\t"
    },
    "body_tag": "<body class=\"\" data-link=\"/c/det-vi-ordner/vinduesvask\">",
@@ -444,10 +417,7 @@
     "em_paragraf": false,
     "social": "alle"
    },
-   "motor": {
-    "type": "standard",
-    "sub_tekst": "Tast din adresse. Så graver vi tallene frem og giver dig et estimat på prisen, mens du venter."
-   },
+   "motor": null,
    "ydelseskort": null,
    "faq": true,
    "faq_ekstra_fil": "c/det-vi-ordner/vinduesvask/faq-ekstra.html",

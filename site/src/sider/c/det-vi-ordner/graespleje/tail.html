@@ -9,7 +9,7 @@
 	
 
 
-			<script>window.KARLTOFFEL=window.KARLTOFFEL||{};window.KARLTOFFEL.tilbudsmotorPage={service:"green",source:"graespleje"};</script>
+			
 		<script src="/assets/js/tilbudsmotor.config.js?v=9"></script>
 		<script src="/assets/js/tilbudsmotor.js?v=59"></script>
 		<script>
@@ -39,3 +39,12 @@
 })();
 		</script>
 		
+		<script>
+window.KARLTOFFEL = window.KARLTOFFEL || {};
+window.KARLTOFFEL.ydelsePris = {"ydelse": "Greenkeeper græspleje", "tittel": "Se prisen på din græsplæne", "lead_txt": "Indtast ca. hvor mange m² plæne du har, og se dit prisestimat.", "prisFn": "Math.max(2.30*f.m2,250)", "prisNote": "function(f){ return 'Estimat for ' + f.m2 + ' m² græsplæne med gødning og pleje. Endelig pris afhænger af plænens tilstand.'; }", "servicesFn": "[{id:'green',navn:'Greenkeeper græspleje',wm:'Greenkeeper græspleje',qty:f.m2,enhed:'m² plæne',pris:2.30}]", "source": "graespleje-pris-hero"};
+window.KARLTOFFEL.ydelsePris.felter = [{"id": "m2", "label": "Ca. m² græsplæne", "ph": "f.eks. 450"}];
+window.KARLTOFFEL.ydelsePris.prisFn = function(f){ return Math.max(2.30*f.m2,250); };
+window.KARLTOFFEL.ydelsePris.prisNoteFn = function(f){ return 'Estimat for ' + f.m2 + ' m² græsplæne med gødning og pleje. Endelig pris afhænger af plænens tilstand.'; };
+window.KARLTOFFEL.ydelsePris.servicesFn = function(f){ return [{id:'green',navn:'Greenkeeper græspleje',wm:'Greenkeeper græspleje',qty:f.m2,enhed:'m² plæne',pris:2.30}]; };
+		</script>
+		<script src="/assets/js/ydelse-pris.js?v=3" defer></script>

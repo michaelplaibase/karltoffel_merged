@@ -17,12 +17,51 @@
 				srcset="/assets/img/thumb/bfecbbced698bfa82928e101c850dabd471dd3da_w2000_q78.webp 2000w"
 				sizes="100vw" width="2000" height="1125">
 		</div>
-		<div class="grid-container sp-hero__grid">
+		<div class="grid-container sp-hero__grid" id="haek-hero-grid">
 			<div class="sp-hero__text" data-in-view-scope>
 				<h1>Tagrenderens<br>499 kr</h1>
 				<p class="sp-hero__lead">Tagrender, der fungerer - og et hus, der ikke tager skade af stillestående vand.</p>
 				Vi renser render og nedløbsrør og efterlader det hele rent, også på jorden. Kontakt os, så ringer vi til dig i åbningstiden med en fast pris og finder en dag sammen. Du betaler først, når renderne er rene. <span class="sp-hero__more">Scroll ned og se priser, hvad der er inkluderet, og hvordan vi arbejder.</span></p>
-			</div>
+									</div>
+<aside class="sp-form hp-form" aria-label="Se prisen på din tagrenderens">
+				<h2 class="sp-form__title">Se prisen på din tagrenderens</h2>
+				<p class="sp-form__lead">Indtast meter tagrende og vælg om huset er 1- eller 2-plans.</p>
+				<form id="ydelse-pris-form" class="sp-form__fields" novalidate>
+					<div id="yp-step1">
+						<div class="yp-felt"><label for="yp-felt-meter">Ca. meter tagrende</label><input id="yp-felt-meter" type="text" inputmode="numeric" placeholder="f.eks. 24" autocomplete="off"></div><div class="yp-felt"><label>Hvilket hus?</label><div class="yp-radio-grp" id="yp-felt-plans"><button type="button" class="yp-radio" data-val="1-plans hus">1-plans hus</button><button type="button" class="yp-radio" data-val="2-plans hus">2-plans hus</button></div></div>
+						<button type="submit" class="sp-form__submit" id="yp-submit"><span id="yp-knap-tekst">Se din pris</span> <span class="hp-knap-arrow" aria-hidden="true">→</span></button>
+						<p class="hp-err" id="yp-err1" hidden>Tast et tal større end 0 — eller brug "Ring hellere selv" nedenunder.</p>
+						<p class="sp-form__note">Ingen kontaktoplysninger før du har set prisen · Uforpligtende</p>
+						<hr class="sp-form__rule">
+						<p class="sp-form__call">Ring hellere selv? <a href="tel:+4522223833"><strong>22 22 38 33</strong></a> <span>man-fre 8-16</span></p>
+					</div>
+					<div id="yp-step2" hidden>
+						<div class="hp-pris-boks" id="yp-pris-boks"></div>
+						<div id="yp-kontakt">
+							<label for="yp-navn">Navn</label>
+							<input id="yp-navn" name="navn" type="text" autocomplete="name">
+							<div id="yp-tlf-felt">
+								<label for="yp-telefon">Telefon</label>
+								<input id="yp-telefon" name="telefon" type="tel" autocomplete="tel" inputmode="tel">
+							</div>
+							<button type="button" class="hp-mail-link" id="yp-mail-link">Jeg vil hellere kontaktes på mail</button>
+							<div id="yp-mailfelt" hidden>
+								<label for="yp-mail">Mailadresse</label>
+								<input id="yp-mail" name="email" type="email" autocomplete="email">
+								<label for="yp-besked">Beskriv din opgave <span class="hp-valgfri">(valgfri — hjælper os med at give dig den rigtige pris)</span></label>
+								<textarea id="yp-besked" name="besked" rows="3" maxlength="900" placeholder="F.eks. mål, adgang eller andet vi skal vide."></textarea>
+							</div>
+							<button type="submit" class="sp-form__submit" id="yp-submit2"><span id="yp-knap-tekst-2">Ja tak - ring mig op</span> <span class="hp-knap-arrow" aria-hidden="true">→</span></button>
+							<p class="hp-err" id="yp-err2" hidden></p>
+							<p class="sp-form__note">Vi bekræfter prisen og aftaler detaljerne med dig. Du betaler først, når arbejdet er gjort.</p>
+							<hr class="sp-form__rule">
+							<p class="sp-form__call">Ring hellere selv? <a href="tel:+4522223833"><strong>22 22 38 33</strong></a> <span>man-fre 8-16</span></p>
+						</div>
+						<div id="yp-status" role="status" aria-live="polite" class="hp-status" hidden></div>
+					</div>
+				</form>
+			</aside>
+</div>
 </div>
 		<div class="sp-usp" role="list">
 			<div class="grid-container">
