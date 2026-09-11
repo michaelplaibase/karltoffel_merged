@@ -7,11 +7,8 @@ export const dynamic = "force-dynamic";
 
 const kr = (n: number) => n.toLocaleString("da-DK") + " kr.";
 
-export default async function TilbudPage() {
-  let tilbud: Awaited<ReturnType<typeof prisma.tilbud.findMany>> = [];
-  let dbFejl = false;
-  try {
-    tilbud = await prisma.tilbud.findMany({
+async function loadTilbud() {
+  return prisma.tilbud.findMany({
     orderBy: { createdAt: "desc" },
     include: {
       contact: { select: { id: true, name: true, companyName: true } },
@@ -19,6 +16,13 @@ export default async function TilbudPage() {
     },
     take: 200,
   });
+}
+
+export default async function TilbudPage() {
+  let tilbud: Awaited<ReturnType<typeof loadTilbud>> = [];
+  let dbFejl = false;
+  try {
+    tilbud = await loadTilbud();
   } catch {
     dbFejl = true;
   }
