@@ -170,7 +170,7 @@ export const GUIDES: Guide[] = [
       },
       {
         "title": "Gem abonnementet",
-        "body": "1. Klik på den blå knap \"Opret abonnement\" nederst på siden.\n2. Systemet gemmer abonnementet, giver det et Abo. nr. og genererer med det samme de kommende ordrer cirka 26 uger frem. Du sendes derefter videre til abonnementets side.\n3. Vil du fortryde uden at gemme, så klik på \"Luk\" eller \"Gå tilbage\".\n4. Mangler der noget, får du en fejlbesked, fx \"Vælg en kunde.\", \"Vælg et basis-interval.\" eller \"Tilføj mindst én opgave.\""
+        "body": "1. Klik på den blå knap \"Opret abonnement\" nederst på siden.\n2. Systemet gemmer abonnementet, giver det et Abo. nr. og genererer med det samme de kommende ordrer cirka 12 måneder frem. Du sendes derefter videre til abonnementets side.\n3. Vil du fortryde uden at gemme, så klik på \"Luk\" eller \"Gå tilbage\".\n4. Mangler der noget, får du en fejlbesked, fx \"Vælg en kunde.\", \"Vælg et basis-interval.\" eller \"Tilføj mindst én opgave.\""
       },
       {
         "title": "Automatisk ordre-generering og knappen \"Generér kommende ordrer\"",

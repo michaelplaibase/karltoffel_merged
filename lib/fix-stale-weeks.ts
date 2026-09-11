@@ -36,11 +36,11 @@ export async function listStaleSubs(): Promise<StaleSub[]> {
   const currentWeek = isoWeek(weekMondayToday());
   const currentYear = new Date().getUTCFullYear();
   const from = new Date(`${weekMondayToday()}T00:00:00Z`);
-  // "Kommende ordrer" = inden for genereringens horisont (26 uger). Ordrer
+  // "Kommende ordrer" = inden for genereringens horisont (52 uger / 12 måneder). Ordrer
   // LÆNGERE ude (fx årstal-bump-ofrene i 2027) tæller IKKE som dækkende —
   // ellers bliver en 2027-tiltildelt startuge aldrig repareret (fund i live
   // data: McDonald's Purhus, alle ordrer i feb-mar 2027).
-  const horizonEnd = new Date(from.getTime() + 26 * 7 * 864e5);
+  const horizonEnd = new Date(from.getTime() + 52 * 7 * 864e5); // 12-måneders horisont (matcher DEFAULT_HORIZON_WEEKS)
 
   const subs = await prisma.subscription.findMany({
     where: { active: true, pending: false },

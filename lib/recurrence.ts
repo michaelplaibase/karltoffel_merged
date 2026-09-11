@@ -9,7 +9,9 @@ import { prisma } from "./db";
 import { Prisma } from "@prisma/client";
 
 const WEEK_MS = 7 * 864e5;
-const DEFAULT_HORIZON_WEEKS = 26;
+// 12-måneders horisont (Thomas, 2026-09-10: "det kunne være fest hvis den
+// kunne vise 12 måneder frem" på kundens aftalekalender) — tidligere 26 uger.
+const DEFAULT_HORIZON_WEEKS = 52;
 
 /** Monday (UTC midnight) of ISO week `week` in `year`. */
 function mondayOfIsoWeek(year: number, week: number): Date {
@@ -344,6 +346,10 @@ export function subscriptionOutlookProblem(
   if (parts == null) return "startugen kan ikke læses — angiv den som fx 'Uge 35, 2026'";
   // Kun "På anmodning"-opgaver planlægges aldrig automatisk — nul er korrekt.
   if (!sub.tasks.some((t) => parseMultiplier(t.intervalMultiplier) != null)) return null;
+  // Bevidst sæsonstart med EKSPLICIT fremtids-årstal ("Uge 20, 2027"): gælder
+  // først ved årsskiftet (Thomas' regel) — tavs indtil da, også nu hvor
+  // horisonten er 52 uger og næste års forekomst reelt ligger inden for.
+  if (parts.year != null && parts.year > ref.getUTCFullYear()) return null;
 
   const base = parseBaseInterval(sub.baseInterval);
   const thisMonday = mondayOf(ref).getTime();
