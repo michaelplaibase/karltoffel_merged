@@ -47,4 +47,4 @@ window.KARLTOFFEL.ydelsePris.prisFn = function(f){ return (f.plans==='2-plans hu
 window.KARLTOFFEL.ydelsePris.prisNoteFn = function(f){ return 'Estimat for ' + f.meter + ' m tagrende, ' + (f.plans || '1-plans hus') + '. Endelig pris afhænger af adgang og opgaven.'; };
 window.KARLTOFFEL.ydelsePris.servicesFn = function(f){ return [{id:'tagrender',navn:'Tagrenderens',wm:(f.plans==='2-plans hus'?'Tagrenerens 2-plans hus':'Tagrenderens Stueplan / 1-plans hus'),qty:f.meter,enhed:'m tagrende',pris:(f.plans==='2-plans hus'?28.00:18.00)}]; };
 		</script>
-		<script src="/assets/js/ydelse-pris.js?v=4" defer></script>
+		<script src="/assets/js/ydelse-pris.js?v=5" defer></script>

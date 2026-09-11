@@ -145,7 +145,13 @@
 		})
 		.then(function(r){
 			if(!r.ok) throw new Error("HTTP " + r.status);
+			/* Kvittering (Mads 2026-09-11): skjul ALT andet — kun overskrift "Tak for din besked" + grøn status-tekst. */
 			STEP2.hidden = true;
+			STEP1.hidden = true;
+			var wrap = form.closest(".sp-form, aside");
+			if(wrap) wrap.querySelectorAll(".sp-form__lead").forEach(function(l){ l.hidden = true; });
+			var ttl = form.closest(".sp-form, aside") ? form.closest(".sp-form, aside").querySelector(".sp-form__title") : null;
+			if(ttl) ttl.textContent = "Tak for din besked";
 			status.hidden = false;
 			status.removeAttribute("data-error");
 			status.textContent = "Tak! Vi ringer dig op med den endelige pris — typisk samme hverdag. Du betaler først, når hækken er klippet.";

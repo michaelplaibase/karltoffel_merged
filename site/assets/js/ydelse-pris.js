@@ -159,7 +159,15 @@
 		})
 		.then(function(r){
 			if(!r.ok) throw new Error("HTTP " + r.status);
+			/* Kvittering (Mads 2026-09-11): skjul ALT andet — kun overskrift "Tak for din besked" + grøn status-tekst. */
 			kontaktWrap.hidden = true;
+			prisBoks.hidden = true;
+			var wrap = form.closest(".sp-form, aside");
+			if(wrap) wrap.querySelectorAll(".sp-form__lead").forEach(function(l){ l.hidden = true; });
+			var ttl = form.closest(".sp-form, aside") ? form.closest(".sp-form, aside").querySelector(".sp-form__title") : null;
+			if(ttl) ttl.textContent = "Tak for din besked";
+			var felterWrap = document.getElementById("yp-step1");
+			if(felterWrap) felterWrap.hidden = true;
 			status.hidden = false;
 			status.removeAttribute("data-error");
 			status.textContent = C.takTekst || "Tak! Vi ringer dig op med den endelige pris — typisk samme hverdag.";
