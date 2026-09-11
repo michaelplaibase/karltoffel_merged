@@ -306,6 +306,15 @@
 	}
 }
 .sp-form--kontakt { margin-top: 0; }
+/* Lige luft rundt om ring-op-formularen (Mads 2026-09-11) */
+#section-id-kontakt-hero .sp-hero__grid { padding-bottom: 96px; }
+/* Lige luft om FAQ'en (Mads 2026-09-11): mindre top, mere bund */
+#section-id-260.section--padding-top-xlarge { padding-top: 60px !important; }
+#section-id-260 { padding-bottom: 60px !important; }
+@media print, screen and (min-width: 64em) {
+	#section-id-260.section--padding-top-xlarge { padding-top: 60px !important; }
+	#section-id-260 { padding-bottom: 60px !important; }
+}
 .ko-status { margin-top: 12px; font-size: 14px; font-weight: 700; }
 .ko-status[data-error="true"] { color: #8A2b0e; }
 .ko-status[data-error="false"] { color: #616711; }
