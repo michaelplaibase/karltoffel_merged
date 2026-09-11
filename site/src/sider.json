@@ -27,7 +27,7 @@
    "ydelseskort": null,
    "faq": false,
    "faq_ekstra_fil": null,
-   "floating_cta": "/#tilbudsmotor",
+   "floating_cta": "/p/kontakt",
    "noindex": true,
    "i_sitemap": false
   },
@@ -60,7 +60,7 @@
    "ydelseskort": null,
    "faq": true,
    "faq_ekstra_fil": "c/det-vi-ordner/algerens-og-algebehandling-af-fliser-tag-og-facader/faq-ekstra.html",
-   "floating_cta": "#tilbudsmotor",
+   "floating_cta": "/p/kontakt",
    "noindex": false,
    "i_sitemap": true
   },
@@ -93,7 +93,7 @@
    "ydelseskort": null,
    "faq": true,
    "faq_ekstra_fil": "c/det-vi-ordner/beskaering/faq-ekstra.html",
-   "floating_cta": "#tilbudsmotor",
+   "floating_cta": "/p/kontakt",
    "noindex": false,
    "i_sitemap": true
   },
@@ -126,7 +126,7 @@
    "ydelseskort": null,
    "faq": true,
    "faq_ekstra_fil": "c/det-vi-ordner/bortskaffelse-haveaffald/faq-ekstra.html",
-   "floating_cta": "#tilbudsmotor",
+   "floating_cta": "/p/kontakt",
    "noindex": false,
    "i_sitemap": true
   },
@@ -159,7 +159,7 @@
    "ydelseskort": null,
    "faq": true,
    "faq_ekstra_fil": null,
-   "floating_cta": "#tilbudsmotor",
+   "floating_cta": "/p/kontakt",
    "noindex": false,
    "i_sitemap": true
   },
@@ -190,7 +190,7 @@
    "faq": true,
    "faq_ekstra_fil": null,
    "faq_custom": true,
-   "floating_cta": "/#tilbudsmotor",
+   "floating_cta": "/p/kontakt",
    "noindex": false,
    "i_sitemap": true
   },
@@ -223,7 +223,7 @@
    "ydelseskort": null,
    "faq": true,
    "faq_ekstra_fil": "c/det-vi-ordner/graespleje/faq-ekstra.html",
-   "floating_cta": "#tilbudsmotor",
+   "floating_cta": "/p/kontakt",
    "noindex": false,
    "i_sitemap": true
   },
@@ -256,7 +256,7 @@
    "ydelseskort": null,
    "faq": true,
    "faq_ekstra_fil": "c/det-vi-ordner/haekklipning/faq-ekstra.html",
-   "floating_cta": "#tilbudsmotor",
+   "floating_cta": "/p/kontakt",
    "noindex": false,
    "i_sitemap": true
   },
@@ -289,7 +289,7 @@
    "ydelseskort": null,
    "faq": true,
    "faq_ekstra_fil": "c/det-vi-ordner/robotplaeneklipper-service/faq-ekstra.html",
-   "floating_cta": "#tilbudsmotor",
+   "floating_cta": "/p/kontakt",
    "noindex": false,
    "i_sitemap": true
   },
@@ -322,7 +322,7 @@
    "ydelseskort": null,
    "faq": true,
    "faq_ekstra_fil": null,
-   "floating_cta": "#tilbudsmotor",
+   "floating_cta": "/p/kontakt",
    "noindex": false,
    "i_sitemap": true
   },
@@ -355,7 +355,7 @@
    "ydelseskort": null,
    "faq": true,
    "faq_ekstra_fil": null,
-   "floating_cta": "#tilbudsmotor",
+   "floating_cta": "/p/kontakt",
    "noindex": false,
    "i_sitemap": true
   },
@@ -388,7 +388,7 @@
    "ydelseskort": null,
    "faq": true,
    "faq_ekstra_fil": "c/det-vi-ordner/ukrudtsbekaempelse/faq-ekstra.html",
-   "floating_cta": "#tilbudsmotor",
+   "floating_cta": "/p/kontakt",
    "noindex": false,
    "i_sitemap": true
   },
@@ -421,7 +421,7 @@
    "ydelseskort": null,
    "faq": true,
    "faq_ekstra_fil": null,
-   "floating_cta": "#tilbudsmotor",
+   "floating_cta": "/p/kontakt",
    "noindex": false,
    "i_sitemap": true
   },
@@ -454,7 +454,7 @@
    "ydelseskort": null,
    "faq": true,
    "faq_ekstra_fil": "c/det-vi-ordner/vinduesvask/faq-ekstra.html",
-   "floating_cta": "#tilbudsmotor",
+   "floating_cta": "/p/kontakt",
    "noindex": false,
    "i_sitemap": true
   },
@@ -505,7 +505,7 @@
    },
    "faq": true,
    "faq_ekstra_fil": null,
-   "floating_cta": "/#tilbudsmotor",
+   "floating_cta": "/p/kontakt",
    "noindex": false,
    "i_sitemap": true
   },
@@ -535,7 +535,7 @@
    "ydelseskort": null,
    "faq": false,
    "faq_ekstra_fil": null,
-   "floating_cta": "/#tilbudsmotor",
+   "floating_cta": "/p/kontakt",
    "noindex": false,
    "i_sitemap": true
   },
@@ -583,7 +583,7 @@
    },
    "faq": false,
    "faq_ekstra_fil": null,
-   "floating_cta": "/#tilbudsmotor",
+   "floating_cta": "/p/kontakt",
    "noindex": false,
    "i_sitemap": true
   },
@@ -626,7 +626,7 @@
    },
    "faq": false,
    "faq_ekstra_fil": null,
-   "floating_cta": "/#tilbudsmotor",
+   "floating_cta": "/p/kontakt",
    "noindex": false,
    "i_sitemap": true
   },
@@ -659,7 +659,7 @@
    "faq": true,
    "faq_ekstra_fil": null,
    "faq_custom": true,
-   "floating_cta": "/#tilbudsmotor",
+   "floating_cta": "/p/kontakt",
    "noindex": false,
    "i_sitemap": true
   },
@@ -689,7 +689,7 @@
    "ydelseskort": null,
    "faq": false,
    "faq_ekstra_fil": null,
-   "floating_cta": "/#tilbudsmotor",
+   "floating_cta": "/p/kontakt",
    "noindex": false,
    "i_sitemap": false
   },
@@ -719,7 +719,7 @@
    "ydelseskort": null,
    "faq": false,
    "faq_ekstra_fil": null,
-   "floating_cta": "/#tilbudsmotor",
+   "floating_cta": "/p/kontakt",
    "noindex": false,
    "i_sitemap": true
   },
@@ -762,7 +762,7 @@
    },
    "faq": false,
    "faq_ekstra_fil": null,
-   "floating_cta": "/#tilbudsmotor",
+   "floating_cta": "/p/kontakt",
    "noindex": false,
    "i_sitemap": true
   },
@@ -792,7 +792,7 @@
    "ydelseskort": null,
    "faq": false,
    "faq_ekstra_fil": null,
-   "floating_cta": "/#tilbudsmotor",
+   "floating_cta": "/p/kontakt",
    "noindex": false,
    "i_sitemap": true
   },
@@ -855,7 +855,7 @@
    "ydelseskort": null,
    "faq": false,
    "faq_ekstra_fil": null,
-   "floating_cta": "/#tilbudsmotor",
+   "floating_cta": "/p/kontakt",
    "noindex": false,
    "i_sitemap": true
   },
@@ -896,7 +896,7 @@
    },
    "faq": false,
    "faq_ekstra_fil": null,
-   "floating_cta": "/#tilbudsmotor",
+   "floating_cta": "/p/kontakt",
    "noindex": false,
    "i_sitemap": true
   },
@@ -927,7 +927,7 @@
    "ydelseskort": null,
    "faq": false,
    "faq_ekstra_fil": null,
-   "floating_cta": null,
+   "floating_cta": "/p/kontakt",
    "noindex": true,
    "i_sitemap": false
   }
