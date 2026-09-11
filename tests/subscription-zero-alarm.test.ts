@@ -54,16 +54,24 @@ test("legitime nul-tilfælde er TAVSE", () => {
   assert.equal(subscriptionOutlookProblem(sub({ active: false }), 0, 0, REF), null);
   // Kun "På anmodning"-opgaver planlægges aldrig automatisk.
   assert.equal(subscriptionOutlookProblem(sub({ tasks: [task("På anmodning")] }), 0, 5, REF), null);
-  // Bevidst sæsonstart udtrykkes nu med EKSPLICIT år — uden for horisonten = tavs.
+  // Bevidst sæsonstart udtrykkes med EKSPLICIT fremtids-år — gælder først ved
+  // årsskiftet (Thomas' regel), så vagten er tavs indtil da (også ved 52 ugers
+  // horisont, hvor næste års forekomst reelt ligger inden for).
   assert.equal(subscriptionOutlookProblem(sub({ startWeek: "Uge 20, 2027" }), 0, 0, REF), null);
   // Igangværende men med interval længere end horisonten og fjern startuge.
   assert.equal(subscriptionOutlookProblem(sub({ startWeek: "Uge 20, 2027", baseInterval: "Hver 40. uge" }), 0, 4, REF), null);
+  // Igangværende årligt abonnement: med 52-ugers horisonten SKAL næste års
+  // besøg ligge forude — generationen opretter det, nul ordrer = reel alarm.
+  const p = subscriptionOutlookProblem(sub({ startWeek: "Uge 27", baseInterval: "Hver 52. uge" }), 0, 4, REF);
+  assert.match(p ?? "", /ingen kommende ordrer/);
 });
 
-test("årligt abonnement MED historik og netop passeret uge er TAVST — næste besøg er om et år", () => {
-  // Hermes-fund (abo 235812/235852/235855): kunden HAR fået årets besøg;
-  // nul kommende ordrer er legitimt frem til næste års forekomst.
-  assert.equal(subscriptionOutlookProblem(sub({ startWeek: "Uge 27", baseInterval: "Hver 52. uge" }), 0, 4, REF), null);
+test("årligt abonnement MED historik og netop passeret uge får næste års besøg inden for 52-ugers horisonten", () => {
+  // Hermes-fund (abo 235812/235852/235855) var tavs ved 26-ugers horisont:
+  // næste års forekomst lå uden for. Med 52 uger ligger den INDEN for, og
+  // generatoren opretter den — nul kommende ordrer er derfor en reel alarm.
+  const p = subscriptionOutlookProblem(sub({ startWeek: "Uge 27", baseInterval: "Hver 52. uge" }), 0, 4, REF);
+  assert.match(p ?? "", /ingen kommende ordrer/);
 });
 
 test("årligt NYT abonnement med passeret startuge alarmerer — det har aldrig fået sit besøg", () => {
