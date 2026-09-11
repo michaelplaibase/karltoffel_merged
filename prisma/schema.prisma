@@ -65,6 +65,7 @@ model User {
   absences         Absence[]
   vehicles         Vehicle[]
   taskLines        TaskLine[]
+  tilbudLines      TilbudLine[]
 
   @@index([companyId])
 }
@@ -424,10 +425,17 @@ model TilbudLine {
   price       Int
   interval    String?  // Thomas, 2026-09-11 (korrektion): valgfrit interval PR. LINJE ("Hver 6. uge" / "1 gang om året") — samme muligheder som BASE_INTERVALS; null = engangsopgave
   startWeek   String?  // Thomas, 2026-09-11 (korrektion 2): valgfri STARTUGE PR. LINJE ("Uge 29" / "Uge 29, 2026") — samme format som tilbud-niveau startuge; null = arver/bruger tilbud-niveau startuge ved konvertering
+  // Thomas, 2026-09-11: valgfri MEDARBEJDER PR. LINJE — SAMME felt/relations-
+  // mønster som TaskLine.employeeId (Int? FK til User, ON DELETE SET NULL).
+  // Ren INTERN data: vises IKKE på PDF'en, accept-siden eller årshjulet —
+  // overføres KUN til TaskLine.employeeId, når tilbuddet konverteres.
+  employee      User?    @relation(fields: [employeeId], references: [id])
+  employeeId    Int?
   sort        Int      @default(0)
   photos      TilbudPhoto[]
 
   @@index([tilbudId])
+  @@index([employeeId])
 }
 
 // Fotos på et tilbud — samme private Blob-store som KS-fotos og månedsrapport.

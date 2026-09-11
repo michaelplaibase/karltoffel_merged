@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import {
   tilbudTotal, nyAcceptToken, buildTilbudPdfData, statusLabel, acceptTokenUdløber, linjeKundeTekst, linjeStartugeTekst,
-  bygAarshjul, parseUgeNr, kortNavn,
+  bygAarshjul, parseUgeNr, kortNavn, tasklineMedarbejdere,
 } from "../lib/tilbud.mts";
 import {
   aarsbelob, besogPrAar, BASE_INTERVALS, tilbudLinjeAarsbelob, tilbudAarsbelobSum,
@@ -259,4 +259,41 @@ test("buildTilbudPdfData: startuge pr. linje gennemgår til PDF-data (tomme = nu
   assert.equal(d.linjer[1].startWeek, null); // tom → intet vist på linjen
   // startuge påvirker IKKE årsbeløbet (kun opstartstidspunkt)
   assert.equal(d.aarsbelob, 566 * 9); // kun vinduespudsning tæller med
+});
+// ─── Medarbejder pr. opgavelinje (Thomas, 2026-09-11) ───────────────────────
+// Intern tilknytning: overføres KUN til TaskLine.employeeId ved konvertering —
+// ALDRIG synlig i PDF-data, accept-side eller årshjul.
+
+test("tasklineMedarbejdere: tilknytning → konvertering overfører til TaskLine.employeeId", () => {
+  // Linjer med valg følger med; linjer uden valg = null (vælges automatisk).
+  assert.deepEqual(
+    tasklineMedarbejdere([
+      { description: "Vinduespudsning", price: 566, interval: "Hver 6. uge", startWeek: "Uge 29", employeeId: 7 },
+      { description: "Tagrender", price: 566, interval: null, employeeId: null },
+      { description: "Terrasse", price: 300, employeeId: 12 },
+    ]),
+    [7, null, 12],
+  );
+  // Sikkerhedsnet-linjen uden employeeId-felt (inkonverteret objekt) → null.
+  assert.deepEqual(tasklineMedarbejdere([{ description: "Serviceaftale", price: 0 } as never]), [null]);
+  assert.deepEqual(tasklineMedarbejdere([]), []);
+});
+
+test("intet medarbejder-felt i PDF-data — selv hvis input-linjer har employeeId", () => {
+  const d = buildTilbudPdfData({
+    contact: { name: "Kunde", companyName: null, att: null },
+    title: "Tilbud", note: null,
+    startWeek: "Uge 29", baseInterval: null,
+    lines: [
+      { description: "Vinduespudsning", price: 566, interval: "Hver 6. uge", startWeek: "Uge 29", employeeId: 7 } as never,
+      { description: "Tagrender", price: 566, employeeId: null } as never,
+    ],
+  });
+  for (const linje of d.linjer) {
+    assert.ok(!("employeeId" in linje), "PDF-linje må ikke indeholde employeeId");
+    assert.ok(!("employee" in linje), "PDF-linje må ikke indeholde employee");
+  }
+  const helesData = JSON.stringify(d);
+  assert.ok(!/"employeeId"/.test(helesData), "hele PDF-data må ikke indeholde employeeId");
+  assert.ok(!/"employee"/.test(helesData), "hele PDF-data må ikke indeholde employee");
 });

@@ -11,7 +11,7 @@ import { categoryColor } from "@/lib/categories";
 import { weekLabel, mondayOf, isoWeekYear } from "@/lib/weeks";
 import { isoWeek } from "@/lib/planner";
 import { parseWeekLabelParts } from "@/lib/recurrence";
-import { nyAcceptToken } from "@/lib/tilbud.mts";
+import { nyAcceptToken, tasklineMedarbejdere } from "@/lib/tilbud.mts";
 import { parseBaseIntervalWeeks } from "@/lib/subscription-intervals";
 import { sendTilbudMail } from "@/lib/tilbud-send";
 import { revalidatePath } from "next/cache";
@@ -32,12 +32,17 @@ function readLines(formData: FormData) {
   // Thomas, 2026-09-11 (korrektion 2): valgfri STARTUGE PR. LINJE — samme
   // format som tilbud-niveau startuge; tom = arver tilbud-niveau startugen.
   const startWeeks = formData.getAll("taskStartWeek").map(String);
+  // Thomas, 2026-09-11: valgfri MEDARBEJDER PR. LINJE (intern) — bruger-id som
+  // streng, tom = vælges automatisk. Gemmes som TilbudLine.employeeId (samme
+  // mønster som TaskLine.employeeId) og overføres til opgaven ved konvertering.
+  const employees = formData.getAll("taskEmployee").map(String);
   return descs
     .map((d, i) => ({
       description: d.trim(),
       price: prices[i] || 0,
       interval: (intervals[i] ?? "").trim() || null,
       startWeek: (startWeeks[i] ?? "").trim() || null,
+      employeeId: Number(employees[i]) || null,
     }))
     .filter((l) => l.description);
 }
@@ -78,6 +83,19 @@ export async function createTilbud(_prev: TilbudState, formData: FormData): Prom
     }
   }
 
+  // Thomas, 2026-09-11: valider medarbejder-id pr. linje (intern felt) — skal
+  // være en aktiv medarbejder, ellers afvises tilbudet (uden valg = null).
+  const valgteEmployeeIds = [...new Set(lines.map((l) => l.employeeId).filter((v): v is number => v != null))];
+  if (valgteEmployeeIds.length) {
+    const aktive = await prisma.user.findMany({ where: { id: { in: valgteEmployeeIds }, active: true }, select: { id: true } });
+    const gyldige = new Set(aktive.map((u) => u.id));
+    for (const l of lines) {
+      if (l.employeeId != null && !gyldige.has(l.employeeId)) {
+        return { error: `Medarbejder for '${l.description}' blev ikke fundet — vælg en aktiv medarbejder, eller lad feltet stå tomt.` };
+      }
+    }
+  }
+
   let contactId = Number(formData.get("contactId")) || 0;
   if (!contactId && formData.get("newCustomer") === "1") {
     const navn = String(formData.get("newName") ?? "").trim();
@@ -110,7 +128,7 @@ export async function createTilbud(_prev: TilbudState, formData: FormData): Prom
   const created = await prisma.tilbud.create({
     data: {
       contactId, title, note, acceptToken: nyAcceptToken(), startWeek, baseInterval,
-      lines: { create: lines.map((l, i) => ({ description: l.description, price: l.price, interval: l.interval, startWeek: l.startWeek, sort: i })) },
+      lines: { create: lines.map((l, i) => ({ description: l.description, price: l.price, interval: l.interval, startWeek: l.startWeek, employeeId: l.employeeId, sort: i })) },
     },
   });
   revalidatePath("/tilbud");
@@ -156,7 +174,7 @@ export async function convertTilbudToSubscription(tilbudId: number): Promise<voi
   const tilbud = await prisma.tilbud.findUnique({
     where: { id: tilbudId },
     include: {
-      lines: { orderBy: { sort: "asc" }, select: { description: true, price: true, interval: true, startWeek: true } },
+      lines: { orderBy: { sort: "asc" }, select: { description: true, price: true, interval: true, startWeek: true, employeeId: true } },
       contact: { select: { id: true, street: true, city: true } },
     },
   });
@@ -207,9 +225,13 @@ export async function convertTilbudToSubscription(tilbudId: number): Promise<voi
       baseInterval = tilbud.baseInterval?.trim() || "Hver 2. uge";
       linjeMultiplikatorer = tilbud.lines.map(() => "Hver gang");
     }
-  const lines = tilbud.lines.length
+  const lines: { description: string; price: number; interval?: string | null; startWeek?: string | null; employeeId?: number | null }[] = tilbud.lines.length
     ? tilbud.lines
-    : [{ description: "Serviceaftale", price: 0 }]; // sikkerhedsnet — TaskLine kræver >= 1 linje
+    : [{ description: "Serviceaftale", price: 0, employeeId: null }]; // sikkerhedsnet — TaskLine kræver >= 1 linje
+  // Thomas, 2026-09-11: intern medarbejder-tilknytning pr. linje følger med til
+  // den enkelte TaskLine ved konvertering (samme felt: TaskLine.employeeId).
+  // KUN her — PDF/accept-side/årshjul får aldrig medarbejderen.
+  const linjeMedarbejdere = tasklineMedarbejdere(lines);
 
   // DisplayNo-allokering med retry — samme mønster som createSubscription.
   for (let attempt = 0; ; attempt++) {
@@ -235,6 +257,10 @@ export async function convertTilbudToSubscription(tilbudId: number): Promise<voi
               durationMin: 60,
               intervalMultiplier: linjeMultiplikatorer[i] ?? "Hver gang",
               startWeek: linjeStartUger[i] ?? null,
+              // Thomas, 2026-09-11: intern medarbejder-tilknytning følger
+              // linjen til opgaven (TaskLine.employeeId) — KUN ved
+              // konvertering; uden valg = null (vælges automatisk, som hidtil).
+              employeeId: linjeMedarbejdere[i] ?? null,
             })),
           },
         },

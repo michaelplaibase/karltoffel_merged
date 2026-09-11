@@ -24,7 +24,10 @@ export default async function TilbudDetailPage({ params }: { params: Promise<{ i
     where: { id: tilbudId },
     include: {
       contact: { select: { id: true, name: true, companyName: true, email: true } },
-      lines: { orderBy: { sort: "asc" } },
+      // Thomas, 2026-09-11: medarbejder-tilknytning pr. linje følger med til
+      // INTERN visning her (teamets side) — den skal ALDRIG videre til
+      // PDF/accept-side/årshjul (disse bygger deres egne data-shapes).
+      lines: { orderBy: { sort: "asc" }, include: { employee: { select: { firstName: true, lastName: true } } } },
       photos: { orderBy: { createdAt: "asc" } },
     },
   });
@@ -64,7 +67,16 @@ export default async function TilbudDetailPage({ params }: { params: Promise<{ i
             <div className="tasklines">
               {tilbud.lines.map((l) => (
                 <div className="tl-row" key={l.id} style={{ gridTemplateColumns: "1fr auto" }}>
-                  <span>{linjeKundeTekst(l)}</span>
+                  <span>
+                    {linjeKundeTekst(l)}
+                    {/* Thomas, 2026-09-11: intern medarbejder-tilknytning —
+                        diskret her (teamets side), IKKE i kundefacing materiale. */}
+                    {l.employee ? (
+                      <small className="form-text" style={{ display: "block" }}>
+                        Intern: {(l.employee.firstName + " " + l.employee.lastName).trim()} (vises ikke for kunden)
+                      </small>
+                    ) : null}
+                  </span>
                   <span className="num">{kr(l.price)}</span>
                 </div>
               ))}

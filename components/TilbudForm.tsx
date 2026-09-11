@@ -8,11 +8,15 @@ import { bygAarshjul } from "@/lib/tilbud.mts";
 import Aarshjul from "@/components/Aarshjul";
 
 type Kontakt = { id: number; name: string; companyName: string | null };
+// Medarbejder-vælger pr. linje (intern — vises ikke for kunden). SAMME
+// kildeliste som abonnements-formularen: getEmployeeOptions (aktive users).
+export type TilbudEmployeeOption = { id: number; name: string };
 
 const kr = (n: number) => n.toLocaleString("da-DK") + " kr";
 
-export default function TilbudForm({ contacts, action }: {
+export default function TilbudForm({ contacts, employees, action }: {
   contacts: Kontakt[];
+  employees: TilbudEmployeeOption[];
   action: (state: TilbudState, formData: FormData) => Promise<TilbudState>;
 }) {
   const [state, formAction, pending] = useActionState(action, {});
@@ -22,8 +26,8 @@ export default function TilbudForm({ contacts, action }: {
   // Tilbud-niveau-feltet er beholdt som STANDARD/præ-valg for nye linjer.
   // Thomas, 2026-09-11 (korrektion 2): også en valgfri STARTUGE PR. OPGAVELINJE
   // — samme format som tilbud-niveau startuge ('Uge 29' / 'Uge 29, 2026').
-  const [linjer, setLinjer] = useState<{ description: string; price: number; interval: string; startWeek: string }[]>([
-    { description: "", price: 0, interval: "", startWeek: "" },
+  const [linjer, setLinjer] = useState<{ description: string; price: number; interval: string; startWeek: string; employee: string }[]>([
+    { description: "", price: 0, interval: "", startWeek: "", employee: "" },
   ]);
   const [standardInterval, setStandardInterval] = useState("");
   // Ny linje arver tilbud-niveau startugen som standard, hvis den er udfyldt.
@@ -33,7 +37,7 @@ export default function TilbudForm({ contacts, action }: {
   const linjeAar = linjer.map(tilbudLinjeAarsbelob);
   const aarligt = tilbudAarsbelobSum(linjer);
 
-  const opdaterLinje = (i: number, felt: "description" | "price" | "interval" | "startWeek", vaerdi: string) => {
+  const opdaterLinje = (i: number, felt: "description" | "price" | "interval" | "startWeek" | "employee", vaerdi: string) => {
     setLinjer((prev) => prev.map((l, j) => (j === i ? { ...l, [felt]: felt === "price" ? Number(vaerdi) || 0 : vaerdi } : l)));
   };
 
@@ -216,6 +220,25 @@ export default function TilbudForm({ contacts, action }: {
                       placeholder="Startuge"
                       aria-label="Startuge (valgfri)"
                     />
+                    {/* Thomas, 2026-09-11: valgfri MEDARBEJDER PR. LINJE —
+                        ren INTERN data (vises IKKE på PDF'en, accept-siden
+                        eller årshjulet). Overføres kun til opgaven, når
+                        tilbuddet konverteres til abonnement. Samme kilde som
+                        abonnements-formularen (aktive medarbejdere). */}
+                    {employees.length > 0 ? (
+                      <select
+                        name="taskEmployee"
+                        className="form-control"
+                        value={l.employee}
+                        onChange={(e) => opdaterLinje(i, "employee", e.target.value)}
+                        aria-label="Medarbejder (intern)"
+                      >
+                        <option value="">Vælges automatisk</option>
+                        {employees.map((e) => (
+                          <option key={e.id} value={e.id}>{e.name}</option>
+                        ))}
+                      </select>
+                    ) : null}
                     <button
                       type="button"
                       className="btn btn-light"
@@ -225,14 +248,19 @@ export default function TilbudForm({ contacts, action }: {
                     {/* Årsbeløb PR. LINJE — kun linjer med interval tæller med. */}
                     {linjeAar[i] != null ? (
                       <small className="form-text" style={{ gridColumn: "1 / -1", marginTop: -4 }}>
-                        Årligt: {kr(linjeAar[i] as number)} ({l.interval.toLowerCase()})
+                        Årligt: {kr(linjeAar[i] as number)} ({l.interval.toLowerCase()}){l.employee ? " · Medarbejder: intern visning" : ""}
                       </small>
                     ) : null}
                   </div>
                 ))}
-                <button type="button" className="btn btn-outline-primary" onClick={() => setLinjer((p) => [...p, { description: "", price: 0, interval: standardInterval, startWeek: standardStartWeek }])}>
+                <button type="button" className="btn btn-outline-primary" onClick={() => setLinjer((p) => [...p, { description: "", price: 0, interval: standardInterval, startWeek: standardStartWeek, employee: "" }])}>
                   + Tilføj opgave
                 </button>
+                {/* Thomas, 2026-09-11: medarbejder-vælgeren er INTERN — gør det
+                    eksplicit, så teamet ikke forventer den på PDF'en. */}
+                {employees.length > 0 ? (
+                  <small className="form-text">Medarbejder pr. linje er kun internt ({""}vises ikke på tilbuddet til kunden) — følger opgaven, når tilbuddet konverteres.</small>
+                ) : null}
                 {/* Thomas, 2026-09-11 (korrektion): Årsbeløbet er nu SUMMEN PR.
                     LINJE — hver linje med interval bidrager med pris × besøg pr.
                     år (52/uge-interval; 1 for "1 gang om året"). Linjer uden

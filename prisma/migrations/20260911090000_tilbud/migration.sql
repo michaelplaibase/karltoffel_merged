@@ -57,6 +57,25 @@ EXCEPTION WHEN duplicate_object THEN null; END $$;
 -- format som tilbud-niveau startuge ('Uge 29' / 'Uge 29, 2026'). Idempotent
 -- (ADD COLUMN IF NOT EXISTS), så migrationen kan køre igen sikkert.
 ALTER TABLE "TilbudLine" ADD COLUMN IF NOT EXISTS "startWeek" TEXT;
+-- Thomas, 2026-09-11: valgfri MEDARBEJDER PR. OPGAVELINJE — samme mønster som
+-- TaskLine.employeeId (Int? FK til User, ON DELETE SET NULL). Ren intern data:
+-- vises IKKE på PDF/accept-side/årshjul, overføres kun til TaskLine ved
+-- konvertering. Idempotent (IF NOT EXISTS / DO $$), så migrationen kan køre
+-- igen sikkert.
+ALTER TABLE "TilbudLine" ADD COLUMN IF NOT EXISTS "employeeId" INTEGER;
+
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint WHERE conname = 'TilbudLine_employeeId_fkey'
+  ) THEN
+    ALTER TABLE "TilbudLine" ADD CONSTRAINT "TilbudLine_employeeId_fkey"
+      FOREIGN KEY ("employeeId") REFERENCES "User"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+  END IF;
+END $$;
+
+CREATE INDEX IF NOT EXISTS "TilbudLine_employeeId_idx" ON "TilbudLine"("employeeId");
+
 DO $$ BEGIN
     ALTER TABLE "TilbudPhoto" ADD CONSTRAINT "TilbudPhoto_tilbudId_fkey" FOREIGN KEY ("tilbudId") REFERENCES "Tilbud"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 EXCEPTION WHEN duplicate_object THEN null; END $$;

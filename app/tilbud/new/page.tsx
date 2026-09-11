@@ -13,11 +13,22 @@ async function loadContacts() {
   });
 }
 
+// Medarbejdere til den interne vælger pr. opgavelinje — SAMME kilde som
+// abonnements-formularen (aktive users med id + navn).
+async function loadEmployees() {
+  return prisma.user.findMany({
+    where: { active: true },
+    orderBy: { id: "asc" },
+    select: { id: true, firstName: true, lastName: true },
+  }).then((users) => users.map((u) => ({ id: u.id, name: `${u.firstName} ${u.lastName}` })));
+}
+
 export default async function NyTilbudPage() {
   let contacts: Awaited<ReturnType<typeof loadContacts>> = [];
+  let employees: Awaited<ReturnType<typeof loadEmployees>> = [];
   let dbFejl = false;
   try {
-    contacts = await loadContacts();
+    [contacts, employees] = await Promise.all([loadContacts(), loadEmployees()]);
   } catch {
     dbFejl = true;
   }
@@ -31,5 +42,5 @@ export default async function NyTilbudPage() {
       </div>
     );
   }
-  return <TilbudForm contacts={contacts} action={createTilbud} />;
+  return <TilbudForm contacts={contacts} employees={employees} action={createTilbud} />;
 }

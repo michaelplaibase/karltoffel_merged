@@ -53,6 +53,15 @@ export function acceptTokenUdløber(now: Date = new Date()): Date {
   return new Date(now.getTime() + 30 * 86_400_000);
 }
 
+/** Thomas, 2026-09-11: intern medarbejder pr. opgavelinje → TaskLine.employeeId
+ *  ved konvertering (kunde-accept via link, manuel accept eller admin).
+ *  SAMME felt som abonnements-opgaver (TaskLine.employeeId Int?, null = vælges
+ *  automatisk). Medarbejderen skal ALDRIG ses i PDF/accept-side/årshjul — der
+ *  bygger deres data ud fra eksplicitte feltlister uden employeeId. */
+export function tasklineMedarbejdere<T extends { employeeId?: number | null | undefined }>(linjer: readonly T[]): (number | null)[] {
+  return linjer.map((l) => (Number.isInteger(l.employeeId) ? (l.employeeId as number) : null));
+}
+
 /** Data-shape der sendes ind i PDF-rendereren (lib/tilbud-doc.mts). */
 export type TilbudPdfData = {
   kundeNavn: string;
