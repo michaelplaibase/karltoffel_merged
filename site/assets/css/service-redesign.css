@@ -254,7 +254,7 @@
 	}
 	.sp-form { margin-top: 0; }
 	.sp-usp ul { flex-direction: row; justify-content: center; gap: 40px; font-size: 15px; }
-	.sp-included__grid { display: grid; grid-template-columns: minmax(0, 1fr) 520px; gap: 64px; align-items: start; }
+	.sp-included__grid.has-video { display: grid; grid-template-columns: minmax(0, 1fr) 520px; gap: 64px; align-items: start; }
 	.sp-beforeafter { margin-top: 0; }
 	.sp-steps__grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 24px; }
 	.sp-step { margin: 0; }
@@ -465,7 +465,7 @@
 @media print, screen and (min-width: 64em) {
 	.sp-included .sp-included__grid { align-items: center; }
 /* Video-kolonne uden video (videoer ikke leveret endnu): grid i én kolonne, tom plads skjules */
-.sp-included__grid:has(.sp-video-col:empty) { display: block; }
+.sp-included__grid.has-video:has(video) { display: grid; }
 }
 .main-wrap .sp-included, .sp-included {
 	padding-top: 60px !important;
