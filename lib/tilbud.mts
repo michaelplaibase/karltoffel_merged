@@ -62,6 +62,22 @@ export function tasklineMedarbejdere<T extends { employeeId?: number | null | un
   return linjer.map((l) => (Number.isInteger(l.employeeId) ? (l.employeeId as number) : null));
 }
 
+/** Thomas, 2026-09-12: Lead-kilde → lead-beregneren. Ren beslutnings-logik
+ *  for konverteringen (convertTilbudToSubscription): tilbuddets leadSource
+ *  skal skrives som LeadAcquisition.source (category = kontaktens type), men
+ *  KUN hvis kunden ikke allerede har en erhvervelse — en eksisterende kanal
+ *  overskrives ALDRIG. Returnerer null, når der IKKE skal oprettes noget
+ *  (ingen kilde på tilbuddet / kunden har allerede en erhvervelse). */
+export function tilbudLeadAcquisition(
+  leadSource: string | null | undefined,
+  isCompany: boolean,
+  hasExistingAcquisition: boolean,
+): { category: "privat" | "virksomhed"; source: string } | null {
+  const source = (leadSource ?? "").trim();
+  if (!source || hasExistingAcquisition) return null;
+  return { category: isCompany ? "virksomhed" : "privat", source };
+}
+
 /** Data-shape der sendes ind i PDF-rendereren (lib/tilbud-doc.mts). */
 export type TilbudPdfData = {
   kundeNavn: string;
