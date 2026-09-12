@@ -18,6 +18,7 @@ const MEDARBEJDER_ALLOWED = [
   "/leads",
   "/customers",
   "/subscriptions",
+  "/tilbud",
   "/fixed-prices",
   "/orders",
   "/reports/day-pdf",
@@ -27,7 +28,14 @@ const MEDARBEJDER_ALLOWED = [
   "/logout",
 ];
 
+// NB Next 16: capturing groups (incl. lookarounds) er ikke tilladt i matcher.
+// /t/<token> (offentligt accept-link) fjernes i stedet i proxy-funktionen.
 export async function proxy(req: NextRequest) {
+  // Offentligt tilbud-accept-link — ingen login.
+  if (req.nextUrl.pathname === "/t" || req.nextUrl.pathname.startsWith("/t/")) {
+    return NextResponse.next();
+  }
+
   const claims = await verifySessionClaims(req.cookies.get(SESSION_COOKIE)?.value);
 
   // Ikke indlogget (eller forældet token-format) → til login med ?next= så

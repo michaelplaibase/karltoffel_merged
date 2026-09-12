@@ -9,11 +9,9 @@ import PauseSection from "@/components/PauseSection";
 
 export type EmployeeOption = { id: number; name: string };
 
-const BASE_INTERVALS = [
-  "Hver uge", "Hver 2. uge", "Hver 3. uge", "Hver 4. uge", "Hver 5. uge", "Hver 6. uge",
-  "Hver 8. uge", "Hver 10. uge", "Hver 12. uge", "Hver 13. uge", "Hver 16. uge",
-  "Hver 24. uge", "Hver 26. uge", "Hver 36. uge", "Hver 48. uge", "Hver 52. uge",
-];
+// BASE_INTERVALS lever i lib/subscription-intervals.ts — samme konstanter som
+// tilbud-formularen (Thomas, 2026-09-11: intervallerne må ALDRIG afvige).
+import { BASE_INTERVALS } from "@/lib/subscription-intervals";
 
 export type SubscriptionInitial = {
   contactId: number; baseInterval: string; startWeek: string; fixedEmployee: string;

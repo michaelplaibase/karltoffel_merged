@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="../app/globals.css">
+<style>body{margin:0;} *{box-sizing:border-box;}</style>
+</head>
+<body>
+<div class="container-1140" style="max-width:1100px">
+  <div class="card">
+    <div class="card-body">
+      <form>
+        <div class="f2">
+          <label class="col-label">Opgaver og priser</label>
+          <div class="tasklines" id="tasklines">
+            <div class="tl-row tl-row-tilbud">
+              <input class="form-control" placeholder="Fx tagrender + nedløb">
+              <input class="form-control num" type="number" placeholder="Pris">
+              <select class="form-control" aria-label="Interval"><option>Engangsopgave</option><option>1 gang om året</option><option>2 gange om året</option><option>4 gange om året</option><option>6 gange om året</option><option>12 gange om året</option><option>26 gange om året</option><option>52 gange om året</option></select>
+              <input class="form-control" placeholder="Startuge" aria-label="Startuge (valgfri)">
+              <button type="button" class="btn btn-light" aria-label="Fjern linje">✕</button>
+            </div>
+            <div class="tl-row tl-row-tilbud">
+              <input class="form-control" placeholder="">
+              <input class="form-control num" type="number" placeholder="Pris">
+              <select class="form-control" aria-label="Interval"><option>Engangsopgave</option><option>1 gang om året</option></select>
+              <input class="form-control" placeholder="Startuge" aria-label="Startuge (valgfri)">
+              <button type="button" class="btn btn-light" aria-label="Fjern linje">✕</button>
+            </div>
+            <button type="button" class="btn btn-outline-primary" style="margin:11px 14px">+ Tilføj opgave</button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+<script>
+window.qaCheck = () => {
+  const rows = [...document.querySelectorAll('.tl-row-tilbud')];
+  const tl = document.getElementById('tasklines');
+  return rows.map(r => {
+    const rr = r.getBoundingClientRect();
+    const kids = [...r.children].map(c => ({ tag: c.tagName, x: Math.round(c.getBoundingClientRect().x), right: Math.round(c.getBoundingClientRect().right), w: Math.round(c.getBoundingClientRect().width) }));
+    const clipped = kids.some(k => k.right > Math.round(rr.right) - 1 || k.x < Math.round(rr.x));
+    return { rowRight: Math.round(rr.right), kids, clipped };
+  });
+};
+</script>
+</body>
+</html>
