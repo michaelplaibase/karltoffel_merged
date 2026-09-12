@@ -348,3 +348,25 @@ test("Lead-kilde er ren INTERN data — aldrig i PDF-data (samme værn som medar
   assert.ok(!/"leadSource"/.test(helesData), "PDF-data må ikke indeholde leadSource");
   assert.ok(!/leadSource/.test(helesData), "hele PDF-data må ikke indeholde leadSource");
 });
+
+// Thomas, 2026-09-12 (fejlretning): mailbeskeden nævner årsbeløb + godkend-link.
+import { tilbudMailBesked, crmBaseUrl } from "../lib/tilbud-mail-besked";
+
+test("tilbudMailBesked: årsbeløb når interval findes — ingen 'samlet'-frase", () => {
+  const besked = tilbudMailBesked({ hilsenNavn: "Anna", titel: "Tilbud på rengøring", aarligt: 24900, godkendUrl: "https://crm.karltoffel.dk/t/abc123" });
+  assert.ok(besked.includes("24.900 kr. om året inkl. moms"), besked);
+  assert.ok(besked.includes("Godkend tilbud her: https://crm.karltoffel.dk/t/abc123"));
+  assert.ok(!besked.toLowerCase().includes("samlet"));
+});
+
+test("tilbudMailBesked: uden årsbeløb — simpel sætning uden beløb", () => {
+  const besked = tilbudMailBesked({ hilsenNavn: "Anna", titel: "Tilbud", aarligt: null });
+  assert.ok(besked.includes("med priserne på opgaverne."), besked);
+  assert.ok(!besked.includes("kr. om året"));
+  assert.ok(!besked.includes("Godkend tilbud her:"));
+});
+
+test("crmBaseUrl: env wins, fallback til produktion", () => {
+  assert.equal(crmBaseUrl({ CRM_BASE_URL: "https://preview.example.com/" }), "https://preview.example.com");
+  assert.equal(crmBaseUrl({}), "https://crm.karltoffel.dk");
+});

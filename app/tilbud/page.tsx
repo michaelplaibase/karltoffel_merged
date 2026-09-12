@@ -1,6 +1,9 @@
 import Link from "next/link";
 import { prisma } from "@/lib/db";
 import { statusLabel } from "@/lib/tilbud.mts";
+// Thomas, 2026-09-12 (fejlretning): oversigten viser nu ÅRSLIGT beløb
+// (kun linjer med interval) i stedet for det samlede beløb.
+import { tilbudAarsbelobSum } from "@/lib/subscription-intervals";
 
 export const metadata = { title: "Tilbud · Karltoffel Business Manager" };
 export const dynamic = "force-dynamic";
@@ -12,7 +15,7 @@ async function loadTilbud() {
     orderBy: { createdAt: "desc" },
     include: {
       contact: { select: { id: true, name: true, companyName: true } },
-      lines: { select: { price: true } },
+      lines: { select: { price: true, interval: true } },
     },
     take: 200,
   });
@@ -42,7 +45,7 @@ export default async function TilbudPage() {
           <div className="table-wrap">
             <table className="data-table">
               <thead>
-                <tr><th>Titel</th><th>Kunde</th><th>Linjer</th><th>Total</th><th>Status</th><th>Oprettet</th></tr>
+                <tr><th>Titel</th><th>Kunde</th><th>Linjer</th><th>Årsbeløb</th><th>Status</th><th>Oprettet</th></tr>
               </thead>
               <tbody>
                 {dbFejl ? (
@@ -51,13 +54,13 @@ export default async function TilbudPage() {
                   <tr><td colSpan={6}>Ingen tilbud endnu — opret det første.</td></tr>
                 ) : (
                   tilbud.map((t) => {
-                    const total = t.lines.reduce((a, l) => a + l.price, 0);
+                    const aarligt = tilbudAarsbelobSum(t.lines);
                     return (
                       <tr key={t.id}>
                         <td><Link href={`/tilbud/${t.id}`} className="strong-link">{t.title}</Link></td>
                         <td><Link href={`/customers/${t.contact.id}`}>{t.contact.companyName || t.contact.name}</Link></td>
                         <td>{t.lines.length}</td>
-                        <td className="num">{kr(total)}</td>
+                        <td className="num">{aarligt != null ? kr(aarligt) : "–"}</td>
                         <td>{statusLabel(t.status)}</td>
                         <td>{t.createdAt.toLocaleDateString("da-DK")}</td>
                       </tr>

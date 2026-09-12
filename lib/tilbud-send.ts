@@ -69,7 +69,10 @@ export async function byggTilbudPdfData(tilbudId: number): Promise<TilbudPdfData
 export type SendTilbudResult = { ok: true } | { ok: false; error: string };
 
 /** Send tilbuddet til kunden fra hej@karltoffel.dk med PDF vedhæftet.
- *  Må KUN kaldes når kontakt har en e-mail. Sætter status 'sendt'. */
+ *  Må KUN kaldes når kontakt har en e-mail. Sætter status 'sendt'.
+ *  Thomas, 2026-09-12 (fejlretning): mailen indeholder nu det offentlige
+ *  godkend-link (/t/<token>) som absolut URL — både i tekst og som klikbar
+ *  Karltoffel-stilet knap i HTML — så kunden faktisk kan godkende fra mailen. */
 export async function sendTilbudMail(args: {
   tilbudId: number;
   to: string;
@@ -79,13 +82,23 @@ export async function sendTilbudMail(args: {
   if (!data) return { ok: false, error: "Tilbuddet blev ikke fundet." };
   if (!data.linjer.length) return { ok: false, error: "Tilbuddet har ingen opgavelinjer." };
 
+  const tilbud = await prisma.tilbud.findUnique({
+    where: { id: args.tilbudId },
+    select: { acceptToken: true },
+  });
+  const godkendUrl = tilbud?.acceptToken ? `${crmBaseUrl()}/t/${tilbud.acceptToken}` : null;
+  const besked = args.besked;
+  // Sikkerhedsgreb: hvis linket er blevet redigeret væk i tekstfeltet,
+  // tilføjes det altid igen — kunden skal aldrig få en mail uden link.
+  const tekst = godkendUrl && !besked.includes(godkendUrl) ? `${besked}\n\nGodkend tilbud her: ${godkendUrl}` : besked;
+
   const pdfBuffer = await renderTilbudDocument(data);
   const periodeNavn = data.titel.toLowerCase().replace(/\s+/g, "-");
   await sendGmail({
     to: args.to,
     subject: `${data.titel} — Karltoffel`,
-    text: args.besked,
-    html: args.besked.split("\n").map((s) => `<p>${escapeHtml(s)}</p>`).join(""),
+    text: tekst,
+    html: htmlFraBesked(tekst, godkendUrl),
     attachments: [
       {
         filename: `karltoffel-${periodeNavn}.pdf`,
@@ -105,17 +118,27 @@ function escapeHtml(s: string): string {
   return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 }
 
-/** Standard-mailtekst til tilbuddet. */
-export function tilbudMailBesked(data: { hilsenNavn: string; titel: string; samlet: number }): string {
-  return (
-    `Hej ${data.hilsenNavn}!\n\n` +
-    `Vedhæftet finder du vores ${data.titel.toLowerCase()} med priserne på opgaverne ` +
-    `(samlet ${data.samlet.toLocaleString("da-DK")} kr. inkl. moms).\n\n` +
-    `Vil du sige ja, kan du klikke "Godkend tilbud" i mailen — så noterer vi det direkte i vores system. ` +
-    `Du kan også bare ringe eller skrive til os.\n\n` +
-    `Vi hører gerne fra dig!\n\nMvh Karltoffel`
-  );
+/** Besked → HTML: linjer som afsnit + det offentlige godkend-link som en
+ *  klikbar Karltoffel-stilet knap (gul baggrund #FFF87B, mørk tekst #4C3718). */
+function htmlFraBesked(besked: string, godkendUrl: string | null): string {
+  const afsnit = besked
+    .split("\n")
+    .map((s) => `<p style="margin:0 0 12px;">${escapeHtml(s)}</p>`)
+    .join("");
+  const knap = godkendUrl
+    ? `<p style="margin:16px 0;">` +
+      `<a href="${escapeHtml(godkendUrl)}" ` +
+      `style="display:inline-block;background:#FFF87B;color:#4C3718;font-weight:700;` +
+      `padding:12px 24px;border-radius:8px;text-decoration:none;">Godkend tilbud her</a></p>` +
+      `<p style="margin:0;color:#6b6b6b;font-size:13px;">` +
+      `Virker knappen ikke? Kopiér dette link ind i din browser:<br>${escapeHtml(godkendUrl)}</p>`
+    : "";
+  return `<div style="font-family:Arial,Helvetica,sans-serif;font-size:15px;line-height:1.5;color:#1a1a1a;">${afsnit}${knap}</div>`;
 }
+
+/** Standard-mailtekst: se lib/tilbud-mail-besked.ts (ren modul, testbar). */
+export { tilbudMailBesked, crmBaseUrl } from "./tilbud-mail-besked";
+import { tilbudMailBesked, crmBaseUrl } from "./tilbud-mail-besked";
 
 /** Genbrugelig helper: priser på tilbudslinjer til visning (listet side). */
 export function tilbudPrisOversigt(linjer: { description: string; price: number }[]): { lines: { description: string; price: number }[]; total: number } {
