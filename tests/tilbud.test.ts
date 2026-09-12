@@ -7,6 +7,23 @@ import {
 import {
   aarsbelob, besogPrAar, BASE_INTERVALS, tilbudLinjeAarsbelob, tilbudAarsbelobSum,
 } from "../lib/subscription-intervals";
+import { isTilbudTableMissing, TILBUD_TABELLER_MANGLER } from "../lib/db";
+
+function p2021(table: string): Error {
+  return Object.assign(new Error("Table does not exist"), { code: "P2021", meta: { table } });
+}
+
+test("isTilbudTableMissing: fanger P2021 for Tilbud/TilbudLine/TilbudPhoto — og ingenting andet", () => {
+  assert.equal(isTilbudTableMissing(p2021("public.Tilbud")), true);
+  assert.equal(isTilbudTableMissing(p2021("public.TilbudLine")), true);
+  assert.equal(isTilbudTableMissing(p2021("public.TilbudPhoto")), true);
+  // andre tabeller / fejlkoder / almindelige fejl er IKKE tilbud-tabeller
+  assert.equal(isTilbudTableMissing(p2021("public.Contact")), false);
+  assert.equal(isTilbudTableMissing(Object.assign(new Error("duplikat"), { code: "P2002", meta: { table: "public.Tilbud" } })), false);
+  assert.equal(isTilbudTableMissing(new Error("noget gik galt")), false);
+  assert.equal(isTilbudTableMissing(null), false);
+  assert.equal(TILBUD_TABELLER_MANGLER.includes("Tilbud-tabellerne"), true);
+});
 
 test("tilbudTotal summerer linjepriserne præcist", () => {
   assert.equal(tilbudTotal([{ price: 1200 }, { price: 350 }, { price: 0 }]), 1550);

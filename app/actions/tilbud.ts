@@ -5,7 +5,7 @@
 // manuelt, og konvertér til abonnement — sidstnævnte genbruger abonnements-
 // flowet (displayNo-allokering, TaskLine-felter og pending-godkendelse som
 // app/actions/subscriptions.ts og lead-konverteringen).
-import { prisma, isUniqueViolation } from "@/lib/db";
+import { prisma, isUniqueViolation, isTilbudTableMissing, TILBUD_TABELLER_MANGLER } from "@/lib/db";
 import { guardAction } from "@/lib/api-auth";
 import { categoryColor } from "@/lib/categories";
 import { weekLabel, mondayOf, isoWeekYear } from "@/lib/weeks";
@@ -125,12 +125,20 @@ export async function createTilbud(_prev: TilbudState, formData: FormData): Prom
   const contact = await prisma.contact.findUnique({ where: { id: contactId }, select: { id: true } });
   if (!contact) return { error: "Kunden blev ikke fundet." };
 
-  const created = await prisma.tilbud.create({
-    data: {
-      contactId, title, note, acceptToken: nyAcceptToken(), startWeek, baseInterval,
-      lines: { create: lines.map((l, i) => ({ description: l.description, price: l.price, interval: l.interval, startWeek: l.startWeek, employeeId: l.employeeId, sort: i })) },
-    },
-  });
+  // Graceful degradering (preview-databasen kan mangle Tilbud-tabellerne):
+  // venlig fejlbesked i stedet for crash (P2021).
+  let created: { id: number };
+  try {
+    created = await prisma.tilbud.create({
+      data: {
+        contactId, title, note, acceptToken: nyAcceptToken(), startWeek, baseInterval,
+        lines: { create: lines.map((l, i) => ({ description: l.description, price: l.price, interval: l.interval, startWeek: l.startWeek, employeeId: l.employeeId, sort: i })) },
+      },
+    });
+  } catch (e) {
+    if (isTilbudTableMissing(e)) return { error: TILBUD_TABELLER_MANGLER };
+    throw e;
+  }
   revalidatePath("/tilbud");
   redirect(`/tilbud/${created.id}`);
 }
@@ -151,6 +159,7 @@ export async function sendTilbud(_prev: TilbudState, formData: FormData): Promis
     revalidatePath("/tilbud");
     return { message: `Tilbud sendt til ${to}.` };
   } catch (e) {
+    if (isTilbudTableMissing(e)) return { error: TILBUD_TABELLER_MANGLER };
     console.error("[tilbud] send fejlede:", e);
     return { error: "Afsendelsen fejlede — prøv igen." };
   }
@@ -159,10 +168,17 @@ export async function sendTilbud(_prev: TilbudState, formData: FormData): Promis
 /** Acceptvej A: holdet markerer manuelt "kunde har accepteret". */
 export async function markTilbudAccepted(tilbudId: number): Promise<void> {
   await guardAction();
-  await prisma.tilbud.updateMany({
-    where: { id: tilbudId, status: { in: ["sendt", "udkast", "afvist"] } },
-    data: { status: "accepteret", acceptedAt: new Date(), acceptMethod: "manuelt" },
-  });
+  try {
+    await prisma.tilbud.updateMany({
+      where: { id: tilbudId, status: { in: ["sendt", "udkast", "afvist"] } },
+      data: { status: "accepteret", acceptedAt: new Date(), acceptMethod: "manuelt" },
+    });
+  } catch (e) {
+    // Manglende tabeller (preview): tilbage til siden med venlig besked —
+    // action-knapperne her er almindelige <form>-actions uden state.
+    if (isTilbudTableMissing(e)) redirect(`/tilbud/${tilbudId}?fejl=tilbud-tabeller`);
+    throw e;
+  }
   revalidatePath(`/tilbud/${tilbudId}`);
   revalidatePath("/tilbud");
 }
@@ -171,13 +187,21 @@ export async function markTilbudAccepted(tilbudId: number): Promise<void> {
  *  intervaller på opgaverne bagefter i det almindelige abonnementsflow). */
 export async function convertTilbudToSubscription(tilbudId: number): Promise<void> {
   await guardAction();
-  const tilbud = await prisma.tilbud.findUnique({
+  const getTilbud = () => prisma.tilbud.findUnique({
     where: { id: tilbudId },
     include: {
       lines: { orderBy: { sort: "asc" }, select: { description: true, price: true, interval: true, startWeek: true, employeeId: true } },
       contact: { select: { id: true, street: true, city: true } },
     },
   });
+  let tilbud: Awaited<ReturnType<typeof getTilbud>>;
+  try {
+    tilbud = await getTilbud();
+  } catch (e) {
+    // Manglende tabeller (preview): tilbage til siden med venlig besked.
+    if (isTilbudTableMissing(e)) redirect(`/tilbud/${tilbudId}?fejl=tilbud-tabeller`);
+    throw e;
+  }
   if (!tilbud) return;
   if (tilbud.status !== "accepteret") return;
   if (tilbud.convertedSubscriptionId) return; // aldrig dublet-konvertering
@@ -275,6 +299,7 @@ export async function convertTilbudToSubscription(tilbudId: number): Promise<voi
       redirect(`/subscriptions/${sub.displayNo}`);
       return;
     } catch (e) {
+      if (isTilbudTableMissing(e)) redirect(`/tilbud/${tilbudId}?fejl=tilbud-tabeller`);
       if (isUniqueViolation(e) && attempt < 5) continue;
       throw e;
     }

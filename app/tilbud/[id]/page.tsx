@@ -15,8 +15,9 @@ export const dynamic = "force-dynamic";
 
 const kr = (n: number) => n.toLocaleString("da-DK") + " kr.";
 
-export default async function TilbudDetailPage({ params }: { params: Promise<{ id: string }> }) {
+export default async function TilbudDetailPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ fejl?: string }> }) {
   const { id } = await params;
+  const { fejl } = await searchParams;
   const tilbudId = Number(id);
   if (!Number.isInteger(tilbudId) || tilbudId <= 0) notFound();
 
@@ -47,6 +48,15 @@ export default async function TilbudDetailPage({ params }: { params: Promise<{ i
 
   return (
     <div className="container-1140" style={{ maxWidth: 1000 }}>
+      {fejl === "tilbud-tabeller" ? (
+        <div className="card" style={{ marginBottom: 16 }}>
+          <div className="card-body">
+            {/* Graceful degradering (preview): server action fangede manglende
+                Tilbud-tabeller (P2021) og sendte brugeren tilbage hertil. */}
+            <p style={{ color: "#8a5a10", margin: 0 }}>Tilbud-tabellerne findes ikke i denne testudgaves database — modulet virker fuldt, når det sættes live.</p>
+          </div>
+        </div>
+      ) : null}
       <div className="toolbar" style={{ justifyContent: "space-between" }}>
         <div>
           <h1 className="page-title" style={{ margin: 0 }}>{tilbud.title}</h1>
