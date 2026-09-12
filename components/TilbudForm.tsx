@@ -5,6 +5,7 @@ import Link from "next/link";
 import type { TilbudState } from "@/app/actions/tilbud";
 import { BASE_INTERVALS, tilbudLinjeAarsbelob, tilbudAarsbelobSum } from "@/lib/subscription-intervals";
 import { bygAarshjul } from "@/lib/tilbud.mts";
+import { LEAD_SOURCES } from "@/lib/lead-sources.mts";
 import Aarshjul from "@/components/Aarshjul";
 
 type Kontakt = { id: number; name: string; companyName: string | null; isCompany: boolean };
@@ -156,6 +157,27 @@ export default function TilbudForm({ contacts, employees, action }: {
               <label className="col-label">Intro-tekst (valgfri)</label>
               <div>
                 <textarea name="note" className="form-control" rows={3} placeholder="Kommer med på tilbuddet og i mailen til kunden." />
+              </div>
+            </div>
+
+            {/* Thomas, 2026-09-12: valgfri LEAD-KILDE — samme liste som
+                lead-beregnerens LEAD_SOURCES (lib/lead-sources.mts). Ren
+                INTERN data: gemmes på Tilbud.leadSource og vises IKKE på
+                PDF/accept-side. Ved konvertering ryger kilden automatisk videre
+                til LeadAcquisition.source, så kunden tæller under den rigtige
+                kanal i Business Manager → Leads. */}
+            <div className="f2">
+              <label className="col-label">Lead-kilde (valgfri)</label>
+              <div>
+                <select name="leadSource" className="form-control" defaultValue="">
+                  <option value="">Ikke sat</option>
+                  {LEAD_SOURCES.map((s) => (
+                    <option key={s} value={s}>{s}</option>
+                  ))}
+                </select>
+                <small className="form-text">
+                  Hvor kunden kommer fra (SEO, Meta osv.) — kun internt. Tæller med i lead-beregneren, når tilbuddet konverteres til abonnement.
+                </small>
               </div>
             </div>
 

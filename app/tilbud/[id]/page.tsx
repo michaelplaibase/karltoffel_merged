@@ -100,6 +100,12 @@ export default async function TilbudDetailPage({ params, searchParams }: { param
           {tilbud.startWeek ? (
             <p className="page-desc">Start: {tilbud.startWeek}</p>
           ) : null}
+          {/* Thomas, 2026-09-12: intern LEAD-KILDE — diskret her på teamets
+              side, IKKE på PDF/accept-side (PDF-data indeholder aldrig feltet).
+              Ved konvertering tæller kilden under kanalen i lead-beregneren. */}
+          {tilbud.leadSource ? (
+            <p className="form-text" style={{ marginBottom: 0 }}>Lead-kilde: <b>{tilbud.leadSource}</b> (intern)</p>
+          ) : null}
           {/* Thomas, 2026-09-11: ÅRSHJUL — alle opgavernes besøg over året pr.
               uge (startuge + interval). Følger med i PDF'en og på accept-siden. */}
           <Aarshjul uger={bygAarshjul(tilbud.lines)} />

@@ -6,6 +6,11 @@
 import { prisma } from "./db";
 import { MOMS } from "./data";
 import { parseBaseIntervalWeeks } from "./subscription-intervals";
+// Thomas, 2026-09-12: kanal-listen bor nu i lib/lead-sources.mts (DB-fri),
+// så klient-komponenter (TilbudForm) kan genbruge PRÆCIS samme liste uden at
+// trække prisma med i bundlen. Re-export bevarer alle eksisterende imports.
+import { LEAD_SOURCES } from "./lead-sources.mts";
+export { LEAD_SOURCES };
 
 const WEEKS_PER_YEAR = 52;
 const MONTHS_PER_YEAR = 12;
@@ -163,7 +168,7 @@ export async function getLeadCalc(fromISO: string, toISO: string): Promise<LeadC
 /** Kanaler (Thomas, 2026-09-03): fritekst muligt, disse er standardvalgene.
  *  "Venteliste" (2026-09-07): kunder der oprindelig skrev sig op på ventelisten
  *  for Sjælland/Fyn i tilbudsmotoren (site sender source "venteliste"). */
-export const LEAD_SOURCES = ["SEO", "Meta", "Sociale medier", "Anbefaling", "Direkte", "Venteliste", "Andet"] as const;
+// (LEAD_SOURCES er flyttet til lib/lead-sources.mts og re-exportes øverst.)
 
 /** Valg af kategori for en ny kunde (auto-forslag ud fra CRM-data). */
 export function suggestCategory(hasSubscription: boolean, hasFixedPrice: boolean, isCompany: boolean): "privat" | "virksomhed" | "fastpris" {

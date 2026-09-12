@@ -76,6 +76,14 @@ END $$;
 
 CREATE INDEX IF NOT EXISTS "TilbudLine_employeeId_idx" ON "TilbudLine"("employeeId");
 
+-- Thomas, 2026-09-12: valgfri LEAD-KILDE på tilbuddet ('SEO', 'Meta', … —
+-- samme liste som LEAD_SOURCES i lead-beregneren). Ren intern data (IKKE på
+-- PDF/accept-side); ved konvertering skrives den videre til
+-- LeadAcquisition.source (kun hvis kunden ikke allerede har en erhvervelse),
+-- så kunden tæller under den rigtige kanal i Business Manager → Leads.
+-- Idempotent (ADD COLUMN IF NOT EXISTS), så migrationen kan køre igen sikkert.
+ALTER TABLE "Tilbud" ADD COLUMN IF NOT EXISTS "leadSource" TEXT;
+
 DO $$ BEGIN
     ALTER TABLE "TilbudPhoto" ADD CONSTRAINT "TilbudPhoto_tilbudId_fkey" FOREIGN KEY ("tilbudId") REFERENCES "Tilbud"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 EXCEPTION WHEN duplicate_object THEN null; END $$;

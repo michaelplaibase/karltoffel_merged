@@ -408,6 +408,11 @@ model Tilbud {
   acceptedAt    DateTime?
   acceptMethod  String?   // "link" | "manuelt"
   convertedSubscriptionId Int?
+  // Thomas, 2026-09-12: valgfri LEAD-KILDE ("SEO", "Meta", …) — samme liste
+  // som LEAD_SOURCES i lead-beregneren. Ren intern data: vises IKKE på
+  // PDF/accept-side; overføres ved konvertering til LeadAcquisition.source,
+  // så kunden tæller under den rigtige kanal i lead-beregneren.
+  leadSource    String?
   lines         TilbudLine[]
   photos        TilbudPhoto[]
   createdAt     DateTime  @default(now())

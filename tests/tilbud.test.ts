@@ -2,8 +2,10 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import {
   tilbudTotal, nyAcceptToken, buildTilbudPdfData, statusLabel, acceptTokenUdløber, linjeKundeTekst, linjeStartugeTekst,
-  bygAarshjul, parseUgeNr, kortNavn, tasklineMedarbejdere,
+  bygAarshjul, parseUgeNr, kortNavn, tasklineMedarbejdere, tilbudLeadAcquisition,
 } from "../lib/tilbud.mts";
+import { LEAD_SOURCES as LEAD_SOURCES_TILBUD } from "../lib/lead-sources.mts";
+import { LEAD_SOURCES as LEAD_SOURCES_LEADCALC } from "../lib/lead-calc";
 import {
   aarsbelob, besogPrAar, BASE_INTERVALS, tilbudLinjeAarsbelob, tilbudAarsbelobSum,
 } from "../lib/subscription-intervals";
@@ -313,4 +315,36 @@ test("intet medarbejder-felt i PDF-data — selv hvis input-linjer har employeeI
   const helesData = JSON.stringify(d);
   assert.ok(!/"employeeId"/.test(helesData), "hele PDF-data må ikke indeholde employeeId");
   assert.ok(!/"employee"/.test(helesData), "hele PDF-data må ikke indeholde employee");
+});
+
+// Thomas, 2026-09-12: LEAD-KILDE — samme liste som lead-beregnerens, gemmes på
+// Tilbud.leadSource og overføres ved konvertering til LeadAcquisition.source
+// (kun hvis kunden ikke allerede har en erhvervelse).
+test("tilbudLeadAcquisition: kilde overføres med kontaktens kategori — og KUN når kunden ikke allerede har en erhvervelse", () => {
+  assert.deepEqual(tilbudLeadAcquisition("SEO", false, false), { category: "privat", source: "SEO" });
+  assert.deepEqual(tilbudLeadAcquisition("Meta", true, false), { category: "virksomhed", source: "Meta" });
+  // eksisterende erhvervelse → ALDRIG overskriv
+  assert.equal(tilbudLeadAcquisition("SEO", false, true), null);
+  // tom/ingen kilde → intet oprettes
+  assert.equal(tilbudLeadAcquisition(null, false, false), null);
+  assert.equal(tilbudLeadAcquisition("", false, false), null);
+  assert.equal(tilbudLeadAcquisition("  ", false, false), null);
+});
+
+test("Lead-kildenavne er PRÆCIS samme liste som lead-beregnerens LEAD_SOURCES", () => {
+  assert.deepEqual(LEAD_SOURCES_TILBUD, ["SEO", "Meta", "Sociale medier", "Anbefaling", "Direkte", "Venteliste", "Andet"]);
+  // lead-calc re-exporter listen — ét navnerum, aldrig afvigende kanaler
+  assert.equal(LEAD_SOURCES_TILBUD, LEAD_SOURCES_LEADCALC);
+});
+
+test("Lead-kilde er ren INTERN data — aldrig i PDF-data (samme værn som medarbejder)", () => {
+  const d = buildTilbudPdfData({
+    contact: { name: "Kunde", companyName: null, att: null },
+    title: "Tilbud", note: null,
+    lines: [{ description: "Vinduespudsning", price: 566, interval: "Hver 6. uge" }],
+  });
+  // PDF-input-typen har slet ikke leadSource-feltet — feltet kan ikke lække.
+  const helesData = JSON.stringify(d);
+  assert.ok(!/"leadSource"/.test(helesData), "PDF-data må ikke indeholde leadSource");
+  assert.ok(!/leadSource/.test(helesData), "hele PDF-data må ikke indeholde leadSource");
 });

@@ -11,7 +11,8 @@ import { categoryColor } from "@/lib/categories";
 import { weekLabel, mondayOf, isoWeekYear } from "@/lib/weeks";
 import { isoWeek } from "@/lib/planner";
 import { parseWeekLabelParts } from "@/lib/recurrence";
-import { nyAcceptToken, tasklineMedarbejdere } from "@/lib/tilbud.mts";
+import { nyAcceptToken, tasklineMedarbejdere, tilbudLeadAcquisition } from "@/lib/tilbud.mts";
+import { LEAD_SOURCES } from "@/lib/lead-sources.mts";
 import { parseBaseIntervalWeeks } from "@/lib/subscription-intervals";
 import { sendTilbudMail } from "@/lib/tilbud-send";
 import { revalidatePath } from "next/cache";
@@ -73,6 +74,14 @@ export async function createTilbud(_prev: TilbudState, formData: FormData): Prom
   const startWeek = startWeekRaw || null;
   const baseIntervalRaw = String(formData.get("baseInterval") ?? "").trim();
   const baseInterval = baseIntervalRaw || null;
+  // Thomas, 2026-09-12: valgfri LEAD-KILDE — samme liste som lead-beregnerens
+  // LEAD_SOURCES. Tom = null (vises/bruges ikke). Ugyldig værdi afvises, så
+  // kanal-navnene i Business Manager → Leads aldrig afviger.
+  const leadSourceRaw = String(formData.get("leadSource") ?? "").trim();
+  const leadSource = leadSourceRaw || null;
+  if (leadSource && !LEAD_SOURCES.includes(leadSource as (typeof LEAD_SOURCES)[number])) {
+    return { error: `Lead-kilde skal være en af: ${LEAD_SOURCES.join(", ")} — eller lades tom.` };
+  }
   const lines = readLines(formData);
   if (!lines.length) return { error: "Tilføj mindst én opgavelinje med en pris." };
   // Thomas, 2026-09-11 (korrektion 2): valider startuge pr. linje med samme
@@ -132,6 +141,8 @@ export async function createTilbud(_prev: TilbudState, formData: FormData): Prom
     created = await prisma.tilbud.create({
       data: {
         contactId, title, note, acceptToken: nyAcceptToken(), startWeek, baseInterval,
+        // Thomas, 2026-09-12: valgfri lead-kilde (intern) — gemmes på tilbuddet.
+        leadSource,
         lines: { create: lines.map((l, i) => ({ description: l.description, price: l.price, interval: l.interval, startWeek: l.startWeek, employeeId: l.employeeId, sort: i })) },
       },
     });
@@ -191,7 +202,7 @@ export async function convertTilbudToSubscription(tilbudId: number): Promise<voi
     where: { id: tilbudId },
     include: {
       lines: { orderBy: { sort: "asc" }, select: { description: true, price: true, interval: true, startWeek: true, employeeId: true } },
-      contact: { select: { id: true, street: true, city: true } },
+      contact: { select: { id: true, isCompany: true, companyId: true, street: true, city: true } },
     },
   });
   let tilbud: Awaited<ReturnType<typeof getTilbud>>;
@@ -293,9 +304,37 @@ export async function convertTilbudToSubscription(tilbudId: number): Promise<voi
         where: { id: tilbudId, convertedSubscriptionId: null },
         data: { status: "konverteret", convertedSubscriptionId: sub.id },
       });
+      // Thomas, 2026-09-12: Lead-kilde → lead-beregneren. Når tilbuddet
+      // konverteres, ryger kunden AUTOMATISK ind som erhvervelse med den
+      // kilde, der er afmærket på tilbuddet — samme mønster som ny-kunde-
+      // oprettelsen i app/actions/contacts.ts (LeadAcquisition med category
+      // privat/virksomhed + source). KUN hvis kunden IKKE allerede har en
+      // erhvervelse — en eksisterende kanal overskrives ALDRIG. Best effort:
+      // konverteringen må aldrig fejle pga. lead-beregneren.
+      if (tilbud.leadSource) {
+        try {
+          const harErhvervelse = await prisma.leadAcquisition.findFirst({
+            where: { contactId: contact.id },
+            select: { id: true },
+          });
+          const erhvervelse = tilbudLeadAcquisition(tilbud.leadSource, contact.isCompany, !!harErhvervelse);
+          if (erhvervelse) {
+            await prisma.leadAcquisition.create({
+              data: {
+                companyId: contact.companyId,
+                contactId: contact.id,
+                ...erhvervelse,
+              },
+            });
+          }
+        } catch (e) {
+          console.error("[tilbud] lead-kilde kunne ikke overføres ved konvertering:", e);
+        }
+      }
       revalidatePath("/subscriptions");
       revalidatePath("/tilbud");
       revalidatePath(`/tilbud/${tilbudId}`);
+      revalidatePath("/business-manager/leads");
       redirect(`/subscriptions/${sub.displayNo}`);
       return;
     } catch (e) {
