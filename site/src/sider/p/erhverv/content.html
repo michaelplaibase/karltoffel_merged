@@ -26,7 +26,7 @@
 <div class="ktb-form-top"><h3>Bliv ringet op</h3><p>Vi ringer inden for én hverdag.</p></div>
 <div class="ktb-erhverv-field ktb-erhverv-field--wide">
 						<label for="erhverv-adresse">Ejendommens adresse</label>
-						<input id="erhverv-adresse" name="address" type="text" autocomplete="street-address" required>
+						<input id="erhverv-adresse" name="address" type="text" autocomplete="street-address" maxlength="300" required>
 					</div>
 					<div class="ktb-erhverv-field">
 						<label for="erhverv-navn">Dit navn</label>
@@ -40,7 +40,11 @@
 						<label for="erhverv-email">E-mail (valgfri)</label>
 						<input id="erhverv-email" name="email" type="email" autocomplete="email">
 					</div>
-					<button type="submit" class="ktb-button">Bed os ringe dig op</button>
+					<div class="ktb-erhverv-field ktb-erhverv-field--wide">
+<label for="erhverv-beskrivelse">Beskriv opgaverne (valgfri)</label>
+<textarea id="erhverv-beskrivelse" name="description" rows="4" maxlength="1500" placeholder="Fortæl fx om ejendommene og de opgaver, I vil have hjælp til."></textarea>
+</div>
+<button type="submit" class="ktb-button">Bed os ringe dig op</button>
 				<div class="ktb-form-status" id="erhverv-form-status" role="status" aria-live="polite" hidden></div></form></div></section>
 <section class="ktb-section ktb-wrap ktb-faq-section"><div><span class="ktb-eyebrow">Det praktiske</span><h2>Inden vi<br>taler sammen.</h2><p>Du er også velkommen til at ringe, hvis du vil vende en konkret opgave.</p></div><div class="ktb-faq"><details><summary>Kan I samle flere ejendomme i én aftale?</summary><p>Vi laver rammeaftaler for blandt andre boligforeninger, udlejere og virksomheder. Fortæl os om adresserne og opgaverne, så tager vi stilling til den samlede løsning sammen.</p></details><details><summary>Kan vi begynde med enkelte opgaver?</summary><p>Ja. I kan både få hjælp til enkelte opgaver og tale med os om en fast aftale.</p></details><details><summary>Hvad koster en fast aftale?</summary><p>Prisen aftales ud fra ejendommen og opgaverne. På erhverv laver vi en samlet plan og en aftalt pris.</p></details><details><summary>Kan I overtage efter en anden leverandør?</summary><p>Ja, det kan vi tale om. Vi gennemgår opgaverne og aftaler tidspunktet for overtagelsen med jer.</p></details></div></section>
 
