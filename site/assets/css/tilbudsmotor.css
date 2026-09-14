@@ -153,6 +153,13 @@
 }
 .tm-flow .ktype-note.show{display:block}
 
+/* Skråfoto-båndet: fast element der følger flowet på alle trin (efter adresse-
+   valg). Centreret under trinnets indhold; foto-kortet genbruger .foto-card. */
+.tm-flow .tm-foto-band{max-width:640px;margin:26px auto 0;text-align:center}
+.tm-flow .tm-foto-band .foto-card{margin:0}
+.tm-flow .tm-foto-band small{display:block;margin-top:10px;opacity:.65;font-size:13px}
+@media (max-width:600px){ .tm-flow .tm-foto-band{margin-top:20px} }
+
 /* STEP 3: VERIFY */
 .tm-flow .verify{padding:36px 0;text-align:center}
 .tm-flow .verify h2{font-family:var(--display);font-size:clamp(26px,4vw,40px);color:var(--gul)}

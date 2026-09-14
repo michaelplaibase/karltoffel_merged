@@ -296,7 +296,7 @@ function loadLuftfoto(){
     s1.src = "/assets/js/vendor/geotiff.min.js";
     s1.onload = function(){
       const s2 = document.createElement("script");
-      s2.src = "/assets/js/skraafoto.js?v=12";
+      s2.src = "/assets/js/skraafoto.js?v=13";
       s2.onload = function(){ res(); };
       s2.onerror = function(){ rej(new Error("skraafoto.js kunne ikke hentes")); };
       document.head.appendChild(s2);
@@ -412,6 +412,14 @@ const STEP_NAMES = ["Hvor bor du?","Hvem gør vi det for?","Din ejendom","Hvad s
 function visStep(id, skipScroll){
   ROOT.querySelectorAll(".step").forEach(s => s.classList.remove("active"));
   $(id).classList.add("active");
+  /* Skråfoto hele vejen (Kristian 2026-09-14): så snart adressen er valgt,
+     følger fotoet med på ALLE trin — ikke kun "Er det her din ejendom?". */
+  const fotoBand = $("tm-foto-band");
+  if(fotoBand){
+    const harAdresse = !!state.adresse;
+    const udenFoto = (id === "step-adresse" || id === "step-venteliste");
+    fotoBand.hidden = udenFoto || !harAdresse;
+  }
   if(!skipScroll) ROOT.scrollIntoView({ block:"start", behavior:"auto" });
   if(id === "step-verify") $("verify-adr").textContent = state.adresse;
   if(id === "step-losning"){ tmPagePreselect(); renderTop(); }
