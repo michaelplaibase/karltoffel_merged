@@ -4,14 +4,26 @@ import { statusLabel } from "@/lib/tilbud.mts";
 // Thomas, 2026-09-12 (fejlretning): oversigten viser nu ÅRSLIGT beløb
 // (kun linjer med interval) i stedet for det samlede beløb.
 import { tilbudAarsbelobSum } from "@/lib/subscription-intervals";
+// Thomas, 2026-09-14: søgefelt — mange tilbud skal kunne findes frem.
+import { SearchBar } from "@/components/ListControls";
 
 export const metadata = { title: "Tilbud · Karltoffel Business Manager" };
 export const dynamic = "force-dynamic";
 
 const kr = (n: number) => n.toLocaleString("da-DK") + " kr.";
 
-async function loadTilbud() {
+async function loadTilbud(q?: string) {
+  const term = q?.trim();
   return prisma.tilbud.findMany({
+    where: term
+      ? {
+          OR: [
+            { title: { contains: term, mode: "insensitive" } },
+            { contact: { name: { contains: term, mode: "insensitive" } } },
+            { contact: { companyName: { contains: term, mode: "insensitive" } } },
+          ],
+        }
+      : undefined,
     orderBy: { createdAt: "desc" },
     include: {
       contact: { select: { id: true, name: true, companyName: true } },
@@ -21,11 +33,14 @@ async function loadTilbud() {
   });
 }
 
-export default async function TilbudPage() {
+export default async function TilbudPage({ searchParams }: { searchParams: Promise<{ q?: string }> }) {
+  const sp = await searchParams;
+  const q = sp.q?.trim() || undefined;
+
   let tilbud: Awaited<ReturnType<typeof loadTilbud>> = [];
   let dbFejl = false;
   try {
-    tilbud = await loadTilbud();
+    tilbud = await loadTilbud(q);
   } catch {
     dbFejl = true;
   }
@@ -37,7 +52,10 @@ export default async function TilbudPage() {
           <h1 className="page-title" style={{ margin: 0 }}>Tilbud</h1>
           <p className="page-desc" style={{ marginBottom: 0 }}>Lav tilbud til kunderne — send dem med billeder og priser, og konvertér accepterede tilbud til abonnementer.</p>
         </div>
-        <Link href="/tilbud/new" className="btn btn-primary">Nyt tilbud</Link>
+        <div className="toolbar">
+          <SearchBar placeholder="Søg i titel eller kunde…" q={q} />
+          <Link href="/tilbud/new" className="btn btn-primary">Nyt tilbud</Link>
+        </div>
       </div>
 
       <div className="card">
@@ -50,6 +68,8 @@ export default async function TilbudPage() {
               <tbody>
                 {dbFejl ? (
                   <tr><td colSpan={6} style={{ color: "#8A6931" }}>Tilbud-tabel mangler i preview-databasen — oprettes automatisk, når modulet sættes live.</td></tr>
+                ) : q && tilbud.length === 0 ? (
+                  <tr><td colSpan={6}>Ingen tilbud matcher din søgning.</td></tr>
                 ) : tilbud.length === 0 ? (
                   <tr><td colSpan={6}>Ingen tilbud endnu — opret det første.</td></tr>
                 ) : (
