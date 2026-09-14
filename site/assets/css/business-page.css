@@ -49,3 +49,5 @@
 #business-page .ktb-form-status[data-error="true"] {color:#a21d17;}
 #business-page [hidden] {display:none!important;}
 @media(max-width:700px){#business-page {padding-top:80px;}}
+
+@media(min-width:1050px){#business-page .ktb-audience-copy .ktb-audience-more>p{max-width:none;}}
