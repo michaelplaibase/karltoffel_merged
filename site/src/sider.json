@@ -616,9 +616,7 @@
     "em_paragraf": false,
     "social": "alle"
    },
-   "motor": {
-    "type": "erhverv"
-   },
+   "motor": null,
    "ydelseskort": null,
    "faq": true,
    "faq_ekstra_fil": null,
