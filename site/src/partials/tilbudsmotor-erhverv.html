@@ -47,31 +47,10 @@
 	  <section class="step verify" id="step-verify" aria-labelledby="tm-h2v">
 	    <h2 id="tm-h2v">Er det her din ejendom?</h2>
 	    <div class="adr" id="verify-adr"></div>
-	    <div class="foto-card">
-	      <span class="foto-badge" id="sf-badge">Luftfoto</span>
-      <canvas id="sf-canvas" class="sf-canvas" role="img" aria-label="Skråfoto af ejendommen"></canvas>
-	      <svg id="sf-fallback" viewBox="0 0 640 380" role="img" aria-label="Luftfoto af ejendom, demo-illustration">
-	        <rect width="640" height="380" fill="#FFFFF0"/>
-	        <rect x="0" y="0" width="640" height="380" fill="#e9e4c6"/>
-	        <path d="M0 300 Q160 260 320 300 T640 290 V380 H0 Z" fill="#d8d2ad"/>
-	        <rect x="70" y="60" width="500" height="270" fill="none" stroke="#86612A" stroke-width="3" stroke-dasharray="10 8"/>
-	        <rect x="120" y="120" width="180" height="120" fill="#4C3718"/>
-	        <polygon points="120,120 210,80 300,120" fill="#5a4322"/>
-	        <rect x="230" y="150" width="30" height="30" fill="#FFF87B"/>
-	        <rect x="150" y="150" width="30" height="30" fill="#FFF87B"/>
-	        <rect x="330" y="140" width="90" height="70" fill="#6b5227"/>
-	        <circle cx="480" cy="140" r="34" fill="#9aa06b"/>
-	        <circle cx="520" cy="200" r="24" fill="#9aa06b"/>
-	        <circle cx="450" cy="230" r="20" fill="#9aa06b"/>
-	        <rect x="120" y="270" width="300" height="26" fill="#c9c39f"/>
-	        <text x="88" y="52" font-family="DM Sans, sans-serif" font-size="15" fill="#86612A">Matrikelgrænse (demo)</text>
-	      </svg>
-	    </div>
 	    <div class="verify-btns">
 	      <button class="btn btn-ja" id="btn-ja">Ja, det er min</button>
 	      <button class="btn btn-nej" id="btn-nej">Nej, prøv igen</button>
 	    </div>
-	    <small id="sf-note">Fotoet er kun til genkendelse — det påvirker ikke din pris.</small>
 	    <div class="tm-nav">
 	      <button class="btn btn-nej" id="vf-tilbage">Tilbage</button>
 	    </div>
@@ -138,6 +117,31 @@
 	  </section>
 	</div>
 
+	  <!-- Skråfoto: fast element der følger flowet hele vejen (alle trin efter
+	       adressen er valgt). Skjules indtil flowet kender adressen. -->
+	  <div class="tm-foto-band" id="tm-foto-band" hidden>
+	    <div class="foto-card" id="sf-foto-card">
+	      <span class="foto-badge" id="sf-badge">Luftfoto</span>
+	      <canvas id="sf-canvas" class="sf-canvas" role="img" aria-label="Skråfoto af ejendommen"></canvas>
+	      <svg id="sf-fallback" viewBox="0 0 640 380" role="img" aria-label="Luftfoto af ejendom, demo-illustration">
+	        <rect width="640" height="380" fill="#FFFFF0"/>
+	        <rect x="0" y="0" width="640" height="380" fill="#e9e4c6"/>
+	        <path d="M0 300 Q160 260 320 300 T640 290 V380 H0 Z" fill="#d8d2ad"/>
+	        <rect x="70" y="60" width="500" height="270" fill="none" stroke="#86612A" stroke-width="3" stroke-dasharray="10 8"/>
+	        <rect x="120" y="120" width="180" height="120" fill="#4C3718"/>
+	        <polygon points="120,120 210,80 300,120" fill="#5a4322"/>
+	        <rect x="230" y="150" width="30" height="30" fill="#FFF87B"/>
+	        <rect x="150" y="150" width="30" height="30" fill="#FFF87B"/>
+	        <rect x="330" y="140" width="90" height="70" fill="#6b5227"/>
+	        <circle cx="480" cy="140" r="34" fill="#9aa06b"/>
+	        <circle cx="520" cy="200" r="24" fill="#9aa06b"/>
+	        <circle cx="450" cy="230" r="20" fill="#9aa06b"/>
+	        <rect x="120" y="270" width="300" height="26" fill="#c9c39f"/>
+	        <text x="88" y="52" font-family="DM Sans, sans-serif" font-size="15" fill="#86612A">Matrikelgrænse (demo)</text>
+	      </svg>
+	    </div>
+	    <small id="sf-note">Fotoet er kun til genkendelse — det påvirker ikke din pris.</small>
+	  </div>
 	<div id="dig" role="status" aria-live="polite">
 	  <div class="dig-inner">
 	    <svg class="spade" viewBox="0 0 64 64" aria-hidden="true">
