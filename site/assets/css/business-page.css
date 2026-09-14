@@ -1,0 +1,82 @@
+/* Erhvervsindhold: alle regler er afgrænset til #business-page. */
+#business-page{--cream:#fffff0;--brown:#4c3718;--yellow:#fff87b;--olive:#62670f;--line:#d4cbb8;--body:'Hanken Grotesk',Arial,sans-serif}#business-page *{box-sizing:border-box}#business-page{margin:0;background:var(--cream);color:var(--brown);font:500 17px/1.55 var(--body)}#business-page a{color:inherit;text-underline-offset:5px}#business-page img{max-width:100%;display:block}#business-page h1,
+#business-page h2,
+#business-page h3,
+#business-page p,
+#business-page figure{margin:0}#business-page h1,
+#business-page h2,
+#business-page h3{font-family:snaga-unicase-display,var(--body);font-weight:900;line-height:1.04;letter-spacing:-.025em}#business-page h1{font-size:clamp(42px,4.6vw,68px);max-width:12ch;margin:20px 0 25px}#business-page h2{font-size:clamp(36px,4vw,54px);margin:16px 0 24px}#business-page h3{font-size:28px}#business-page p+p{margin-top:16px}#business-page .ktb-wrap{width:min(1160px,calc(100% - 80px));margin-inline:auto}#business-page .ktb-button{display:inline-flex;align-items:center;justify-content:space-between;gap:22px;border:0;border-radius:40px;padding:16px 24px;background:var(--brown);color:var(--yellow);text-decoration:none;font:750 15px/1.3 var(--body);cursor:pointer;min-height:48px}#business-page .ktb-button span{font-size:23px;line-height:1}#business-page .ktb-button:hover{background:var(--olive)}#business-page .ktb-hero{display:grid;grid-template-columns:1.2fr .8fr;gap:70px;align-items:center;padding-block:55px 65px}#business-page .ktb-eyebrow{display:inline-block;background:var(--yellow);border-radius:30px;padding:4px 12px;font-size:11px;text-transform:uppercase;font-weight:800;letter-spacing:.09em}#business-page .ktb-lead{font-size:20px;line-height:1.55;max-width:46ch}#business-page .ktb-hero .ktb-button{margin-top:28px}#business-page .ktb-hero-foot{font-size:13px;margin-top:19px;max-width:40ch}#business-page .ktb-hero-picture{position:relative;height:560px;transform:rotate(2deg);border-radius:120px 16px 100px 16px;overflow:hidden}#business-page .ktb-hero-picture img{width:100%;height:100%;object-fit:cover}#business-page .ktb-hero-picture figcaption{position:absolute;bottom:25px;left:20px;background:var(--yellow);color:var(--brown);padding:8px 14px;border-radius:30px;font-size:13px;font-weight:700}#business-page .ktb-clients{background:var(--brown);color:var(--cream);padding:25px 0 30px;text-align:center}#business-page .ktb-clients p{font-size:11px;text-transform:uppercase;letter-spacing:.13em;color:var(--yellow);margin-bottom:16px}#business-page .ktb-client-names{display:flex;justify-content:space-between;align-items:center;gap:20px;flex-wrap:wrap;font-weight:750;font-size:18px}#business-page .ktb-section{padding-block:90px}#business-page .ktb-section-heading{display:grid;grid-template-columns:1fr 1fr;gap:80px;align-items:center;margin-bottom:35px}#business-page .ktb-section-heading h2{margin-bottom:0}#business-page .ktb-section-heading>p{max-width:45ch;font-size:18px}#business-page .ktb-services{background:var(--yellow)}#business-page .ktb-services .ktb-eyebrow{background:var(--cream)}#business-page .ktb-service-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:24px}#business-page .ktb-service-grid article{padding:27px;border:1px solid #a99d49;border-radius:20px}#business-page .ktb-number{border:1px solid currentColor;display:flex;align-items:center;justify-content:center;border-radius:50%;width:32px;height:32px;font-size:12px;margin-bottom:28px}#business-page .ktb-service-grid h3{margin-bottom:16px}#business-page .ktb-service-grid p{font-size:16px}#business-page .ktb-service-links{display:flex;gap:36px;margin-top:26px;font-weight:700;font-size:15px}#business-page .ktb-service-links a{display:flex;gap:24px}#business-page .ktb-agreement{display:grid;grid-template-columns:.78fr 1.22fr;gap:100px;align-items:center}#business-page .ktb-film{max-width:360px}#business-page .ktb-film video{display:block;width:100%;height:auto;aspect-ratio:9/16;object-fit:cover;background:var(--brown);border-radius:22px}#business-page .ktb-film>p{font-size:13px;margin-top:14px}#business-page .ktb-video-text{font-size:12px;margin-top:10px}#business-page .ktb-video-text summary{cursor:pointer;text-decoration:underline}#business-page .ktb-video-text p{margin-top:12px}#business-page .ktb-agreement-row{border-top:1px solid var(--line);padding-top:20px;margin-top:24px}#business-page .ktb-agreement-row h3{font:800 19px var(--body);margin-bottom:6px}#business-page .ktb-agreement-row p{font-size:16px}#business-page .ktb-contact-section{background:var(--olive);color:var(--cream);padding:75px 0}#business-page .ktb-contact-grid{display:grid;grid-template-columns:1fr 1fr;gap:110px}#business-page .ktb-contact-grid h2{font-size:clamp(43px,4.8vw,66px);color:var(--yellow)}#business-page .ktb-contact-grid .ktb-eyebrow{color:var(--brown)}#business-page .ktb-contact-grid>div>p{max-width:36ch}#business-page .ktb-contact-grid .ktb-phone{display:block;font:900 32px snaga-unicase-display,var(--body);margin:28px 0 8px;text-decoration:none}#business-page .ktb-contact-grid form{background:var(--cream);color:var(--brown);padding:32px;border-radius:22px}#business-page .ktb-form-top h3{font-size:30px}#business-page .ktb-form-top p{font-size:14px;margin:7px 0 22px}#business-page label{display:block;font-size:13px;font-weight:750;margin-bottom:16px}#business-page label span{font-weight:400}#business-page input,
+#business-page textarea{display:block;width:100%;background:#fff;border:1px solid #b9ac90;border-radius:8px;font:400 16px var(--body);color:var(--brown);padding:12px;margin-top:6px;min-height:46px}#business-page textarea{resize:vertical}#business-page .ktb-form-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}#business-page .ktb-contact-grid form .ktb-button{width:100%;background:var(--yellow);color:var(--brown)}#business-page #form-status{margin-top:16px;font-size:14px;font-weight:700}#business-page .ktb-faq-section{display:grid;grid-template-columns:1fr 1.25fr;gap:100px}#business-page .ktb-faq-section>div>p{max-width:31ch}#business-page .ktb-faq details{border-bottom:1px solid var(--line);padding:23px 0}#business-page .ktb-faq details:first-child{border-top:1px solid var(--line)}#business-page .ktb-faq summary{font-size:17px;font-weight:750;cursor:pointer;list-style:none;display:flex;justify-content:space-between;gap:25px}#business-page .ktb-faq summary:after{content:'+';font-size:24px;line-height:1}#business-page .ktb-faq details[open] summary:after{content:'−'}#business-page .ktb-faq details p{margin-top:16px;font-size:16px}#business-page .ktb-faq summary::-webkit-details-marker{display:none}#business-page :focus-visible{outline:3px solid #a57013;outline-offset:5px}
+@media(max-width:1050px){#business-page .ktb-hero{gap:35px}#business-page .ktb-agreement{gap:55px}#business-page .ktb-contact-grid{gap:50px}#business-page .ktb-section-heading{gap:35px}#business-page .ktb-hero-picture{height:520px}}
+@media(max-width:700px){#business-page .ktb-wrap{width:calc(100% - 40px)}#business-page .ktb-hero{grid-template-columns:1fr;padding-block:40px;gap:32px}#business-page .ktb-hero h1{font-size:47px;max-width:13ch}#business-page .ktb-lead{font-size:18px}#business-page .ktb-hero .ktb-button{font-size:14px;padding:15px 19px}#business-page .ktb-hero-picture{height:360px;width:94%;margin:auto;transform:rotate(1.5deg);border-radius:65px 12px 65px 12px}#business-page .ktb-hero-picture img{object-position:center 42%}#business-page .ktb-client-names{font-size:15px;justify-content:center;gap:12px 22px}#business-page .ktb-section{padding-block:55px}#business-page .ktb-section-heading,
+#business-page .ktb-agreement,
+#business-page .ktb-contact-grid,
+#business-page .ktb-faq-section{grid-template-columns:1fr;gap:27px}#business-page .ktb-section-heading>p{font-size:16px}#business-page .ktb-service-grid{grid-template-columns:1fr;gap:15px}#business-page .ktb-service-grid article{padding:24px}#business-page .ktb-number{margin-bottom:20px}#business-page .ktb-service-links{flex-direction:column;gap:17px}#business-page .ktb-agreement .ktb-film{order:2;max-width:310px;margin:12px auto 0}#business-page .ktb-agreement h2{font-size:43px}#business-page .ktb-contact-section{padding:50px 0}#business-page .ktb-contact-grid h2{font-size:50px}#business-page .ktb-contact-grid form{padding:24px 20px}#business-page .ktb-form-grid{grid-template-columns:1fr;gap:0}#business-page .ktb-faq-section{gap:30px}}
+#business-page .ktb-audience-mobile-picker{display:none}#business-page .ktb-audience-more>summary{display:none}#business-page .ktb-audience-copy .ktb-audience-more>p{font-size:18px;max-width:47ch}
+#business-page .ktb-audiences{border-bottom:1px solid var(--line)}#business-page .ktb-audience-tabs{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:30px}#business-page .ktb-audience-tabs button{background:transparent;border:1px solid #b3a387;border-radius:30px;padding:12px 19px;min-height:46px;color:var(--brown);font:700 14px/1.3 var(--body);cursor:pointer}#business-page .ktb-audience-tabs button:hover{background:#f2ecd5}#business-page .ktb-audience-tabs button[aria-selected="true"]{background:var(--brown);color:var(--yellow);border-color:var(--brown)}#business-page .ktb-audience-panel{display:grid;grid-template-columns:280px 1fr;gap:65px;align-items:center;padding:35px;background:#f5f0dc;border-radius:24px}#business-page .ktb-audience-panel[hidden]{display:none}#business-page .ktb-audience-film{position:relative;align-self:start}#business-page .ktb-audience-film video{width:100%;height:auto;aspect-ratio:9/16;display:block;background:var(--brown);object-fit:cover;border-radius:16px}#business-page .ktb-audience-play{position:absolute;bottom:25px;left:50%;transform:translateX(-50%);border:0;background:var(--yellow);color:var(--brown);border-radius:30px;padding:14px 22px;display:flex;align-items:center;gap:13px;white-space:nowrap;cursor:pointer;font:750 15px var(--body);box-shadow:0 3px 20px #0003}#business-page .ktb-audience-play[hidden]{display:none}#business-page .ktb-audience-copy h3{font-size:clamp(30px,3vw,44px);margin:19px 0}#business-page .ktb-audience-copy>p{font-size:18px;max-width:47ch}#business-page .ktb-audience-copy ul{padding:0;list-style:none;margin:25px 0}#business-page .ktb-audience-copy li{padding:10px 0 10px 25px;border-bottom:1px solid var(--line);position:relative;font-size:16px}#business-page .ktb-audience-copy li:before{content:'✓';position:absolute;left:0}#business-page .ktb-audience-copy .ktb-button{margin-top:4px}#business-page .ktb-audience-video-error{font-size:13px;margin-top:10px}
+@media(max-width:850px){#business-page .ktb-audience-panel{gap:30px;grid-template-columns:240px 1fr;padding:25px}#business-page .ktb-audience-copy h3{font-size:33px}}
+@media(max-width:700px){#business-page .ktb-audience-tabs{gap:8px;margin-bottom:22px}#business-page .ktb-audience-tabs button{font-size:12px;padding:11px 13px;flex:1 1 auto}#business-page .ktb-audience-panel{grid-template-columns:1fr;padding:24px 20px;gap:27px}#business-page .ktb-audience-copy{order:0}#business-page .ktb-audience-film{order:1;width:min(100%,270px);margin-inline:auto}#business-page .ktb-audience-copy h3{font-size:32px}#business-page .ktb-audience-copy>p{font-size:16px}#business-page .ktb-audience-copy li{font-size:14px}#business-page .ktb-audience-copy .ktb-button{font-size:13px;padding:14px 17px;width:100%}}
+@media(max-width:700px){
+ #business-page .ktb-audience-tabs{display:none}
+ #business-page .ktb-audience-mobile-picker{display:block;margin:0 0 20px}
+ #business-page .ktb-audience-mobile-picker label{margin-bottom:8px;font-size:13px}
+ #business-page .ktb-audience-mobile-picker select{width:100%;min-height:54px;border:1px solid var(--brown);border-radius:12px;padding:12px 40px 12px 16px;background:var(--brown);color:var(--yellow);font:700 16px var(--body);color-scheme:dark;cursor:pointer}
+ #business-page .ktb-audiences .ktb-section-heading{gap:17px;margin-bottom:25px}
+ #business-page .ktb-audiences .ktb-section-heading>p{display:none}
+ #business-page .ktb-audience-panel{display:flex;flex-direction:column;padding:24px 20px;gap:24px}
+ #business-page .ktb-audience-panel[hidden]{display:none}
+ #business-page .ktb-audience-film{order:0;width:210px;max-width:100%;align-self:center;margin:0}
+ #business-page .ktb-audience-copy{order:1;width:100%}
+ #business-page .ktb-audience-copy>.ktb-eyebrow{display:none}
+ #business-page .ktb-audience-copy h3{font-size:28px;margin:0 0 14px;text-wrap:balance}
+ #business-page .ktb-audience-copy h3 br{display:none}
+ #business-page .ktb-audience-more>summary{display:flex;align-items:center;justify-content:space-between;gap:15px;list-style:none;font-size:14px;font-weight:750;cursor:pointer;padding:14px 0;border-top:1px solid var(--line)}
+ #business-page .ktb-audience-more>summary::-webkit-details-marker{display:none}
+ #business-page .ktb-audience-more>summary::after{content:'+';font-size:22px;line-height:1}
+ #business-page .ktb-audience-more[open]>summary::after{content:'−'}
+ #business-page .ktb-audience-copy .ktb-audience-more>p{font-size:16px;margin-top:8px}
+ #business-page .ktb-audience-copy .ktb-audience-more ul{margin:16px 0}
+ #business-page .ktb-audience-copy .ktb-button{margin-top:13px}
+}
+
+#business-page {display:block;padding-top:100px;font-family:"Hanken Grotesk",Arial,sans-serif;}
+#business-page section {scroll-margin-top:100px;}
+#business-page p {padding:0;}
+#business-page h1,#business-page h2,#business-page h3 {text-transform:none;}
+#business-page button,#business-page input,#business-page textarea,#business-page select {box-sizing:border-box;}
+#business-page .ktb-eyebrow {line-height:1.55;}
+#business-page .ktb-form-status {margin-top:16px;font-size:14px;}
+#business-page .ktb-form-status[data-error="true"] {color:#a21d17;}
+#business-page [hidden] {display:none!important;}
+@media(max-width:700px){#business-page {padding-top:80px;}}
+
+@media(min-width:1050px){#business-page .ktb-audience-copy .ktb-audience-more>p{max-width:none;}}
+
+/* Hold feltets overskrift tæt på feltet og adskil feltgrupperne. */
+#business-page .ktb-erhverv-field {margin-bottom:20px;}
+#business-page .ktb-erhverv-field label {margin:0 0 6px;}
+#business-page .ktb-erhverv-field input,
+#business-page .ktb-erhverv-field textarea {margin:0;}
+
+/* Alle eksisterende kundenavne i én rolig, sammenhængende række. */
+#business-page .ktb-clients-heading {position:relative;min-height:44px;display:flex;align-items:center;justify-content:center;padding-inline:50px;}
+#business-page .ktb-clients-heading p {margin:0;}
+#business-page .ktb-clients-pause {position:absolute;right:0;top:0;width:40px;height:40px;border:1px solid #fffff066;border-radius:50%;background:transparent;color:var(--yellow);font:700 18px/1 var(--body);cursor:pointer;}
+#business-page .ktb-clients-window {overflow-x:auto;scrollbar-width:thin;scrollbar-color:var(--yellow) var(--brown);}
+#business-page .ktb-clients-track {display:flex;width:max-content;}
+#business-page .ktb-clients-list {display:flex;flex:none;align-items:center;gap:56px;list-style:none;padding:12px 56px 12px 0;margin:0;font-size:18px;font-weight:750;}
+#business-page .ktb-clients-list li {white-space:nowrap;padding:0;margin:0;}
+#business-page .ktb-clients-list[aria-hidden] {display:none;}
+#business-page .ktb-clients.is-moving .ktb-clients-window {overflow:hidden;}
+#business-page .ktb-clients.is-moving .ktb-clients-list[aria-hidden] {display:flex;}
+#business-page .ktb-clients.is-moving .ktb-clients-track {animation:ktb-client-scroll 65s linear infinite;}
+#business-page .ktb-clients.is-paused .ktb-clients-track {animation-play-state:paused;}
+@media(hover:hover){#business-page .ktb-clients:hover .ktb-clients-track {animation-play-state:paused;}}
+@keyframes ktb-client-scroll {to {transform:translateX(-50%);}}
+@media(max-width:700px){#business-page .ktb-clients-list {font-size:16px;gap:36px;padding-right:36px;}}
+@media(prefers-reduced-motion:reduce){
+ #business-page .ktb-clients.is-moving .ktb-clients-window {overflow-x:auto;}
+ #business-page .ktb-clients.is-moving .ktb-clients-track {animation:none;transform:none;}
+ #business-page .ktb-clients.is-moving .ktb-clients-list[aria-hidden] {display:none;}
+ #business-page .ktb-clients-pause {display:none;}
+}

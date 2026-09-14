@@ -19,6 +19,7 @@
 		var phone = String(data.get("phone") || "").trim();
 		var email = String(data.get("email") || "").trim();
 		var address = String(data.get("address") || "").trim();
+		var description = String(data.get("description") || "").trim().slice(0, 1500);
 
 		if(!address || !name || phone.replace(/\D/g, "").length < 8){
 			showStatus("Udfyld adresse, navn og et telefonnummer med mindst 8 cifre.", true);
@@ -54,7 +55,8 @@
 				address: address,
 				kundetype: "erhverv",
 				source: "erhverv-tilbagekald",
-				message: "Ønsker opkald om erhvervsservice. Adresse: " + address,
+				message: "Ønsker opkald om erhvervsservice. Adresse: " + address +
+					(description ? "\n\nOpgavebeskrivelse: " + description : ""),
 				meta_capi: { event_id: metaEventId, content_name: "erhverv-tilbagekald" }
 			})
 		})
