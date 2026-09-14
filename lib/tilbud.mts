@@ -62,6 +62,23 @@ export function tasklineMedarbejdere<T extends { employeeId?: number | null | un
   return linjer.map((l) => (Number.isInteger(l.employeeId) ? (l.employeeId as number) : null));
 }
 
+/** Thomas, 2026-09-12: valgfri LEAD-KILDE på et tilbud → LeadAcquisition ved
+ *  konvertering til abonnement. Kilden er KANAL-navnet fra lead-beregnerens
+ *  LEAD_SOURCES (lib/lead-sources.mts); kategorien følger kontaktens type
+ *  (privat/virksomhed), PRÆCIS som ny-kunde-flowet i app/actions/contacts.ts.
+ *  Returnerer null når intet skal oprettes: tom/blank kilde, eller når kunden
+ *  ALLEREDE har en erhvervelse — en eksisterende kanal overskrives ALDRIG. */
+export function tilbudLeadAcquisition(
+  leadSource: string | null | undefined,
+  isCompany: boolean | null | undefined,
+  harErhvervelse: boolean,
+): { category: "privat" | "virksomhed"; source: string } | null {
+  const source = String(leadSource ?? "").trim();
+  if (!source) return null;
+  if (harErhvervelse) return null;
+  return { category: isCompany ? "virksomhed" : "privat", source };
+}
+
 /** Data-shape der sendes ind i PDF-rendereren (lib/tilbud-doc.mts). */
 export type TilbudPdfData = {
   kundeNavn: string;
