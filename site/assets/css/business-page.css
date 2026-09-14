@@ -51,3 +51,32 @@
 @media(max-width:700px){#business-page {padding-top:80px;}}
 
 @media(min-width:1050px){#business-page .ktb-audience-copy .ktb-audience-more>p{max-width:none;}}
+
+/* Hold feltets overskrift tæt på feltet og adskil feltgrupperne. */
+#business-page .ktb-erhverv-field {margin-bottom:20px;}
+#business-page .ktb-erhverv-field label {margin:0 0 6px;}
+#business-page .ktb-erhverv-field input,
+#business-page .ktb-erhverv-field textarea {margin:0;}
+
+/* Alle eksisterende kundenavne i én rolig, sammenhængende række. */
+#business-page .ktb-clients-heading {position:relative;min-height:44px;display:flex;align-items:center;justify-content:center;padding-inline:50px;}
+#business-page .ktb-clients-heading p {margin:0;}
+#business-page .ktb-clients-pause {position:absolute;right:0;top:0;width:40px;height:40px;border:1px solid #fffff066;border-radius:50%;background:transparent;color:var(--yellow);font:700 18px/1 var(--body);cursor:pointer;}
+#business-page .ktb-clients-window {overflow-x:auto;scrollbar-width:thin;scrollbar-color:var(--yellow) var(--brown);}
+#business-page .ktb-clients-track {display:flex;width:max-content;}
+#business-page .ktb-clients-list {display:flex;flex:none;align-items:center;gap:56px;list-style:none;padding:12px 56px 12px 0;margin:0;font-size:18px;font-weight:750;}
+#business-page .ktb-clients-list li {white-space:nowrap;padding:0;margin:0;}
+#business-page .ktb-clients-list[aria-hidden] {display:none;}
+#business-page .ktb-clients.is-moving .ktb-clients-window {overflow:hidden;}
+#business-page .ktb-clients.is-moving .ktb-clients-list[aria-hidden] {display:flex;}
+#business-page .ktb-clients.is-moving .ktb-clients-track {animation:ktb-client-scroll 65s linear infinite;}
+#business-page .ktb-clients.is-paused .ktb-clients-track {animation-play-state:paused;}
+@media(hover:hover){#business-page .ktb-clients:hover .ktb-clients-track {animation-play-state:paused;}}
+@keyframes ktb-client-scroll {to {transform:translateX(-50%);}}
+@media(max-width:700px){#business-page .ktb-clients-list {font-size:16px;gap:36px;padding-right:36px;}}
+@media(prefers-reduced-motion:reduce){
+ #business-page .ktb-clients.is-moving .ktb-clients-window {overflow-x:auto;}
+ #business-page .ktb-clients.is-moving .ktb-clients-track {animation:none;transform:none;}
+ #business-page .ktb-clients.is-moving .ktb-clients-list[aria-hidden] {display:none;}
+ #business-page .ktb-clients-pause {display:none;}
+}

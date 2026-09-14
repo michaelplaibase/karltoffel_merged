@@ -2,6 +2,16 @@
 'use strict';
 const root = document.getElementById('business-page');
 if (!root) return;
+const clients = root.querySelector('.ktb-clients');
+const pauseClients = clients.querySelector('.ktb-clients-pause');
+clients.classList.add('is-moving');
+pauseClients.hidden = false;
+pauseClients.addEventListener('click', () => {
+  const paused = clients.classList.toggle('is-paused');
+  pauseClients.setAttribute('aria-pressed', String(paused));
+  pauseClients.setAttribute('aria-label', paused ? 'Start kundenavnenes bevægelse' : 'Sæt kundenavnenes bevægelse på pause');
+  pauseClients.querySelector('span').textContent = paused ? '▶' : 'Ⅱ';
+});
 root.querySelectorAll('.ktb-audience-panel').forEach(panel => {
   panel.dataset.tabLabel = panel.getAttribute('aria-labelledby');
   panel.querySelector('h3').id = panel.id + '-heading';
