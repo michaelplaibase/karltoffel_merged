@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { getDownloadUrl } from "@vercel/blob";
-import { statusLabel, tilbudTotal, linjeKundeTekst, bygAarshjul } from "@/lib/tilbud.mts";
+import { statusLabel, linjeKundeTekst, bygAarshjul } from "@/lib/tilbud.mts";
 import Aarshjul from "@/components/Aarshjul";
 import { tilbudAarsbelobSum } from "@/lib/subscription-intervals";
 import { tilbudMailBesked } from "@/lib/tilbud-send";
@@ -34,15 +34,18 @@ export default async function TilbudDetailPage({ params, searchParams }: { param
   });
   if (!tilbud) notFound();
 
-  const total = tilbudTotal(tilbud.lines); // til staff-mailen — vises IKKE som bundlinje
-  // Thomas, 2026-09-11 (korrektion): Årsbeløbet er summen PR. LINJE — kun
-  // linjer med interval tæller med (engangsopgaver tæller ikke).
+  // Thomas, 2026-09-12 (fejlretning): mailen nævner nu ÅRSLIGT beløb (kun
+  // linjer med interval) i stedet for det samlede beløb.
   const aarligt = tilbudAarsbelobSum(tilbud.lines);
   const fotos = tilbud.photos.map((p) => ({ id: p.id, lineId: p.lineId, url: getDownloadUrl(p.url) }));
+  // Thomas, 2026-09-12 (fejlretning): kundens godkend-link skal være en
+  // ABSOLUTE URL i mailen (offentlig accept-side /t/<token>).
+  const godkendUrl = `${(process.env.CRM_BASE_URL?.trim() || "https://crm.karltoffel.dk").replace(/\/$/, "")}/t/${tilbud.acceptToken}`;
   const mailBesked = tilbudMailBesked({
     hilsenNavn: (tilbud.contact.name || "kunde").split(" ")[0],
     titel: tilbud.title,
-    samlet: total,
+    aarligt,
+    godkendUrl,
   });
   const offentligtLink = `/t/${tilbud.acceptToken}`;
 
@@ -133,7 +136,8 @@ export default async function TilbudDetailPage({ params, searchParams }: { param
               besked={tilbudMailBesked({
                 hilsenNavn: (tilbud.contact.name || "kunde").split(" ")[0],
                 titel: tilbud.title,
-                samlet: total,
+                aarligt,
+                godkendUrl,
               })}
               action={sendTilbud}
             />
