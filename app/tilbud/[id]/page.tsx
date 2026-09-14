@@ -130,6 +130,14 @@ export default async function TilbudDetailPage({ params, searchParams }: { param
         <div className="card">
           <div className="card-body">
             <h2 className="section-title" style={{ marginTop: 0 }}>Send til kunden</h2>
+            {/* Thomas, 2026-09-14: FORHÅNDSVISNING — åbn accept-siden i nyt
+                faneblad, så teamet kan se hvad kunden får, FØR tilbuddet sendes.
+                Virker også for udkast (siden viser preview uden godkend-knap). */}
+            <p>
+              <a href={offentligtLink} target="_blank" rel="noopener" className="btn btn-outline-primary">
+                Forhåndsvisning (som kunden ser den)
+              </a>
+            </p>
             <TilbudSendPanel
               tilbudId={tilbud.id}
               to={tilbud.contact.email ?? ""}
@@ -147,6 +155,11 @@ export default async function TilbudDetailPage({ params, searchParams }: { param
               Kunden kan godkende tilbuddet via dette link (fx sendt i mailen eller en SMS):
             </p>
             <code style={{ display: "block", wordBreak: "break-all" }}>{offentligtLink}</code>
+            <p style={{ marginTop: 10 }}>
+              <a href={offentligtLink} target="_blank" rel="noopener" className="btn btn-light">
+                Forhåndsvisning (som kunden ser den)
+              </a>
+            </p>
             <p className="form-text">På siden kan kunden klikke ”Godkend tilbud” — så skifter status automatisk til accepteret.</p>
           </div>
         </div>

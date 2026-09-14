@@ -156,6 +156,17 @@ export default async function TilbudAcceptPage({
           <b style={{ color: "#FFF87B" }}>Tak — tilbuddet er godkendt!</b>
           <p style={{ margin: "6px 0 0" }}>Vi kontakter dig snarest for at aftale detaljerne.</p>
         </div>
+      ) : tilbud.status === "udkast" ? (
+        // Thomas, 2026-09-14: FORHÅNDSVISNING — teamet kan åbne /t/{token} fra
+        // /tilbud/[id] for at se siden som kunden vil se den, FØR tilbuddet
+        // sendes. Udkast kan ikke godkendes her (kanGodkende kræver status
+        // 'sendt'), og linket er stadig hemmeligt (kun tokenet giver adgang).
+        <div style={{ marginTop: 20, background: "#FFF87B", border: "2px dashed #8A6931", borderRadius: 8, padding: 16 }}>
+          <b>Forhåndsvisning</b>
+          <p style={{ margin: "6px 0 0" }}>
+            Dette er en forhåndsvisning af, hvordan kunden vil se tilbuddet. Kunden kan ikke godkende endnu — tilbuddet skal først sendes.
+          </p>
+        </div>
       ) : (
         <div style={{ marginTop: 20 }}>
           <p>Linket er ikke aktivt længere — kontakt os på 22 22 38 33 eller hej@karltoffel.dk, så hører vi gerne fra dig.</p>
