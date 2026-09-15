@@ -10,7 +10,7 @@ export function tilbudMailBesked(data: {
 }): string {
   const prisSaetning =
     data.aarligt != null
-      ? `opgaverne der løber over året (${data.aarligt.toLocaleString("da-DK")} kr. om året inkl. moms)`
+      ? `opgaverne der løber over året (${data.aarligt.toLocaleString("da-DK")} kr. om året u. moms)`
       : `opgaverne`;
   const linkLinje = data.godkendUrl ? `\n\nGodkend tilbud her: ${data.godkendUrl}` : "";
   return (

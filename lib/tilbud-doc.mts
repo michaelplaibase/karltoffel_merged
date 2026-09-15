@@ -7,6 +7,7 @@ import { Document, Page, Text, View, StyleSheet, Image, Font, pdf } from "@react
 import { SNAGA_BLACK, HANKEN_REGULAR, HANKEN_SEMIBOLD } from "./maanedrapport-fonts";
 import type { TilbudPdfData } from "./tilbud.mts";
 import { bygAarshjul } from "./tilbud.mts";
+import { tilbudMomsOgIalt, krMoms } from "./vat";
 
 import * as ReactNS from "react";
 const e = ReactNS.createElement;
@@ -140,7 +141,7 @@ function TilbudDoc({ data }: { data: TilbudPdfData }) {
               // ("Starter uge 29") — kun når linjen har en startuge.
               l.startWeek ? e(Text, { style: S.lineFrekvens }, `Starter ${l.startWeek.charAt(0).toLowerCase()}${l.startWeek.slice(1)}`) : null,
             ),
-            e(Text, { style: S.linePrice }, `${kr(l.price)} pr. gang`),
+            e(Text, { style: S.linePrice }, `${kr(l.price)} pr. gang (u. moms)`),
           ),
         ),
       ),
@@ -150,12 +151,22 @@ function TilbudDoc({ data }: { data: TilbudPdfData }) {
       ...aarshjulAfsnit(data.linjer),
       // Bundlinje: ÅRLIGT beløb når intervallet er sat (Thomas, 2026-09-11 —
       // det gamle 'samlet beløb' er fjernet). Uden interval: kun momsnoden.
+      // Thomas, 2026-09-15: priser u. moms — moms (25%) + ialt inkl. moms i
+      // bunden. Samme lib/vat-funktion som alle andre flader, så tallene
+      // aldrig afviger.
       e(View, { style: S.totalBox, wrap: false },
         data.aarsbelob != null
-          ? e(Text, { style: { fontSize: 11, fontWeight: 600 } }, `Årligt beløb: ${kr(data.aarsbelob)} (inkl. moms)`)
+          ? (() => {
+              const m = tilbudMomsOgIalt(data.aarsbelob);
+              return [
+                e(Text, { key: "ekskl", style: { fontSize: 11, fontWeight: 600 } }, `Årligt beløb: ${krMoms(m.ekskl)} (u. moms)`),
+                e(Text, { key: "moms", style: { fontSize: 9.5, marginTop: 3 } }, `Moms (25%): ${krMoms(m.moms)}`),
+                e(Text, { key: "ialt", style: { fontSize: 11, fontWeight: 600, marginTop: 3 } }, `Ialt inkl. moms: ${krMoms(m.ialt)}`),
+              ];
+            })()
           : null,
         e(Text, { style: { fontSize: 8.5, marginTop: data.aarsbelob != null ? 3 : 0, color: RISTET } },
-          "Alle priser er inkl. moms. Tilbuddet er gældende i 30 dage."),
+          "Alle priser er u. moms. Tilbuddet er gældende i 30 dage."),
       ),
       e(View, { style: { backgroundColor: MULD, borderRadius: 4, padding: 12, margin: "12pt 20pt 0 20pt" }, wrap: false },
         e(Text, { style: { fontFamily: "Snaga", fontSize: 11, color: FRITURE } }, "Vil du sige ja?"),
