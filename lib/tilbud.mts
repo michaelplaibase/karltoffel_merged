@@ -83,6 +83,9 @@ export function tilbudLeadAcquisition(
 /** Data-shape der sendes ind i PDF-rendereren (lib/tilbud-doc.mts). */
 export type TilbudPdfData = {
   kundeNavn: string;
+  // Thomas, 2026-09-15: kundens adresse ("Svendborgvej 62, 5700 Svendborg") —
+  // vises under kundenavnet i PDF-headeren (gul Tilbud-boks). null = udelades.
+  kundeAdresse: string | null;
   hilsenNavn: string;
   titel: string;
   note: string | null;
@@ -99,7 +102,7 @@ export type TilbudPdfData = {
 };
 
 export type TilbudInput = {
-  contact: { name: string; companyName: string | null; att: string | null };
+  contact: { name: string; companyName: string | null; att: string | null; street?: string | null; city?: string | null };
   title: string;
   note: string | null;
   startWeek?: string | null;
@@ -120,6 +123,9 @@ export function buildTilbudPdfData(input: TilbudInput): TilbudPdfData {
   }));
   return {
     kundeNavn: navn,
+    // Thomas, 2026-09-15: adresse under kundenavnet — contact.street + city
+    // (city indeholder allerede postnummer, "8660 Skanderborg").
+    kundeAdresse: [input.contact.street, input.contact.city].filter(Boolean).join(", ") || null,
     hilsenNavn: fornavn,
     titel: input.title || "Tilbud",
     note: input.note || null,

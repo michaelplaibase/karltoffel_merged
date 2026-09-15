@@ -25,7 +25,7 @@ export default async function TilbudDetailPage({ params, searchParams }: { param
   const tilbud = await prisma.tilbud.findUnique({
     where: { id: tilbudId },
     include: {
-      contact: { select: { id: true, name: true, companyName: true, email: true } },
+      contact: { select: { id: true, name: true, companyName: true, email: true, street: true, city: true } },
       // Thomas, 2026-09-11: medarbejder-tilknytning pr. linje følger med til
       // INTERN visning her (teamets side) — den skal ALDRIG videre til
       // PDF/accept-side/årshjul (disse bygger deres egne data-shapes).
@@ -69,6 +69,10 @@ export default async function TilbudDetailPage({ params, searchParams }: { param
           <h1 className="page-title" style={{ margin: 0 }}>{tilbud.title}</h1>
           <p className="page-desc" style={{ marginBottom: 0 }}>
             <Link href={`/customers/${tilbud.contact.id}`}>{tilbud.contact.companyName || tilbud.contact.name}</Link>
+            {/* Thomas, 2026-09-15: kundens adresse i kundeoplysningerne. */}
+            {(tilbud.contact.street || tilbud.contact.city)
+              ? ` · ${[tilbud.contact.street, tilbud.contact.city].filter(Boolean).join(", ")}`
+              : ""}
             {" · Status: "}
             <b>{statusLabel(tilbud.status)}</b>
             {tilbud.sentAt ? ` · Sendt ${tilbud.sentAt.toLocaleDateString("da-DK")}` : ""}

@@ -101,3 +101,15 @@ label.heading{color:#4C3718}
 .swiper .swiper-button-next::after,.swiper-button-next::after,.swiper .swiper-button-prev::after,.swiper-button-prev::after{font-size:25px}
 .swiper .swiper-button-next::after,.swiper-button-next::after{content:"";width:0.875em;height:1em;background-color:currentColor;-webkit-mask:url("data:image/svg+xml;utf8,%3Csvg%20xmlns=%22http://www.w3.org/2000/svg%22%20viewBox=%220%200%20512%20512%22%3E%3Cpath%20transform=%22matrix(1%200%200%20-1%200%20448)%22%20d=%22M430%20175%20447%20192%20430%20175%20447%20192%20430%20209%20276%20363%20259%20380%20225%20346%20242%20329%20355%20216H24H0V168H24H355L242%2055L225%2038L259%204L276%2021L430%20175Z%22/%3E%3C/svg%3E") no-repeat 0 0/100% 100%;mask:url("data:image/svg+xml;utf8,%3Csvg%20xmlns=%22http://www.w3.org/2000/svg%22%20viewBox=%220%200%20512%20512%22%3E%3Cpath%20transform=%22matrix(1%200%200%20-1%200%20448)%22%20d=%22M430%20175%20447%20192%20430%20175%20447%20192%20430%20209%20276%20363%20259%20380%20225%20346%20242%20329%20355%20216H24H0V168H24H355L242%2055L225%2038L259%204L276%2021L430%20175Z%22/%3E%3C/svg%3E") no-repeat 0 0/100% 100%}
 .swiper .swiper-button-prev::after,.swiper-button-prev::after{content:"";width:0.875em;height:1em;background-color:currentColor;-webkit-mask:url("data:image/svg+xml;utf8,%3Csvg%20xmlns=%22http://www.w3.org/2000/svg%22%20viewBox=%220%200%20512%20512%22%3E%3Cpath%20transform=%22matrix(1%200%200%20-1%200%20448)%22%20d=%22M18%20175%201%20192%2018%20175%201%20192%2018%20209%20172%20363%20189%20380%20223%20346%20206%20329%2093%20216H424H448V168H424H93L206%2055L223%2038L189%204L172%2021L18%20175Z%22/%3E%3C/svg%3E") no-repeat 0 0/100% 100%;mask:url("data:image/svg+xml;utf8,%3Csvg%20xmlns=%22http://www.w3.org/2000/svg%22%20viewBox=%220%200%20512%20512%22%3E%3Cpath%20transform=%22matrix(1%200%200%20-1%200%20448)%22%20d=%22M18%20175%201%20192%2018%20175%201%20192%2018%20209%20172%20363%20189%20380%20223%20346%20206%20329%2093%20216H424H448V168H424H93L206%2055L223%2038L189%204L172%2021L18%20175Z%22/%3E%3C/svg%3E") no-repeat 0 0/100% 100%}
+
+
+/* Erhverv-punkt i topmenuen skal skille sig ud (Kristian 2026-09-15): federe + jordbrun accent-farve */
+.header__nav .nav .nav__item .nav__link--erhverv,
+.drawer__nav .nav .nav__item .nav__link--erhverv {
+	font-weight:800;
+	color:#8A6931;
+}
+.header__nav .nav .nav__item .nav__link--erhverv:hover,
+.drawer__nav .nav .nav__item .nav__link--erhverv:hover {
+	color:#4C3718;
+}
