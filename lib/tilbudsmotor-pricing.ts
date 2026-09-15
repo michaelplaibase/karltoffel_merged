@@ -39,6 +39,9 @@ export type PricedService = {
   enhed: string;
   freq: number;
   pris: number | null;
+  /** Mindestepris pr. besøg (fx hæk 1.350 kr) — spejler `min` i motoren.
+   *  Linjeprisen = max(pris*qty, min) pr. besøg, før freq ganges på. */
+  min?: number | null;
 };
 
 export type Beregning = {
@@ -63,7 +66,10 @@ export function beregn(services: PricedService[]): Beregning {
   for (const p of services) {
     count += 1;                                    // uprisede ("indeholdt") tæller også med
     if (p.freq > visits) visits = p.freq;           // ydelser bundtes på samme besøg
-    if (p.pris != null && p.qty > 0) brutto += p.pris * p.qty * p.freq;
+    if (p.pris != null && p.qty > 0) {
+      const linje = Math.max(p.pris * p.qty, p.min || 0);   // samme min-logik som motoren
+      brutto += linje * p.freq;
+    }
   }
   const pct = rabatPct(count);
   const aar = brutto * (1 - pct / 100);
@@ -75,7 +81,7 @@ export function beregn(services: PricedService[]): Beregning {
 
 /** Årspris pr. linje inkl. moms. null-pris → 0 kr (men linjen vises stadig). */
 export function linjeAar(p: PricedService): number {
-  return p.pris == null || !p.qty ? 0 : p.pris * p.qty * p.freq;
+  return p.pris == null || !p.qty ? 0 : Math.max(p.pris * p.qty, p.min || 0) * p.freq;
 }
 
 /** Rabatkoden er EKSTRA rabat oven i mængderabatten og trækkes fra årssummen
@@ -133,6 +139,7 @@ export function parseLeadPayload(raw: string | null): LeadPayload {
       enhed: s(r.enhed),
       freq: n(r.freq),
       pris: typeof r.pris === "number" && Number.isFinite(r.pris) && r.pris >= 0 ? r.pris : null,
+      min: typeof r.min === "number" && Number.isFinite(r.min) && r.min >= 0 ? r.min : null,
     }];
   });
 

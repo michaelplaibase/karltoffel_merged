@@ -29,7 +29,7 @@ const PRODUCTS = [
      vokset sig for stor) 33,50 kr/m. Prisen afledes af hæk-spørgsmålene
      (state.haekInfo, se syncHaekPris). wm-navnene er UÆNDREDE (samme
      WorkMaker-produkt for begge priser indtil nyt produkt findes i CSV). */
-  {id:"haek",     navn:"Hækklipning",                    enhed:"m hæk",      pris:27.00, note:"Trimning — hæk under 220 cm",            qty:0,  freq:1,  fmax:3,  on:false, pakke:true, kat:"pakke", wm:"Hækklipning 1 side pr meter Under 220 cm"},
+  {id:"haek",     navn:"Hækklipning",                    enhed:"m hæk",      pris:33.75, min:1350, note:"Trimning — hæk under 220 cm",            qty:0,  freq:1,  fmax:3,  on:false, pakke:true, kat:"pakke", wm:"Hækklipning 1 side pr meter Under 220 cm"},
   {id:"green",    navn:"Greenkeeper græspleje",          enhed:"m² plæne",   pris:2.30,  note:"Gødning og pleje af plænen",      qty:0, freq:3,  fmax:6,  on:false, pakke:true, kat:"pakke", wm:"Greenkeeper græspleje"},
   {id:"alge",     navn:"Algebehandling af tag",          enhed:"m² tag",     pris:9.80,  min:950,  note:"Mos og alger, beregnet på skråt tagareal", qty:0, freq:1, fmax:2, on:false, pakke:true, kat:"pakke", wm:"Algebehandling af tag"},
   {id:"tagrender",navn:"Tagrenderens",                   enhed:"m tagrende", pris:18.00, note:"Stueplan / 1-plans hus",          qty:0,  freq:1,  fmax:2,  on:false, pakke:true, kat:"pakke", wm:"Tagrenderens Stueplan / 1-plans hus"},
@@ -155,7 +155,7 @@ const state = {
 
 /* ============ HÆK-SPØRGSMÅL + PRISAFLEDNING ============ */
 /* Kundevenlige spørgsmål på hæk-rækken (ingen forvalg). Priser:
-   TRIMNING 27,00 kr/m · BESKÆRING (skære ind, vokset sig for stor) 33,50 kr/m.
+   TRIMNING 33,75 kr/m (1 side) · 2 SIDER 61,88 kr/m · BESKÆRING 40,50 kr/m · tillæg tjørn +10 % / overgroet +20 % · min. 1.350 kr pr. besøg.
    "Inden for det seneste år" → forudvælg trimning; "Mere end et år siden" →
    beskæring; "Ved ikke" → følg arbejdes-svaret. Arbejde-svaret vinder ALTID
    over forudvalget. Over 2,2 m → pris:null-mønsteret (tæller 0 kr): vi ringer
@@ -165,7 +165,8 @@ const HAEK_SP = {
   sidstKlippet: { q:"Hvornår blev hækken klippet sidst?", opts:["Inden for det seneste år","Mere end et år siden","Ved ikke"] },
   hoejde:       { q:"Hvor høj er hækken?",               opts:["Under 1,5 m","1,5–2,2 m","Over 2,2 m","Ved ikke"] },
   sider:        { q:"Hvad skal der klippes?",            opts:["Indersider og top","2 sider og top","Flere forskellige — vi tjekker på luftfoto"] },
-  arbejde:      { q:"Skal hækken bare trimmes, eller skal den skæres ind?", opts:["Bare en trimning — den skal se pæn ud","Den er vokset sig for stor og skal skæres ind"] }
+  arbejde:      { q:"Skal hækken bare trimmes, eller skal den skæres ind?", opts:["Bare en trimning — den skal se pæn ud","Den er vokset sig for stor og skal skæres ind"] },
+  tillaeg:      { q:"Er der noget særligt ved hækken?", opts:["Nej, en almindelig hæk","Den er meget tæt — fx tjørn (+10 %)","Den er overgroet og skal skæres kraftigt ned (+20 %)"] }
 };
 const HAEK_HOEJDE_UKENDT_TXT = "Over 2,2 m — vi ringer til dig og beder om et billede af hækken, så vi kan give dig et præcist tilbud";
 function syncHaekPris(){
@@ -182,13 +183,22 @@ function syncHaekPris(){
     if(info.arbejde) beskaering = (info.arbejde === HAEK_SP.arbejde.opts[1]);
     else if(info.sidstKlippet === HAEK_SP.sidstKlippet.opts[1]) beskaering = true;
     else if(info.sidstKlippet === HAEK_SP.sidstKlippet.opts[0]) beskaering = false;
-    /* Kristian 2026-09-15: "2 sider og top" koster 34,00 kr/m (trimning)
-       i stedet for 27,00 kr/m ved "Indersider og top". */
+    /* Priser 2026-09-15 (Kristian): 10 % under Hurtighaveservice —
+       trimning 1 side 33,75 kr/m · 2 sider 61,88 kr/m · beskæring
+       (skæres ind) 40,50 kr/m = standard + 20 %. Tillæg: tjørnet +10 %,
+       overgroet +20 % (multiplikator på linjeprisen). Min. pris 1.350
+       kr ligger som min:1350 på hæk-linjen (gælder pr. besøg). */
     const toSiderTop = (info.sider === HAEK_SP.sider.opts[1]);
-    h.pris = beskaering ? 33.50 : (toSiderTop ? 34.00 : 27.00);
-    h.note = beskaering ? "Beskæring — skæres ind (vokset sig for stor)"
+    const grund = beskaering ? 40.50 : (toSiderTop ? 61.88 : 33.75);
+    /* Tillæg (tjørne/overgroet): nye spørgsmål, multiplikator. */
+    let tillag = 1;
+    if(info.tillaeg === HAEK_SP.tillaeg.opts[1]) tillag = 1.10;
+    else if(info.tillaeg === HAEK_SP.tillaeg.opts[2]) tillag = 1.20;
+    h.pris = Math.round(grund * tillag * 100) / 100;
+    h.note = (beskaering ? "Beskæring — skæres ind (vokset sig for stor)"
            : toSiderTop  ? "Trimning — 2 sider og top, hæk under 220 cm"
-                         : "Trimning — hæk under 220 cm";
+                         : "Trimning — hæk under 220 cm")
+           + (tillag > 1 ? " (inkl. tillæg)" : "");
     h.haekBeskaering = beskaering;
     delete h.prisNote;
   }
@@ -356,7 +366,7 @@ function resetProducts(){
   tmPagePreselectDone = false;   /* ny adresse → forudvælg servicesidens ydelse igen */
   state.maal = null;
   state.haekInfo = { sidstKlippet:"", hoejde:"", sider:"", arbejde:"", udkoersel:"" };
-  syncHaekPris();                /* tilbage til standard: trimning 27,00 kr/m */
+  syncHaekPris();                /* tilbage til standard: trimning 33,75 kr/m */
 }
 
 function vaelgAdresse(titel){
@@ -828,7 +838,7 @@ $("btn-send").addEventListener("click", ()=>{
      (/api/lead) — secret'en bor på serveren, aldrig i browseren. */
   const servicesArr = [];
   valgt.forEach(p=>{
-    const s = { id:p.id, navn:p.navn, wm:p.wm, qty:p.qty, enhed:p.enhed, freq:p.freq, pris:p.pris, erPakkevare:p.pakke };
+    const s = { id:p.id, navn:p.navn, wm:p.wm, qty:p.qty, enhed:p.enhed, freq:p.freq, pris:p.pris, min:p.min ?? null, erPakkevare:p.pakke };
     if(p.id === "haek"){
       /* Beskæring sendes midlertidigt med samme wm (nyt produkt afventes i
          CSV) — note i leadet så teamet kan se, at 33,50 kr/m gælder. */
@@ -837,10 +847,12 @@ $("btn-send").addEventListener("click", ()=>{
         hoejde: state.haekInfo.hoejde || "Ikke besvaret",
         sider: state.haekInfo.sider || "Ikke besvaret",
         arbejde: state.haekInfo.arbejde || "Ikke besvaret",
+        tillaeg: state.haekInfo.tillaeg || "Ikke besvaret",
         udkoersel: state.haekInfo.udkoersel || "Ikke besvaret"
       };
       if(state.haekInfo.hoejde === "Over 2,2 m") s.note = HAEK_HOEJDE_UKENDT_TXT;
-      else if(p.haekBeskaering) s.note = "Beskæring (skæres ind) — 33,50 kr/m, sendes med samme WM-produkt indtil videre";
+      else if(p.haekBeskaering) s.note = "Beskæring (skæres ind) — 40,50 kr/m (standard + 20 %), sendes med samme WM-produkt indtil videre";
+      if(state.haekInfo.tillaeg && state.haekInfo.tillaeg !== HAEK_SP.tillaeg.opts[0]) s.note = (s.note ? s.note + " · " : "") + "Tillæg valgt: " + state.haekInfo.tillaeg;
       /* Udkørsels-tilvalget: haek_udkoersel-post KUN ved Ja (Kristian 2026-09-09). */
       if(state.haekInfo.udkoersel === "Ja"){
         servicesArr.push({ id:"haek_udkoersel", navn:"Udkørsel og fjernelse af klip", wm:null, qty:1, enhed:"", freq:p.freq, pris:HAEK_UDKOERSEL, erPakkevare:false });
@@ -1445,7 +1457,7 @@ function opdater(){
        Efter højde-valg opdateres som normalt. */
     if(p.id === "haek" && p.on && !(state.haekInfo && state.haekInfo.hoejde)){
       const toSiderTopNote = (state.haekInfo && state.haekInfo.sider === HAEK_SP.sider.opts[1]);
-      el.innerHTML = '<span class="pw-note">Ca. ' + (toSiderTopNote ? "34,00" : "27,00") + ' kr/m — afhængig af højde</span>';
+      el.innerHTML = '<span class="pw-note">Ca. ' + (toSiderTopNote ? "61,88" : "33,75") + ' kr/m — afhængig af højde</span>';
       delete el.dataset.val;
       return;
     }
