@@ -239,17 +239,19 @@ export default function TilbudForm({ contacts, employees, action }: {
               <div className="tasklines">
                 {linjer.map((l, i) => (
                   <div className="tl-row tl-row-tilbud" key={i}>
-                    {/* Thomas, 2026-09-15: textarea + bredere kolonne i
-                        .tl-row-tilbud (globals.css) — opgavebeskrivelsen var
-                        for lille til lange tekster. */}
+                    {/* Thomas, 2026-09-15 (korrektion 2): textareaen står
+                        alene på en FULD række (.tl-desc, gridColumn 1/-1) —
+                        maksimal skriveplads til lange opgavetekster. */}
+                    <div className="tl-desc">
                     <textarea
                       name="taskDescription"
                       className="form-control"
-                      rows={2}
+                      rows={4}
                       placeholder={i === 0 ? "Fx tagrender + nedløb" : ""}
                       value={l.description}
                       onChange={(e) => opdaterLinje(i, "description", e.target.value)}
                     />
+                    </div>
                     <input
                       name="taskPrice"
                       type="number"
