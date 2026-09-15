@@ -5,6 +5,7 @@ import Link from "next/link";
 import type { TilbudState } from "@/app/actions/tilbud";
 import { BASE_INTERVALS, tilbudLinjeAarsbelob, tilbudAarsbelobSum } from "@/lib/subscription-intervals";
 import { bygAarshjul } from "@/lib/tilbud.mts";
+import { tilbudMomsOgIalt, krMoms } from "@/lib/vat";
 import { LEAD_SOURCES } from "@/lib/lead-sources.mts";
 import Aarshjul from "@/components/Aarshjul";
 
@@ -45,6 +46,10 @@ export default function TilbudForm({ contacts, employees, action }: {
   // interval tæller ikke med — samme beregning som abonnementet).
   const linjeAar = linjer.map(tilbudLinjeAarsbelob);
   const aarligt = tilbudAarsbelobSum(linjer);
+  // Thomas, 2026-09-15: priser angives U. moms — moms (25%) lægges til i
+  // bunden. ÉN delt funktion (lib/vat), så tallene aldrig afviger fra
+  // detaljesiden, PDF'en og accept-siden.
+  const momsBund = aarligt != null ? tilbudMomsOgIalt(aarligt) : null;
 
   const opdaterLinje = (i: number, felt: "description" | "price" | "interval" | "startWeek" | "employee", vaerdi: string) => {
     setLinjer((prev) => prev.map((l, j) => (j === i ? { ...l, [felt]: felt === "price" ? Number(vaerdi) || 0 : vaerdi } : l)));
@@ -234,13 +239,19 @@ export default function TilbudForm({ contacts, employees, action }: {
               <div className="tasklines">
                 {linjer.map((l, i) => (
                   <div className="tl-row tl-row-tilbud" key={i}>
-                    <input
+                    {/* Thomas, 2026-09-15 (korrektion 2): textareaen står
+                        alene på en FULD række (.tl-desc, gridColumn 1/-1) —
+                        maksimal skriveplads til lange opgavetekster. */}
+                    <div className="tl-desc">
+                    <textarea
                       name="taskDescription"
                       className="form-control"
+                      rows={4}
                       placeholder={i === 0 ? "Fx tagrender + nedløb" : ""}
                       value={l.description}
                       onChange={(e) => opdaterLinje(i, "description", e.target.value)}
                     />
+                    </div>
                     <input
                       name="taskPrice"
                       type="number"
@@ -248,7 +259,7 @@ export default function TilbudForm({ contacts, employees, action }: {
                       className="form-control num"
                       value={l.price || ""}
                       onChange={(e) => opdaterLinje(i, "price", e.target.value)}
-                      placeholder="Pris"
+                      placeholder="Pris (u. moms)"
                     />
                     {/* Valgfrit interval PR. LINJE — samme muligheder som
                         abonnementet (genbrugt BASE_INTERVALS). */}
@@ -310,7 +321,7 @@ export default function TilbudForm({ contacts, employees, action }: {
                     {/* Årsbeløb PR. LINJE — kun linjer med interval tæller med. */}
                     {linjeAar[i] != null ? (
                       <small className="form-text" style={{ gridColumn: "1 / -1", marginTop: -4 }}>
-                        Årligt: {kr(linjeAar[i] as number)} ({l.interval.toLowerCase()}){l.employee ? " · Medarbejder: intern visning" : ""}
+                        Årligt (u. moms): {kr(linjeAar[i] as number)} ({l.interval.toLowerCase()}){l.employee ? " · Medarbejder: intern visning" : ""}
                       </small>
                     ) : null}
                   </div>
@@ -327,8 +338,13 @@ export default function TilbudForm({ contacts, employees, action }: {
                     LINJE — hver linje med interval bidrager med pris × besøg pr.
                     år (52/uge-interval; 1 for "1 gang om året"). Linjer uden
                     interval er engangsopgaver og tæller ikke med. */}
-                {aarligt != null ? (
-                  <div className="tl-sum"><span>Årligt beløb (inkl. moms) — sum af linjerne med interval</span><b>{kr(aarligt)}</b></div>
+                {momsBund ? (
+                  <div className="tl-sum" style={{ flexDirection: "column", alignItems: "flex-end", gap: 3 }}>
+                    <span>Årligt beløb (u. moms) — sum af linjerne med interval</span>
+                    <b>{kr(momsBund.ekskl)}</b>
+                    <span>Moms (25%): {krMoms(momsBund.moms)}</span>
+                    <b>Ialt inkl. moms: {krMoms(momsBund.ialt)}</b>
+                  </div>
                 ) : null}
               </div>
             </div>

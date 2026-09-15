@@ -93,14 +93,14 @@ test("tilbudAarsbelobSum: blandede linjer — kun linjer med interval tæller me
 test("linjeKundeTekst giver kundevenlig frekvenstekst pr. linje", () => {
   assert.equal(
     linjeKundeTekst({ description: "Vinduespudsning", price: 566, interval: "Hver 6. uge" }),
-    "Vinduespudsning — 566 kr. pr. gang — hver 6. uge",
+    "Vinduespudsning — 566 kr. pr. gang (u. moms) — hver 6. uge",
   );
   assert.equal(
     linjeKundeTekst({ description: "Tagrender", price: 566, interval: "1 gang om året" }),
-    "Tagrender — 566 kr. pr. gang — 1 gang om året",
+    "Tagrender — 566 kr. pr. gang (u. moms) — 1 gang om året",
   );
   // engangsopgave: ingen frekvens
-  assert.equal(linjeKundeTekst({ description: "Tagrender", price: 566 }), "Tagrender — 566 kr. pr. gang");
+  assert.equal(linjeKundeTekst({ description: "Tagrender", price: 566 }), "Tagrender — 566 kr. pr. gang (u. moms)");
 });
 
 test("nyAcceptToken er URL-sikkert og unikt (engangs-token)", () => {
@@ -255,12 +255,12 @@ test("linjeStartugeTekst: 'Uge 29' → 'Starter uge 29' — tom/null → null", 
 test("linjeKundeTekst viser startuge diskret på linjen — kun når den er sat", () => {
   assert.equal(
     linjeKundeTekst({ description: "Vinduespudsning", price: 566, interval: "Hver 6. uge", startWeek: "Uge 29" }),
-    "Vinduespudsning — 566 kr. pr. gang — hver 6. uge — Starter uge 29",
+    "Vinduespudsning — 566 kr. pr. gang (u. moms) — hver 6. uge — Starter uge 29",
   );
   // ingen startuge → intet ekstra vist (samme tekst som før korrektionen)
   assert.equal(
     linjeKundeTekst({ description: "Tagrender", price: 566 }),
-    "Tagrender — 566 kr. pr. gang",
+    "Tagrender — 566 kr. pr. gang (u. moms)",
   );
 });
 
@@ -354,7 +354,7 @@ import { tilbudMailBesked, crmBaseUrl } from "../lib/tilbud-mail-besked";
 
 test("tilbudMailBesked: årsbeløb når interval findes — ingen 'samlet'-frase", () => {
   const besked = tilbudMailBesked({ hilsenNavn: "Anna", titel: "Tilbud på rengøring", aarligt: 24900, godkendUrl: "https://crm.karltoffel.dk/t/abc123" });
-  assert.ok(besked.includes("24.900 kr. om året inkl. moms"), besked);
+  assert.ok(besked.includes("24.900 kr. om året u. moms"), besked);
   assert.ok(besked.includes("Godkend tilbud her: https://crm.karltoffel.dk/t/abc123"));
   assert.ok(!besked.toLowerCase().includes("samlet"));
 });

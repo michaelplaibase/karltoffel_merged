@@ -40,7 +40,9 @@ export function linjeStartugeTekst(startWeek: string | null | undefined): string
 export function linjeKundeTekst(line: { description: string; price: number; interval?: string | null; startWeek?: string | null }): string {
   const frek = frekvensTekst(line.interval);
   const start = linjeStartugeTekst(line.startWeek);
-  return `${line.description} — ${kr(line.price)} pr. gang${frek ? ` — ${frek}` : ""}${start ? ` — ${start}` : ""}`;
+  // Thomas, 2026-09-15: linjepriser er U. moms (klarering — "felterne vi
+  // skriver i skal være uden moms"); moms vises i bunden af tilbuddet.
+  return `${line.description} — ${kr(line.price)} pr. gang (u. moms)${frek ? ` — ${frek}` : ""}${start ? ` — ${start}` : ""}`;
 }
 
 /** Engangs-token til det offentlige accept-link /t/{token} — samme mønster som

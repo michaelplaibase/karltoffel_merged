@@ -4,6 +4,7 @@ import { statusLabel } from "@/lib/tilbud.mts";
 // Thomas, 2026-09-12 (fejlretning): oversigten viser nu ÅRSLIGT beløb
 // (kun linjer med interval) i stedet for det samlede beløb.
 import { tilbudAarsbelobSum } from "@/lib/subscription-intervals";
+import { tilbudMomsOgIalt, krMoms } from "@/lib/vat";
 // Thomas, 2026-09-14: søgefelt — mange tilbud skal kunne findes frem.
 import { SearchBar } from "@/components/ListControls";
 
@@ -75,12 +76,23 @@ export default async function TilbudPage({ searchParams }: { searchParams: Promi
                 ) : (
                   tilbud.map((t) => {
                     const aarligt = tilbudAarsbelobSum(t.lines);
+                    // Thomas, 2026-09-15: årsbeløb vises U. moms — ialt inkl.
+                    // moms som sekundært tal (samme lib/vat-funktion som
+                    // formular, detaljeside, PDF og accept-side).
+                    const momsBund = aarligt != null ? tilbudMomsOgIalt(aarligt) : null;
                     return (
                       <tr key={t.id}>
                         <td><Link href={`/tilbud/${t.id}`} className="strong-link">{t.title}</Link></td>
                         <td><Link href={`/customers/${t.contact.id}`}>{t.contact.companyName || t.contact.name}</Link></td>
                         <td>{t.lines.length}</td>
-                        <td className="num">{aarligt != null ? kr(aarligt) : "–"}</td>
+                        <td className="num">
+                          {momsBund ? (
+                            <>
+                              {kr(momsBund.ekskl)}
+                              <small className="form-text" style={{ display: "block" }}>Ialt inkl. moms: {krMoms(momsBund.ialt)}</small>
+                            </>
+                          ) : "–"}
+                        </td>
                         <td>{statusLabel(t.status)}</td>
                         <td>{t.createdAt.toLocaleDateString("da-DK")}</td>
                       </tr>

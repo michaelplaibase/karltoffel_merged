@@ -5,6 +5,7 @@ import { getDownloadUrl } from "@vercel/blob";
 import { statusLabel, linjeKundeTekst, bygAarshjul } from "@/lib/tilbud.mts";
 import Aarshjul from "@/components/Aarshjul";
 import { tilbudAarsbelobSum } from "@/lib/subscription-intervals";
+import { tilbudMomsOgIalt, krMoms } from "@/lib/vat";
 import { tilbudMailBesked } from "@/lib/tilbud-send";
 import { sendTilbud, markTilbudAccepted, convertTilbudToSubscription, deleteTilbud } from "@/app/actions/tilbud";
 import TilbudSendPanel from "@/components/TilbudSendPanel";
@@ -37,6 +38,9 @@ export default async function TilbudDetailPage({ params, searchParams }: { param
   // Thomas, 2026-09-12 (fejlretning): mailen nævner nu ÅRSLIGT beløb (kun
   // linjer med interval) i stedet for det samlede beløb.
   const aarligt = tilbudAarsbelobSum(tilbud.lines);
+  // Thomas, 2026-09-15: priser u. moms — moms (25%) i bunden, ÉN delt
+  // funktion (lib/vat), så tallene aldrig afviger fra formular/PDF/accept-side.
+  const momsBund = aarligt != null ? tilbudMomsOgIalt(aarligt) : null;
   const fotos = tilbud.photos.map((p) => ({ id: p.id, lineId: p.lineId, url: getDownloadUrl(p.url) }));
   // Thomas, 2026-09-12 (fejlretning): kundens godkend-link skal være en
   // ABSOLUTE URL i mailen (offentlig accept-side /t/<token>).
@@ -94,8 +98,13 @@ export default async function TilbudDetailPage({ params, searchParams }: { param
                 </div>
               ))}
               {/* Thomas, 2026-09-11: 'samlet beløb' fjernet — ÅRLIGT beløb når intervallet er sat. */}
-              {aarligt != null ? (
-                <div className="tl-sum"><span>Årligt beløb (inkl. moms)</span><b>{kr(aarligt)}</b></div>
+              {momsBund ? (
+                <div className="tl-sum" style={{ flexDirection: "column", alignItems: "flex-end", gap: 3 }}>
+                  <span>Årligt beløb (u. moms)</span>
+                  <b>{kr(momsBund.ekskl)}</b>
+                  <span>Moms (25%): {krMoms(momsBund.moms)}</span>
+                  <b>Ialt inkl. moms: {krMoms(momsBund.ialt)}</b>
+                </div>
               ) : null}
             </div>
           </div>

@@ -41,6 +41,32 @@ export function formatPriceDual(oereIncl: number): string {
   return `${kr(oereIncl)} kr. (${kr(inclToExcl(oereIncl))} kr. u. moms)`;
 }
 
+// ─── Tilbud-moms (Thomas, 2026-09-15) ───────────────────────────────────────
+// Alle priser på et tilbud angives UDEN moms; moms (25%) lægges til i bunden
+// af tilbuddet (PDF, formular, detaljeside, oversigt, accept-side). ÉN delt
+// funktion, så tallene ALDRIG kan afvige mellem steder. Beregningen sker i
+// ØRE med round-half-up — samme afrundingsregel som resten af koden — så
+// 566 kr. u. moms → 141,50 kr. moms → 707,50 kr. inkl. moms (exact).
+
+export type TilbudMomsBund = { ekskl: number; moms: number; ialt: number }; // alle i KRONER (evt. halve kroner)
+
+/** Moms-bund for et tilbud: ekskl.-moms kroner → { ekskl, moms (25%),
+ *  ialt inkl. moms }. Input/retur i KRONER; intern beregning i øre med
+ *  round-half-up (fx 566 kr. → moms 141,50 kr. → ialt 707,50 kr.). */
+export function tilbudMomsOgIalt(eksklKroner: number): TilbudMomsBund {
+  const oere = roundHalfUp(eksklKroner * 100);
+  const momsOere = roundHalfUp(oere * VAT_RATE);
+  const ialtOere = oere + momsOere;
+  return { ekskl: oere / 100, moms: momsOere / 100, ialt: ialtOere / 100 };
+}
+
+/** Formater kroner med op til 2 decimaler (kun når der ER decimaler):
+ *  1250 → "1.250 kr.", 707,5 → "707,50 kr.". */
+export function krMoms(n: number): string {
+  const frac = Number.isInteger(n) ? 0 : 2;
+  return n.toLocaleString("da-DK", { minimumFractionDigits: frac, maximumFractionDigits: frac }) + " kr.";
+}
+
 export type VatLine = { /** pris i KRONER som gemt (TaskLine.price-konvention). */ price: number };
 export type VatTotals = { exclTotal: number; vatTotal: number; inclTotal: number };
 export type PriceBasis = "incl" | "excl";

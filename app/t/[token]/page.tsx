@@ -6,6 +6,7 @@ import { underLimit, recordHit } from "@/lib/rate-limit";
 import { tilbudTotal, linjeKundeTekst, linjeStartugeTekst, bygAarshjul } from "@/lib/tilbud.mts";
 import Aarshjul from "@/components/Aarshjul";
 import { tilbudAarsbelobSum } from "@/lib/subscription-intervals";
+import { tilbudMomsOgIalt, krMoms } from "@/lib/vat";
 
 // Offentlig accept-side (Thomas, 2026-09-11): kunden klikker "Godkend tilbud" på
 // /t/{token}. Ingen login — tokenet ER autorisationen, samme mønster som
@@ -62,6 +63,9 @@ export default async function TilbudAcceptPage({
   // Thomas, 2026-09-11 (korrektion): Årsbeløbet = summen PR. LINJE — kun
   // linjer med interval tæller med; linjer uden interval er engangsopgaver.
   const aarligt = tilbudAarsbelobSum(tilbud.lines);
+  // Thomas, 2026-09-15: priser u. moms — moms (25%) i bunden (samme
+  // lib/vat-funktion som formular, detaljeside, oversigt og PDF).
+  const momsBund = aarligt != null ? tilbudMomsOgIalt(aarligt) : null;
   let accepted = tilbud.status === "accepteret" || tilbud.status === "konverteret";
 
   // Primitiver til server actionen (den kan ikke close over en evt. null tilbud)
@@ -113,7 +117,7 @@ export default async function TilbudAcceptPage({
           <div key={i} style={{ padding: "7px 0", borderBottom: "1px solid #e8e0c8" }}>
             <div style={{ display: "flex", justifyContent: "space-between" }}>
               <span>{l.description}</span>
-              <b>{kr(l.price)}</b>
+              <b>{kr(l.price)} <small style={{ fontWeight: 400 }}>(u. moms)</small></b>
             </div>
             {/* Thomas, 2026-09-11 (korrektion): frekvens vises pr. linje — let
                 læsbar kundevenlig form ("hver 6. uge" / "1 gang om året");
@@ -134,9 +138,11 @@ export default async function TilbudAcceptPage({
         {/* Thomas, 2026-09-11 (korrektion): Årligt beløb = summen pr. linje
             (pris × besøg pr. år for hver linje med interval). */}
         {/* Thomas, 2026-09-11: 'samlet beløb' fjernet — ÅRLIGT beløb når intervallet er sat. */}
-        {aarligt != null ? (
+        {momsBund ? (
           <div style={{ background: "#FFF87B", borderRadius: 6, padding: "12px 14px", marginTop: 10 }}>
-            <b style={{ fontSize: 17 }}>Årligt beløb: {kr(aarligt)} (inkl. moms)</b>
+            <b style={{ fontSize: 17 }}>Årligt beløb: {krMoms(momsBund.ekskl)} (u. moms)</b>
+            <div style={{ marginTop: 4 }}>Moms (25%): {krMoms(momsBund.moms)}</div>
+            <div style={{ marginTop: 2, fontWeight: 700 }}>Ialt inkl. moms: {krMoms(momsBund.ialt)}</div>
           </div>
         ) : null}
       </div>

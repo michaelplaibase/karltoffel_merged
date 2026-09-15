@@ -828,10 +828,17 @@ textarea.task-desc { resize: none; overflow: hidden; min-height: 58px; height: a
    har en stor andel (minmax(0, 1.2fr)) — igen med minmax(0, …) overalt, så
    intet spor kan blive bredere end containeren (intet klippes). Feltet har
    også en synlig, læsbar label ovenover (se TilbudForm.tsx). */
+/* Thomas, 2026-09-15 (korrektion 2): opgave-feltet SKAL være markant
+   større. Valgte layout-opdeling frem for endnu bredere kolonne:
+   textarea'en får sin egen FULDE række (grid-column 1 / -1), og
+   pris/interval/startuge/medarbejder/slet ligger i en række under.
+   Det giver det MEST skriveplads uden at klippe noget (minmax(0, …)
+   bevaret overalt). */
 .tl-row-tilbud {
-  grid-template-columns: minmax(0, 1.7fr) minmax(80px, 0.6fr) minmax(120px, 0.8fr) minmax(110px, 0.7fr) minmax(0, 1.2fr) 36px;
+  grid-template-columns: minmax(0, 0.9fr) minmax(120px, 0.9fr) minmax(110px, 0.8fr) minmax(0, 1.2fr) 36px;
   min-width: 0;
 }
+.tl-row-tilbud .tl-desc { grid-column: 1 / -1; }
 .tl-row-tilbud .form-control { min-width: 0; }
 .tl-row-tilbud .tl-field-label {
   display: block;
@@ -842,7 +849,7 @@ textarea.task-desc { resize: none; overflow: hidden; min-height: 58px; height: a
   margin: 0 0 3px;
 }
 @media (max-width: 1100px) {
-  .tl-row-tilbud { grid-template-columns: minmax(0, 1.5fr) minmax(70px, 0.6fr) minmax(110px, 0.8fr) minmax(100px, 0.7fr) minmax(0, 1.2fr) 32px; }
+  .tl-row-tilbud { grid-template-columns: minmax(0, 0.9fr) minmax(100px, 0.9fr) minmax(100px, 0.8fr) minmax(0, 1.1fr) 32px; }
 }
 @media (max-width: 860px) {
   /* Smal skærm: felter stakker pænt — titel og pris, interval og startuge,
