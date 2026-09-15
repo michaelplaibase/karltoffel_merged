@@ -182,8 +182,13 @@ function syncHaekPris(){
     if(info.arbejde) beskaering = (info.arbejde === HAEK_SP.arbejde.opts[1]);
     else if(info.sidstKlippet === HAEK_SP.sidstKlippet.opts[1]) beskaering = true;
     else if(info.sidstKlippet === HAEK_SP.sidstKlippet.opts[0]) beskaering = false;
-    h.pris = beskaering ? 33.50 : 27.00;
-    h.note = beskaering ? "Beskæring — skæres ind (vokset sig for stor)" : "Trimning — hæk under 220 cm";
+    /* Kristian 2026-09-15: "2 sider og top" koster 34,00 kr/m (trimning)
+       i stedet for 27,00 kr/m ved "Indersider og top". */
+    const toSiderTop = (info.sider === HAEK_SP.sider.opts[1]);
+    h.pris = beskaering ? 33.50 : (toSiderTop ? 34.00 : 27.00);
+    h.note = beskaering ? "Beskæring — skæres ind (vokset sig for stor)"
+           : toSiderTop  ? "Trimning — 2 sider og top, hæk under 220 cm"
+                         : "Trimning — hæk under 220 cm";
     h.haekBeskaering = beskaering;
     delete h.prisNote;
   }
@@ -1439,7 +1444,8 @@ function opdater(){
        før højden er valgt — neutral note (prisNote-mønsteret) indtil da.
        Efter højde-valg opdateres som normalt. */
     if(p.id === "haek" && p.on && !(state.haekInfo && state.haekInfo.hoejde)){
-      el.innerHTML = '<span class="pw-note">Ca. 27,00 kr/m — afhængig af højde</span>';
+      const toSiderTopNote = (state.haekInfo && state.haekInfo.sider === HAEK_SP.sider.opts[1]);
+      el.innerHTML = '<span class="pw-note">Ca. ' + (toSiderTopNote ? "34,00" : "27,00") + ' kr/m — afhængig af højde</span>';
       delete el.dataset.val;
       return;
     }
