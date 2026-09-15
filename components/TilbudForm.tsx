@@ -4,7 +4,7 @@ import { useActionState, useState } from "react";
 import Link from "next/link";
 import type { TilbudState } from "@/app/actions/tilbud";
 import { BASE_INTERVALS, tilbudLinjeAarsbelob, tilbudAarsbelobSum } from "@/lib/subscription-intervals";
-import { bygAarshjul } from "@/lib/tilbud.mts";
+import { bygAarshjul, linjeFarve } from "@/lib/tilbud.mts";
 import { tilbudMomsOgIalt, krMoms } from "@/lib/vat";
 import { LEAD_SOURCES } from "@/lib/lead-sources.mts";
 import Aarshjul from "@/components/Aarshjul";
@@ -242,7 +242,14 @@ export default function TilbudForm({ contacts, employees, action }: {
                     {/* Thomas, 2026-09-15 (korrektion 2): textareaen står
                         alene på en FULD række (.tl-desc, gridColumn 1/-1) —
                         maksimal skriveplads til lange opgavetekster. */}
-                    <div className="tl-desc">
+                    <div className="tl-desc" style={{ display: "flex", gap: 8, alignItems: "flex-start" }}>
+                    {/* Thomas, 2026-09-15: farve-prik pr. linje — samme farve som
+                        linjens chips i årshjulet nedenfor (linjeFarve(i)). */}
+                    <span
+                      aria-hidden
+                      title={`Linjens farve i årshjulet`}
+                      style={{ flexShrink: 0, width: 12, height: 12, borderRadius: 4, background: linjeFarve(i), border: `1px solid rgba(76, 55, 24, 0.25)`, marginTop: 8, display: "inline-block" }}
+                    />
                     <textarea
                       name="taskDescription"
                       className="form-control"

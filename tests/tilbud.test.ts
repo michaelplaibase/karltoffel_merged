@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import {
   tilbudTotal, nyAcceptToken, buildTilbudPdfData, statusLabel, acceptTokenUdløber, linjeKundeTekst, linjeStartugeTekst,
   bygAarshjul, parseUgeNr, kortNavn, tasklineMedarbejdere, tilbudLeadAcquisition,
+  linjeFarve, LINJE_FARVE_TEKST,
 } from "../lib/tilbud.mts";
 import { LEAD_SOURCES as LEAD_SOURCES_TILBUD } from "../lib/lead-sources.mts";
 import { LEAD_SOURCES as LEAD_SOURCES_LEADCALC } from "../lib/lead-calc";
@@ -369,4 +370,41 @@ test("tilbudMailBesked: uden årsbeløb — simpel sætning uden beløb", () => 
 test("crmBaseUrl: env wins, fallback til produktion", () => {
   assert.equal(crmBaseUrl({ CRM_BASE_URL: "https://preview.example.com/" }), "https://preview.example.com");
   assert.equal(crmBaseUrl({}), "https://crm.karltoffel.dk");
+});
+
+// Thomas, 2026-09-15: linje-farver — deterministiske pr. linje-INDEX og
+// ENS på tværs af formular/PDF/accept-side (linjeFarve er den ENE kilde).
+test("linjeFarve: deterministisk pr. index, wrap efter paletten, gyldig hex", () => {
+  assert.equal(linjeFarve(0), linjeFarve(0));
+  const palette = new Set(Array.from({ length: 24 }, (_, i) => linjeFarve(i)));
+  assert.ok(palette.size >= 8 && palette.size <= 10, `paletten skal være 8-10 farver, fik ${palette.size}`);
+  // Wrap: farve(n) === farve(n % palettestørrelse)
+  const p = palette.size;
+  for (let i = 0; i < p * 2 + 3; i++) assert.equal(linjeFarve(i), linjeFarve(i % p));
+  // Alle farver er hex — mørk #4C3718 tekst bruges ovenpå dem alle.
+  for (const f of palette) assert.match(f, /^#[0-9A-Fa-f]{6}$/);
+  assert.equal(LINJE_FARVE_TEKST, "#4C3718");
+  // Defensivt: ugyldige index'er rammer ikke crash.
+  assert.equal(linjeFarve(-1), linjeFarve(0));
+});
+
+test("bygAarshjul: hver opgave bærer sin linjes farve (samme linje = samme farve i alle uger)", () => {
+  const hjul = bygAarshjul([
+    { description: "Vinduer", interval: "Hver 4. uge", startWeek: "Uge 2" },
+    { description: "Tagrender", interval: "Hver 6. uge", startWeek: "Uge 3" },
+    { description: "Algebehandling", interval: "1 gang om året", startWeek: "Uge 40" },
+  ]);
+  const farve = new Map<string, string>();
+  for (const u of hjul) for (const o of u.opgaver) {
+    assert.ok(o.farve, `opgaven ${o.titel} mangler farve`);
+    const prev = farve.get(o.titel);
+    if (prev) assert.equal(prev, o.farve, `${o.titel} skifter farve mellem uger`);
+    farve.set(o.titel, o.farve as string);
+  }
+  // Tre linjer → tre FORSKELLIGE farver (linje 1, 2, 3 = farve 1, 2, 3).
+  assert.equal(new Set(farve.values()).size, 3);
+  // Samme farver som linjeFarve(index).
+  for (const [i, titel] of ["Vinduer", "Tagrender", "Algebehandling"].entries()) {
+    assert.equal(farve.get(titel), linjeFarve(i));
+  }
 });
