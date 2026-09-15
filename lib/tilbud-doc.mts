@@ -123,6 +123,11 @@ function TilbudDoc({ data }: { data: TilbudPdfData }) {
       e(View, { style: S.hero },
         e(Text, { style: S.heroTitle }, data.titel),
         e(Text, { style: S.heroSub }, `Til ${data.kundeNavn}`),
+      // Thomas, 2026-09-15: kundens adresse diskret under kundenavnet
+      // ("Til Regionshospitalet Brædstrup / Svendborgvej 62, 5700 Svendborg").
+      data.kundeAdresse
+        ? e(Text, { style: { ...S.heroSub, fontSize: 10, fontWeight: 400, marginTop: 2 } }, data.kundeAdresse)
+        : null,
       ),
       e(Text, { style: { marginHorizontal: 20, marginTop: 14, fontSize: 10.5, lineHeight: 1.5 } },
         `Hej ${data.hilsenNavn}! Her er vores tilbud på opgaverne. Du kan se priserne på hver opgave` +

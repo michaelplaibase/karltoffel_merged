@@ -39,7 +39,7 @@ export default async function TilbudAcceptPage({
     return prisma.tilbud.findUnique({
     where: { acceptToken: token },
     include: {
-      contact: { select: { name: true, companyName: true } },
+      contact: { select: { name: true, companyName: true, street: true, city: true } },
       lines: { orderBy: { sort: "asc" }, select: { description: true, price: true, interval: true, startWeek: true } },
     },
   });
@@ -110,6 +110,10 @@ export default async function TilbudAcceptPage({
       <div style={{ background: "#FFF87B", borderRadius: 8, padding: 20, marginTop: 16 }}>
         <h1 style={{ margin: 0, fontSize: 26 }}>{tilbud.title}</h1>
         <p style={{ margin: "6px 0 0" }}>Til {tilbud.contact.companyName || tilbud.contact.name}</p>
+        {/* Thomas, 2026-09-15: kundens adresse diskret under kundenavnet. */}
+        {(tilbud.contact.street || tilbud.contact.city) ? (
+          <small style={{ color: "#8A6931", display: "block" }}>{[tilbud.contact.street, tilbud.contact.city].filter(Boolean).join(", ")}</small>
+        ) : null}
       </div>
 
       <div style={{ marginTop: 18 }}>
