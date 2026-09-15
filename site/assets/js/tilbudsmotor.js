@@ -1444,7 +1444,8 @@ function opdater(){
        før højden er valgt — neutral note (prisNote-mønsteret) indtil da.
        Efter højde-valg opdateres som normalt. */
     if(p.id === "haek" && p.on && !(state.haekInfo && state.haekInfo.hoejde)){
-      el.innerHTML = '<span class="pw-note">Ca. 27,00 kr/m — afhængig af højde</span>';
+      const toSiderTopNote = (state.haekInfo && state.haekInfo.sider === HAEK_SP.sider.opts[1]);
+      el.innerHTML = '<span class="pw-note">Ca. ' + (toSiderTopNote ? "34,00" : "27,00") + ' kr/m — afhængig af højde</span>';
       delete el.dataset.val;
       return;
     }
