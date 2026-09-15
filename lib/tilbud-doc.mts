@@ -6,7 +6,7 @@
 import { Document, Page, Text, View, StyleSheet, Image, Font, pdf } from "@react-pdf/renderer";
 import { SNAGA_BLACK, HANKEN_REGULAR, HANKEN_SEMIBOLD } from "./maanedrapport-fonts";
 import type { TilbudPdfData } from "./tilbud.mts";
-import { bygAarshjul } from "./tilbud.mts";
+import { bygAarshjul, linjeFarve, LINJE_FARVE_TEKST } from "./tilbud.mts";
 import { tilbudMomsOgIalt, krMoms } from "./vat";
 
 import * as ReactNS from "react";
@@ -85,11 +85,29 @@ function aarshjulAfsnit(linjer: TilbudPdfData["linjer"]) {
         uger.map((u) =>
           e(View, { key: u.uge, style: { backgroundColor: FRITURE, borderRadius: 3, padding: "4pt 6pt", maxWidth: "30%" } },
             e(Text, { style: { fontSize: 8.5, fontWeight: 600, fontFamily: "Hanken" } }, `Uge ${u.uge}`),
-            e(Text, { style: { fontSize: 9, color: JORDNAER, fontWeight: 600, marginTop: 1 } },
-              u.opgaver.map((o) => o.kort + (o.naesteAar ? "→" : "")).join(" · ")),
+            // Thomas, 2026-09-15: hver opgave er sin egen chip i LINJENS farve
+            // (samme linjeFarve(index) som formularen/accept-siden), så man
+            // straks ser, hvilke uger der hører til hvilken opgave.
+            e(View, { style: { flexDirection: "row", flexWrap: "wrap", gap: 3, marginTop: 2 } },
+              u.opgaver.map((o, i) =>
+                e(Text, { key: i, style: { fontSize: 9, color: LINJE_FARVE_TEKST, fontWeight: 600, backgroundColor: o.farve ?? JORDNAER, borderRadius: 2, padding: "1pt 4pt", maxWidth: 90 } },
+                  o.kort + (o.naesteAar ? "→" : ""))),
+            ),
           ),
         ),
       ),
+      // Legend (Thomas, 2026-09-15): farve + opgavenavn — kun når der er mere
+      // end én linje, så farverne kan kobles til opgaverne.
+      linjer.length > 1
+        ? e(View, { style: { flexDirection: "column", gap: 2, marginTop: 6 }, wrap: false },
+            linjer.map((l, i) =>
+              e(View, { key: i, style: { flexDirection: "row", alignItems: "center", gap: 5 } },
+                e(View, { style: { width: 8, height: 8, borderRadius: 2, backgroundColor: linjeFarve(i) } }),
+                e(Text, { style: { fontSize: 8.5, color: JORDNAER } }, l.description),
+              ),
+            ),
+          )
+        : null,
     ),
   ];
 }
@@ -135,7 +153,12 @@ function TilbudDoc({ data }: { data: TilbudPdfData }) {
             // 566 kr. pr. gang — hver 6. uge"). Engangsopgaver uden interval
             // vises uden frekvenslinje.
             e(View, { style: { flex: 1 } },
-              e(Text, { style: S.lineName }, l.description),
+              // Thomas, 2026-09-15: farve-markering pr. linjerække — samme
+              // farve som linjens chips i årshjulet nedenfor.
+              e(View, { style: { flexDirection: "row", alignItems: "center", gap: 5 } },
+                e(View, { style: { width: 7, height: 7, borderRadius: 2, backgroundColor: linjeFarve(i), marginTop: 1 } }),
+                e(Text, { style: S.lineName }, l.description),
+              ),
               l.interval ? e(Text, { style: S.lineFrekvens }, l.interval.toLowerCase()) : null,
               // Thomas, 2026-09-11 (korrektion 2): diskret startuge pr. linje
               // ("Starter uge 29") — kun når linjen har en startuge.

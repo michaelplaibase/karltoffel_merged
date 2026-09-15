@@ -6,12 +6,20 @@
 // Karltoffel-brand: creme baggrund #FFFFF0, mørkbrun #4C3718 tekst, gul
 // #FFF87B accent (jf. PDF'ens MOS/JORDNAER/FRITURE).
 import type { AarshjulUge } from "@/lib/tilbud.mts";
+import { LINJE_FARVE_TEKST } from "@/lib/tilbud.mts";
 
 const CHIPS = "#8A6931";
 
 export default function Aarshjul({ uger, overskrift }: { uger: AarshjulUge[]; overskrift?: string }) {
   if (!uger.length) return null;
   const naesteAar = uger.some((u) => u.opgaver.some((o) => o.naesteAar));
+  // Legend (Thomas, 2026-09-15): unikke (titel, farve)-par i første
+  // forekomst-rækkefølge — vises kun når der er flere opgaver.
+  const legende: { titel: string; farve: string }[] = [];
+  for (const u of uger) for (const o of u.opgaver) {
+    if (!o.farve) continue;
+    if (!legende.some((l) => l.titel === o.titel && l.farve === o.farve)) legende.push({ titel: o.titel, farve: o.farve });
+  }
   return (
     <div style={{ background: "#FFFFF0", border: "1px solid #e8e0c8", borderRadius: 8, padding: "12px 14px", marginTop: 12 }}>
       <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", flexWrap: "wrap", gap: 6 }}>
@@ -29,7 +37,7 @@ export default function Aarshjul({ uger, overskrift }: { uger: AarshjulUge[]; ov
                 <span
                   key={i}
                   title={o.titel}
-                  style={{ background: "#4C3718", color: "#FFF87B", borderRadius: 4, padding: "1px 6px", fontSize: 12, fontWeight: 600 }}
+                  style={{ background: o.farve ?? "#4C3718", color: o.farve ? LINJE_FARVE_TEKST : "#FFF87B", borderRadius: 4, padding: "1px 6px", fontSize: 12, fontWeight: 600, border: o.farve ? "1px solid rgba(76, 55, 24, 0.25)" : undefined }}
                 >
                   {o.kort}
                   {o.naesteAar ? "→" : ""}
@@ -43,6 +51,16 @@ export default function Aarshjul({ uger, overskrift }: { uger: AarshjulUge[]; ov
         Bogstaverne er opgavernes initialer (hold musen/tryk for titlen).
         {naesteAar ? " Pilen (→) markerer besøg, der falder i det følgende år (ugerne ruller over 52)." : null}
       </div>
+      {legende.length > 1 ? (
+        <div style={{ marginTop: 8, display: "flex", flexWrap: "wrap", gap: "6px 12px", alignItems: "center" }}>
+          {legende.map((l) => (
+            <span key={l.titel + l.farve} style={{ display: "inline-flex", alignItems: "center", gap: 5, fontSize: 12, color: "#4C3718" }}>
+              <span style={{ width: 10, height: 10, borderRadius: 3, background: l.farve, border: "1px solid rgba(76, 55, 24, 0.25)", display: "inline-block" }} />
+              {l.titel}
+            </span>
+          ))}
+        </div>
+      ) : null}
     </div>
   );
 }

@@ -3,7 +3,7 @@ import { headers } from "next/headers";
 import { prisma } from "@/lib/db";
 import { sendEmail } from "@/lib/email";
 import { underLimit, recordHit } from "@/lib/rate-limit";
-import { tilbudTotal, linjeKundeTekst, linjeStartugeTekst, bygAarshjul } from "@/lib/tilbud.mts";
+import { tilbudTotal, linjeKundeTekst, linjeStartugeTekst, bygAarshjul, linjeFarve } from "@/lib/tilbud.mts";
 import Aarshjul from "@/components/Aarshjul";
 import { tilbudAarsbelobSum } from "@/lib/subscription-intervals";
 import { tilbudMomsOgIalt, krMoms } from "@/lib/vat";
@@ -115,9 +115,17 @@ export default async function TilbudAcceptPage({
       <div style={{ marginTop: 18 }}>
         {tilbud.lines.map((l, i) => (
           <div key={i} style={{ padding: "7px 0", borderBottom: "1px solid #e8e0c8" }}>
-            <div style={{ display: "flex", justifyContent: "space-between" }}>
-              <span>{l.description}</span>
-              <b>{kr(l.price)} <small style={{ fontWeight: 400 }}>(u. moms)</small></b>
+            <div style={{ display: "flex", justifyContent: "space-between", gap: 8 }}>
+              {/* Thomas, 2026-09-15: farve-prik pr. linje — samme farve som
+                  linjens chips i årshjulet (linjeFarve(i)). */}
+              <span style={{ display: "flex", alignItems: "flex-start", gap: 8 }}>
+                <span
+                  aria-hidden
+                  style={{ flexShrink: 0, width: 11, height: 11, borderRadius: 4, background: linjeFarve(i), border: "1px solid rgba(76, 55, 24, 0.25)", marginTop: 4, display: "inline-block" }}
+                />
+                <span>{l.description}</span>
+              </span>
+              <b style={{ flexShrink: 0 }}>{kr(l.price)} <small style={{ fontWeight: 400 }}>(u. moms)</small></b>
             </div>
             {/* Thomas, 2026-09-11 (korrektion): frekvens vises pr. linje — let
                 læsbar kundevenlig form ("hver 6. uge" / "1 gang om året");

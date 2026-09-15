@@ -158,8 +158,34 @@ export function kortNavn(titel: string): string {
   return ord.slice(0, 2).map((o) => o.charAt(0).toUpperCase()).join("");
 }
 
-export type AarshjulOpgave = { titel: string; kort: string; /** besøget falder i næste år (uger > 52) */ naesteAar?: boolean };
+export type AarshjulOpgave = { titel: string; kort: string; /** besøget falder i næste år (uger > 52) */ naesteAar?: boolean; /** linjens farve (Thomas, 2026-09-15) */ farve?: string };
 export type AarshjulUge = { uge: number; opgaver: AarshjulOpgave[] };
+
+// ─── Linje-farver (Thomas, 2026-09-15): hver opgavelinje får sin egen farve ──
+// så man straks ser i ÅRSHJULET, hvilke uger der hører til hvilken opgave.
+// Farven beregnes ud fra linjens INDEX (stabil sortering: orderBy sort/asc som
+// PDF'en allerede bruger) — gemmes IKKE i DB, og formular/PDF/accept-side
+// deler ÉN funktion, så farverne aldrig afviger mellem steder.
+const LINJE_FARVER = [
+  "#FFF87B", // gul (Karltoffel-accent)
+  "#ACD542", // lys grøn
+  "#42D4F4", // lys cyan
+  "#F58231", // orange
+  "#C593FE", // lys lilla
+  "#F6A5C0", // lys lyserød
+  "#9AC8E8", // lys blå
+  "#FFC9A3", // fersken
+] as const;
+
+/** Mørk Karltoffel-tekst på ALLE linje-farver — god læsbarhed i UI/PDF. */
+export const LINJE_FARVE_TEKST = "#4C3718";
+
+/** Deterministisk farve pr. linje-index: linje 1 = farve 1 osv., wrap efter
+ *  paletten. Negativ/ikke-heltals index → første farve (defensivt). */
+export function linjeFarve(index: number): string {
+  const i = Number.isInteger(index) && index >= 0 ? index : 0;
+  return LINJE_FARVER[i % LINJE_FARVER.length];
+}
 
 /** Byg årshjulet: [{uge, opgaver:[{titel, kort}]}] sorteret pr. uge (1–52).
  *  Besøg = besogPrAar(interval) (samme afrunding som årsbeløbet — "1 gang om
@@ -170,7 +196,7 @@ export function bygAarshjul(
   linjer: { description: string; interval?: string | null; startWeek?: string | null }[],
 ): AarshjulUge[] {
   const perUge = new Map<number, AarshjulOpgave[]>();
-  for (const l of linjer) {
+  for (const [linjeIndex, l] of linjer.entries()) {
     const start = parseUgeNr(l.startWeek);
     const titel = (l.description ?? "").trim();
     if (start == null || !titel) continue;
@@ -180,7 +206,7 @@ export function bygAarshjul(
       const raa = start + step * i;
       const uge = ((raa - 1) % 52) + 1; // wrap over 52 → samme uge næste år
       const liste = perUge.get(uge) ?? [];
-      liste.push({ titel: l.description, kort: kortNavn(l.description), naesteAar: raa > 52 || undefined });
+      liste.push({ titel: l.description, kort: kortNavn(l.description), naesteAar: raa > 52 || undefined, farve: linjeFarve(linjeIndex) });
       perUge.set(uge, liste);
     }
   }

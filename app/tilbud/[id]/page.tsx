@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { getDownloadUrl } from "@vercel/blob";
-import { statusLabel, linjeKundeTekst, bygAarshjul } from "@/lib/tilbud.mts";
+import { statusLabel, linjeKundeTekst, bygAarshjul, linjeFarve } from "@/lib/tilbud.mts";
 import Aarshjul from "@/components/Aarshjul";
 import { tilbudAarsbelobSum } from "@/lib/subscription-intervals";
 import { tilbudMomsOgIalt, krMoms } from "@/lib/vat";
@@ -82,9 +82,17 @@ export default async function TilbudDetailPage({ params, searchParams }: { param
           <div className="f2">
             <label className="col-label">Opgaver og priser</label>
             <div className="tasklines">
-              {tilbud.lines.map((l) => (
+              {tilbud.lines.map((l, i) => (
                 <div className="tl-row" key={l.id} style={{ gridTemplateColumns: "1fr auto" }}>
-                  <span>
+                  <span style={{ display: "flex", alignItems: "flex-start", gap: 8 }}>
+                    {/* Thomas, 2026-09-15: farve-prik pr. linje — samme farve
+                        som linjens chips i årshjulet (linjeFarve(i), stabilt
+                        pr. index). */}
+                    <span
+                      aria-hidden
+                      style={{ flexShrink: 0, width: 12, height: 12, borderRadius: 4, background: linjeFarve(i), border: "1px solid rgba(76, 55, 24, 0.25)", marginTop: 4, display: "inline-block" }}
+                    />
+                    <span style={{ flex: 1 }}>
                     {linjeKundeTekst(l)}
                     {/* Thomas, 2026-09-11: intern medarbejder-tilknytning —
                         diskret her (teamets side), IKKE i kundefacing materiale. */}
@@ -93,6 +101,7 @@ export default async function TilbudDetailPage({ params, searchParams }: { param
                         Intern: {(l.employee.firstName + " " + l.employee.lastName).trim()} (vises ikke for kunden)
                       </small>
                     ) : null}
+                    </span>
                   </span>
                   <span className="num">{kr(l.price)}</span>
                 </div>
