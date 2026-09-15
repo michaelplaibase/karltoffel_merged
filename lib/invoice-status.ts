@@ -39,7 +39,7 @@ export function invoiceLabel(o: InvoiceStatusInput): string | null {
   if (o.businessBatchInvoiceGuid) {
     const s = o.businessBatchInvoiceStatus ?? "";
     if (s === "Sent" || s === "Booked") return "Samlefaktura sendt";
-    if (s === "Draft") return "Samlefaktura-kladde";
+    if (s === "Draft") return "Åben faktura (kladde)";
     if (s === "Failed") return "Samlefaktura fejlede";
     return "På samlefaktura";
   }

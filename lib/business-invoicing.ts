@@ -32,6 +32,7 @@ import {
 import { quarterlyPeriodEndingBefore } from "./invoice-frequency";
 import { computeInvoiceTotals } from "./vat";
 import type { VatTotals } from "./vat";
+import { findOpenDraftForContact, addProductLinesToDraft, registerOpenInvoice, releaseOpenInvoice } from "./invoice-consolidation";
 
 /** [start, end) for "d. 20. i forrige måned til d. 20. i denne måned" (UTC-dato,
  *  ingen klokkeslæt-afhængighed — ordrer er dato-baserede). `now` er typisk
@@ -203,6 +204,22 @@ async function runBatchForPeriod(args: {
       const existing = await findInvoiceByExternalRef(access, org, ref);
       let guid = existing?.guid ?? null;
       let timeStamp = existing?.timeStamp ?? "";
+      // KONSOLIDERING (2026-09-15): en kunde skal kun have ÉN åben faktura.
+      // Har kontakten en åben kladde fra en tidligere (evt. fejlslagen) kørsel,
+      // tilføjes periodelinjer DEN i stedet for at oprette en ny faktura.
+      let adoptedTotalInclVat: number | null = null;
+      if (!guid) {
+        const open = await findOpenDraftForContact(access, org, contactId);
+        if (open) {
+          guid = open.guid;
+          timeStamp = open.timeStamp;
+          adoptedTotalInclVat = open.totalInclVat;
+          const lines = contactOrders.flatMap((o) =>
+            o.tasks.map((t) => ({ description: `Ordre #${o.id} — ${t.description}`, price: t.price })),
+          );
+          await addProductLinesToDraft(access, org, guid, lines, cfg.salesAccountNumber);
+        }
+      }
 
       if (!guid) {
         const lines = contactOrders.flatMap((o) =>
@@ -217,6 +234,10 @@ async function runBatchForPeriod(args: {
         guid = draft.guid;
         timeStamp = draft.timeStamp;
         await patchExternalReference(access, org, guid, timeStamp, ref).then((ts) => { timeStamp = ts; });
+        // Registrér kladden som kontaktens ÅBNE faktura (konsoliderings-nøglen)
+        // — frigives ved bogføring nedenfor, så næste kørsel ikke adopterer en
+        // allerede sendt faktura.
+        await registerOpenInvoice(contactId, guid).catch(() => {});
       }
 
       // Persist the shared guid on EVERY order in this batch — inside no explicit
@@ -231,8 +252,11 @@ async function runBatchForPeriod(args: {
       if (!alreadyBooked) {
         const detail = await getInvoice(access, org, guid);
         if (detail.totalInclVat == null) throw new Error("Momskontrol umulig: Dinero returnerede ingen total — kladden er IKKE bogført.");
-        if (Math.abs(detail.totalInclVat - sumInclVat) > 1) {
-          throw new Error(`Momskontrol fejlede: Dinero-total ${detail.totalInclVat} kr ≠ ordrernes sum ${sumInclVat} kr. Kladden er IKKE bogført.`);
+        // Forventet total: en ADOPTERET kladdes total før tilføjelsen (inkluderer
+        // manuelle linjer) + denne periodes sum; en ny kladde → bare perioden.
+        const expected = (adoptedTotalInclVat ?? 0) + sumInclVat;
+        if (Math.abs(detail.totalInclVat - expected) > 1) {
+          throw new Error(`Momskontrol fejlede: Dinero-total ${detail.totalInclVat} kr ≠ forventet ${expected} kr. Kladden er IKKE bogført.`);
         }
         const booked = await bookInvoice(access, org, guid, detail.timeStamp || timeStamp);
         timeStamp = booked.timeStamp || timeStamp;
@@ -245,6 +269,8 @@ async function runBatchForPeriod(args: {
       // Automatisk afsendelse — INGEN godkendelsestrin (Michael: "Det skal bare
       // ske helt automatisk"). Samme non-downgrade-garanti som pr.-ordre-flowet.
       await emailInvoice(access, org, guid, timeStamp);
+      // Sendt/bogført → fakturaen er ikke længere åben (konsoliderings-nøglen).
+      await releaseOpenInvoice(contactId, guid);
       await prisma.order.updateMany({
         where: { id: { in: orderIds } },
         data: { businessBatchInvoiceStatus: "Sent", businessBatchInvoicedAt: new Date(), businessBatchError: null },

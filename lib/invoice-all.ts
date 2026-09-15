@@ -23,6 +23,7 @@ import {
   bookInvoice, emailInvoice, getInvoice, findInvoiceByExternalRef, DineroApiError,
 } from "./dinero";
 import { todayCphISO } from "./calendar";
+import { findOpenDraftForContact, addProductLinesToDraft, registerOpenInvoice, releaseOpenInvoice } from "./invoice-consolidation";
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
@@ -155,6 +156,24 @@ export async function runInvoiceAll(): Promise<InvoiceAllResult> {
       let guid = existing?.guid ?? null;
       let timeStamp = existing?.timeStamp ?? "";
 
+      // KONSOLIDERING (2026-09-15): en kunde skal kun have ÉN åben faktura.
+      // Har kunden en åben kladde (fx "Opret fakturakladde" fra en tidligere
+      // opgave), tilføjes dagens linjer DEN i stedet for at oprette en ny —
+      // og hele den åbne faktura bogføres+sendes samlet.
+      let adoptedTotalInclVat: number | null = null;
+      if (!guid) {
+        const open = await findOpenDraftForContact(access, org, contactId);
+        if (open) {
+          guid = open.guid;
+          timeStamp = open.timeStamp;
+          adoptedTotalInclVat = open.totalInclVat;
+          const lines = contactOrders.flatMap((o) =>
+            o.tasks.map((t) => ({ description: `Ordre #${o.id} — ${t.description}`, price: t.price })),
+          );
+          await addProductLinesToDraft(access, org, guid, lines, cfg.salesAccountNumber);
+        }
+      }
+
       if (!guid) {
         const lines = contactOrders.flatMap((o) =>
           o.tasks.map((t) => ({ description: `Ordre #${o.id} — ${t.description}`, price: t.price })),
@@ -177,6 +196,8 @@ export async function runInvoiceAll(): Promise<InvoiceAllResult> {
             timeStamp = data.TimeStamp ?? timeStamp;
           }
         } catch { /* best-effort */ }
+        // Registrér kladden som kontaktens ÅBNE faktura — frigives ved bogføring.
+        await registerOpenInvoice(contactId, guid).catch(() => {});
       }
 
       // Persister guid på ALLE ordrer i gruppen FØR bogføring (crash-sikkerhed).
@@ -189,8 +210,11 @@ export async function runInvoiceAll(): Promise<InvoiceAllResult> {
       if (!alreadyBooked) {
         const detail = await getInvoiceWithRetry(access, org, guid);
         if (detail.totalInclVat == null) throw new Error("Momskontrol umulig: Dinero returnerede ingen total — kladden er IKKE bogført.");
-        if (Math.abs(detail.totalInclVat - sumInclVat) > 1) {
-          throw new Error(`Momskontrol fejlede: Dinero-total ${detail.totalInclVat} kr ≠ ordrernes sum ${sumInclVat} kr. Kladden er IKKE bogført.`);
+        // Forventet total: en ADOPTERET kladdes total før tilføjelsen (inkluderer
+        // manuelle linjer) + dagens sum; en ny kladde → bare dagens sum.
+        const expected = (adoptedTotalInclVat ?? 0) + sumInclVat;
+        if (Math.abs(detail.totalInclVat - expected) > 1) {
+          throw new Error(`Momskontrol fejlede: Dinero-total ${detail.totalInclVat} kr ≠ forventet ${expected} kr. Kladden er IKKE bogført.`);
         }
         const booked = await bookInvoice(access, org, guid, detail.timeStamp || timeStamp);
         timeStamp = booked.timeStamp || timeStamp;
@@ -201,6 +225,8 @@ export async function runInvoiceAll(): Promise<InvoiceAllResult> {
       }
 
       await emailInvoice(access, org, guid, timeStamp);
+      // Sendt/bogført → fakturaen er ikke længere åben (konsoliderings-nøglen).
+      await releaseOpenInvoice(contactId, guid);
       await prisma.order.updateMany({
         where: { id: { in: orderIds } },
         data: { businessBatchInvoiceStatus: "Sent", businessBatchInvoicedAt: new Date(), businessBatchError: null },

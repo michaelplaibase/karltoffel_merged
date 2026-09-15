@@ -39,6 +39,11 @@ import type { DineroConnection } from "@prisma/client";
 import { effectiveInvoiceFrequency } from "./invoice-frequency";
 import { computeInvoiceTotals } from "./vat";
 import type { VatTotals } from "./vat";
+import {
+  findOpenDraftForContact, addProductLinesToDraft,
+  registerOpenInvoice, releaseOpenInvoice, expectedTotalKr,
+  type DraftLine,
+} from "./invoice-consolidation";
 
 // ─── Endpoints ─────────────────────────────────────────────────────────────────
 const API_BASE = "https://api.dinero.dk";
@@ -553,6 +558,72 @@ export async function issueInvoiceForOrder(
       if (!clash) await prisma.contact.update({ where: { id: order.contactId }, data: { dineroContactGuid: contactGuid } });
     }
 
+    // ─── KONSOLIDERING (2026-09-15): én ÅBEN faktura pr. kunde ───────────────────
+    // Hvis kunden allerede har en åben (u-bogført) Dinero-kladde, tilføjes denne
+    // ordres linjer den EKSISTERENDE faktura i stedet for at oprette en ny —
+    // gælder både "Opret fakturakladde" og "Send faktura - ubetalt" (hele den
+    // åbne faktura sendes så på kundens faktureringsdag: straks ved ubetalt,
+    // d. 20. for samlefaktura-kunder hvis kladden stammer fra batch-flowet).
+    // "Betalt kontant" springer over: beløbet kvitteres i egen pr.-ordre-faktura.
+    // Ordrer der bærer deres EGEN pr.-ordre-kladde (dineroInvoiceGuid) genoptager
+    // deres normale flow nedenfor — de konsolideres ikke på en anden faktura.
+    if (decision !== D_SEND_CASH && !hasPerOrderDraft && !perOrderBooked) {
+      const open = await findOpenDraftForContact(access, org, order.contactId);
+      if (open) {
+        const lines: DraftLine[] = order.tasks.map((t) => ({ description: t.description, price: t.price }));
+        // Moms-grundlag: kladdens total FRA før tilføjelsen (inkluderer allerede
+        // manuelle linjer) + de nye linjers sum.
+        const expected = expectedTotalKr(open.totalInclVat, lines);
+        try {
+          // Genoptagelses-værn: er denne ordre ALLEREDE på den åbne faktura (fx
+          // "Fakturér igen" efter crash), må linjerne IKKE tilføjes to gange.
+          const fresh = await prisma.order.findUnique({ where: { id: orderId }, select: { businessBatchInvoiceGuid: true } });
+          if (fresh?.businessBatchInvoiceGuid !== open.guid) {
+            await addProductLinesToDraft(access, org, open.guid, lines, cfg.salesAccountNumber);
+          }
+          // Delte batch-felter (ikke @unique dineroInvoiceGuid — flere ordrer deler
+          // fakturaen, samme mønster som samlefaktura-flowet).
+          await prisma.order.update({
+            where: { id: orderId },
+            data: { businessBatchInvoiceGuid: open.guid, businessBatchInvoiceTimeStamp: open.timeStamp, businessBatchInvoiceStatus: "Draft", businessBatchError: null },
+          });
+          if (decision === D_DRAFT) return { ok: true, status: "Draft" };
+          if (decision === D_SEND_UNPAID) {
+            const detail = await getInvoice(access, org, open.guid); // frisk timeStamp + total inkl. nye linjer
+            const ts = detail.timeStamp || open.timeStamp;
+            if (detail.totalInclVat == null) throw new Error("Momskontrol umulig: Dinero returnerede ingen total — kladden er IKKE bogført.");
+            if (Math.abs(detail.totalInclVat - expected) > 1) {
+              throw new Error(`Momskontrol fejlede: Dinero-total ${detail.totalInclVat} kr ≠ forventet ${expected} kr. Kladden er IKKE bogført.`);
+            }
+            const booked = await bookInvoice(access, org, open.guid, ts);
+            const bookedTs = booked.timeStamp || ts;
+            await prisma.order.updateMany({
+              where: { businessBatchInvoiceGuid: open.guid, businessBatchInvoiceNumber: null },
+              data: { businessBatchInvoiceNumber: booked.number, businessBatchInvoiceTimeStamp: bookedTs, businessBatchInvoiceStatus: "Booked" },
+            });
+            await emailInvoice(access, org, open.guid, bookedTs);
+            await prisma.order.updateMany({
+              where: { businessBatchInvoiceGuid: open.guid },
+              data: { businessBatchInvoiceStatus: "Sent", businessBatchInvoicedAt: new Date(), businessBatchError: null },
+            });
+            // Sendt/bogført → fakturaen er ikke længere åben.
+            await releaseOpenInvoice(order.contactId, open.guid);
+            return { ok: true, status: "Sent" };
+          }
+          return { ok: true, status: "Draft" };
+        } catch (e) {
+          const msg = (e instanceof Error ? e.message : "Konsolidering fejlede").slice(0, 500);
+          // Kladden forbliver ÅBEN (OpenInvoice-rækken består) — næste afsluttede
+          // opgave lægger stadig sine linjer på den samme faktura.
+          await prisma.order.update({
+            where: { id: orderId },
+            data: { businessBatchError: msg, businessBatchInvoiceStatus: "Failed" },
+          }).catch(() => {});
+          return { ok: false, status: "Failed", error: msg };
+        }
+      }
+    }
+
     // 2. Reuse / adopt / create the draft invoice, SERIALISED per order under an
     //    advisory lock and persisted inside it, so concurrent runs and crash-recovery
     //    cannot create a second invoice (@unique dineroInvoiceGuid alone can't).
@@ -598,6 +669,13 @@ export async function issueInvoiceForOrder(
     const guid = ensured.guid;
     let timeStamp = ensured.timeStamp;
 
+    // Registrér kladden som kontaktens ÅBNE faktura (konsoliderings-nøglen,
+    // lib/invoice-consolidation.ts) — kun når den faktisk er åben (u-bogført).
+    // Frigives igen ved bogføring nedenfor; en sendt faktura er aldrig åben.
+    if ((decision === D_DRAFT || decision === D_SEND_UNPAID) && !alreadyBooked) {
+      await registerOpenInvoice(order.contactId, guid).catch(() => {});
+    }
+
     // 3. Draft-only: stop here (user finishes it in Dinero's Salg UI).
     if (decision === D_DRAFT) {
       await prisma.order.update({ where: { id: orderId }, data: { dineroInvoiceStatus: "Draft", invoicedAt: new Date(), dineroError: null } });
@@ -617,6 +695,7 @@ export async function issueInvoiceForOrder(
           where: { id: orderId },
           data: { dineroInvoiceNumber: detail.number, dineroInvoiceTimeStamp: timeStamp, dineroInvoiceStatus: "Booked", dineroError: null },
         });
+        await releaseOpenInvoice(order.contactId, guid); // bogført → ikke længere åben
       } else {
         if (detail.totalInclVat == null) {
           throw new Error("Momskontrol umulig: Dinero returnerede ingen total — kladden er IKKE bogført.");
@@ -636,6 +715,7 @@ export async function issueInvoiceForOrder(
             dineroError: null,
           },
         });
+        await releaseOpenInvoice(order.contactId, guid); // bogført → ikke længere åben
       }
     } else {
       const detail = await getInvoice(access, org, guid);

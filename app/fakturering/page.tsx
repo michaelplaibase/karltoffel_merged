@@ -15,6 +15,7 @@ import CleanupDescriptionsButton from "@/components/CleanupDescriptionsButton";
 import InvoiceAllButton from "@/components/InvoiceAllButton";
 import InvoiceNowButton from "@/components/InvoiceNowButton";
 import NotDoneRowActions from "@/components/NotDoneRowActions";
+import ManualInvoiceLineForm from "@/components/ManualInvoiceLineForm";
 
 export const metadata = { title: "Faktureringsoverblik · Karltoffel Business Manager" };
 
@@ -129,6 +130,43 @@ export default async function InvoicingOverviewPage() {
   const notDone = rows.filter((o) => !CLOSED.has(o.status));
   const sum = (rs: Row[]) => rs.reduce((a, o) => a + o.price, 0);
 
+  // Åbne fakturaer (2026-09-15): kunder med præcis ÉN u-bogført Dinero-faktura.
+  // Nye afsluttede opgaver lægger deres linjer HER (lib/invoice-consolidation.ts)
+  // i stedet for at oprette en ny faktura, og den sendes på kundens fakturerings-
+  // dag (pr_gang → straks, maaned/kvartal → d. 20.). Herfra kan der også tilføjes
+  // en manuel linje (fx varekøb kunden skal betale).
+  const openInvoices = await prisma.openInvoice.findMany({
+    where: { status: "Draft" },
+    include: {
+      contact: { select: { id: true, name: true, invoiceFrequency: true, isCompany: true } },
+    },
+    orderBy: { updatedAt: "desc" },
+  });
+  const openRows = await Promise.all(openInvoices.map(async (inv) => {
+    const orders = await prisma.order.findMany({
+      where: { businessBatchInvoiceGuid: inv.guid },
+      include: { tasks: true },
+      orderBy: { plannedAt: "desc" },
+    });
+    const manual = await prisma.invoiceManualLine.findMany({ where: { guid: inv.guid } });
+    const manualSum = manual.reduce((a, l) => a + Number(l.quantity) * l.priceInclVat, 0);
+    const ordersSum = orders.reduce((a, o) => a + o.tasks.reduce((b, t) => b + t.price, 0), 0);
+    const freq = inv.contact.invoiceFrequency === "maaned" || inv.contact.invoiceFrequency === "kvartal"
+      ? inv.contact.invoiceFrequency
+      : inv.contact.invoiceFrequency === "pr_gang" ? "pr_gang"
+      : inv.contact.isCompany ? "maaned" : "pr_gang";
+    const sendDay = freq === "pr_gang" ? "sendes straks ved næste afslutning" : `sendes d. 20. (${freq === "kvartal" ? "kvartal" : "måned"})`;
+    return {
+      id: inv.id,
+      contactId: inv.contact.id,
+      customer: inv.contact.name,
+      orders: orders.map((o) => ({ id: o.id, price: o.tasks.reduce((a, t) => a + t.price, 0) })),
+      manual: manual.map((l) => ({ id: l.id, description: l.description, total: Number(l.quantity) * l.priceInclVat })),
+      sum: ordersSum + manualSum,
+      sendDay,
+    };
+  }));
+
   return (
     <div className="container-1140 container-wide">
       <h1 className="page-title">Faktureringsoverblik</h1>
@@ -145,6 +183,40 @@ export default async function InvoicingOverviewPage() {
       {/* "Fakturér alle" (Michael, 2026-09-03): sender alle klar-til-faktura
           ordrer med det samme, med "Er du sikker?"-bekræftelse. */}
       <InvoiceAllButton />
+
+          <div className="card" style={{ marginBottom: 16 }}>
+            <div className="card-header"><h4 className="section-title">Åbne fakturaer ({openRows.length})</h4></div>
+            <div className="card-body tight">
+              {openRows.length === 0 ? (
+                <div className="table-empty">Ingen åbne fakturaer — hver kunde har højst én ad gangen, og nye opgaver lægges automatisk på den.</div>
+              ) : (
+                openRows.map((inv) => (
+                  <div key={inv.id} className="card" style={{ marginBottom: 12 }}>
+                    <div className="card-header">
+                      <h5 className="section-title">
+                        <Link href={`/customers/${inv.contactId}`}>{inv.customer}</Link> — {money(inv.sum)} · {inv.sendDay}
+                      </h5>
+                    </div>
+                    <div className="card-body tight">
+                      {inv.orders.length === 0 && inv.manual.length === 0 ? (
+                        <div className="help-note">Ingen linjer registreret i CRM endnu.</div>
+                      ) : (
+                        <ul style={{ margin: "4px 0", paddingLeft: 18 }}>
+                          {inv.orders.map((o) => (
+                            <li key={`o${o.id}`}><Link href={`/orders/${o.id}`}>Ordre #{o.id}</Link> — {money(o.price)}</li>
+                          ))}
+                          {inv.manual.map((l) => (
+                            <li key={`m${l.id}`}>{l.description} — {money(l.total)} <em>(manuel)</em></li>
+                          ))}
+                        </ul>
+                      )}
+                      <ManualInvoiceLineForm openInvoiceId={inv.id} />
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
 
           <div className="card" style={{ marginBottom: 16 }}>
             <div className="card-header"><h4 className="section-title">Klar til fakturering ({ready.length}) — {money(sum(ready))}</h4></div>
