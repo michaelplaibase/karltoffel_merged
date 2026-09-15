@@ -145,6 +145,7 @@ const state = {
   kundetype: null,   /* "privat" | "erhverv" — vælges på step 2 */
   betaling: "pr_gang",   /* fast: betaling pr. gang — abonnements-valg fjernet */
   rabatkode: { code:"", percent:0, valid:false },   /* valideret server-side via /api/rabatkode */
+  naboRabat: false,                     /* naborabat: 10% til begge (Kristian 2026-09-15) */
   /* Hæk-spørgsmålene (trin 4): kundens egne svar uden forvalg.
      sidstKlippet + hoejde + sider + arbejde + udkoersel — styrer hækkens pris
      (syncHaekPris). udkoersel = tilvalg (Kristian 2026-09-09): intet svar =
@@ -517,6 +518,19 @@ ktErhverv.addEventListener("click", ()=> ktKlik("erhverv"));
 ktVidere.addEventListener("click", ()=>{ if(state.kundetype) ktFortsaet(); });
 $("kt-tilbage").addEventListener("click", ()=>{ clearTimeout(ktTimer); visStep("step-adresse"); });
 
+/* Naborabat (Kristian 2026-09-15): checkbox på kontakt-trinnet — 10% ekstra
+   rabat til begge husstande. Rabatten udmøntes manuelt i CRM'et når begge har
+   bestilt; i motoren vises den som ekstra −10% på estimatet. */
+(function(){
+  const nb = document.getElementById("k-nabo");
+  if(!nb) return;
+  nb.addEventListener("change", ()=>{
+    state.naboRabat = nb.checked;
+    opdater();            /* genberegn sticky/total med det samme */
+    opdaterBetaling();    /* betalingskortet viser nettotallet */
+  });
+})();
+
 /* Runde 2: rabatkode vises kun, når kunden spørger efter den. */
 (function(){
   const t = document.getElementById("rk-toggle"), w = document.getElementById("rk-wrap");
@@ -555,7 +569,11 @@ function opdaterBetaling(){
   /* Fix 2: KUN hæk-gebyret tilbage (højde ikke svaret / over 2,2 m) → intet
      konkret total-tal på betalingskortet endnu — 500 kr må ikke ligne en pris. */
   if(haekUsikker() && r.yearTotal <= haekGebyrAar()){ btTotal.textContent = "—"; return; }
-  btTotal.textContent = DKK0.format(Math.round(r.yearTotal));
+  /* Naborabat: betalingskortet viser det ÅRLIGTE tal EFTER naborabatten (samme
+     grundlag som payload-estimatet — rabatkode tæller med her som før). */
+  const kodePct = state.rabatkode.valid ? state.rabatkode.percent : 0;
+  const naboPct = state.naboRabat ? 10 : 0;
+  btTotal.textContent = DKK0.format(Math.round(r.yearTotal * (1 - (kodePct + naboPct)/100)));
 }
 
 /* ============ VIDERE/TILBAGE-NAVIGATION ============ */
@@ -825,8 +843,9 @@ $("btn-send").addEventListener("click", ()=>{
   const ktLabel = state.kundetype === "erhverv" ? " · Erhverv" : (state.kundetype === "privat" ? " · Privat" : "");
   /* Rabatkode: ekstra procentrabat, trukket fra den samlede sum. */
   const kodePct = state.rabatkode.valid ? state.rabatkode.percent : 0;
-  const totalNet = r.total * (1 - kodePct/100);        /* pr. besøg, netto */
-  const yearNet = r.yearTotal * (1 - kodePct/100);     /* ÅRLIGT netto estimat (freq ganget ind) */
+  const naboPct = state.naboRabat ? 10 : 0;             /* naborabat: ekstra 10% */
+  const totalNet = r.total * (1 - (kodePct + naboPct)/100);        /* pr. besøg, netto */
+  const yearNet = r.yearTotal * (1 - (kodePct + naboPct)/100);     /* ÅRLIGT netto estimat (freq ganget ind) */
   /* Fix 1 (2026-09-09, Kristian): skattefradraget bortfalder ALDRIG — vises
      NORMALT på det årlige netto-estimat i det godkendte format, også når
      kun 500-gebyret er med (over 2,2 m) eller i blandet kurv. Ingen
@@ -887,6 +906,7 @@ $("btn-send").addEventListener("click", ()=>{
   } catch (e) {}
   /* KONTRAKT: feltnavn `rabatkode` (streng, trimmet + uppercased) — kun med når koden er valid. */
   if(state.rabatkode.valid) payload.rabatkode = state.rabatkode.code;
+  if(state.naboRabat) payload.naborabat = true;
   /* Erhverv: CVR + firmaoplysninger er valgfrie ekstra felter på leadet —
      blot informative for CRM'et, blokerer aldrig indsendelsen (se tjekCvr). */
   if(state.kundetype === "erhverv"){
@@ -1056,6 +1076,7 @@ function pushLeadEvent(valgt, r, totalNet, kodePct){
   }
   /* Kun med når koden faktisk er valideret server-side. */
   if(state.rabatkode.valid) ev.coupon = state.rabatkode.code;
+  if(state.naboRabat) ev.naborabat = true;
   /* Måling må aldrig vælte tak-siden. */
   try { dl.push(ev); } catch(e){}
 }
@@ -1427,8 +1448,14 @@ function opdaterRabat(){
     ? '<span class="tm-rabat-kode">Rabatkode <b>' + esc(state.rabatkode.code) + '</b>: ekstra <b>−' + kodePct + '%</b>' +
       (kodeKr > 0 ? ' (ca. <span class="tm-kode-kr tm-anim-kr">' + kr(kodeKr) + '</span>)' : '') + '</span>'
     : '';
-  if(kodePct > 0){
-    el.innerHTML = kodeHtml;
+  /* Naborabat (Kristian 2026-09-15): vises som egen linje oveni rabatkoden. */
+  var naboPct = state.naboRabat ? 10 : 0;
+  var naboKr = r.yearTotal * naboPct / 100;
+  var naboHtml = naboPct > 0
+    ? '<span class="tm-rabat-kode">Naborabat: ekstra <b>&minus;10%</b> (ca. ' + kr(naboKr) + '/&aring;r) &mdash; g&aelig;lder n&aring;r naboen ogs&aring; bestiller</span>'
+    : '';
+  if(kodePct > 0 || naboPct > 0){
+    el.innerHTML = naboHtml + kodeHtml;
     delete el.dataset.kr;
     el.hidden = false;
   } else {
