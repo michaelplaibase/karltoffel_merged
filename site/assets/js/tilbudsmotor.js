@@ -24,7 +24,7 @@ const $ = (id) => ROOT.querySelector("#" + id);
 /*PRICING-START*/
 const PRODUCTS = [
   /* ---- De mest valgte services (ikke forudvalgt — kunden vælger selv) ---- */
-  {id:"vinduer",  navn:"Udvendig vinduesvask",       enhed:"glas",       pris:17.00, note:"Udvendige døre, vinduer og porte",                 qty:0,   freq:8,  fmax:12, on:false, pakke:true, kat:"pakke", wm:"Udvendig vinduesvask pr glas"},
+  {id:"vinduer",  navn:"Udvendig vinduesvask",       enhed:"glas",       pris:17.00, note:"Pr. ramme — alle vinduestyper (bondehus, tophængt osv.), plus døre og porte",                 qty:0,   freq:8,  fmax:12, on:false, pakke:true, kat:"pakke", wm:"Udvendig vinduesvask pr glas"},
   /* Hæk: TRIMNING 27,00 kr/m (hæk under 220 cm) — BESKÆRING (skære ind,
      vokset sig for stor) 33,50 kr/m. Prisen afledes af hæk-spørgsmålene
      (state.haekInfo, se syncHaekPris). wm-navnene er UÆNDREDE (samme
