@@ -47,7 +47,7 @@ const num = (v: unknown, max: number) => (typeof v === "number" && Number.isFini
  *  ukendte/ugyldige rækker droppes. */
 type TmService = { id: string; navn: string; wm: string | null; qty: number; enhed: string; freq: number; pris: number | null };
 type Rabat = { rabatkode: string; rabatOk: boolean; rabatPct: number | null };
-function parseTmPayload(body: Record<string, unknown>, rabat: Rabat | null): { payloadJson: string | null; kundetype: string | null; services: TmService[]; estimatMd: number } {
+function parseTmPayload(body: Record<string, unknown>, rabat: Rabat | null): { payloadJson: string | null; kundetype: string | null; services: TmService[]; estimatMd: number; naborabat: boolean } {
   const kt = str(body.kundetype, 10).toLowerCase();
   const kundetype = kt === "privat" || kt === "erhverv" ? kt : null;
 
@@ -75,10 +75,15 @@ function parseTmPayload(body: Record<string, unknown>, rabat: Rabat | null): { p
   const e = body.estimat && typeof body.estimat === "object" ? (body.estimat as Record<string, unknown>) : {};
   const estimat = { md: num(e.md, 10_000_000), aar: num(e.aar, 100_000_000), visits: num(e.visits, 366), count: num(e.count, 100) };
 
-  const payloadJson = kundetype || betaling || services.length || rabat
-    ? JSON.stringify({ kundetype, betaling, services, estimat, ...(rabat ?? {}) })
+  /* Naborabat (Kristian 2026-09-15): kunde har slået sig sammen med en nabo —
+     10% er trukket fra estimatet i motoren; udmøntes manuelt når begge har
+     bestilt. Gemmes i payloadet så teamet kan se flaget. */
+  const naborabat = body.naborabat === true;
+
+  const payloadJson = kundetype || betaling || services.length || rabat || naborabat
+    ? JSON.stringify({ kundetype, betaling, services, estimat, naborabat, ...(rabat ?? {}) })
     : null;
-  return { payloadJson, kundetype, services, estimatMd: estimat.md };
+  return { payloadJson, kundetype, services, estimatMd: estimat.md, naborabat };
 }
 
 const DKK = new Intl.NumberFormat("da-DK", { maximumFractionDigits: 0 });
@@ -254,6 +259,7 @@ export async function POST(req: NextRequest) {
       address ? `Adresse: ${address}` : null,
       tm.kundetype ? `Kundetype: ${tm.kundetype === "erhverv" ? "Erhverv" : "Privat"}` : null,
       tm.estimatMd ? `Estimat: ${DKK.format(tm.estimatMd)} kr/md` : null,
+      tm.naborabat ? "🏷 NABORABAT: kunden har valgt naborabat (10%) — est. er med rabatten. Udmønt manuelt når naboen også har bestilt." : null,
       rabat ? `Rabatkode: ${rabat.rabatkode}${rabat.rabatOk ? ` (−${rabat.rabatPct}%)` : " (ugyldig)"}` : null,
       lines.length ? `` : null,
       ...lines,
