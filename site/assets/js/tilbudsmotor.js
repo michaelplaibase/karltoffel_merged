@@ -32,7 +32,7 @@ const PRODUCTS = [
   {id:"haek",     navn:"Hækklipning",                    enhed:"m hæk",      pris:27.00, note:"Trimning — hæk under 220 cm",            qty:0,  freq:1,  fmax:3,  on:false, pakke:true, kat:"pakke", wm:"Hækklipning 1 side pr meter Under 220 cm"},
   {id:"green",    navn:"Greenkeeper græspleje",          enhed:"m² plæne",   pris:2.30,  note:"Gødning og pleje af plænen",      qty:0, freq:3,  fmax:6,  on:false, pakke:true, kat:"pakke", wm:"Greenkeeper græspleje"},
   {id:"alge",     navn:"Algebehandling af tag",          enhed:"m² tag",     pris:9.80,  min:950,  note:"Mos og alger, beregnet på skråt tagareal", qty:0, freq:1, fmax:2, on:false, pakke:true, kat:"pakke", wm:"Algebehandling af tag"},
-  {id:"tagrender",navn:"Tagrenderens",                   enhed:"m tagrende", pris:18.00, note:"Stueplan / 1-plans hus",          qty:0,  freq:1,  fmax:2,  on:false, pakke:true, kat:"pakke", wm:"Tagrenderens Stueplan / 1-plans hus"},
+  {id:"tagrender",navn:"Tagrenderens",                   enhed:"m tagrende", pris:21.60, note:"Stueplan / 1-plans hus",          qty:0,  freq:1,  fmax:2,  on:false, pakke:true, kat:"pakke", wm:"Tagrenderens Stueplan / 1-plans hus"},
 
   /* ---- Tilvalg: "Vi tilbyder også" (off som standard, gruppe = kat) ---- */
   {id:"ukrudt_sproejt", navn:"Sprøjtning af ukrudt mellem belægning", enhed:"m² fliser", pris:1.50, min:150, note:"Vi holder fugerne rene", qty:0, freq:5, fmax:8, on:false, pakke:false, kat:"groen", wm:"Ukrudt bekæmpelse på belægningsarealer"},
@@ -340,8 +340,8 @@ function applyMeasurements(m){
      forudfylder kun meter-antallet ovenfor. */
   const tr = PRODUCTS.find(x=>x.id==="tagrender");
   if(tr && m.rygHojde != null){
-    if(m.rygHojde > 5){ tr.pris = 28.00; tr.note = "2-plans hus"; tr.wm = "Tagrenerens 2-plans hus"; }
-    else { tr.pris = 18.00; tr.note = "Stueplan / 1-plans hus"; tr.wm = "Tagrenderens Stueplan / 1-plans hus"; }
+    if(m.rygHojde > 5){ tr.pris = 33.60; tr.note = "2-plans hus"; tr.wm = "Tagrenerens 2-plans hus"; }
+    else { tr.pris = 21.60; tr.note = "Stueplan / 1-plans hus"; tr.wm = "Tagrenderens Stueplan / 1-plans hus"; }
   }
   /* Opdater priserne på stedet (ingen gen-render), så priserne tæller
      blødt hen til de auto-målte mængder. */
