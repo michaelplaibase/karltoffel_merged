@@ -36,7 +36,7 @@
 /* Mørk fokus-ring på lyse flader (gul-på-gul ellers usynlig). */
 .tm-flow .row :focus-visible,.tm-flow .topbar :focus-visible,.tm-flow .qty input:focus-visible,.tm-flow .kontakt input:focus-visible,.tm-flow .kontakt textarea:focus-visible,.tm-flow .cta-bar :focus-visible,.tm-flow .adr-list :focus-visible{outline-color:var(--brun)}
 
-.tm-flow .tm-main{max-width:1040px;margin:0 auto;padding:48px 24px 64px}
+.tm-flow .tm-main{max-width:1040px;margin:0 auto;padding:28px 24px 44px}
 .tm-flow .step{display:none}
 .tm-flow .step.active{display:block;animation:tm-stepin .45s ease both}
 @keyframes tm-stepin{from{opacity:0;transform:translateX(24px)}to{opacity:1;transform:none}}
@@ -46,11 +46,11 @@
 }
 
 /* STEP 1: HERO */
-.tm-flow .hero{padding:40px 0 48px;text-align:center}
+.tm-flow .hero{padding:24px 0 28px;text-align:center}
 /* h2 (ikke h1): sidens dokument-outline må kun have ét h1 — hero-overskriften her er sektionens */
-.tm-flow .hero h2{font-family:var(--display);font-weight:700;font-size:clamp(34px,6vw,64px);line-height:1.04;color:var(--gul);letter-spacing:.01em}
-.tm-flow .hero p.sub{margin:18px auto 0;max-width:520px;font-size:18px;color:var(--ivory);opacity:.92}
-.tm-flow .adr-wrap{position:relative;max-width:640px;margin:40px auto 0;text-align:left}
+.tm-flow .hero h2{font-family:var(--display);font-weight:700;font-size:clamp(26px,4vw,38px);line-height:1.15;color:var(--gul);letter-spacing:.01em}
+.tm-flow .hero p.sub{margin:12px auto 0;max-width:520px;font-size:16px;color:var(--ivory);opacity:.92}
+.tm-flow .adr-wrap{position:relative;max-width:640px;margin:24px auto 0;text-align:left}
 .tm-flow .adr-label{display:block;font-size:13px;letter-spacing:.1em;text-transform:uppercase;color:var(--gul);margin:0 0 8px 4px}
 .tm-flow #adr-input{width:100%;padding:20px 22px;font-size:19px;border:0;border-radius:14px;background:var(--ivory);color:var(--brun)}
 .tm-flow #adr-input::placeholder{color:#7d7052}   /* ≥4.5:1 på ivory (AA) */
@@ -84,18 +84,18 @@
 .tm-flow .tm-progress-dots i.on{background:var(--gul);opacity:1}
 
 /* Gennemgående "Tilbage"/"Videre"-navigation */
-.tm-flow .tm-nav{display:flex;gap:14px;justify-content:center;margin-top:34px;flex-wrap:wrap}
+.tm-flow .tm-nav{display:flex;gap:14px;justify-content:center;margin-top:22px;flex-wrap:wrap}
 .tm-flow .btn[disabled]{opacity:.35;cursor:default}
 .tm-flow .btn[disabled]:hover{filter:none}
 
 /* STEP 2: PRIVAT/ERHVERV */
-.tm-flow .ktype{padding:36px 0;text-align:center}
-.tm-flow .ktype h2{font-family:var(--display);font-size:clamp(26px,4vw,40px);color:var(--gul)}
-.tm-flow .ktype .ktype-sub{margin-top:10px;font-size:16px;opacity:.9}
-.tm-flow .ktype-cards{display:flex;gap:16px;justify-content:center;flex-wrap:wrap;margin-top:30px}
-.tm-flow .ktype-card{display:block;min-width:220px;padding:24px 28px;background:rgba(255,248,123,.06);border:2px solid var(--bronze);border-radius:16px;color:var(--ivory);text-align:center;transition:background .15s,border-color .15s}
+.tm-flow .ktype{padding:20px 0;text-align:center}
+.tm-flow .ktype h2{font-family:var(--display);font-size:clamp(21px,3.4vw,30px);color:var(--gul)}
+.tm-flow .ktype .ktype-sub{margin-top:8px;font-size:15px;opacity:.9}
+.tm-flow .ktype-cards{display:flex;gap:14px;justify-content:center;flex-wrap:wrap;margin-top:20px}
+.tm-flow .ktype-card{display:block;min-width:200px;padding:18px 22px;background:rgba(255,248,123,.06);border:2px solid var(--bronze);border-radius:14px;color:var(--ivory);text-align:center;transition:background .15s,border-color .15s}
 .tm-flow .ktype-card:hover{background:rgba(255,248,123,.15);border-color:var(--gul)}
-.tm-flow .ktype-card svg{width:44px;height:44px;margin:0 auto 12px}
+.tm-flow .ktype-card svg{width:36px;height:36px;margin:0 auto 10px}
 .tm-flow .ktype-card b{display:block;font-size:19px}
 .tm-flow .ktype-card small{display:block;margin-top:4px;font-size:13px;color:var(--gul);opacity:.75}
 .tm-flow .ktype-card.selected{background:var(--gul);border-color:var(--gul);color:var(--brun)}
@@ -161,9 +161,9 @@
 @media (max-width:600px){ .tm-flow .tm-foto-band{margin:2px auto 18px} }
 
 /* STEP 3: VERIFY */
-.tm-flow .verify{padding:36px 0;text-align:center}
-.tm-flow .verify h2{font-family:var(--display);font-size:clamp(26px,4vw,40px);color:var(--gul)}
-.tm-flow .verify .adr{margin-top:8px;font-size:17px;opacity:.9}
+.tm-flow .verify{padding:20px 0;text-align:center}
+.tm-flow .verify h2{font-family:var(--display);font-size:clamp(21px,3.4vw,30px);color:var(--gul)}
+.tm-flow .verify .adr{margin-top:8px;font-size:16px;opacity:.9}
 .tm-flow .foto-card{position:relative;max-width:640px;margin:28px auto 0;border-radius:18px;overflow:hidden;background:var(--ivory)}
 .tm-flow .foto-badge{position:absolute;top:14px;left:14px;z-index:2;background:var(--brun);color:var(--gul);font-size:12px;letter-spacing:.12em;padding:6px 10px;border-radius:999px;text-transform:uppercase}
 .tm-flow .sf-canvas{display:none;width:100%;height:auto;vertical-align:top}
@@ -182,7 +182,7 @@
 .tm-flow .sf-angle-hint{display:none;margin-top:14px;color:var(--gul);font-size:14px;opacity:.9}
 
 /* STEP 4: LØSNINGSLISTE — todelt udvælgelse (mobile-first) */
-.tm-flow .losning{padding:24px 0 48px}
+.tm-flow .losning{padding:14px 0 28px}
 
 /* Adresseboks — kun adressen + "Skift adresse" */
 .tm-flow .topbar{display:flex;align-items:center;gap:11px;background:var(--ivory);color:var(--brun);border-radius:18px;padding:15px 18px;box-shadow:0 14px 34px rgba(0,0,0,.3)}
@@ -198,10 +198,10 @@
 /* ÉN samlet, stationær serviceliste (alle skærme): valgte OG fravalgte services
    er SAMME gule kort, grupperet efter kategori. Navnet (1fr) ombryder lange
    navne til 2 linjer; pris + frekvens holdes til højre. */
-.tm-flow .rows{display:flex;flex-direction:column;gap:18px;max-width:760px;margin:14px auto 0}
-.tm-flow .row-grp{display:flex;flex-direction:column;gap:9px}
+.tm-flow .rows{display:flex;flex-direction:column;gap:12px;max-width:760px;margin:12px auto 0}
+.tm-flow .row-grp{display:flex;flex-direction:column;gap:6px}
 .tm-flow .row-cat{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--gul);opacity:.7;margin:0 4px}
-.tm-flow .row{display:grid;grid-template-columns:auto minmax(0,1fr) 44px auto;grid-template-areas:"chk navn pw fw";column-gap:7px;align-items:center;background:var(--gul);color:var(--brun);border-radius:13px;padding:10px 11px}
+.tm-flow .row{display:grid;grid-template-columns:auto minmax(0,1fr) 44px auto;grid-template-areas:"chk navn pw fw";column-gap:7px;align-items:center;background:var(--gul);color:var(--brun);border-radius:11px;padding:7px 10px}
 /* Fravalgt: rækken står bomstille — kun checkbox-state skifter, og pris/frekvens
    skjules på stedet. visibility (ikke display): kontrollerne beholder deres
    plads i gridden, så intet hopper. */
@@ -264,7 +264,7 @@
    ikke efterlader tomme linjer i den stakkede layout. Desktop (>=1024px)
    og melleombreaket (700-1023px) påvirkes ikke. */
 @media (max-width:700px){
-  .tm-flow .row{grid-template-columns:auto minmax(0,1fr);grid-template-areas:"chk navn" ". pw" ". fw";row-gap:9px;column-gap:10px;align-items:start}
+  .tm-flow .row{grid-template-columns:auto minmax(0,1fr);grid-template-areas:"chk navn" ". pw" ". fw";row-gap:6px;column-gap:10px;align-items:start}
   .tm-flow .qrow{grid-template-areas:"chk navn" ". qw" ". pw" ". fw"}
   .tm-flow .qw,.tm-flow .pw,.tm-flow .fw{align-items:flex-start}
   .tm-flow .pw-note{text-align:left}
@@ -278,11 +278,11 @@
 
 
 /* STEP 5: KONTAKT + TAK */
-.tm-flow .kontakt{max-width:560px;margin:0 auto;padding:36px 0}
-.tm-flow .kontakt h2{font-family:var(--display);color:var(--gul);font-size:clamp(26px,4vw,38px)}
-.tm-flow .kontakt p{margin-top:10px;opacity:.9}
-.tm-flow .kontakt label{display:block;margin:20px 0 6px;font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:var(--gul)}
-.tm-flow .kontakt input,.tm-flow .kontakt textarea{width:100%;padding:15px 16px;border-radius:12px;border:0;background:var(--ivory);color:var(--brun);font-size:16px}
+.tm-flow .kontakt{max-width:560px;margin:0 auto;padding:20px 0}
+.tm-flow .kontakt h2{font-family:var(--display);color:var(--gul);font-size:clamp(21px,3vw,29px)}
+.tm-flow .kontakt p{margin-top:8px;opacity:.9}
+.tm-flow .kontakt label{display:block;margin:14px 0 6px;font-size:12.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--gul)}
+.tm-flow .kontakt input,.tm-flow .kontakt textarea{width:100%;padding:13px 15px;border-radius:12px;border:0;background:var(--ivory);color:var(--brun);font-size:15px}
 .tm-flow .kontakt .err{color:var(--ivory);background:var(--roed-moerk);border-radius:10px;padding:10px 14px;margin-top:16px;font-size:14px;display:none}   /* ivory på mørk rød ≈7.1:1 (AA) */
 .tm-flow .kontakt .err.show{display:block}
 /* Rabatkode-status under feltet: "anvendt" (gul) eller diskret "Ukendt rabatkode" */
@@ -293,13 +293,13 @@
 /* Konkret opkaldstidspunkt på tak-siden */
 .tm-flow .tak-ring{display:none;margin-top:14px;font-size:19px;font-weight:700;color:var(--gul)}
 .tm-flow .tak-ring.show{display:block}
-.tm-flow .tak{max-width:560px;margin:0 auto;padding:56px 0;text-align:center}
-.tm-flow .tak h2{font-family:var(--display);color:var(--gul);font-size:clamp(30px,5vw,46px)}
+.tm-flow .tak{max-width:560px;margin:0 auto;padding:32px 0;text-align:center}
+.tm-flow .tak h2{font-family:var(--display);color:var(--gul);font-size:clamp(23px,4vw,33px)}
 .tm-flow .tak p{margin-top:14px;font-size:17px;opacity:.92}
 .tm-flow .tak .opsum{margin-top:26px;background:#5a4322;border-radius:16px;padding:18px;text-align:left;font-size:14.5px;line-height:1.7}
 
 /* Mængderabat-banner på løsnings-trinnet ("jo mere du vælger, jo mere sparer du") */
-.tm-flow .tm-rabat{margin:16px auto 0;max-width:640px;padding:12px 18px;border-radius:13px;background:var(--gul);color:var(--brun);font-size:14px;font-weight:600;text-align:center;line-height:1.45}
+.tm-flow .tm-rabat{margin:10px auto 0;max-width:640px;padding:8px 14px;border-radius:11px;background:var(--gul);color:var(--brun);font-size:13px;font-weight:600;text-align:center;line-height:1.4}
 .tm-flow .tm-rabat[hidden]{display:none}
 .tm-flow .tm-rabat b{font-weight:800}
 /* Rabatkode-linjen i banneret — egen linje under mængderabatten */
@@ -328,7 +328,7 @@
 /* Sticky opsummering: under listen, over "Videre/Tilbage"-navgen. position:sticky
    + bottom:0 holder den i viewportens bund, mens listen scrolles — og når man
    når bunden, står den naturligt OVER navgen (den ligger først i DOM'en). */
-.tm-flow .tm-sticky{position:sticky;bottom:0;z-index:5;display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:6px 12px;max-width:640px;margin:20px auto 6px;padding:13px 18px;border-radius:14px;background:var(--gul);color:var(--brun);font-size:14.5px;font-weight:700;line-height:1.3;box-shadow:0 12px 30px rgba(0,0,0,.35)}
+.tm-flow .tm-sticky{position:sticky;bottom:0;z-index:5;display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:6px 12px;max-width:640px;margin:14px auto 6px;padding:9px 16px;border-radius:12px;background:var(--gul);color:var(--brun);font-size:13.5px;font-weight:700;line-height:1.25;box-shadow:0 12px 30px rgba(0,0,0,.35)}
 .tm-flow .tm-sticky .tm-sticky-count,.tm-flow .tm-sticky .tm-sticky-total{font-weight:800;font-variant-numeric:tabular-nums;white-space:nowrap}
 .tm-flow .tm-sticky .tm-sticky-mid{opacity:.85;white-space:nowrap}
 
@@ -338,9 +338,9 @@
    løb ud over skærmen — nowrap på tværs af dele er fjernet på mobil, så
    teksten Wrappes i stedet for at stikke ud. */
 @media (max-width:600px){
-  .tm-flow .tm-card-head{padding:13px 12px}
-  .tm-flow .tm-card-body{padding:2px 6px 10px}
-  .tm-flow .tm-sticky{font-size:13px;padding:11px 12px;gap:4px 8px;flex-wrap:wrap;text-align:left}
+  .tm-flow .tm-card-head{padding:10px 12px}
+  .tm-flow .tm-card-body{padding:2px 6px 8px}
+  .tm-flow .tm-sticky{font-size:12.5px;padding:8px 12px;gap:4px 8px;flex-wrap:wrap;text-align:left}
   .tm-flow .tm-sticky .tm-sticky-count,.tm-flow .tm-sticky .tm-sticky-total,.tm-flow .tm-sticky .tm-sticky-mid{white-space:normal}
   .tm-flow .tm-sticky .tm-sticky-total{min-width:0;max-width:100%}
   .tm-flow .tm-sticky small{white-space:normal;display:block;width:100%}
@@ -412,7 +412,7 @@
    i stedet (navn → antal → pris → stepper). qw-label beholdes (den er
    selvforklarende og ombryder). */
 @media (min-width:701px) and (max-width:1023px){
-  .tm-flow .row{grid-template-columns:auto minmax(0,1fr);grid-template-areas:"chk navn" ". pw" ". fw";row-gap:9px;column-gap:10px;align-items:start}
+  .tm-flow .row{grid-template-columns:auto minmax(0,1fr);grid-template-areas:"chk navn" ". pw" ". fw";row-gap:6px;column-gap:10px;align-items:start}
   .tm-flow .qrow{grid-template-areas:"chk navn" ". qw" ". pw" ". fw"}
   .tm-flow .qw,.tm-flow .pw,.tm-flow .fw{align-items:flex-start}
   .tm-flow .pw-note{text-align:left}
@@ -426,16 +426,16 @@
    område i grid-areas). 1fr med minmax(0,·) kan aldrig længere kollapse ind
    i nabofelterne. */
 @media (min-width:1024px){
-  .tm-flow .rows{max-width:920px;gap:20px}
+  .tm-flow .rows{max-width:920px;gap:14px}
   .tm-flow .row{
     grid-template-columns:auto minmax(0,1fr) 150px 250px 132px;
     grid-template-areas:"chk navn qw pw fw";
-    column-gap:22px;
-    padding:14px 22px;
+    column-gap:20px;
+    padding:9px 18px;
     align-items:center;
   }
   .tm-flow .row:not(.qrow){grid-template-areas:"chk navn . pw fw"}
-  .tm-flow .row .navn{font-size:15.5px}
+  .tm-flow .row .navn{font-size:15px}
   /* Antal-felt: kompakt fast kolonne; label må ombryde på to linjer i stedet
      for at presse navnet væk. */
   .tm-flow .qw{width:150px}
