@@ -351,7 +351,7 @@ function applyMeasurements(m){
      forudfylder kun meter-antallet ovenfor. */
   const tr = PRODUCTS.find(x=>x.id==="tagrender");
   if(tr && m.rygHojde != null){
-    if(m.rygHojde > 5){ tr.pris = 33.60; tr.note = "2-plans hus"; tr.wm = "Tagrenerens 2-plans hus"; }
+    if(m.rygHojde > 5){ tr.pris = 21.60; tr.note = "2-plans hus"; tr.wm = "Tagrenerens 2-plans hus"; }
     else { tr.pris = 21.60; tr.note = "Stueplan / 1-plans hus"; tr.wm = "Tagrenderens Stueplan / 1-plans hus"; }
   }
   /* Opdater priserne på stedet (ingen gen-render), så priserne tæller
