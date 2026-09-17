@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { getDownloadUrl } from "@vercel/blob";
-import { statusLabel, linjeKundeTekst, bygAarshjul, linjeFarve } from "@/lib/tilbud.mts";
+import { statusLabel, linjeKundeTekst, bygAarshjul, linjeFarve, tilbudKanRedigeres } from "@/lib/tilbud.mts";
 import Aarshjul from "@/components/Aarshjul";
 import { tilbudAarsbelobSum } from "@/lib/subscription-intervals";
 import { tilbudMomsOgIalt, krMoms } from "@/lib/vat";
@@ -82,7 +82,16 @@ export default async function TilbudDetailPage({ params, searchParams }: { param
             {tilbud.sentAt ? ` · Sendt ${tilbud.sentAt.toLocaleDateString("da-DK")}` : ""}
           </p>
         </div>
-        <Link href="/tilbud" className="btn btn-light">Til oversigten</Link>
+        <div className="toolbar">
+          {/* Thomas, 2026-09-17: holdet kan redigere et tilbud der enten er
+              'udkast' ELLER 'sendt' (fx rykke startugen på et sendt tilbud).
+              Redigering af et sendt tilbud nulstiller det til udkast + laver
+              et nyt godkend-link — se /tilbud/[id]/edit og updateTilbud. */}
+          {tilbudKanRedigeres(tilbud.status) ? (
+            <Link href={`/tilbud/${tilbud.id}/edit`} className="btn btn-primary">Rediger</Link>
+          ) : null}
+          <Link href="/tilbud" className="btn btn-light">Til oversigten</Link>
+        </div>
       </div>
 
       <div className="card">
@@ -169,6 +178,15 @@ export default async function TilbudDetailPage({ params, searchParams }: { param
         <div className="card">
           <div className="card-body">
             <h2 className="section-title" style={{ marginTop: 0 }}>Send til kunden</h2>
+            {/* Thomas, 2026-09-17: tydeliggør den SÆRLIGE regel for sendte
+                tilbud — redigering nulstiller til udkast + roterer tokenet. */}
+            {tilbud.status === "sendt" ? (
+              <p className="form-text" style={{ color: "#8a5a10" }}>
+                Bemærk: Hvis du redigerer dette SENDTE tilbud, nulstilles det til udkast, og
+                kundens nuværende godkend-link bliver ugyldigt — kunden skal have det
+                opdaterede tilbud tilsendt igen med et nyt link, før hun kan godkende.
+              </p>
+            ) : null}
             {/* Thomas, 2026-09-14: FORHÅNDSVISNING — åbn accept-siden i nyt
                 faneblad, så teamet kan se hvad kunden får, FØR tilbuddet sendes.
                 Virker også for udkast (siden viser preview uden godkend-knap). */}

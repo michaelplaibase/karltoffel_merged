@@ -11,7 +11,7 @@ import { categoryColor } from "@/lib/categories";
 import { weekLabel, mondayOf, isoWeekYear } from "@/lib/weeks";
 import { isoWeek } from "@/lib/planner";
 import { parseWeekLabelParts } from "@/lib/recurrence";
-import { nyAcceptToken, tasklineMedarbejdere, tilbudLeadAcquisition } from "@/lib/tilbud.mts";
+import { nyAcceptToken, tasklineMedarbejdere, tilbudLeadAcquisition, tilbudEditReset, tilbudKanRedigeres } from "@/lib/tilbud.mts";
 import { LEAD_SOURCES } from "@/lib/lead-sources.mts";
 import { parseBaseIntervalWeeks } from "@/lib/subscription-intervals";
 import { sendTilbudMail } from "@/lib/tilbud-send";
@@ -37,8 +37,14 @@ function readLines(formData: FormData) {
   // streng, tom = vælges automatisk. Gemmes som TilbudLine.employeeId (samme
   // mønster som TaskLine.employeeId) og overføres til opgaven ved konvertering.
   const employees = formData.getAll("taskEmployee").map(String);
+  // Thomas, 2026-09-17: redigering — hvert linjefelt bærer nu også sin
+  // EKSISTERENDE TilbudLine-id (taskId, tom = NY linje). Id'et bruges af
+  // updateTilbud til at OP DATERE linjen på plads (bevarer linjefotos) i
+  // stedet for at slette + genoprette (som ville afkoble linjefotos).
+  const ids = formData.getAll("taskId").map((v) => Number(v) || null);
   return descs
     .map((d, i) => ({
+      id: ids[i] || null,
       description: d.trim(),
       price: prices[i] || 0,
       interval: (intervals[i] ?? "").trim() || null,
@@ -152,6 +158,126 @@ export async function createTilbud(_prev: TilbudState, formData: FormData): Prom
   }
   revalidatePath("/tilbud");
   redirect(`/tilbud/${created.id}`);
+}
+
+/** Redigér et EKSISTERENDE tilbud internt (Thomas, 2026-09-17): holdet kan rette
+ *  i et tilbud, der allerede er sendt ('sendt') — fx startugen — uden at det
+ *  skal oprettes på ny. Samme felter som opret-formularen (titel, note,
+ *  startWeek, baseInterval, leadSource + opgavelinjerne).
+ *
+ *  REGLER:
+ *   • Kun 'udkast' eller 'sendt' kan redigeres — 'accepteret'/'konverteret'
+ *     er låste kontrakter og afvises (se tilbudKanRedigeres).
+ *   • At redigere et SENDT tilbud NULSTILLER det til 'udkast' + ROTERER
+ *     acceptToken (og rydder sentAt/sentTo) — se tilbudEditReset. Det gamle
+ *     godkend-link /t/<token> bliver ugyldigt, så kunden aldrig kan godkende
+ *     indhold hun ikke har set. Holdet sender tilbuddet igen med et friskt link.
+ *     Et 'udkast' beholder status + token.
+ *   • Rækkerne opdateres ATOMTISK (én transaction): tilbud-rækken + linjerne.
+ *     Eksisterende linjer opdateres PÅ PLADS via taskId (linjefotos bevares);
+ *     nye linjer oprettes; fjernede linjer slettes, og DERES fotos afkobles til
+ *     "forside"-fotos (lineId → null) i stedet for at gå tabt.
+ */
+export async function updateTilbud(_prev: TilbudState, formData: FormData): Promise<TilbudState> {
+  await guardAction();
+  const tilbudId = Number(formData.get("tilbudId"));
+  if (!Number.isInteger(tilbudId) || tilbudId <= 0) return { error: "Ugyldigt tilbud." };
+
+  // Samme skalære validering som createTilbud (titler/startuger/lead-kilde).
+  const title = String(formData.get("title") ?? "").trim() || "Tilbud";
+  const note = String(formData.get("note") ?? "").trim() || null;
+  const startWeekRaw = String(formData.get("startWeek") ?? "").trim();
+  if (startWeekRaw && !UGE_RE.test(startWeekRaw)) {
+    return { error: "Startuge skal skrives som fx 'Uge 29' eller 'Uge 29, 2026' — eller lades tom." };
+  }
+  const startWeek = startWeekRaw || null;
+  const baseInterval = String(formData.get("baseInterval") ?? "").trim() || null;
+  const leadSourceRaw = String(formData.get("leadSource") ?? "").trim();
+  const leadSource = leadSourceRaw || null;
+  if (leadSource && !LEAD_SOURCES.includes(leadSource as (typeof LEAD_SOURCES)[number])) {
+    return { error: `Lead-kilde skal være en af: ${LEAD_SOURCES.join(", ")} — eller lades tom.` };
+  }
+  const lines = readLines(formData);
+  if (!lines.length) return { error: "Tilføj mindst én opgavelinje med en pris." };
+  for (const l of lines) {
+    if (l.startWeek && !UGE_RE.test(l.startWeek)) {
+      return { error: `Startuge for '${l.description}' skal skrives som fx 'Uge 29' eller 'Uge 29, 2026' — eller lades tom.` };
+    }
+  }
+  const valgteEmployeeIds = [...new Set(lines.map((l) => l.employeeId).filter((v): v is number => v != null))];
+  if (valgteEmployeeIds.length) {
+    const aktive = await prisma.user.findMany({ where: { id: { in: valgteEmployeeIds }, active: true }, select: { id: true } });
+    const gyldige = new Set(aktive.map((u) => u.id));
+    for (const l of lines) {
+      if (l.employeeId != null && !gyldige.has(l.employeeId)) {
+        return { error: `Medarbejder for '${l.description}' blev ikke fundet — vælg en aktiv medarbejder, eller lad feltet stå tomt.` };
+      }
+    }
+  }
+
+  // Indlæs det eksisterende tilbud + linje-id'er (til atomisk diff af linjerne).
+  let tilbud: Awaited<ReturnType<typeof getTilbud>>;
+  const getTilbud = () => prisma.tilbud.findUnique({
+    where: { id: tilbudId },
+    include: { lines: { orderBy: { sort: "asc" }, select: { id: true } } },
+  });
+  try {
+    tilbud = await getTilbud();
+  } catch (e) {
+    if (isTilbudTableMissing(e)) return { error: TILBUD_TABELLER_MANGLER };
+    throw e;
+  }
+  if (!tilbud) return { error: "Tilbuddet blev ikke fundet." };
+  if (!tilbudKanRedigeres(tilbud.status)) {
+    return { error: `Tilbuddet kan ikke redigeres i status '${tilbud.status}' — kun udkast eller sendt.` };
+  }
+
+  // Redigering af et SENDT tilbud: nulstil til udkast + roter token. Kundens
+  // tidligere godkend-link bliver dermed ugyldigt med det samme.
+  const skalNulstilles = tilbudEditReset(tilbud.status);
+
+  const formIds = new Set(lines.filter((l) => l.id).map((l) => l.id as number));
+  const tilDelete = tilbud.lines.map((l) => l.id).filter((id) => !formIds.has(id));
+
+  try {
+    await prisma.$transaction(async (tx) => {
+      await tx.tilbud.update({
+        where: { id: tilbudId },
+        data: {
+          title, note, startWeek, baseInterval, leadSource,
+          ...(skalNulstilles
+            ? { status: "udkast", acceptToken: nyAcceptToken(), sentAt: null, sentTo: null }
+            : {}),
+        },
+      });
+      // Fjernede linjer: afkobl DEROES fotos til forsiden (lineId → null), så
+      // ingen foto går tabt, dernæst slet linjerne.
+      if (tilDelete.length) {
+        await tx.tilbudPhoto.updateMany({ where: { tilbudId, lineId: { in: tilDelete } }, data: { lineId: null } });
+        await tx.tilbudLine.deleteMany({ where: { id: { in: tilDelete }, tilbudId } });
+      }
+      // Eksisterende linjer opdateres PÅ PLADS (bevarer linjefotos via PK);
+      // nye linjer oprettes. sort = index (samme rekkefølge som formularen).
+      for (const [i, l] of lines.entries()) {
+        if (l.id) {
+          await tx.tilbudLine.updateMany({
+            where: { id: l.id, tilbudId },
+            data: { description: l.description, price: l.price, interval: l.interval, startWeek: l.startWeek, employeeId: l.employeeId, sort: i },
+          });
+        } else {
+          await tx.tilbudLine.create({
+            data: { tilbudId, description: l.description, price: l.price, interval: l.interval, startWeek: l.startWeek, employeeId: l.employeeId, sort: i },
+          });
+        }
+      }
+    });
+  } catch (e) {
+    if (isTilbudTableMissing(e)) return { error: TILBUD_TABELLER_MANGLER };
+    throw e;
+  }
+  revalidatePath(`/tilbud/${tilbudId}`);
+  revalidatePath("/tilbud");
+  redirect(`/tilbud/${tilbudId}`);
 }
 
 /** Send tilbuddet til kunden med branded PDF (hej@karltoffel.dk). */
