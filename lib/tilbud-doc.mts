@@ -170,12 +170,13 @@ function TilbudDoc({ data }: { data: TilbudPdfData }) {
               l.startWeek ? e(Text, { style: S.lineFrekvens }, `Starter ${l.startWeek.charAt(0).toLowerCase()}${l.startWeek.slice(1)}`) : null,
             ),
             e(Text, { style: S.linePrice },
-              // Thomas, 2026-09-17: PRIVATE kunder ser prisen INKL. moms på hver
-              // opgavelinje (fx "707,50 kr. pr. gang (inkl. moms)"); virksomheder
+              // Thomas, 2026-09-17 (korrektion 2): hver linje viser BÅDE prisen
+              // u. moms OG inkl. moms for PRIVATE kunder (fx "566 kr. pr. gang
+              // (u. moms) / 707,50 kr. pr. gang (inkl. moms)"); virksomheder
               // bibeholder kun prisen u. moms (momsen i bunden).
               data.isCompany
                 ? `${kr(l.price)} pr. gang (u. moms)`
-                : `${krMoms(tilbudMomsOgIalt(l.price).ialt)} pr. gang (inkl. moms)`),
+                : `${kr(l.price)} pr. gang (u. moms) / ${krMoms(tilbudMomsOgIalt(l.price).ialt)} pr. gang (inkl. moms)`),
           ),
         ),
       ),

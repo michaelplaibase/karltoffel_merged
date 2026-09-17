@@ -18,17 +18,19 @@ export const metadata = { title: "Godkend tilbud · Karltoffel" };
 
 const kr = (n: number) => n.toLocaleString("da-DK") + " kr.";
 
-/** Thomas, 2026-09-17: pristekst pr. linje på accept-siden. PRIVATE kunder:
- *  kun prisen INKL. moms ("707,50 kr. pr. gang (inkl. moms)") — ikke u. moms.
- *  Virksomheder: kun u. moms (som hidtil). */
+/** Thomas, 2026-09-17 (korrektion 2): pristekst pr. linje på accept-siden.
+ *  PRIVATE kunder: BÅDE prisen u. moms OG inkl. moms (fx "566 kr. pr. gang
+ *  (u. moms) / 707,50 kr. pr. gang (inkl. moms)"). Virksomheder: kun u. moms
+ *  (som hidtil, momsen i bunden). */
 function linjeAcceptPrisTekst(price: number, privatKunde: boolean) {
   if (!privatKunde) {
     return <>{kr(price)} <small style={{ fontWeight: 400 }}>(u. moms)</small></>;
   }
-  const m = tilbudMomsOgIalt(price);
   return (
     <>
-      {krMoms(m.ialt)} <small style={{ fontWeight: 400 }}>(inkl. moms)</small>
+      {kr(price)} <small style={{ fontWeight: 400 }}>(u. moms)</small>
+      <span style={{ marginLeft: "0.35em" }}>/</span>
+      {krMoms(tilbudMomsOgIalt(price).ialt)} <small style={{ fontWeight: 400 }}>(inkl. moms)</small>
     </>
   );
 }
