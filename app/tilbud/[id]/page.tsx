@@ -25,7 +25,7 @@ export default async function TilbudDetailPage({ params, searchParams }: { param
   const tilbud = await prisma.tilbud.findUnique({
     where: { id: tilbudId },
     include: {
-      contact: { select: { id: true, name: true, companyName: true, email: true, street: true, city: true } },
+      contact: { select: { id: true, name: true, companyName: true, isCompany: true, email: true, street: true, city: true } },
       // Thomas, 2026-09-11: medarbejder-tilknytning pr. linje følger med til
       // INTERN visning her (teamets side) — den skal ALDRIG videre til
       // PDF/accept-side/årshjul (disse bygger deres egne data-shapes).
@@ -41,6 +41,10 @@ export default async function TilbudDetailPage({ params, searchParams }: { param
   // Thomas, 2026-09-15: priser u. moms — moms (25%) i bunden, ÉN delt
   // funktion (lib/vat), så tallene aldrig afviger fra formular/PDF/accept-side.
   const momsBund = aarligt != null ? tilbudMomsOgIalt(aarligt) : null;
+  // Thomas, 2026-09-17: prisen pr. linje — for PRIVATE øverst u. moms og lige
+  // nedenunder inkl. moms (så teamet ser regnestykket pr. linje); VIRKSOMHEDER
+  // kun u. moms (som hidtil, momsen i bunden). Samme regel som PDF/accept-side.
+  const privatKunde = tilbud.contact.isCompany !== true;
   const fotos = tilbud.photos.map((p) => ({ id: p.id, lineId: p.lineId, url: getDownloadUrl(p.url) }));
   // Thomas, 2026-09-12 (fejlretning): kundens godkend-link skal være en
   // ABSOLUTE URL i mailen (offentlig accept-side /t/<token>).
@@ -107,7 +111,20 @@ export default async function TilbudDetailPage({ params, searchParams }: { param
                     ) : null}
                     </span>
                   </span>
-                  <span className="num">{kr(l.price)}</span>
+                  <span className="num" style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 1 }}>
+                    {/* Thomas, 2026-09-17: prisen står ude til siden — for
+                        PRIVATE øverst u. moms, lige nedenunder inkl. moms (så
+                        teamet ser regnestykket pr. linje). VIRKSOMHEDER: kun
+                        u. moms (som hidtil, momsen i bunden). */}
+                    {privatKunde ? (
+                      <>
+                        <span>{kr(l.price)} (u. moms)</span>
+                        <small className="form-text">{krMoms(tilbudMomsOgIalt(l.price).ialt)} (inkl. moms)</small>
+                      </>
+                    ) : (
+                      <span>{kr(l.price)}</span>
+                    )}
+                  </span>
                 </div>
               ))}
               {/* Thomas, 2026-09-11: 'samlet beløb' fjernet — ÅRLIGT beløb når intervallet er sat. */}

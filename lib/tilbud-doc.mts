@@ -169,7 +169,14 @@ function TilbudDoc({ data }: { data: TilbudPdfData }) {
               // ("Starter uge 29") — kun når linjen har en startuge.
               l.startWeek ? e(Text, { style: S.lineFrekvens }, `Starter ${l.startWeek.charAt(0).toLowerCase()}${l.startWeek.slice(1)}`) : null,
             ),
-            e(Text, { style: S.linePrice }, `${kr(l.price)} pr. gang (u. moms)`),
+            e(Text, { style: S.linePrice },
+              // Thomas, 2026-09-17 (korrektion 2): hver linje viser BÅDE prisen
+              // u. moms OG inkl. moms for PRIVATE kunder (fx "566 kr. pr. gang
+              // (u. moms) / 707,50 kr. pr. gang (inkl. moms)"); virksomheder
+              // bibeholder kun prisen u. moms (momsen i bunden).
+              data.isCompany
+                ? `${kr(l.price)} pr. gang (u. moms)`
+                : `${kr(l.price)} pr. gang (u. moms) / ${krMoms(tilbudMomsOgIalt(l.price).ialt)} pr. gang (inkl. moms)`),
           ),
         ),
       ),

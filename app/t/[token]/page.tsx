@@ -18,6 +18,23 @@ export const metadata = { title: "Godkend tilbud · Karltoffel" };
 
 const kr = (n: number) => n.toLocaleString("da-DK") + " kr.";
 
+/** Thomas, 2026-09-17 (korrektion 2): pristekst pr. linje på accept-siden.
+ *  PRIVATE kunder: BÅDE prisen u. moms OG inkl. moms (fx "566 kr. pr. gang
+ *  (u. moms) / 707,50 kr. pr. gang (inkl. moms)"). Virksomheder: kun u. moms
+ *  (som hidtil, momsen i bunden). */
+function linjeAcceptPrisTekst(price: number, privatKunde: boolean) {
+  if (!privatKunde) {
+    return <>{kr(price)} <small style={{ fontWeight: 400 }}>(u. moms)</small></>;
+  }
+  return (
+    <>
+      {kr(price)} <small style={{ fontWeight: 400 }}>(u. moms)</small>
+      <span style={{ marginLeft: "0.35em" }}>/</span>
+      {krMoms(tilbudMomsOgIalt(price).ialt)} <small style={{ fontWeight: 400 }}>(inkl. moms)</small>
+    </>
+  );
+}
+
 export default async function TilbudAcceptPage({
   params,
   searchParams,
@@ -39,7 +56,7 @@ export default async function TilbudAcceptPage({
     return prisma.tilbud.findUnique({
     where: { acceptToken: token },
     include: {
-      contact: { select: { name: true, companyName: true, street: true, city: true } },
+      contact: { select: { name: true, companyName: true, street: true, city: true, isCompany: true } },
       lines: { orderBy: { sort: "asc" }, select: { description: true, price: true, interval: true, startWeek: true } },
     },
   });
@@ -66,6 +83,9 @@ export default async function TilbudAcceptPage({
   // Thomas, 2026-09-15: priser u. moms — moms (25%) i bunden (samme
   // lib/vat-funktion som formular, detaljeside, oversigt og PDF).
   const momsBund = aarligt != null ? tilbudMomsOgIalt(aarligt) : null;
+  // Thomas, 2026-09-17: PRIVATE kunder ser prisen INKL. moms pr. linje
+  // (samme regel som PDF'en); virksomheder kun u. moms (som hidtil).
+  const privatKunde = tilbud.contact.isCompany !== true;
   let accepted = tilbud.status === "accepteret" || tilbud.status === "konverteret";
 
   // Primitiver til server actionen (den kan ikke close over en evt. null tilbud)
@@ -129,7 +149,7 @@ export default async function TilbudAcceptPage({
                 />
                 <span>{l.description}</span>
               </span>
-              <b style={{ flexShrink: 0 }}>{kr(l.price)} <small style={{ fontWeight: 400 }}>(u. moms)</small></b>
+              <b style={{ flexShrink: 0 }}>{linjeAcceptPrisTekst(l.price, privatKunde)}</b>
             </div>
             {/* Thomas, 2026-09-11 (korrektion): frekvens vises pr. linje — let
                 læsbar kundevenlig form ("hver 6. uge" / "1 gang om året");
