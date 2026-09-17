@@ -14,13 +14,30 @@ type Kontakt = { id: number; name: string; companyName: string | null; isCompany
 // kildeliste som abonnements-formularen: getEmployeeOptions (aktive users).
 export type TilbudEmployeeOption = { id: number; name: string };
 
+// Thomas, 2026-09-17: edit-mode. Når `initial` er givet, forudfylder
+// formularen et EKSISTERENDE tilbud (fra /tilbud/[id]/edit) og sender
+// ændringerne til `updateTilbud` i stedet for at oprette et nyt.
+export type TilbudInitial = {
+  id: number;
+  contactId: number;
+  contactName: string;
+  title: string;
+  note: string | null;
+  startWeek: string | null;
+  baseInterval: string | null;
+  leadSource: string | null;
+  lines: { id: number; description: string; price: number; interval: string | null; startWeek: string | null; employee: string }[];
+};
+
 const kr = (n: number) => n.toLocaleString("da-DK") + " kr";
 
-export default function TilbudForm({ contacts, employees, action }: {
+export default function TilbudForm({ contacts, employees, action, initial }: {
   contacts: Kontakt[];
   employees: TilbudEmployeeOption[];
   action: (state: TilbudState, formData: FormData) => Promise<TilbudState>;
+  initial?: TilbudInitial | null;
 }) {
+  const rediger = !!initial;
   const [state, formAction, pending] = useActionState(action, {});
   const [nyKunde, setNyKunde] = useState(false);
   // Thomas, 2026-09-11 (korrektion 3): kundetype (privat vs. virksomhed) —
@@ -36,12 +53,17 @@ export default function TilbudForm({ contacts, employees, action }: {
   // Tilbud-niveau-feltet er beholdt som STANDARD/præ-valg for nye linjer.
   // Thomas, 2026-09-11 (korrektion 2): også en valgfri STARTUGE PR. OPGAVELINJE
   // — samme format som tilbud-niveau startuge ('Uge 29' / 'Uge 29, 2026').
-  const [linjer, setLinjer] = useState<{ description: string; price: number; interval: string; startWeek: string; employee: string }[]>([
-    { description: "", price: 0, interval: "", startWeek: "", employee: "" },
-  ]);
-  const [standardInterval, setStandardInterval] = useState("");
+  // Thomas, 2026-09-17: `id` bærer den EKSISTERENDE TilbudLine-id i edit-mode
+  // (null = ny linje), så updateTilbud kan opdatere linjerne på plads (fx
+  // bevarer linjefotos) i stedet for at slette + genoprette.
+  const [linjer, setLinjer] = useState<{ id: number | null; description: string; price: number; interval: string; startWeek: string; employee: string }[]>(
+    initial?.lines?.length
+      ? initial.lines.map((l) => ({ id: l.id, description: l.description, price: l.price, interval: l.interval ?? "", startWeek: l.startWeek ?? "", employee: l.employee ?? "" }))
+      : [{ id: null, description: "", price: 0, interval: "", startWeek: "", employee: "" }],
+  );
+  const [standardInterval, setStandardInterval] = useState(initial?.baseInterval ?? "");
   // Ny linje arver tilbud-niveau startugen som standard, hvis den er udfyldt.
-  const [standardStartWeek, setStandardStartWeek] = useState("");
+  const [standardStartWeek, setStandardStartWeek] = useState(initial?.startWeek ?? "");
   // Årsbeløb pr. linje + summen af linjerne med interval (engangsopgaver uden
   // interval tæller ikke med — samme beregning som abonnementet).
   const linjeAar = linjer.map(tilbudLinjeAarsbelob);
@@ -63,8 +85,12 @@ export default function TilbudForm({ contacts, employees, action }: {
     <div className="container-1140" style={{ maxWidth: 1100 }}>
       <div className="toolbar" style={{ justifyContent: "space-between" }}>
         <div>
-          <h1 className="page-title" style={{ margin: 0 }}>Nyt tilbud</h1>
-          <p className="page-desc" style={{ marginBottom: 0 }}>Vælg kunden, tilføj opgaver med priser — fotos tilføjes på tilbuddet bagefter.</p>
+          <h1 className="page-title" style={{ margin: 0 }}>{rediger ? "Ret tilbud" : "Nyt tilbud"}</h1>
+          <p className="page-desc" style={{ marginBottom: 0 }}>
+            {rediger
+              ? "Redigér tilbuddet — ændringerne gemmes på dette tilbud. Bemærk: redigeres et SENDT tilbud, nulstilles det til udkast, og kunden skal have det opdaterede tilbud tilsendt igen (nyt godkend-link)."
+              : "Vælg kunden, tilføj opgaver med priser — fotos tilføjes på tilbuddet bagefter."}
+          </p>
         </div>
         <Link href="/tilbud" className="btn btn-light">Gå tilbage</Link>
       </div>
@@ -72,9 +98,20 @@ export default function TilbudForm({ contacts, employees, action }: {
       <div className="card">
         <div className="card-body">
           <form action={formAction}>
+            {/* Thomas, 2026-09-17: edit-mode markerer hvilket tilbud der rettes.
+                Kunden er LÅST i edit-mode (kan kun ændres via kunde-kartoteket). */}
+            {rediger ? <input type="hidden" name="tilbudId" value={String(initial?.id ?? "")} /> : null}
             <div className="f2">
               <label className="col-label">Kunde</label>
               <div>
+                {rediger ? (
+                  <>
+                    <input type="hidden" name="contactId" value={String(initial?.contactId ?? "")} />
+                    <p className="page-desc" style={{ marginBottom: 0 }}>{initial?.contactName ?? ""} (kan ikke ændres her)</p>
+                    <small className="form-text">Ændres kun i kunde-kartoteket — tilbuddet holdes på den samme kunde.</small>
+                  </>
+                ) : (
+                <>
                 {nyKunde ? (
                   <label style={{ display: "flex", alignItems: "center", gap: 8 }}>
                     <input type="checkbox" checked={nyKunde} onChange={(e) => setNyKunde(e.target.checked)} />
@@ -108,10 +145,12 @@ export default function TilbudForm({ contacts, employees, action }: {
                     </label>
                   </>
                 )}
+                </>
+                )}
               </div>
             </div>
 
-            {nyKunde ? (
+            {!rediger && nyKunde ? (
               <>
                 <input type="hidden" name="newCustomer" value="1" />
                 <div className="f2">
@@ -239,6 +278,11 @@ export default function TilbudForm({ contacts, employees, action }: {
               <div className="tasklines">
                 {linjer.map((l, i) => (
                   <div className="tl-row tl-row-tilbud" key={i}>
+                    {/* Thomas, 2026-09-17: bær den EKSISTERENDE TilbudLine-id
+                        (tom = ny linje), så updateTilbud opdaterer linjen på
+                        plads og bevarer evt. linjefotos. */
+                    }
+                    <input type="hidden" name="taskId" value={l.id != null ? String(l.id) : ""} />
                     {/* Thomas, 2026-09-15 (korrektion 2): textareaen står
                         alene på en FULD række (.tl-desc, gridColumn 1/-1) —
                         maksimal skriveplads til lange opgavetekster. */}
@@ -333,7 +377,7 @@ export default function TilbudForm({ contacts, employees, action }: {
                     ) : null}
                   </div>
                 ))}
-                <button type="button" className="btn btn-outline-primary" onClick={() => setLinjer((p) => [...p, { description: "", price: 0, interval: standardInterval, startWeek: standardStartWeek, employee: "" }])}>
+                <button type="button" className="btn btn-outline-primary" onClick={() => setLinjer((p) => [...p, { id: null, description: "", price: 0, interval: standardInterval, startWeek: standardStartWeek, employee: "" }])}>
                   + Tilføj opgave
                 </button>
                 {/* Thomas, 2026-09-11: medarbejder-vælgeren er INTERN — gør det
@@ -367,8 +411,8 @@ export default function TilbudForm({ contacts, employees, action }: {
             <hr className="section-hr" />
             {state.error ? <p style={{ color: "#8a5a10" }}>{state.error}</p> : null}
             <div className="row-actions" style={{ alignItems: "center", gap: 12 }}>
-              <button type="submit" className="btn btn-primary" disabled={pending}>{pending ? "Opretter…" : "Opret tilbud"}</button>
-              <span className="form-text">Du kan rette alt — og tilføje fotos — på tilbuddet bagefter.</span>
+              <button type="submit" className="btn btn-primary" disabled={pending}>{pending ? (rediger ? "Gemmer…" : "Opretter…") : (rediger ? "Gem ændringer" : "Opret tilbud")}</button>
+              <span className="form-text">{rediger ? "Ændringerne gemmes på dette tilbud. Fotos administreres på detaljesiden bagefter." : "Du kan rette alt — og tilføje fotos — på tilbuddet bagefter."}</span>
             </div>
           </form>
         </div>

@@ -236,3 +236,29 @@ export function statusLabel(status: string): string {
     default: return status;
   }
 }
+
+// ─── Redigering af et ALLEREDE SENDT tilbud (Thomas, 2026-09-17) ─────────────
+// Holdet skal kunne rette i et tilbud, der allerede er sendt — fx startugen,
+// når kunden vender tilbage og vil rykke på startdatoen. Reglerne er:
+//   • KUN 'udkast' eller 'sendt' kan redigeres manuelt. 'accepteret'/
+//     'konverteret' er låste kontrakter — de må ikke ændres.
+//   • Når et SENDT tilbud redigeres, NULSTILLES det til 'udkast' og
+//     godkend-tokenet ROTERES (se app/actions/tilbud.ts updateTilbud): det
+//     tidligere sendte godkend-link (/t/<token>) bliver ugyldigt med det
+//     samme, så kunden ALDRIG kan godkende indhold hun ikke har set/samtykket
+//     til. Holdet sender derefter det OPDATEREDE tilbud med et friskt link.
+//     Et 'udkast' beholder status + token (ingen konsekvens — intet link er
+//     sendt endnu; forhåndsvisnings-linket genskabes pr. side-load alligevel).
+// Disse to er rene beslutnings-funktioner → testbare uden database.
+
+/** Skal redigering af et tilbud med denne status NULSTILLE til udkast + rotere
+ *  token? I praksis: ja netop for 'sendt' (det eneste med et aktivt kunde-link). */
+export function tilbudEditReset(status: string): boolean {
+  return status === "sendt";
+}
+
+/** Må holdet manuelt redigere et tilbud med denne status internt i CRM'et?
+ *  (accepteret/konverteret er låste kontrakter og returnerer false.) */
+export function tilbudKanRedigeres(status: string): boolean {
+  return status === "udkast" || status === "sendt";
+}

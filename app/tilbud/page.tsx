@@ -82,7 +82,16 @@ export default async function TilbudPage({ searchParams }: { searchParams: Promi
                     const momsBund = aarligt != null ? tilbudMomsOgIalt(aarligt) : null;
                     return (
                       <tr key={t.id}>
-                        <td><Link href={`/tilbud/${t.id}`} className="strong-link">{t.title}</Link></td>
+                        <td>
+                          <Link href={`/tilbud/${t.id}`} className="strong-link">{t.title}</Link>
+                          {/* Thomas, 2026-09-17: holdet kan redigere både udkast
+                              og SENDTE tilbud direkte fra oversigten. */}
+                          {t.status === "udkast" || t.status === "sendt" ? (
+                            <small className="form-text" style={{ display: "block" }}>
+                              <Link href={`/tilbud/${t.id}/edit`}>Rediger</Link>
+                            </small>
+                          ) : null}
+                        </td>
                         <td><Link href={`/customers/${t.contact.id}`}>{t.contact.companyName || t.contact.name}</Link></td>
                         <td>{t.lines.length}</td>
                         <td className="num">
