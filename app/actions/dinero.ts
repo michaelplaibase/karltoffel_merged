@@ -74,16 +74,35 @@ export async function runDineroTest(_prev: TestResult, _formData: FormData): Pro
  *  på ordresiden og natautomatikken): idempotent, genoptager fra det nåede trin
  *  og KASTER ALDRIG — fejl returneres, så UI'et kan vise dem inline (aldrig
  *  stille). Kun administratorer (samme gate som RevenuePanel). */
+import { invoiceSingleCustomer } from "@/lib/invoice-all";
+
 export type InvoiceNowResult = { ok: boolean; message?: string; error?: string };
+
+/** "Fakturer nu" (Thomas, 2026-09-03 / 2026-09-17) — fakturér kunden og alle
+ *  kundens uafregnede opgaver på ÉN samlet faktura. Hvis kaldt med et ordreId,
+ *  slås ordrens kunde op så alle kundens opgaver automatisk samles. */
+export async function invoiceCustomerNow(contactId: number): Promise<InvoiceNowResult> {
+  await guardAction();
+  const user = await getSessionUser();
+  if (!user?.isAdmin) return { ok: false, error: "Kun administratorer kan fakturere herfra." };
+  try {
+    const res = await invoiceSingleCustomer(contactId);
+    revalidatePath("/fakturering");
+    return res;
+  } catch (e) {
+    return { ok: false, error: e instanceof Error ? e.message : "Fakturering fejlede — intet blev sendt." };
+  }
+}
 
 export async function invoiceNow(orderId: number): Promise<InvoiceNowResult> {
   await guardAction();
   const user = await getSessionUser();
   if (!user?.isAdmin) return { ok: false, error: "Kun administratorer kan fakturere herfra." };
   try {
-    // Thomas, 2026-09-03: "Fakturer nu" er en BEVIDST manuel handling og skal
-    // tilsidesætte en gemt "Send ikke faktura"/"Registrer senere"-beslutning —
-    // dvs. fakturere alligevel (se overrideInvoiceDecision i lib/dinero.ts).
+    const order = await prisma.order.findUnique({ where: { id: orderId }, select: { contactId: true } });
+    if (order) {
+      return await invoiceCustomerNow(order.contactId);
+    }
     const res = await issueInvoiceForOrder(orderId, { overrideInvoiceDecision: true });
     if (!res.ok) return { ok: false, error: res.error ?? "Fakturering fejlede — intet blev sendt." };
     revalidatePath("/fakturering");

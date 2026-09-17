@@ -199,6 +199,7 @@ model Contact {
   orders        Order[]
   leads         Lead[]
   acquisitions  LeadAcquisition[]
+  openInvoice   OpenInvoice?
   createdAt     DateTime  @default(now())
 
   @@index([companyId])
@@ -348,6 +349,43 @@ model Order {
   @@index([subscriptionId])
   @@index([plannedAt])
   @@index([businessBatchInvoiceGuid])
+}
+
+// ─── Faktura-konsolidering (én ÅBEN faktura pr. kunde, 2026-09-15) ───────────
+// En kunde må kun have ÉN åben (uafsluttet/ikke-sendt) Dinero-faktura ad gangen.
+// Denne tabel er DB-kilden til sandhed for "hvilken faktura er ÅBEN lige nu for
+// denne kunde": når en ny opgave lukkes, tilføjes de nye linjer den eksisterende
+// åbne faktura (lib/invoice-consolidation.ts) i stedet for at oprette en ny.
+// Rækken oprettes når kladden oprettes, og SLETTES når fakturaen bogføres — en
+// bogført/sendt faktura er aldrig åben og må ALDRIG ændres.
+model OpenInvoice {
+  id        Int      @id @default(autoincrement())
+  contact   Contact  @relation(fields: [contactId], references: [id])
+  contactId Int      @unique // højst ÉN åben faktura pr. kunde
+  guid      String   @unique // Dinero-faktura-guid for den åbne klade
+  status    String   @default("Draft") // Draft | Failed (aldrig Booked/Sent — så slettes rækken)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  manualLines InvoiceManualLine[]
+
+  @@index([guid])
+}
+
+// Manuel fakturalinje tilføjet direkte på en åben faktura (fx varekøb kunden
+// skal betale). Gemmes i DB, fordi alle bogførings-momskontroller sammenligner
+// Dinero-fakturaens total med (ordrelinjer + manuelle linjer) på guid'en —
+// uden DB-rækken ville en manuel linje få momskontrollen til at afvise bogføring.
+model InvoiceManualLine {
+  id          Int         @id @default(autoincrement())
+  openInvoice OpenInvoice @relation(fields: [openInvoiceId], references: [id], onDelete: Cascade)
+  openInvoiceId Int
+  guid        String // samme Dinero-guid som OpenInvoice (denormaliseret for opslag)
+  description String
+  quantity    Decimal     @default(1) @db.Decimal(10, 2)
+  priceInclVat Int // kr INCL. moms PR. STK (samme konvention som TaskLine.price)
+  createdAt   DateTime    @default(now())
+
+  @@index([guid])
 }
 
 // Kvalitetssikrings-fotos (KS) fra dagsprogrammets kamera-knap (Thomas 2026-09-03).

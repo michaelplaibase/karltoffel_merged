@@ -1,13 +1,10 @@
-// Run `prisma migrate deploy` ONLY for a production build. Vercel preview/branch
-// builds (VERCEL_ENV=preview) skip it, so an unmerged migration on a feature
-// branch never gets applied to the PRODUCTION database. For a fuller setup, use
-// Neon's Vercel integration (a separate Neon branch per preview deployment).
+// Run `prisma migrate deploy` for production AND preview builds. Previews share
+// the production database, so a preview with un-applied migrations crashes at
+// runtime (fx /fakturering, fejl-id 2368054365: OpenInvoice/InvoiceManualLine
+// tabellerne manglede, fordi 20260915090000_invoice_consolidation kun lå på
+// feature-branchen og derfor aldrig blev kørt). Migrations er committet på
+// branchen, så en preview kan sikkert anvende dem — samme regler som prod.
 import { execSync } from "node:child_process";
 
-const env = process.env.VERCEL_ENV;
-if (env && env !== "production") {
-  console.log(`[migrate-prod] VERCEL_ENV=${env} — skipping prisma migrate deploy.`);
-} else {
-  console.log(`[migrate-prod] Running prisma migrate deploy (VERCEL_ENV=${env ?? "unset"}).`);
-  execSync("prisma migrate deploy", { stdio: "inherit" });
-}
+console.log(`[migrate-prod] Running prisma migrate deploy (VERCEL_ENV=${process.env.VERCEL_ENV ?? "unset"}).`);
+execSync("prisma migrate deploy", { stdio: "inherit" });

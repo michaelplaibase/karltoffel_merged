@@ -1,11 +1,12 @@
-// "Fakturér alle" (Michael, 2026-09-03): manuel knap i Faktureringsoverblikket
-// (/fakturering) der overrider ALLE tidsregler og sender fakturaer MED DET SAME
-// — både for privat- og erhvervskunder, uanset faktureringsregel (pr_gang,
-// maaned, kvartal). Normal-flowet (samlefaktura d. 20., pr.-gang kl. 23)
-// påvirkes IKKE — denne knap er et manuelt "ryd l sagen nu"-tilskud.
+// "Fakturér alle" (Michael, 2026-09-03) & "Fakturér kunde" (Thomas, 2026-09-17):
+// Sender fakturaer MED DET SAMME — både for privat- og erhvervskunder, uanset
+// faktureringsregel (pr_gang, maaned, kvartal).
+// Hver kunde samles ALTID på ÉN faktura for alle deres uafregnede udførte opgaver.
+// Normal-flowet (samlefaktura d. 20., pr.-gang kl. 23) påvirkes IKKE — dette
+// er et manuelt overbliks- og handlingsflow på /fakturering.
 //
-// Design (genbruger samlefaktura-maskinens sikkerheds­værn):
-// - Kandidater: fortidsordrer med status "Udført", endnu uden faktura
+// Design (genbruger samlefaktura-maskinens sikkerhedsværn):
+// - Kandidater: fortidsordrer med status "Udført", endnu uden bogført faktura
 //   (hverken pr.-ordre-guid eller batch-guid) — samme synlighed som
 //   "Klar til fakturering"-kortet på /fakturering. Ordrer med en eksplicit
 //   "Send ikke faktura"/"Registrer senere"-beslutning respekteres og springes over.
@@ -23,6 +24,7 @@ import {
   bookInvoice, emailInvoice, getInvoice, findInvoiceByExternalRef, DineroApiError,
 } from "./dinero";
 import { todayCphISO } from "./calendar";
+import { findOpenDraftForContact, addProductLinesToDraft, registerOpenInvoice, releaseOpenInvoice } from "./invoice-consolidation";
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
@@ -76,6 +78,187 @@ export async function readyOrderIds(): Promise<number[]> {
   return rows.filter((o) => !o.invoiceDecision || !SKIP_DECISIONS.has(o.invoiceDecision)).map((o) => o.id);
 }
 
+/** Fakturér én enkelt kunde og alle kundens uafregnede udførte opgaver på ÉN samlet faktura. */
+export async function invoiceSingleCustomer(contactId: number): Promise<{
+  ok: boolean;
+  message?: string;
+  error?: string;
+  simulated?: boolean;
+}> {
+  const today = new Date(`${todayCphISO()}T00:00:00.000Z`);
+  const todayISO = todayCphISO();
+  const ref = `karltoffel-customer-${contactId}-${todayISO}`;
+
+  // Find alle kandidat-ordrer for kunden der er Udført, fortid og endnu ikke bogført/sendt
+  const allPast = await prisma.order.findMany({
+    where: {
+      contactId,
+      status: "Udført",
+      plannedAt: { lt: today },
+      dineroInvoiceGuid: null,
+      dineroInvoiceNumber: null,
+      businessBatchInvoiceNumber: null,
+    },
+    include: { contact: true, tasks: true },
+    orderBy: { plannedAt: "asc" },
+  });
+
+  // Udeluk ordrer med eksplicit nej-tak-beslutning
+  const contactOrders = allPast.filter((o) => !o.invoiceDecision || !SKIP_DECISIONS.has(o.invoiceDecision));
+
+  // Tjek om kunden allerede har en åben faktura / kladde i CRM
+  const openInvoice = await prisma.openInvoice.findUnique({
+    where: { contactId },
+    include: { manualLines: true, contact: true },
+  });
+
+  const manualLines = openInvoice?.manualLines ?? [];
+  const manualSum = manualLines.reduce((a, l) => a + Number(l.quantity) * l.priceInclVat, 0);
+  const ordersSum = contactOrders.reduce((a, o) => a + o.tasks.reduce((b, t) => b + t.price, 0), 0);
+  const sumInclVat = ordersSum + manualSum;
+
+  if (contactOrders.length === 0 && manualLines.length === 0) {
+    return { ok: false, error: "Ingen opgaver eller linjer at fakturere for denne kunde." };
+  }
+
+  const orderIds = contactOrders.map((o) => o.id);
+  const customer = contactOrders[0]?.contact.name ?? openInvoice?.contact.name ?? "Kunden";
+  const cfg = await loadActiveConfig();
+
+  if (!cfg) {
+    // Dry-run: log + markér som simulated, nedgrader ALDRIG en rigtig faktura.
+    console.log(`[invoice-customer:dry-run] kontakt #${contactId} (${customer}) ordrer=${orderIds.join(",")} sum=${sumInclVat}kr`);
+    if (orderIds.length > 0) {
+      await prisma.order.updateMany({
+        where: { id: { in: orderIds }, businessBatchInvoiceNumber: null },
+        data: { businessBatchInvoiceStatus: "simulated", businessBatchInvoicedAt: new Date(), businessBatchError: null },
+      });
+    }
+    if (openInvoice) {
+      await prisma.openInvoice.deleteMany({ where: { contactId, guid: openInvoice.guid } }).catch(() => {});
+    }
+    return {
+      ok: true,
+      simulated: true,
+      message: `Simuleret (dry-run): ${orderIds.length} opgave(r) på ${customer} (${sumInclVat.toLocaleString("da-DK")} kr.) faktureret samlet.`,
+    };
+  }
+
+  try {
+    const access = await getAccessToken();
+    const org = cfg.orgId;
+    const contact = contactOrders[0]?.contact ?? (await prisma.contact.findUniqueOrThrow({ where: { id: contactId } }));
+
+    let contactGuid = contact.dineroContactGuid;
+    if (!contactGuid) {
+      contactGuid = await ensureDineroContact(access, org, contact);
+      const clash = await prisma.contact.findFirst({ where: { dineroContactGuid: contactGuid, NOT: { id: contactId } }, select: { id: true } });
+      if (!clash) await prisma.contact.update({ where: { id: contactId }, data: { dineroContactGuid: contactGuid } });
+    }
+
+    const existing = await findInvoiceByExternalRef(access, org, ref);
+    let guid = existing?.guid ?? null;
+    let timeStamp = existing?.timeStamp ?? "";
+
+    // KONSOLIDERING (2026-09-15): en kunde skal kun have ÉN åben faktura.
+    // Har kunden en åben kladde, tilføjes ordrelinjerne DEN i stedet for at
+    // oprette en ny — og hele den åbne faktura bogføres+sendes samlet.
+    let adoptedTotalInclVat: number | null = null;
+    if (!guid) {
+      const open = await findOpenDraftForContact(access, org, contactId);
+      if (open) {
+        guid = open.guid;
+        timeStamp = open.timeStamp;
+        adoptedTotalInclVat = open.totalInclVat;
+        // Tilføj kun linjer for ordrer der ikke allerede bærer denne guid
+        const ordersToAdd = contactOrders.filter((o) => o.businessBatchInvoiceGuid !== guid);
+        if (ordersToAdd.length > 0) {
+          const lines = ordersToAdd.flatMap((o) =>
+            o.tasks.map((t) => ({ description: `Ordre #${o.id} — ${t.description}`, price: t.price })),
+          );
+          await addProductLinesToDraft(access, org, guid, lines, cfg.salesAccountNumber);
+        }
+      }
+    }
+
+    if (!guid) {
+      const lines = contactOrders.flatMap((o) =>
+        o.tasks.map((t) => ({ description: `Ordre #${o.id} — ${t.description}`, price: t.price })),
+      );
+      const draft = await createDraftInvoice(access, org, {
+        contactGuid, orderId: contactOrders[0]?.id ?? 0, salesAccountNumber: cfg.salesAccountNumber, tasks: lines,
+      });
+      guid = draft.guid;
+      timeStamp = draft.timeStamp;
+      try {
+        const res = await fetch(`https://api.dinero.dk/v1/${org}/invoices/${guid}`, {
+          method: "PUT",
+          headers: { Authorization: `Bearer ${access}`, accept: "application/json", "content-type": "application/json" },
+          body: JSON.stringify({ Timestamp: timeStamp, ExternalReference: ref }),
+        });
+        if (res.ok) {
+          const data = (await res.json().catch(() => ({}))) as { TimeStamp?: string };
+          timeStamp = data.TimeStamp ?? timeStamp;
+        }
+      } catch { /* best-effort */ }
+      await registerOpenInvoice(contactId, guid).catch(() => {});
+    }
+
+    // Persister guid på ALLE ordrer i gruppen FØR bogføring (crash-sikkerhed).
+    if (orderIds.length > 0) {
+      await prisma.order.updateMany({
+        where: { id: { in: orderIds } },
+        data: { businessBatchInvoiceGuid: guid, businessBatchInvoiceTimeStamp: timeStamp, businessBatchInvoiceStatus: "Draft", businessBatchError: null },
+      });
+    }
+
+    const alreadyBooked = existing?.number != null;
+    let bookedNumber = existing?.number ?? null;
+
+    if (!alreadyBooked) {
+      const detail = await getInvoiceWithRetry(access, org, guid);
+      if (detail.totalInclVat == null) throw new Error("Momskontrol umulig: Dinero returnerede ingen total — kladden er IKKE bogført.");
+      const expected = (adoptedTotalInclVat ?? 0) + (contactOrders.filter((o) => o.businessBatchInvoiceGuid !== guid).reduce((a, o) => a + o.tasks.reduce((b, t) => b + t.price, 0), 0) || sumInclVat);
+      if (Math.abs(detail.totalInclVat - expected) > 1) {
+        throw new Error(`Momskontrol fejlede: Dinero-total ${detail.totalInclVat} kr ≠ forventet ${expected} kr. Kladden er IKKE bogført.`);
+      }
+      const booked = await bookInvoice(access, org, guid, detail.timeStamp || timeStamp);
+      timeStamp = booked.timeStamp || timeStamp;
+      bookedNumber = booked.number;
+      if (orderIds.length > 0) {
+        await prisma.order.updateMany({
+          where: { id: { in: orderIds } },
+          data: { businessBatchInvoiceNumber: booked.number, businessBatchInvoiceTimeStamp: timeStamp, businessBatchInvoiceStatus: "Booked" },
+        });
+      }
+    }
+
+    await emailInvoice(access, org, guid, timeStamp);
+    // Sendt/bogført → fakturaen er ikke længere åben (konsoliderings-nøglen).
+    await releaseOpenInvoice(contactId, guid);
+    if (orderIds.length > 0) {
+      await prisma.order.updateMany({
+        where: { id: { in: orderIds } },
+        data: { businessBatchInvoiceStatus: "Sent", businessBatchInvoicedAt: new Date(), businessBatchError: null },
+      });
+    }
+
+    return {
+      ok: true,
+      message: `Faktura #${bookedNumber ?? ""} sendt til ${customer} (${orderIds.length} opgave(r) samlet, ${sumInclVat.toLocaleString("da-DK")} kr.).`,
+    };
+  } catch (e) {
+    const msg = (e instanceof Error ? e.message : "Fakturering fejlede").slice(0, 500);
+    if (orderIds.length > 0) {
+      await prisma.order.updateMany({
+        where: { id: { in: orderIds }, businessBatchInvoiceNumber: null },
+        data: { businessBatchError: msg, businessBatchInvoiceStatus: "Failed" },
+      }).catch(() => {});
+    }
+    return { ok: false, error: msg };
+  }
+}
+
 /** Kør "Fakturér alle": grupper alle klare ordrer pr. kontakt og send ÉN
  *  faktura pr. kunde med det samme. Kaldes kun fra app/actions/invoice-all.ts
  *  (admin-beskyttet server action). */
@@ -113,107 +296,23 @@ export async function runInvoiceAll(): Promise<InvoiceAllResult> {
   result.contacts = byContact.size;
   result.totalInclVat = orders.reduce((a, o) => a + o.tasks.reduce((b, t) => b + t.price, 0), 0);
 
-  const cfg = await loadActiveConfig();
-  const todayISO = todayCphISO();
-
   let first = true;
   for (const [contactId, contactOrders] of byContact) {
     // 300 ms pause mellem kunder (ikke før den første) — Dinero rate-limit.
     if (first) first = false; else await sleep(300);
 
-    const sumInclVat = contactOrders.reduce((a, o) => a + o.tasks.reduce((b, t) => b + t.price, 0), 0);
     const customer = contactOrders[0].contact.name;
-    const ref = `karltoffel-invoice-all-${contactId}-${todayISO}`;
-    const orderIds = contactOrders.map((o) => o.id);
+    const res = await invoiceSingleCustomer(contactId);
 
-    if (!cfg) {
-      // Dry-run: log + markér som simulated, nedgrader ALDRIG en rigtig faktura.
-      console.log(`[invoice-all:dry-run] kontakt #${contactId} (${customer}) ordrer=${orderIds.join(",")} sum=${sumInclVat}kr`);
-      await prisma.order.updateMany({
-        where: { id: { in: orderIds }, businessBatchInvoiceGuid: null },
-        data: { businessBatchInvoiceStatus: "simulated", businessBatchInvoicedAt: new Date(), businessBatchError: null },
-      });
-      result.simulated++;
-      continue;
-    }
-
-    try {
-      const access = await getAccessToken();
-      const org = cfg.orgId;
-      const contact = contactOrders[0].contact;
-
-      let contactGuid = contact.dineroContactGuid;
-      if (!contactGuid) {
-        contactGuid = await ensureDineroContact(access, org, contact);
-        const clash = await prisma.contact.findFirst({ where: { dineroContactGuid: contactGuid, NOT: { id: contactId } }, select: { id: true } });
-        if (!clash) await prisma.contact.update({ where: { id: contactId }, data: { dineroContactGuid: contactGuid } });
+    if (res.ok) {
+      if (res.simulated) {
+        result.simulated++;
+      } else {
+        result.invoiced++;
       }
-
-      // Genbrug en eksisterende kladde for denne kunde+dagsnøgle, hvis et tidligt
-      // forsøg døde før guid-persist (samme idempotens som samlefaktura-flowet).
-      const existing = await findInvoiceByExternalRef(access, org, ref);
-      let guid = existing?.guid ?? null;
-      let timeStamp = existing?.timeStamp ?? "";
-
-      if (!guid) {
-        const lines = contactOrders.flatMap((o) =>
-          o.tasks.map((t) => ({ description: `Ordre #${o.id} — ${t.description}`, price: t.price })),
-        );
-        const draft = await createDraftInvoice(access, org, {
-          contactGuid, orderId: 0, salesAccountNumber: cfg.salesAccountNumber, tasks: lines,
-        });
-        guid = draft.guid;
-        timeStamp = draft.timeStamp;
-        // Ret ExternalReference fra "karltoffel-order-0" til dagsnøglen (ellers
-        // matcher genkørsels-opslaget aldrig) — best-effort, som i batch-flowet.
-        try {
-          const res = await fetch(`https://api.dinero.dk/v1/${org}/invoices/${guid}`, {
-            method: "PUT",
-            headers: { Authorization: `Bearer ${access}`, accept: "application/json", "content-type": "application/json" },
-            body: JSON.stringify({ Timestamp: timeStamp, ExternalReference: ref }),
-          });
-          if (res.ok) {
-            const data = (await res.json().catch(() => ({}))) as { TimeStamp?: string };
-            timeStamp = data.TimeStamp ?? timeStamp;
-          }
-        } catch { /* best-effort */ }
-      }
-
-      // Persister guid på ALLE ordrer i gruppen FØR bogføring (crash-sikkerhed).
-      await prisma.order.updateMany({
-        where: { id: { in: orderIds } },
-        data: { businessBatchInvoiceGuid: guid, businessBatchInvoiceTimeStamp: timeStamp, businessBatchInvoiceStatus: "Draft", businessBatchError: null },
-      });
-
-      const alreadyBooked = existing?.number != null;
-      if (!alreadyBooked) {
-        const detail = await getInvoiceWithRetry(access, org, guid);
-        if (detail.totalInclVat == null) throw new Error("Momskontrol umulig: Dinero returnerede ingen total — kladden er IKKE bogført.");
-        if (Math.abs(detail.totalInclVat - sumInclVat) > 1) {
-          throw new Error(`Momskontrol fejlede: Dinero-total ${detail.totalInclVat} kr ≠ ordrernes sum ${sumInclVat} kr. Kladden er IKKE bogført.`);
-        }
-        const booked = await bookInvoice(access, org, guid, detail.timeStamp || timeStamp);
-        timeStamp = booked.timeStamp || timeStamp;
-        await prisma.order.updateMany({
-          where: { id: { in: orderIds } },
-          data: { businessBatchInvoiceNumber: booked.number, businessBatchInvoiceTimeStamp: timeStamp, businessBatchInvoiceStatus: "Booked" },
-        });
-      }
-
-      await emailInvoice(access, org, guid, timeStamp);
-      await prisma.order.updateMany({
-        where: { id: { in: orderIds } },
-        data: { businessBatchInvoiceStatus: "Sent", businessBatchInvoicedAt: new Date(), businessBatchError: null },
-      });
-      result.invoiced++;
-    } catch (e) {
-      const msg = (e instanceof Error ? e.message : "Fakturering fejlede").slice(0, 500);
+    } else {
       result.failed++;
-      result.errors.push({ contactId, customer, error: msg });
-      await prisma.order.updateMany({
-        where: { id: { in: orderIds }, businessBatchInvoiceNumber: null },
-        data: { businessBatchError: msg, businessBatchInvoiceStatus: "Failed" },
-      }).catch(() => {});
+      result.errors.push({ contactId, customer, error: res.error ?? "Fakturering fejlede" });
     }
   }
 

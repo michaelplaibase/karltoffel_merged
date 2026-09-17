@@ -121,9 +121,15 @@ test("batch-idempotens: guid persisteres på ALLE ordrer i batchen FØR bogføri
 test("momskontrol mod Dinero er bevaret: afvigelse > 1 kr stopper bogføring (fail-closed)", async () => {
   const b = await source("lib/business-invoicing.ts");
   assert.match(b, /Momskontrol umulig: Dinero returnerede ingen total/);
-  assert.match(b, /Momskontrol fejlede: Dinero-total \$\{detail\.totalInclVat\} kr ≠ ordrernes sum \$\{sumInclVat\} kr/);
+  // Konsolidering (2026-09-15): forventet total = adopteret kladdes total før
+  // tilføjelsen (inkl. manuelle linjer) + periodens sum — fail-closed bevaret.
+  assert.match(b, /const expected = \(adoptedTotalInclVat \?\? 0\) \+ sumInclVat;/);
+  assert.match(b, /Momskontrol fejlede: Dinero-total \$\{detail\.totalInclVat\} kr ≠ forventet \$\{expected\} kr/);
   const d = await source("lib/dinero.ts");
   assert.match(d, /Momskontrol fejlede: Dinero-total \$\{detail\.totalInclVat\} kr ≠ ordrens \$\{sumInclVat\} kr/);
+  // Pr.-ordre-flowet konsoliderer også på den åbne faktura med samme værn.
+  assert.match(d, /const expected = expectedTotalKr\(open\.totalInclVat, lines\);/);
+  assert.match(d, /Momskontrol fejlede: Dinero-total \$\{detail\.totalInclVat\} kr ≠ forventet \$\{expected\} kr/);
 });
 
 // ─── priceBasis-klargøring til cutover (skal senere kun være ét flag) ─────────
