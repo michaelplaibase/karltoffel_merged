@@ -169,16 +169,13 @@ function TilbudDoc({ data }: { data: TilbudPdfData }) {
               // ("Starter uge 29") — kun når linjen har en startuge.
               l.startWeek ? e(Text, { style: S.lineFrekvens }, `Starter ${l.startWeek.charAt(0).toLowerCase()}${l.startWeek.slice(1)}`) : null,
             ),
-            e(View, { style: { alignItems: "flex-end" } },
-              // Thomas, 2026-09-17: PRIVATE kunder ser også prisen INKL. moms
-              // pr. opgavelinje (på en egen linje under u. moms-prisen, så den
-              // aldrig klemmer beskrivelsen); virksomheder kun u. moms.
-              e(Text, { style: S.linePrice }, `${kr(l.price)} pr. gang (u. moms)`),
-              !data.isCompany
-                ? e(Text, { style: { ...S.linePrice, fontSize: 8, color: RISTET, marginTop: 1 } },
-                    `${krMoms(tilbudMomsOgIalt(l.price).ialt)} pr. gang (inkl. moms)`)
-                : null,
-            ),
+            e(Text, { style: S.linePrice },
+              // Thomas, 2026-09-17: PRIVATE kunder ser prisen INKL. moms på hver
+              // opgavelinje (fx "707,50 kr. pr. gang (inkl. moms)"); virksomheder
+              // bibeholder kun prisen u. moms (momsen i bunden).
+              data.isCompany
+                ? `${kr(l.price)} pr. gang (u. moms)`
+                : `${krMoms(tilbudMomsOgIalt(l.price).ialt)} pr. gang (inkl. moms)`),
           ),
         ),
       ),
