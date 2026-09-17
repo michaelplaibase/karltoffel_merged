@@ -53,3 +53,26 @@ test("manuel linje: DB-rækken gemmes så momskontrollen tæller den med (Invoic
   assert.match(c, /manualLinesSumKr/);
   assert.match(c, /expectedTotalKr/);
 });
+
+test("faktureringsoverblik: uafregnede opgaver grupperes pr. kunde med samlet total (Thomas 2026-09-17)", async () => {
+  const page = await source("app/fakturering/page.tsx");
+  assert.match(page, /readyByContact/);
+  assert.match(page, /customerGroups/);
+  assert.match(page, /Hver kunde modtager kun 1 samlet faktura/);
+});
+
+test("faktureringsoverblik: fakturér nu samler automatisk alle kundens uafregnede opgaver på ÉN faktura", async () => {
+  const d = await source("app/actions/dinero.ts");
+  assert.match(d, /export async function invoiceCustomerNow\(contactId: number\)/);
+  assert.match(d, /invoiceSingleCustomer/);
+
+  const invAll = await source("lib/invoice-all.ts");
+  assert.match(invAll, /export async function invoiceSingleCustomer\(contactId: number\)/);
+  assert.match(invAll, /where:\s*\{[\s\S]*?contactId[\s\S]*?status:\s*"Udført"/);
+});
+
+test("faktureringsoverblik: manuelle linjer kan tilføjes direkte pr. kunde", async () => {
+  const m = await source("app/actions/invoice-manual.ts");
+  assert.match(m, /contactId/);
+  assert.match(m, /export async function addManualInvoiceLine\([\s\S]*?target: number \| \{ openInvoiceId\?: number; contactId\?: number \}/);
+});
