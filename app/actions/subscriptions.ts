@@ -185,6 +185,26 @@ export async function stopSubscription(pk: number): Promise<void> {
   redirect("/subscriptions");
 }
 
+/** Startugens catch-up (delt af approve- og resume-flowet): startugen er
+ *  årløs ("Uge N") og blev typisk sat til "næste uge" ved lead-konverteringen.
+ *  Godkendes/genoptages abonnementet FØRST uger senere, er ugen passeret — og
+ *  generatoren (nyt abonnement uden ordrer) ville fortolke den som NÆSTE års
+ *  forekomst: nul ordrer i op til et år, helt stille. Er ugen mere end et halvt
+ *  år ude i "fremtiden", er den reelt lige passeret → ryk starten til næste uge.
+ *  En bevidst sæsonstart (< 26 uger ude) bevares. Returnerer ny startWeek eller
+ *  null, hvis ugen ikke skal justeres. */
+async function startWeekCatchUp(pk: number, startWeek: string | null): Promise<string | null> {
+  const stored = parseWeekLabel(startWeek ?? "");
+  if (stored == null) return null;
+  const currentWeek = isoWeek(weekMondayToday());
+  const weeksUntil = ((stored - currentWeek) + 52) % 52;
+  if (weeksUntil <= 26) return null;
+  const nextMondayISO = new Date(Date.parse(`${weekMondayToday()}T00:00:00Z`) + 7 * 864e5).toISOString().slice(0, 10);
+  const label = weekLabel(nextMondayISO); // "Uge N, YYYY" — entydigt år
+  await prisma.subscription.update({ where: { id: pk }, data: { startWeek: label, nextWeek: label } });
+  return label;
+}
+
 /** Godkend et AFVENTENDE abonnement (dit trin 5: opkaldet bekræftede prisen):
  *  aktivér det og materialisér de kommende ordrer med det samme. */
 export async function approveSubscription(pk: number): Promise<void> {
@@ -194,22 +214,7 @@ export async function approveSubscription(pk: number): Promise<void> {
     data: { active: true, pending: false },
     select: { contactId: true, displayNo: true, startWeek: true },
   });
-  // Startugen er årløs ("Uge N") og blev typisk sat til "næste uge" ved
-  // lead-konverteringen. Godkendes abonnementet FØRST uger senere, er ugen
-  // passeret — og generatoren (nyt abonnement uden ordrer) ville fortolke den
-  // som NÆSTE års forekomst: nul ordrer i op til et år, helt stille. Er ugen
-  // mere end et halvt år ude i "fremtiden", er den reelt lige passeret →
-  // ryk starten til næste uge. En bevidst sæsonstart (< 26 uger ude) bevares.
-  const stored = parseWeekLabel(sub.startWeek);
-  if (stored != null) {
-    const currentWeek = isoWeek(weekMondayToday());
-    const weeksUntil = ((stored - currentWeek) + 52) % 52;
-    if (weeksUntil > 26) {
-      const nextMondayISO = new Date(Date.parse(`${weekMondayToday()}T00:00:00Z`) + 7 * 864e5).toISOString().slice(0, 10);
-      const label = weekLabel(nextMondayISO); // "Uge N, YYYY" — entydigt år
-      await prisma.subscription.update({ where: { id: pk }, data: { startWeek: label, nextWeek: label } });
-    }
-  }
+  await startWeekCatchUp(pk, sub.startWeek);
   await generateForSubscriptionId(pk);
   revalidatePath("/subscriptions");
   revalidatePath("/orders");
@@ -217,6 +222,59 @@ export async function approveSubscription(pk: number): Promise<void> {
   revalidatePath("/daycalendar");
   revalidatePath(`/customers/${sub.contactId}`);
   redirect(`/subscriptions/${sub.displayNo}`);
+}
+
+/** PAUSE et abonnement (Thomas, 2026-09-17): sæt det på pause indtil det
+ *  genoptages manuelt. Der oprettes ikke flere ordrer, og kommende uleverede
+ *  (ulåste) ordrer fjernes fra kalenderen — præcis som stop, men abonnementet
+ *  forbliver aktivt og VISES stadig (med pausemarkering), så det kan genoptages.
+ *  Historik, afsluttede, låste og indeværende uges ordrer røres ikke. */
+export async function pauseSubscription(pk: number): Promise<void> {
+  await guardAction();
+  const sub = await prisma.subscription.update({
+    where: { id: pk }, data: { paused: true, pending: false },
+    select: { contactId: true },
+  });
+
+  const nextMonday = new Date(mondayOfUTCNow().getTime() + 7 * 864e5);
+  const stale = await prisma.order.findMany({
+    where: { subscriptionId: pk, plannedAt: { gte: nextMonday }, status: "Afventer levering", lockedFully: false },
+    select: { id: true },
+  });
+  if (stale.length) {
+    const ids = stale.map((o) => o.id);
+    await prisma.$transaction([
+      prisma.taskLine.deleteMany({ where: { orderId: { in: ids } } }),
+      prisma.order.deleteMany({ where: { id: { in: ids } } }),
+    ]);
+  }
+
+  revalidatePath("/subscriptions");
+  revalidatePath("/orders");
+  revalidatePath("/calendar");
+  revalidatePath("/daycalendar");
+  revalidatePath(`/customers/${sub.contactId}`);
+  redirect("/subscriptions");
+}
+
+/** GENOPTAG et pauset abonnement (Thomas, 2026-09-17): ophæv pausen og læg de
+ *  kommende ordrer tilbage i kalenderen. Gamle, tidsmæssigt misvisende
+ *  startuger fanges af startWeekCatchUp (samme logik som approve). */
+export async function resumeSubscription(pk: number): Promise<void> {
+  await guardAction();
+  const sub = await prisma.subscription.update({
+    where: { id: pk },
+    data: { paused: false, pending: false },
+    select: { contactId: true, displayNo: true, startWeek: true },
+  });
+  await startWeekCatchUp(pk, sub.startWeek);
+  await generateForSubscriptionId(pk);
+  revalidatePath("/subscriptions");
+  revalidatePath("/orders");
+  revalidatePath("/calendar");
+  revalidatePath("/daycalendar");
+  revalidatePath(`/customers/${sub.contactId}`);
+  redirect("/subscriptions");
 }
 
 /** Mandag (UTC midnat) i indeværende uge. */

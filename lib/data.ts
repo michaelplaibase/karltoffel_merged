@@ -46,6 +46,7 @@ export type Subscription = {
   fixedEmployee: string;
   nextWeek: string;
   pending: boolean; // afventer godkendelse efter bekræftelses-opkaldet
+  paused: boolean;  // på pause (Thomas, 2026-09-17): vises stadig, genererer ikke ordrer
   // STILLE-NUL-VAGT (uge 35-hændelsen): sat når et aktivt abonnement står uden
   // kommende ordrer, selvom det burde have nogen — vises som advarsel i listerne.
   generationWarning: string | null;

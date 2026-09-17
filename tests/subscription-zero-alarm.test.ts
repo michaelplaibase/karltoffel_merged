@@ -15,7 +15,7 @@ const source = (path: string) => readFile(new URL(path, root), "utf8");
 const REF = new Date("2026-08-26T10:00:00Z"); // onsdag i uge 35
 const task = (interval = "Hver gang") => ({ intervalMultiplier: interval });
 const sub = (over: Partial<Parameters<typeof subscriptionOutlookProblem>[0]> = {}) => ({
-  active: true, pending: false, startWeek: "35", nextWeek: "35", baseInterval: "Hver 2. uge", tasks: [task()],
+  active: true, paused: false, pending: false, startWeek: "35", nextWeek: "35", baseInterval: "Hver 2. uge", tasks: [task()],
   ...over,
 });
 
@@ -52,6 +52,8 @@ test("legitime nul-tilfælde er TAVSE", () => {
   // Afventende eller stoppet → ikke vagtens bord.
   assert.equal(subscriptionOutlookProblem(sub({ pending: true }), 0, 0, REF), null);
   assert.equal(subscriptionOutlookProblem(sub({ active: false }), 0, 0, REF), null);
+  // PAUSE (Thomas, 2026-09-17): nul kommende ordrer er legitimt — vagten tavs.
+  assert.equal(subscriptionOutlookProblem(sub({ paused: true }), 0, 0, REF), null);
   // Kun "På anmodning"-opgaver planlægges aldrig automatisk.
   assert.equal(subscriptionOutlookProblem(sub({ tasks: [task("På anmodning")] }), 0, 5, REF), null);
   // Bevidst sæsonstart udtrykkes med EKSPLICIT fremtids-år — gælder først ved

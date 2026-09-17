@@ -78,6 +78,7 @@ function mapSubscription(s: SubRow, generationWarning: string | null = null): Su
     fixedEmployee: s.fixedEmployee,
     nextWeek: s.nextWeek ?? "",
     pending: s.pending,
+    paused: s.paused,
     generationWarning,
   };
 }
@@ -293,6 +294,7 @@ export async function getSubscriptionEditData(displayNo: number) {
     fixedEmployee: s.fixedEmployee,
     deliveryAddress: s.deliveryAddress,
     pending: s.pending,
+    paused: s.paused,
     tasks: [...s.tasks].sort((a, b) => a.sort - b.sort).map((t) => ({
       description: t.description, price: String(t.price), duration: String(t.durationMin),
       category: t.category, interval: t.intervalMultiplier ?? "Hver gang", nextWeek: t.startWeek ?? "",

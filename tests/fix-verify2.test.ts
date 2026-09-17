@@ -9,12 +9,17 @@ const source = (path: string) => readFile(new URL(path, root), "utf8");
 
 test("godkendelse af afventende abonnement normaliserer en reelt passeret startuge", async () => {
   const actions = await source("app/actions/subscriptions.ts");
-  assert.match(actions, /const stored = parseWeekLabel\(sub\.startWeek\)/);
+  // Refaktoreret 2026-09-17: normaliseringen bor i den delelige startWeekCatchUp
+  // (deles af godkend + genoptag), ikke inlinet i approveSubscription.
+  assert.match(actions, /async function startWeekCatchUp\(pk: number, startWeek: string \| null\)/);
+  assert.match(actions, /const stored = parseWeekLabel\(startWeek \?\? ""\)/);
   assert.match(actions, /const weeksUntil = \(\(stored - currentWeek\) \+ 52\) % 52/);
-  assert.match(actions, /if \(weeksUntil > 26\)/);
-  // Normaliseringen SKAL ske før genereringen — ellers fortolkes ugen som næste år.
-  const body = actions.slice(actions.indexOf("export async function approveSubscription"));
-  assert.ok(body.indexOf("weeksUntil") < body.indexOf("await generateForSubscriptionId"));
+  assert.match(actions, /if \(weeksUntil <= 26\) return null/);
+  // Både godkend OG genoptag kalder catch-up FØR genereringen.
+  const approve = actions.slice(actions.indexOf("export async function approveSubscription"), actions.indexOf("export async function pauseSubscription"));
+  assert.ok(approve.indexOf("startWeekCatchUp") < approve.indexOf("await generateForSubscriptionId"));
+  const resume = actions.slice(actions.indexOf("export async function resumeSubscription"));
+  assert.ok(resume.indexOf("startWeekCatchUp") < resume.indexOf("await generateForSubscriptionId"));
 });
 
 test("dinero-værnet undtager påbegyndte pr.-ordre-kladder og kontant betaling", async () => {

@@ -207,14 +207,32 @@ test("GroupMessageForm sender medarbejder + kanal med til modtager-opslaget", as
 });
 
 // ---------------------------------------------------------------------------
+// HØJ: Pause/Genoptag abonnement (Thomas, 2026-09-17)
+// ---------------------------------------------------------------------------
+
+test("pause/genoptag findes, og pausede abonnementer hverken alarmerer eller genererer", async () => {
+  const actions = await src("app/actions/subscriptions.ts");
+  assert.match(actions, /export async function pauseSubscription\(pk: number\)/);
+  assert.match(actions, /export async function resumeSubscription\(pk: number\)/);
+  // Pause rydder fremtidige ulåste ordrer (som stop) men bevarer historik.
+  assert.match(actions, /plannedAt: \{ gte: nextMonday \}, status: "Afventer levering", lockedFully: false/);
+  // Genoptag lægger ordrerne tilbage via genereringen.
+  assert.match(actions, /await generateForSubscriptionId\(pk\)/);
+  // Generatoren må aldrig lave ordrer på pausede — loadActiveSubs + per-id guard.
+  const rec = await src("lib/recurrence.ts");
+  assert.match(rec, /where: \{ active: true, paused: false \}/);
+  assert.match(rec, /if \(!sub \|\| !sub\.active \|\| sub\.paused\) return 0/);
+});
+
+// ---------------------------------------------------------------------------
 // MELLEM: revalidering af /daycalendar + faktisk "Fremtidige ordrer"-kolonne
 // ---------------------------------------------------------------------------
 
 test("alle abonnements-mutationer revaliderer /daycalendar", async () => {
   const actions = await src("app/actions/subscriptions.ts");
   const hits = actions.match(/revalidatePath\("\/daycalendar"\)/g) ?? [];
-  // regenerateOrders + stop + approve + create + update = 5
-  assert.equal(hits.length, 5);
+  // regenerateOrders + stop + approve + create + update + pause + resume = 7
+  assert.equal(hits.length, 7);
   const funk = await src("app/actions/funktioner.ts");
   const applyOpt = funk.slice(funk.indexOf("export async function applyOptimization"), funk.indexOf("// ---- Price adjustment"));
   assert.match(applyOpt, /revalidatePath\("\/daycalendar"\)/);

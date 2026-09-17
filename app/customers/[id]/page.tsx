@@ -10,6 +10,7 @@ import SkraafotoCard from "@/components/SkraafotoCard";
 import CustomerOrdersTable from "@/components/CustomerOrdersTable";
 import CustomerCalendar, { type CalDay } from "@/components/CustomerCalendar";
 import { stopSubscription } from "@/app/actions/subscriptions";
+import { pauseSubscription, resumeSubscription } from "@/app/actions/subscriptions";
 import { deleteFixedPrice } from "@/app/actions/fixed-prices";
 
 // Skråfoto-verifikationen bruger Dataforsyningen-tokenet, men tokenet når ALDRIG
@@ -163,12 +164,18 @@ export default async function CustomerDetail({
                   <tr key={s.id}>
                     <td><RowMenu items={[
                       { label: "Rediger abonnement", href: `/subscriptions/${s.id}` },
+                      ...(s.paused
+                        ? [{ label: "Genoptag abonnement…", action: resumeSubscription.bind(null, s.pk),
+                            confirm: { title: "Genoptag abonnement", body: `Genoptag abonnement #${s.id}? Pausen ophæves, og de kommende ordrer lægges tilbage i kalenderen.`, confirmLabel: "Genoptag abonnement" } }]
+                        : [{ label: "Pause abonnement…", action: pauseSubscription.bind(null, s.pk),
+                            confirm: { title: "Pause abonnement", body: `Sæt abonnement #${s.id} på pause? Der oprettes ikke flere ordrer, og kommende uleverede (ulåste) ordrer fjernes fra kalenderen, indtil du genoptager abonnementet igen.`, confirmLabel: "Pause abonnement" } }]),
                       { label: "Stop abonnement…", danger: true, action: stopSubscription.bind(null, s.pk),
                         confirm: { title: "Stop abonnement", body: `Vil du stoppe abonnement #${s.id}? Der oprettes ikke flere ordrer, og kommende uleverede (ulåste) ordrer fjernes fra kalenderen.`, confirmLabel: "Stop abonnement", note: "Denne handling kan ikke fortrydes." } },
                     ]} /></td>
                     <td className="num">
                       <Link href={`/subscriptions/${s.id}`}>{s.id}</Link>
                       {s.pending ? <span className="badge badge-soft-warning" style={{ marginLeft: 6 }}>Afventende</span> : null}
+                      {s.paused ? <span className="badge badge-soft-muted" style={{ marginLeft: 6 }}>Pause</span> : null}
                     </td>
                     <td>{s.deliveryAddress}</td>
                     <td>{s.tasks.map((t, i) => <div key={i}><CatChip category={t.category} letter={t.letter} /> {t.description}</div>)}</td>

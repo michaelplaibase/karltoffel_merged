@@ -22,7 +22,7 @@ export type SubscriptionInitial = {
 };
 
 export default function SubscriptionForm({
-  action, contacts, employees, employeeOptions, initial, title, submitLabel, danger, minuteRate,
+  action, contacts, employees, employeeOptions, initial, title, submitLabel, danger, pause, minuteRate,
 }: {
   action: (state: SubscriptionState, formData: FormData) => Promise<SubscriptionState>;
   contacts: ContactOption[];
@@ -34,6 +34,9 @@ export default function SubscriptionForm({
   title: string;
   submitLabel: string;
   danger?: React.ReactNode;
+  /** Pause-handling (Thomas, 2026-09-17): vises i save-baren når abonnementet
+   *  er på pause, fx en \"Genoptag abonnement\"-knap. */
+  pause?: React.ReactNode;
   /** Minutpris (kr/min ekskl. moms) — auto-beregner varighed ud fra prisen. */
   minuteRate: number;
 }) {
@@ -106,6 +109,7 @@ export default function SubscriptionForm({
       <div className="savebar">
         <Link href="/subscriptions" className="btn btn-light">Luk</Link>
         {danger}
+        {pause}
         <button type="submit" className="btn btn-primary" disabled={pending}>
           {pending ? "Gemmer…" : submitLabel}
         </button>

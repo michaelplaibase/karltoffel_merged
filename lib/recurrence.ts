@@ -105,7 +105,10 @@ function isPausedOn(
 
 type SubWithTasks = Awaited<ReturnType<typeof loadActiveSubs>>[number];
 function loadActiveSubs() {
-  return prisma.subscription.findMany({ where: { active: true }, include: { tasks: true } });
+  // Pause (Thomas, 2026-09-17): et pauset abonnement MÅ ikke generere nye ordrer,
+  // heller ikke fra nat-kørsel/manuel knap. active forbliver true (vises stadig),
+  // så vi filtrerer eksplicit på !paused.
+  return prisma.subscription.findMany({ where: { active: true, paused: false }, include: { tasks: true } });
 }
 
 async function defaultEmployeeId(fixedEmployee: string): Promise<number | null> {
@@ -284,7 +287,9 @@ export async function generateAllSubscriptionOrders(ref: Date = new Date(), hori
 /** Generate for a single subscription id (used after create/edit). */
 export async function generateForSubscriptionId(id: number, ref: Date = new Date(), horizonWeeks = DEFAULT_HORIZON_WEEKS): Promise<number> {
   const sub = await prisma.subscription.findUnique({ where: { id }, include: { tasks: true } });
-  if (!sub || !sub.active) return 0;
+  // Pause: et pauset abonnement genererer aldrig (guard i tilfælde af at
+  // regenerering/redigering kaldes uden om loadActiveSubs).
+  if (!sub || !sub.active || sub.paused) return 0;
   return generateForSubscription(sub, ref, horizonWeeks);
 }
 
@@ -335,13 +340,15 @@ export async function regenerateFutureOrders(
  *  reelt kan ligge efter horisonten. Ren funktion — deler parserne med selve
  *  genereringen, så vagten aldrig kan drive fra motoren. */
 export function subscriptionOutlookProblem(
-  sub: { active: boolean; pending: boolean; startWeek: string | null; nextWeek: string | null; baseInterval: string; tasks: { intervalMultiplier: string | null }[] },
+  sub: { active: boolean; paused: boolean; pending: boolean; startWeek: string | null; nextWeek: string | null; baseInterval: string; tasks: { intervalMultiplier: string | null }[] },
   futureOrderCount: number,
   totalOrderCount: number,
   ref: Date = new Date(),
   horizonWeeks = DEFAULT_HORIZON_WEEKS
 ): string | null {
-  if (!sub.active || sub.pending || futureOrderCount > 0) return null;
+  // Pause (Thomas, 2026-09-17): nul kommende ordrer er LEGITIMT når abonnementet
+  // er pauset — det skal aldrig alarmere listen som et stille generator-problem.
+  if (!sub.active || sub.paused || sub.pending || futureOrderCount > 0) return null;
   const parts = parseWeekLabelParts(sub.startWeek) ?? parseWeekLabelParts(sub.nextWeek);
   if (parts == null) return "startugen kan ikke læses — angiv den som fx 'Uge 35, 2026'";
   // Kun "På anmodning"-opgaver planlægges aldrig automatisk — nul er korrekt.

@@ -42,8 +42,8 @@ export async function GET(req: Request) {
   // ordrer, når rytmen siger det burde have nogen, er et alarm-fund — det var
   // præcis sådan ~30 abonnementer forsvandt fra kalenderen uden én fejl i loggen.
   const subs = await prisma.subscription.findMany({
-    where: { active: true, pending: false },
-    select: { id: true, displayNo: true, active: true, pending: true, startWeek: true, nextWeek: true, baseInterval: true, tasks: { select: { intervalMultiplier: true } } },
+    where: { active: true, pending: false, paused: false },
+    select: { id: true, displayNo: true, active: true, paused: true, pending: true, startWeek: true, nextWeek: true, baseInterval: true, tasks: { select: { intervalMultiplier: true } } },
   });
   const from = new Date(`${monday}T00:00:00Z`);
   const [futureCounts, totalCounts] = await Promise.all([

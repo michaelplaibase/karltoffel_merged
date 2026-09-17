@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import { getSubscriptionEditData, getContactOptions, getEmployeeNames, getEmployeeOptions, getMinuteRate } from "@/lib/queries";
-import { updateSubscription, stopSubscription, approveSubscription } from "@/app/actions/subscriptions";
+import { updateSubscription, stopSubscription, approveSubscription, pauseSubscription, resumeSubscription } from "@/app/actions/subscriptions";
 import { routeId } from "@/lib/route-ids";
 import SubscriptionForm from "@/components/SubscriptionForm";
 import ConfirmButton from "@/components/ConfirmButton";
@@ -51,6 +51,14 @@ export default async function EditSubscription({ params }: { params: Promise<{ i
         title={`Rediger abonnement #${sub.displayNo}`}
         submitLabel="Opdater abonnement"
         minuteRate={minuteRate}
+        pause={sub.paused && (
+          <ConfirmButton
+            action={resumeSubscription.bind(null, sub.pk)}
+            label="Genoptag abonnement" title="Genoptag abonnement"
+            body="Vil du genoptage abonnementet? Pausen ophæves, og de kommende ordrer lægges tilbage i kalenderen."
+            confirmLabel="Genoptag abonnement"
+          />
+        )}
         danger={
           <ConfirmButton
             action={stopSubscription.bind(null, sub.pk)}

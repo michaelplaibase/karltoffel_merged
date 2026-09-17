@@ -269,6 +269,10 @@ model Subscription {
   fixedEmployee  String    @default("Ingen")
   notiOverride   Boolean   @default(false)
   active         Boolean   @default(true)
+  // Pause (Thomas, 2026-09-17): abonnementet er på PAUSE — der genereres ingen
+  // nye ordrer, og kommende ulåste ordrer ryddes ved pausen. `active` forbliver
+  // true, så det stadig Vises i listerne (med pausemarkering) og kan genoptages.
+  paused         Boolean   @default(false)
   pending        Boolean   @default(false) // afventende godkendelse (lead konverteret, pris ikke bekræftet endnu) — active er false imens
   tasks          TaskLine[]
   orders         Order[]
