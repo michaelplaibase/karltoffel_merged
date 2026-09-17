@@ -29,18 +29,6 @@ const RISTET = "#8A6931";
 
 const kr = (n: number) => n.toLocaleString("da-DK") + " kr.";
 
-/** Thomas, 2026-09-17: pristekst pr. opgavelinje. PRIVATE kunder får BÅDE
- *  u. moms OG inkl. moms ("566 kr. pr. gang (u. moms) · 707,50 kr. pr. gang
- *  (inkl. moms)"); virksomheder bibeholder kun u. moms (som hidtil), hvor
- *  moms beregnes i bunden af tilbuddet. Samme lib/vat-funktion som resten
- *  af fladerne, så tallene aldrig afviger. */
-function linePrisTekst(price: number, isCompany: boolean): string {
-  const uMoms = `${kr(price)} pr. gang (u. moms)`;
-  if (isCompany) return uMoms;
-  const m = tilbudMomsOgIalt(price);
-  return `${uMoms} · ${krMoms(m.ialt)} pr. gang (inkl. moms)`;
-}
-
 const S = StyleSheet.create({
   page: { backgroundColor: MOS, fontFamily: "Hanken", color: JORDNAER },
   headerBar: { backgroundColor: JORDNAER, padding: "14pt 20pt", flexDirection: "row", alignItems: "center" },
@@ -181,7 +169,16 @@ function TilbudDoc({ data }: { data: TilbudPdfData }) {
               // ("Starter uge 29") — kun når linjen har en startuge.
               l.startWeek ? e(Text, { style: S.lineFrekvens }, `Starter ${l.startWeek.charAt(0).toLowerCase()}${l.startWeek.slice(1)}`) : null,
             ),
-            e(Text, { style: S.linePrice }, linePrisTekst(l.price, data.isCompany)),
+            e(View, { style: { alignItems: "flex-end" } },
+              // Thomas, 2026-09-17: PRIVATE kunder ser også prisen INKL. moms
+              // pr. opgavelinje (på en egen linje under u. moms-prisen, så den
+              // aldrig klemmer beskrivelsen); virksomheder kun u. moms.
+              e(Text, { style: S.linePrice }, `${kr(l.price)} pr. gang (u. moms)`),
+              !data.isCompany
+                ? e(Text, { style: { ...S.linePrice, fontSize: 8, color: RISTET, marginTop: 1 } },
+                    `${krMoms(tilbudMomsOgIalt(l.price).ialt)} pr. gang (inkl. moms)`)
+                : null,
+            ),
           ),
         ),
       ),
