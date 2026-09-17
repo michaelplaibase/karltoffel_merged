@@ -83,6 +83,9 @@ export function tilbudLeadAcquisition(
 /** Data-shape der sendes ind i PDF-rendereren (lib/tilbud-doc.mts). */
 export type TilbudPdfData = {
   kundeNavn: string;
+  /** Thomas, 2026-09-17: PRIVATE kunder skal se prisen INKL. moms pr. linje
+   *  på tilbuddet; virksomheder bibeholder kun u. moms (som hidtil). */
+  isCompany: boolean;
   // Thomas, 2026-09-15: kundens adresse ("Svendborgvej 62, 5700 Svendborg") —
   // vises under kundenavnet i PDF-headeren (gul Tilbud-boks). null = udelades.
   kundeAdresse: string | null;
@@ -102,7 +105,7 @@ export type TilbudPdfData = {
 };
 
 export type TilbudInput = {
-  contact: { name: string; companyName: string | null; att: string | null; street?: string | null; city?: string | null };
+  contact: { name: string; companyName: string | null; att: string | null; street?: string | null; city?: string | null; isCompany?: boolean | null };
   title: string;
   note: string | null;
   startWeek?: string | null;
@@ -123,6 +126,7 @@ export function buildTilbudPdfData(input: TilbudInput): TilbudPdfData {
   }));
   return {
     kundeNavn: navn,
+    isCompany: input.contact.isCompany === true,
     // Thomas, 2026-09-15: adresse under kundenavnet — contact.street + city
     // (city indeholder allerede postnummer, "8660 Skanderborg").
     kundeAdresse: [input.contact.street, input.contact.city].filter(Boolean).join(", ") || null,
