@@ -107,7 +107,13 @@ export default async function TilbudDetailPage({ params, searchParams }: { param
                     ) : null}
                     </span>
                   </span>
-                  <span className="num">{kr(l.price)}</span>
+                  <span className="num" style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 1 }}>
+                    {/* Thomas, 2026-09-17: prisen står ude til siden — øverst
+                        u. moms, lige nedenunder inkl. moms (begge for at teamet
+                        kan se regnestykket pr. linje). */}
+                    <span>{kr(l.price)}</span>
+                    <small className="form-text">{krMoms(tilbudMomsOgIalt(l.price).ialt)}</small>
+                  </span>
                 </div>
               ))}
               {/* Thomas, 2026-09-11: 'samlet beløb' fjernet — ÅRLIGT beløb når intervallet er sat. */}
