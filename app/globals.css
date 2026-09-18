@@ -835,26 +835,43 @@ textarea.task-desc { resize: none; overflow: hidden; min-height: 58px; height: a
    Det giver det MEST skriveplads uden at klippe noget (minmax(0, …)
    bevaret overalt). */
 .tl-row-tilbud {
-  grid-template-columns: minmax(0, 0.8fr) minmax(120px, 0.85fr) minmax(100px, 0.7fr) minmax(100px, 0.7fr) minmax(0, 1.1fr) 36px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  align-items: stretch;
+  gap: 12px 0;
+  min-width: 0;
+  padding: 12px 14px;
+}
+/* Beskrivelsen fylder en fuld række; slet-knappen står fast øverst til
+   højre i samme række, så alle linjer har slet-knappen på samme sted. */
+.tl-row-tilbud .tl-desc {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
   min-width: 0;
 }
-.tl-row-tilbud .tl-desc { grid-column: 1 / -1; }
-.tl-row-tilbud .form-control { min-width: 0; }
-.tl-row-tilbud .tl-field-label {
+.tl-row-tilbud .tl-desc .form-control { flex: 1 1 auto; min-width: 0; }
+.tl-row-tilbud .tl-desc .btn { flex-shrink: 0; align-self: flex-start; }
+/* Parametrene i et ensartet felt-grid med etiket OVER hvert felt.
+   auto-fit giver ét rent lag på desktop (op til 5 kolonner) og stakker
+   pænt på smal skærm — intet klippes, intet overflow. */
+.tl-param-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 10px 14px;
+}
+.tl-param-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+.tl-param-field > .form-control { width: 100%; min-width: 0; }
+.tl-param-field .tl-field-label {
   display: block;
   font-size: 11px;
   letter-spacing: 0.04em;
   text-transform: uppercase;
   color: #8a7a5c;
-  margin: 0 0 3px;
-}
-@media (max-width: 1100px) {
-  .tl-row-tilbud { grid-template-columns: minmax(0, 0.8fr) minmax(108px, 0.85fr) minmax(95px, 0.7fr) minmax(95px, 0.7fr) minmax(0, 1.1fr) 32px; }
-}
-@media (max-width: 860px) {
-  /* Smal skærm: felter stakker pænt — titel og pris, interval og startuge,
-     slet-knap til sidst. Ingen felter klippes af. */
-  .tl-row-tilbud { grid-template-columns: minmax(0, 1fr) minmax(0, 130px); row-gap: 10px; min-width: 0; }
-  .tl-row-tilbud .btn { justify-self: end; grid-column: 2; }
-  .tl-row-tilbud .tl-employee-cell { grid-column: 1; }
+  line-height: 1;
 }

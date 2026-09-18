@@ -290,146 +290,159 @@ export default function TilbudForm({ contacts, employees, action, initial }: {
                   <div className="tl-row tl-row-tilbud" key={i}>
                     {/* Thomas, 2026-09-17: bær den EKSISTERENDE TilbudLine-id
                         (tom = ny linje), så updateTilbud opdaterer linjen på
-                        plads og bevarer evt. linjefotos. */
-                    }
+                        plads og bevarer evt. linjefotos. */}
                     <input type="hidden" name="taskId" value={l.id != null ? String(l.id) : ""} />
-                    {/* Thomas, 2026-09-15 (korrektion 2): textareaen står
-                        alene på en FULD række (.tl-desc, gridColumn 1/-1) —
-                        maksimal skriveplads til lange opgavetekster. */}
-                    <div className="tl-desc" style={{ display: "flex", gap: 8, alignItems: "flex-start" }}>
-                    {/* Thomas, 2026-09-15: farve-prik pr. linje — samme farve som
-                        linjens chips i årshjulet nedenfor (linjeFarve(i)). */}
-                    <span
-                      aria-hidden
-                      title={`Linjens farve i årshjulet`}
-                      style={{ flexShrink: 0, width: 12, height: 12, borderRadius: 4, background: linjeFarve(i), border: `1px solid rgba(76, 55, 24, 0.25)`, marginTop: 8, display: "inline-block" }}
-                    />
-                    <textarea
-                      name="taskDescription"
-                      className="form-control"
-                      rows={4}
-                      placeholder={i === 0 ? "Fx tagrender + nedløb" : ""}
-                      value={l.description}
-                      onChange={(e) => opdaterLinje(i, "description", e.target.value)}
-                    />
-                    </div>
-                    <input
-                      name="taskPrice"
-                      type="number"
-                      min={0}
-                      className="form-control num"
-                      value={l.price || ""}
-                      onChange={(e) => opdaterLinje(i, "price", e.target.value)}
-                      placeholder="Pris (u. moms)"
-                    />
-                    {/* Thomas, 2026-09-18: valgfri KATEGORI PR. LINJE — SAMME
-                        kategori-dropdown/fritekst som abonnementets
-                        TaskLineEditor (CATEGORIES + "Egen kategori" fra
-                        lib/categories.ts), så tilbud og abonnement aldrig
-                        afviger. Følger med til opgaven ved konvertering
-                        (i stedet for altid "Andet"). */}
-                    <div className="tl-employee-cell">
-                      <small className="tl-field-label">Kategori</small>
-                      {l.category === EGEN_KATEGORI ? (
-                        <span style={{ display: "flex", gap: 6 }}>
-                          <input
-                            type="text"
-                            value={l.egenKategoriTekst ?? ""}
-                            onChange={(e) => opdaterLinje(i, "egenKategoriTekst", e.target.value)}
-                            className="form-control"
-                            placeholder="Skriv kategori…"
-                            aria-label="Egen kategori"
-                          />
-                          <button
-                            type="button"
-                            onClick={() => {
-                              const t = (l.egenKategoriTekst ?? "").trim();
-                              if (t) { opdaterLinje(i, "category", t); opdaterLinje(i, "egenKategoriTekst", ""); }
-                            }}
-                            className="btn btn-primary btn-sm"
-                            title="Brug denne kategori"
-                          >OK</button>
-                        </span>
-                      ) : (
-                        <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                          <span
-                            className="catchip"
-                            style={{ background: chipBackground(l.category), color: chipTextColor(l.category), flexShrink: 0 }}
-                          >{(l.category[0] ?? "A").toUpperCase()}</span>
-                          <select
-                            name="taskCategory"
-                            className="form-control"
-                            value={l.category}
-                            onChange={(e) => opdaterLinje(i, "category", e.target.value)}
-                            aria-label="Kategori"
-                          >
-                            {CAT_NAMES.map((c) => <option key={c} value={c}>{c}</option>)}
-                            {savedCatNames.map((c) => <option key={c} value={c}>{c}</option>)}
-                            <option value={EGEN_KATEGORI}>Egen kategori…</option>
-                          </select>
-                        </span>
-                      )}
-                    </div>
-                    {/* Valgfrit interval PR. LINJE — samme muligheder som
-                        abonnementet (genbrugt BASE_INTERVALS). */}
-                    <select
-                      name="taskInterval"
-                      className="form-control"
-                      value={l.interval}
-                      onChange={(e) => opdaterLinje(i, "interval", e.target.value)}
-                      aria-label="Interval"
-                    >
-                      <option value="">Engangsopgave</option>
-                      {BASE_INTERVALS.map((iv) => (
-                        <option key={iv} value={iv}>{iv}</option>
-                      ))}
-                    </select>
-                    {/* Thomas, 2026-09-11 (korrektion 2): valgfri STARTUGE PR.
-                        LINJE — samme format som tilbud-niveau ('Uge 29' /
-                        'Uge 29, 2026'); tom = arver tilbud-niveau startugen
-                        ved konvertering. Påvirker IKKE årsbeløbet. */}
-                    <input
-                      name="taskStartWeek"
-                      className="form-control"
-                      value={l.startWeek}
-                      onChange={(e) => opdaterLinje(i, "startWeek", e.target.value)}
-                      placeholder="Startuge"
-                      aria-label="Startuge (valgfri)"
-                    />
-                    {/* Thomas, 2026-09-11: valgfri MEDARBEJDER PR. LINJE —
-                        ren INTERN data (vises IKKE på PDF'en, accept-siden
-                        eller årshjulet). Overføres kun til opgaven, når
-                        tilbuddet konverteres til abonnement. Samme kilde som
-                        abonnements-formularen (aktive medarbejdere). */}
-                    {/* Thomas, 2026-09-11 (korrektion 4): medarbejder-feltet
-                        fik sin egen BREDE kolonne i .tl-row-tilbud + en synlig
-                        label — selecten er altid med, så rækkens kolonner er
-                        stabile (slet-knappen ryger aldrig ned på en ny række,
-                        selv hvis listen over medarbejdere er tom). */}
-                    <div className="tl-employee-cell">
-                      <small className="tl-field-label">Medarbejder</small>
-                      <select
-                        name="taskEmployee"
+                    {/* Opgavebeskrivelsen fylder en FULD linje; slet-knappen
+                        ligger i SAMME række mod højre, så hver linje har sin
+                        slet-knap ensartet (øverst til højre) i stedet for at
+                        blive skubbet ned i bunden af felt-rækken. */}
+                    <div className="tl-desc">
+                      {/* farve-prik pr. linje — samme farve som linjens chips
+                          i årshjulet nedenfor (linjeFarve(i)). */}
+                      <span
+                        aria-hidden
+                        title={`Linjens farve i årshjulet`}
+                        style={{ flexShrink: 0, width: 12, height: 12, borderRadius: 4, background: linjeFarve(i), border: `1px solid rgba(76, 55, 24, 0.25)`, marginTop: 8, display: "inline-block" }}
+                      />
+                      <textarea
+                        name="taskDescription"
                         className="form-control"
-                        value={l.employee}
-                        onChange={(e) => opdaterLinje(i, "employee", e.target.value)}
-                        aria-label="Medarbejder (intern)"
-                      >
-                        <option value="">Vælges automatisk</option>
-                        {employees.map((e) => (
-                          <option key={e.id} value={e.id}>{e.name}</option>
-                        ))}
-                      </select>
+                        rows={4}
+                        placeholder={i === 0 ? "Fx tagrender + nedløb" : ""}
+                        value={l.description}
+                        onChange={(e) => opdaterLinje(i, "description", e.target.value)}
+                      />
+                      <button
+                        type="button"
+                        className="btn btn-light"
+                        onClick={() => setLinjer((prev) => (prev.length > 1 ? prev.filter((_, j) => j !== i) : prev))}
+                        aria-label="Fjern linje"
+                      >✕</button>
                     </div>
-                    <button
-                      type="button"
-                      className="btn btn-light"
-                      onClick={() => setLinjer((prev) => (prev.length > 1 ? prev.filter((_, j) => j !== i) : prev))}
-                      aria-label="Fjern linje"
-                    >✕</button>
+                    {/* Parametrene (Pris/Kategori/Interval/Startuge/Medarbejder)
+                        ligger nu i et ensartet felt-grid med etiket OVER hvert
+                        felt — i stedet for en klemt række med niveauer på kryds
+                        og tværs. Felterne fylder hver deres kolonne og stakker
+                        pænt på smallere skærme (auto-fit). */}
+                    <div className="tl-param-grid">
+                      <div className="tl-param-field">
+                        <small className="tl-field-label">Pris (u. moms)</small>
+                        <input
+                          name="taskPrice"
+                          type="number"
+                          min={0}
+                          className="form-control num"
+                          value={l.price || ""}
+                          onChange={(e) => opdaterLinje(i, "price", e.target.value)}
+                          placeholder="0,00"
+                        />
+                      </div>
+                      {/* Thomas, 2026-09-18: valgfri KATEGORI PR. LINJE — SAMME
+                          kategori-dropdown/fritekst som abonnementets
+                          TaskLineEditor (CATEGORIES + "Egen kategori" fra
+                          lib/categories.ts), så tilbud og abonnement aldrig
+                          afviger. Følger med til opgaven ved konvertering
+                          (i stedet for altid "Andet"). */}
+                      <div className="tl-param-field">
+                        <small className="tl-field-label">Kategori</small>
+                        {l.category === EGEN_KATEGORI ? (
+                          <span style={{ display: "flex", gap: 6, alignItems: "center", width: "100%", minWidth: 0 }}>
+                            <input
+                              type="text"
+                              value={l.egenKategoriTekst ?? ""}
+                              onChange={(e) => opdaterLinje(i, "egenKategoriTekst", e.target.value)}
+                              className="form-control"
+                              placeholder="Skriv kategori…"
+                              aria-label="Egen kategori"
+                              style={{ flex: "1 1 0", minWidth: 0 }}
+                            />
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const t = (l.egenKategoriTekst ?? "").trim();
+                                if (t) { opdaterLinje(i, "category", t); opdaterLinje(i, "egenKategoriTekst", ""); }
+                              }}
+                              className="btn btn-primary btn-sm"
+                              title="Brug denne kategori"
+                            >OK</button>
+                          </span>
+                        ) : (
+                          <span style={{ display: "flex", alignItems: "center", gap: 6, width: "100%", minWidth: 0 }}>
+                            <span
+                              className="catchip"
+                              style={{ background: chipBackground(l.category), color: chipTextColor(l.category), flexShrink: 0 }}
+                            >{(l.category[0] ?? "A").toUpperCase()}</span>
+                            <select
+                              name="taskCategory"
+                              className="form-control"
+                              value={l.category}
+                              onChange={(e) => opdaterLinje(i, "category", e.target.value)}
+                              aria-label="Kategori"
+                              style={{ flex: "1 1 0", minWidth: 0 }}
+                            >
+                              {CAT_NAMES.map((c) => <option key={c} value={c}>{c}</option>)}
+                              {savedCatNames.map((c) => <option key={c} value={c}>{c}</option>)}
+                              <option value={EGEN_KATEGORI}>Egen kategori…</option>
+                            </select>
+                          </span>
+                        )}
+                      </div>
+                      {/* Valgfrit interval PR. LINJE — samme muligheder som
+                          abonnementet (genbrugt BASE_INTERVALS). */}
+                      <div className="tl-param-field">
+                        <small className="tl-field-label">Interval</small>
+                        <select
+                          name="taskInterval"
+                          className="form-control"
+                          value={l.interval}
+                          onChange={(e) => opdaterLinje(i, "interval", e.target.value)}
+                          aria-label="Interval"
+                        >
+                          <option value="">Engangsopgave</option>
+                          {BASE_INTERVALS.map((iv) => (
+                            <option key={iv} value={iv}>{iv}</option>
+                          ))}
+                        </select>
+                      </div>
+                      {/* Thomas, 2026-09-11 (korrektion 2): valgfri STARTUGE PR.
+                          LINJE — samme format som tilbud-niveau ('Uge 29' /
+                          'Uge 29, 2026'); tom = arver tilbud-niveau startugen
+                          ved konvertering. Påvirker IKKE årsbeløbet. */}
+                      <div className="tl-param-field">
+                        <small className="tl-field-label">Startuge</small>
+                        <input
+                          name="taskStartWeek"
+                          className="form-control"
+                          value={l.startWeek}
+                          onChange={(e) => opdaterLinje(i, "startWeek", e.target.value)}
+                          placeholder="Fx Uge 29"
+                          aria-label="Startuge (valgfri)"
+                        />
+                      </div>
+                      {/* Thomas, 2026-09-11: valgfri MEDARBEJDER PR. LINJE —
+                          ren INTERN data (vises IKKE på PDF'en, accept-siden
+                          eller årshjulet). Overføres kun til opgaven, når
+                          tilbuddet konverteres til abonnement. Samme kilde som
+                          abonnements-formularen (aktive medarbejdere). */}
+                      <div className="tl-param-field">
+                        <small className="tl-field-label">Medarbejder</small>
+                        <select
+                          name="taskEmployee"
+                          className="form-control"
+                          value={l.employee}
+                          onChange={(e) => opdaterLinje(i, "employee", e.target.value)}
+                          aria-label="Medarbejder (intern)"
+                        >
+                          <option value="">Vælges automatisk</option>
+                          {employees.map((e) => (
+                            <option key={e.id} value={e.id}>{e.name}</option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
                     {/* Årsbeløb PR. LINJE — kun linjer med interval tæller med. */}
                     {linjeAar[i] != null ? (
-                      <small className="form-text" style={{ gridColumn: "1 / -1", marginTop: -4 }}>
+                      <small className="form-text">
                         Årligt (u. moms): {kr(linjeAar[i] as number)} ({l.interval.toLowerCase()}){l.employee ? " · Medarbejder: intern visning" : ""}
                       </small>
                     ) : null}
