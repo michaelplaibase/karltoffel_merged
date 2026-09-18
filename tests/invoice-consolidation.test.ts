@@ -76,3 +76,13 @@ test("faktureringsoverblik: manuelle linjer kan tilføjes direkte pr. kunde", as
   assert.match(m, /contactId/);
   assert.match(m, /export async function addManualInvoiceLine\([\s\S]*?target: number \| \{ openInvoiceId\?: number; contactId\?: number \}/);
 });
+
+test("faktureringsoverblik: en opgave udført I DAG (lte today) tælles med — ikke kun fortid (Thomas, 2026-09-18)", async () => {
+  const page = await source("app/fakturering/page.tsx");
+  assert.match(page, /plannedAt: \{ lte: today \}/);
+  assert.doesNotMatch(page, /plannedAt: \{ lt: today \}/);
+
+  const invAll = await source("lib/invoice-all.ts");
+  assert.equal((invAll.match(/plannedAt: \{ lte: today \}/g) ?? []).length, 3);
+  assert.doesNotMatch(invAll, /plannedAt: \{ lt: today \}/);
+});
