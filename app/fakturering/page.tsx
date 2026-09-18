@@ -55,7 +55,7 @@ type CustomerGroup = {
 async function loadRows(): Promise<Row[]> {
   const today = new Date(`${todayCphISO()}T00:00:00.000Z`);
   const rows = await prisma.order.findMany({
-    where: { plannedAt: { lt: today } },
+    where: { plannedAt: { lte: today } },
     include: { tasks: true, employee: true, contact: true },
     orderBy: { plannedAt: "desc" },
     take: 500,

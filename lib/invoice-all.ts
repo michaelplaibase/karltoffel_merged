@@ -71,7 +71,7 @@ export async function readyOrderIds(): Promise<number[]> {
       businessBatchInvoiceGuid: null,
       dineroInvoiceGuid: null,
       dineroInvoiceNumber: null,
-      plannedAt: { lt: today },
+      plannedAt: { lte: today },
     },
     select: { id: true, invoiceDecision: true },
   });
@@ -94,7 +94,7 @@ export async function invoiceSingleCustomer(contactId: number): Promise<{
     where: {
       contactId,
       status: "Udført",
-      plannedAt: { lt: today },
+      plannedAt: { lte: today },
       dineroInvoiceGuid: null,
       dineroInvoiceNumber: null,
       businessBatchInvoiceNumber: null,
@@ -275,7 +275,7 @@ export async function runInvoiceAll(): Promise<InvoiceAllResult> {
       businessBatchInvoiceGuid: null,
       dineroInvoiceGuid: null,
       dineroInvoiceNumber: null,
-      plannedAt: { lt: today },
+      plannedAt: { lte: today },
     },
     include: { contact: true, tasks: true },
   });
