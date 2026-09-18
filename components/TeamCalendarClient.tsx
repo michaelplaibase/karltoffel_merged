@@ -108,6 +108,7 @@ export default function TeamCalendarClient(props: Props) {
   // View state (all client-side, no reload):
   const [selectedEmp, setSelectedEmp] = useState<Set<number>>(() => new Set(employees.map((e) => e.id)));
   const [usersOpen, setUsersOpen] = useState(false);
+  const [staffOpen, setStaffOpen] = useState(true);
   const [monthView, setMonthView] = useState<"dato" | "oversigt">("dato"); // month sub-toggle [Dato | Oversigt]
   const [notice, setNotice] = useState<string | null>(null);
   const [confirmDel, setConfirmDel] = useState<MenuTarget | null>(null);
@@ -259,6 +260,16 @@ export default function TeamCalendarClient(props: Props) {
         <Link className={`cbtn${props.mode === "month" ? " on" : ""}`}
           href={`${basePath}?view=month&month=${props.mode === "week" ? props.nav.monthParam : props.month.monthParam}`}>Måned</Link>
       </div>
+      {props.mode === "week" && (
+        <button
+          className={`cbtn${staffOpen ? " on" : ""}`}
+          type="button"
+          title={staffOpen ? "Skjul bemandingspanel" : "Vis bemandingspanel"}
+          onClick={() => setStaffOpen((v) => !v)}
+        >
+          Bemanding
+        </button>
+      )}
       <span ref={usersRef} style={{ position: "relative" }}>
         <button className={`cbtn${usersOpen ? " on" : ""}`} type="button" title="Vælg hvilke kollegaer der vises"
           onClick={() => setUsersOpen((v) => !v)}>Brugere · {shown.length}</button>
@@ -282,119 +293,190 @@ export default function TeamCalendarClient(props: Props) {
 
   // ---------- week board ----------
   function weekBoard(week: CalendarWeek) {
+    const totalEvents = week.events.length;
     return (
-      <div className="board-scroll">
-        <div className="board">
-          <div className="corner">Medarbejder</div>
-          {week.days.map((d, i) => (
-            <div key={i} className={`dhead${i >= 5 ? " wknd" : ""}${isoAddDays(week.monday, i) === todayISO ? " today" : ""}`}>
-              <b><Link href={`/daycalendar?date=${isoAddDays(week.monday, i)}`} style={{ color: "inherit" }}>{d.label} {d.date}</Link></b>
-              <span className="kr num">{d.revenue > 0 ? kr(d.revenue) : "—"}</span>
-            </div>
-          ))}
+      <div className="week-layout">
+        <div className="board-scroll">
+          <div className="board">
+            <div className="corner">Medarbejder</div>
+            {week.days.map((d, i) => (
+              <div key={i} className={`dhead${i >= 5 ? " wknd" : ""}${isoAddDays(week.monday, i) === todayISO ? " today" : ""}`}>
+                <b><Link href={`/daycalendar?date=${isoAddDays(week.monday, i)}`} style={{ color: "inherit" }}>{d.label} {d.date}</Link></b>
+                <span className="kr num">{d.revenue > 0 ? kr(d.revenue) : "—"}</span>
+              </div>
+            ))}
 
-          {shown.map((emp) => {
-            const empEvents = week.events.filter((e) => e.employeeId === emp.id);
-            return (
-              <Fragment key={emp.id}>
-                <div className="lbl" style={empVar(emp.color)}>
-                  <span className="ava">{initials(emp.name)}</span>
-                  <span className="who">
-                    <b>{emp.name}</b>
-                    <span className="num">{empEvents.length} {empEvents.length === 1 ? "opgave" : "opgaver"}</span>
-                  </span>
-                </div>
-                {[0, 1, 2, 3, 4, 5, 6].map((day) => {
-                  const evs = empEvents.filter((e) => e.day === day).sort((a, b) => a.start - b.start);
-                  const dropKey = `${emp.id}:${day}`;
-                  const dropHandlers = canDrag ? {
-                    onDragOver: (e: React.DragEvent) => { e.preventDefault(); e.dataTransfer.dropEffect = "move"; if (dragOver !== dropKey) setDragOver(dropKey); },
-                    onDragLeave: () => { if (dragOver === dropKey) setDragOver(null); },
-                    onDrop: (e: React.DragEvent) => {
-                      e.preventDefault();
-                      setDragOver(null);
-                      const id = dragIdRef.current ?? Number(e.dataTransfer.getData("text/plain"));
-                      dragIdRef.current = null;
-                      if (!Number.isFinite(id)) return;
-                      const dateISO = isoAddDays(week.monday, day);
-                      run(() => moveOrderManual(id, emp.id, dateISO));
-                      setNotice(`Opgave flyttet til ${emp.name}, ${DAY_HEADS[day]} — placeringen er låst og overholder alle planlægningsregler.`);
-                    },
-                  } : {};
-                  return (
-                    <div key={day} style={empVar(emp.color)} {...dropHandlers}
-                      className={`cell${day >= 5 ? " wknd" : ""}${isoAddDays(week.monday, day) === todayISO ? " today" : ""}${dragOver === dropKey ? " drop-target" : ""}`}>
-                      {evs.length > 0 ? (
-                        <div className="stack">
-                          {evs.map((ev) => (
-                            <div key={`${ev.id}:${ev.day}:${ev.start}:${ev.end}`} className={`ev ${STATUS_CLASS[ev.status]}`} style={{ cursor: "pointer" }}
-                              role={readOnly ? "button" : undefined}
-                              tabIndex={readOnly ? 0 : undefined}
-                              aria-label={readOnly ? `Åbn visningsmenu for ${ev.customer}` : undefined}
-                              onKeyDown={readOnly ? (e) => {
-                                if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openReadOnlyMenu(e, ev); }
-                              } : undefined}
-                              onClick={readOnly ? (e) => openReadOnlyMenu(e, ev) : (e) => openMenu(e, ev)}
-                              {...(canDrag ? {
-                                draggable: true,
-                                onDragStart: (e: React.DragEvent) => { dragIdRef.current = ev.id; e.dataTransfer.effectAllowed = "move"; e.dataTransfer.setData("text/plain", String(ev.id)); },
-                                onDragEnd: () => { dragIdRef.current = null; setDragOver(null); },
-                              } : {})}>
-                              <span className="t num">{fmtHM(ev.start)}–{fmtHM(ev.end)}</span>
-                              <span className="h">{ev.postal}</span>
-                              <span className="s">
-                                <i className="cat" style={{ "--cat": categoryColor(ev.category) } as React.CSSProperties}>{catLetter(ev.category)}</i>
-                                <span className="txt">{ev.customer}</span>
-                              </span>
-                              {<PreviewTaskDetails tasks={ev.tasks ?? []} />}
-                              {readOnly && ev.previewSuggestion && <span className="hint">{ev.previewSuggestion}</span>}
-                            </div>
-                          ))}
-                        </div>
-                      ) : day < 5 ? (
-                        <span className="idle">Ledig</span>
-                      ) : null}
-                    </div>
-                  );
-                })}
-              </Fragment>
-            );
-          })}
+            {shown.map((emp) => {
+              const empEvents = week.events.filter((e) => e.employeeId === emp.id);
+              return (
+                <Fragment key={emp.id}>
+                  <div className="lbl" style={empVar(emp.color)}>
+                    <span className="ava">{initials(emp.name)}</span>
+                    <span className="who">
+                      <b>{emp.name}</b>
+                      <span className="num">{empEvents.length} {empEvents.length === 1 ? "opgave" : "opgaver"}</span>
+                    </span>
+                  </div>
+                  {[0, 1, 2, 3, 4, 5, 6].map((day) => {
+                    const evs = empEvents.filter((e) => e.day === day).sort((a, b) => a.start - b.start);
+                    const dropKey = `${emp.id}:${day}`;
+                    const dropHandlers = canDrag ? {
+                      onDragOver: (e: React.DragEvent) => { e.preventDefault(); e.dataTransfer.dropEffect = "move"; if (dragOver !== dropKey) setDragOver(dropKey); },
+                      onDragLeave: () => { if (dragOver === dropKey) setDragOver(null); },
+                      onDrop: (e: React.DragEvent) => {
+                        e.preventDefault();
+                        setDragOver(null);
+                        const id = dragIdRef.current ?? Number(e.dataTransfer.getData("text/plain"));
+                        dragIdRef.current = null;
+                        if (!Number.isFinite(id)) return;
+                        const dateISO = isoAddDays(week.monday, day);
+                        run(() => moveOrderManual(id, emp.id, dateISO));
+                        setNotice(`Opgave flyttet til ${emp.name}, ${DAY_HEADS[day]} — placeringen er låst og overholder alle planlægningsregler.`);
+                      },
+                    } : {};
+                    return (
+                      <div key={day} style={empVar(emp.color)} {...dropHandlers}
+                        className={`cell${day >= 5 ? " wknd" : ""}${isoAddDays(week.monday, day) === todayISO ? " today" : ""}${dragOver === dropKey ? " drop-target" : ""}`}>
+                        {evs.length > 0 ? (
+                          <div className="stack">
+                            {evs.map((ev) => (
+                              <div key={`${ev.id}:${ev.day}:${ev.start}:${ev.end}`} className={`ev ${STATUS_CLASS[ev.status]}`} style={{ cursor: "pointer" }}
+                                role={readOnly ? "button" : undefined}
+                                tabIndex={readOnly ? 0 : undefined}
+                                aria-label={readOnly ? `Åbn visningsmenu for ${ev.customer}` : undefined}
+                                onKeyDown={readOnly ? (e) => {
+                                  if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openReadOnlyMenu(e, ev); }
+                                } : undefined}
+                                onClick={readOnly ? (e) => openReadOnlyMenu(e, ev) : (e) => openMenu(e, ev)}
+                                {...(canDrag ? {
+                                  draggable: true,
+                                  onDragStart: (e: React.DragEvent) => { dragIdRef.current = ev.id; e.dataTransfer.effectAllowed = "move"; e.dataTransfer.setData("text/plain", String(ev.id)); },
+                                  onDragEnd: () => { dragIdRef.current = null; setDragOver(null); },
+                                } : {})}>
+                                <span className="t num">{fmtHM(ev.start)}–{fmtHM(ev.end)}</span>
+                                <span className="h">{ev.postal}</span>
+                                <span className="s">
+                                  <i className="cat" style={{ "--cat": categoryColor(ev.category) } as React.CSSProperties}>{catLetter(ev.category)}</i>
+                                  <span className="txt">{ev.customer}</span>
+                                </span>
+                                {<PreviewTaskDetails tasks={ev.tasks ?? []} />}
+                                {readOnly && ev.previewSuggestion && <span className="hint">{ev.previewSuggestion}</span>}
+                              </div>
+                            ))}
+                          </div>
+                        ) : day < 5 ? (
+                          <span className="idle">Ledig</span>
+                        ) : null}
+                      </div>
+                    );
+                  })}
+                </Fragment>
+              );
+            })}
+          </div>
+
+          {week.unplanned.length > 0 && (
+            <div className="lane">
+              <div className="lbl">
+                <span className="ava" style={empVar("var(--danger)")}>!</span>
+                <span className="who"><b>Ikke planlagt</b><span>Se årsagen på hvert kort</span></span>
+              </div>
+              <div className="bin">
+                {week.unplanned.map((job) => (
+                  <div key={job.id} className={`ev ${STATUS_CLASS[job.status]}`}
+                    style={{ ...empVar("var(--muted)"), width: 200, cursor: "pointer" }}
+                    role={readOnly ? "button" : undefined}
+                    tabIndex={readOnly ? 0 : undefined}
+                    aria-label={readOnly ? `Åbn visningsmenu for ${job.customer}. Årsag: ${UNPLANNED_REASON_LABEL[job.reason] ?? "Ukendt årsag"}` : undefined}
+                    onKeyDown={readOnly ? (e) => {
+                      if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openReadOnlyMenu(e, job); }
+                    } : undefined}
+                    onClick={readOnly ? (e) => openReadOnlyMenu(e, job) : (e) => openMenu(e, job)}>
+                    <span className="t num">Uge {week.weekNo}</span>
+                    <span className="h">{job.postal}</span>
+                    <span className="s">
+                      <i className="cat" style={{ "--cat": categoryColor(job.category) } as React.CSSProperties}>{catLetter(job.category)}</i>
+                      <span className="txt">{job.customer}</span>
+                    </span>
+                    <span className="unplanned-reason" aria-label={`Årsag: ${UNPLANNED_REASON_LABEL[job.reason] ?? "Ukendt årsag"}`}>
+                      <span className="unplanned-reason-label">Årsag:</span>
+                      {UNPLANNED_REASON_LABEL[job.reason] ?? "Ukendt årsag"}
+                    </span>
+                    <PreviewTaskDetails tasks={job.tasks ?? []} />
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
 
-        {week.unplanned.length > 0 && (
-          <div className="lane">
-            <div className="lbl">
-              <span className="ava" style={empVar("var(--danger)")}>!</span>
-              <span className="who"><b>Ikke planlagt</b><span>Se årsagen på hvert kort</span></span>
-            </div>
-            <div className="bin">
-              {week.unplanned.map((job) => (
-                <div key={job.id} className={`ev ${STATUS_CLASS[job.status]}`}
-                  style={{ ...empVar("var(--muted)"), width: 200, cursor: "pointer" }}
-                  role={readOnly ? "button" : undefined}
-                  tabIndex={readOnly ? 0 : undefined}
-                  aria-label={readOnly ? `Åbn visningsmenu for ${job.customer}. Årsag: ${UNPLANNED_REASON_LABEL[job.reason] ?? "Ukendt årsag"}` : undefined}
-                  onKeyDown={readOnly ? (e) => {
-                    if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openReadOnlyMenu(e, job); }
-                  } : undefined}
-                  onClick={readOnly ? (e) => openReadOnlyMenu(e, job) : (e) => openMenu(e, job)}>
-                  <span className="t num">Uge {week.weekNo}</span>
-                  <span className="h">{job.postal}</span>
-                  <span className="s">
-                    <i className="cat" style={{ "--cat": categoryColor(job.category) } as React.CSSProperties}>{catLetter(job.category)}</i>
-                    <span className="txt">{job.customer}</span>
+        <aside className={`staff-panel${staffOpen ? "" : " collapsed"}`} aria-label="Bemanding">
+          {staffOpen ? (
+            <>
+              <div className="staff-head">
+                <div className="staff-head-title">
+                  <span className="staff-title">Bemanding</span>
+                  <span className="badge acc num" title={`${totalEvents} opgaver planlagt i uge ${week.weekNo}`}>
+                    Uge {week.weekNo}
                   </span>
-                  <span className="unplanned-reason" aria-label={`Årsag: ${UNPLANNED_REASON_LABEL[job.reason] ?? "Ukendt årsag"}`}>
-                    <span className="unplanned-reason-label">Årsag:</span>
-                    {UNPLANNED_REASON_LABEL[job.reason] ?? "Ukendt årsag"}
-                  </span>
-                  <PreviewTaskDetails tasks={job.tasks ?? []} />
                 </div>
-              ))}
-            </div>
-          </div>
-        )}
+                <button
+                  type="button"
+                  className="cbtn staff-toggle-btn"
+                  title="Fold bemandingspanel sammen"
+                  aria-label="Fold bemandingspanel sammen"
+                  onClick={() => setStaffOpen(false)}
+                >
+                  ›
+                </button>
+              </div>
+
+              <div className="staff-list">
+                {week.employees.map((emp) => {
+                  const empEvents = week.events.filter((e) => e.employeeId === emp.id);
+                  const count = empEvents.length;
+                  const isSelected = selectedEmp.has(emp.id);
+                  return (
+                    <button
+                      key={emp.id}
+                      type="button"
+                      className={`staff-row${isSelected ? "" : " is-off"}`}
+                      style={empVar(emp.color)}
+                      onClick={() => toggleEmp(emp.id)}
+                      title={`${emp.name}: ${count} ${count === 1 ? "opgave" : "opgaver"} planlagt (${isSelected ? "slået til — klik for at skjule i kalenderen" : "slået fra — klik for at vise i kalenderen"})`}
+                    >
+                      <span className="staff-ava">{initials(emp.name)}</span>
+                      <span className="staff-name">{emp.name}</span>
+                      <span className="staff-count num">
+                        <b>{count}</b>
+                        <span className="staff-unit">{count === 1 ? "opg." : "opg."}</span>
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+
+              <div className="staff-foot">
+                <span className="staff-foot-label">I alt:</span>
+                <span className="staff-foot-val num">
+                  <b>{totalEvents}</b> {totalEvents === 1 ? "opgave" : "opgaver"}
+                </span>
+              </div>
+            </>
+          ) : (
+            <button
+              type="button"
+              className="staff-collapsed-bar"
+              onClick={() => setStaffOpen(true)}
+              title="Åbn bemandingspanel"
+              aria-label="Åbn bemandingspanel"
+            >
+              <span className="staff-collapsed-icon">‹</span>
+              <span className="staff-collapsed-txt">Bemanding</span>
+              <span className="badge acc num staff-collapsed-badge">{totalEvents}</span>
+            </button>
+          )}
+        </aside>
       </div>
     );
   }
