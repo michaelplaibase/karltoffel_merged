@@ -37,6 +37,10 @@ function readLines(formData: FormData) {
   // streng, tom = vælges automatisk. Gemmes som TilbudLine.employeeId (samme
   // mønster som TaskLine.employeeId) og overføres til opgaven ved konvertering.
   const employees = formData.getAll("taskEmployee").map(String);
+  // Thomas, 2026-09-18: valgfri KATEGORI PR. LINJE — samme kategori-liste som
+  // abonnementets TaskLineEditor (CATEGORIES fra lib/categories.ts), tom =
+  // "Andet" (det hidtidige konverterings-resultat).
+  const categories = formData.getAll("taskCategory").map(String);
   // Thomas, 2026-09-17: redigering — hvert linjefelt bærer nu også sin
   // EKSISTERENDE TilbudLine-id (taskId, tom = NY linje). Id'et bruges af
   // updateTilbud til at OP DATERE linjen på plads (bevarer linjefotos) i
@@ -47,6 +51,7 @@ function readLines(formData: FormData) {
       id: ids[i] || null,
       description: d.trim(),
       price: prices[i] || 0,
+      category: (categories[i] ?? "").trim() || "Andet",
       interval: (intervals[i] ?? "").trim() || null,
       startWeek: (startWeeks[i] ?? "").trim() || null,
       employeeId: Number(employees[i]) || null,
@@ -149,7 +154,7 @@ export async function createTilbud(_prev: TilbudState, formData: FormData): Prom
         contactId, title, note, acceptToken: nyAcceptToken(), startWeek, baseInterval,
         // Thomas, 2026-09-12: valgfri lead-kilde (intern) — gemmes på tilbuddet.
         leadSource,
-        lines: { create: lines.map((l, i) => ({ description: l.description, price: l.price, interval: l.interval, startWeek: l.startWeek, employeeId: l.employeeId, sort: i })) },
+        lines: { create: lines.map((l, i) => ({ description: l.description, price: l.price, category: l.category, interval: l.interval, startWeek: l.startWeek, employeeId: l.employeeId, sort: i })) },
       },
     });
   } catch (e) {
@@ -262,11 +267,11 @@ export async function updateTilbud(_prev: TilbudState, formData: FormData): Prom
         if (l.id) {
           await tx.tilbudLine.updateMany({
             where: { id: l.id, tilbudId },
-            data: { description: l.description, price: l.price, interval: l.interval, startWeek: l.startWeek, employeeId: l.employeeId, sort: i },
+            data: { description: l.description, price: l.price, category: l.category, interval: l.interval, startWeek: l.startWeek, employeeId: l.employeeId, sort: i },
           });
         } else {
           await tx.tilbudLine.create({
-            data: { tilbudId, description: l.description, price: l.price, interval: l.interval, startWeek: l.startWeek, employeeId: l.employeeId, sort: i },
+            data: { tilbudId, description: l.description, price: l.price, category: l.category, interval: l.interval, startWeek: l.startWeek, employeeId: l.employeeId, sort: i },
           });
         }
       }
@@ -327,7 +332,7 @@ export async function convertTilbudToSubscription(tilbudId: number): Promise<voi
   const getTilbud = () => prisma.tilbud.findUnique({
     where: { id: tilbudId },
     include: {
-      lines: { orderBy: { sort: "asc" }, select: { description: true, price: true, interval: true, startWeek: true, employeeId: true } },
+      lines: { orderBy: { sort: "asc" }, select: { description: true, price: true, category: true, interval: true, startWeek: true, employeeId: true } },
       contact: { select: { id: true, isCompany: true, companyId: true, street: true, city: true } },
     },
   });
@@ -386,7 +391,7 @@ export async function convertTilbudToSubscription(tilbudId: number): Promise<voi
       baseInterval = tilbud.baseInterval?.trim() || "Hver 2. uge";
       linjeMultiplikatorer = tilbud.lines.map(() => "Hver gang");
     }
-  const lines: { description: string; price: number; interval?: string | null; startWeek?: string | null; employeeId?: number | null }[] = tilbud.lines.length
+  const lines: { description: string; price: number; category?: string | null; interval?: string | null; startWeek?: string | null; employeeId?: number | null }[] = tilbud.lines.length
     ? tilbud.lines
     : [{ description: "Serviceaftale", price: 0, employeeId: null }]; // sikkerhedsnet — TaskLine kræver >= 1 linje
   // Thomas, 2026-09-11: intern medarbejder-tilknytning pr. linje følger med til
@@ -410,9 +415,13 @@ export async function convertTilbudToSubscription(tilbudId: number): Promise<voi
           active: false,
           tasks: {
             create: lines.map((l, i) => ({
-              category: "Andet",
-              letter: "A",
-              color: categoryColor("Andet"),
+              // Thomas, 2026-09-18: linjens valgte kategori følger med til
+              // opgaven, så konverteringen IKKE længere altid lander under
+              // "Andet". Valideret i formularen (samme CATEGORIES som
+              // abonnementets TaskLineEditor).
+              category: l.category?.trim() || "Andet",
+              letter: (l.category?.trim() || "Andet")[0]?.toUpperCase() ?? "A",
+              color: categoryColor(l.category?.trim() || "Andet"),
               description: l.description,
               price: l.price,
               durationMin: 60,

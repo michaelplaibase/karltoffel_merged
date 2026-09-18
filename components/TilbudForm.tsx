@@ -7,7 +7,13 @@ import { BASE_INTERVALS, tilbudLinjeAarsbelob, tilbudAarsbelobSum } from "@/lib/
 import { bygAarshjul, linjeFarve } from "@/lib/tilbud.mts";
 import { tilbudMomsOgIalt, krMoms } from "@/lib/vat";
 import { LEAD_SOURCES } from "@/lib/lead-sources.mts";
+// Thomas, 2026-09-18: kategori PR. OPGAVELINJE — SAMME kategori-liste/farver
+// som abonnementets TaskLineEditor (CATEGORIES + "Egen kategori" fra
+// lib/categories.ts), så tilbuds-kategorierne aldrig afviger fra abonnementet.
+import { CATEGORIES, chipBackground, chipTextColor, EGEN_KATEGORI, isNewCategoryName } from "@/lib/categories";
 import Aarshjul from "@/components/Aarshjul";
+
+const CAT_NAMES = Object.keys(CATEGORIES);
 
 type Kontakt = { id: number; name: string; companyName: string | null; isCompany: boolean };
 // Medarbejder-vælger pr. linje (intern — vises ikke for kunden). SAMME
@@ -26,7 +32,7 @@ export type TilbudInitial = {
   startWeek: string | null;
   baseInterval: string | null;
   leadSource: string | null;
-  lines: { id: number; description: string; price: number; interval: string | null; startWeek: string | null; employee: string }[];
+  lines: { id: number; description: string; price: number; category: string; interval: string | null; startWeek: string | null; employee: string }[];
 };
 
 const kr = (n: number) => n.toLocaleString("da-DK") + " kr";
@@ -56,10 +62,10 @@ export default function TilbudForm({ contacts, employees, action, initial }: {
   // Thomas, 2026-09-17: `id` bærer den EKSISTERENDE TilbudLine-id i edit-mode
   // (null = ny linje), så updateTilbud kan opdatere linjerne på plads (fx
   // bevarer linjefotos) i stedet for at slette + genoprette.
-  const [linjer, setLinjer] = useState<{ id: number | null; description: string; price: number; interval: string; startWeek: string; employee: string }[]>(
+  const [linjer, setLinjer] = useState<{ id: number | null; description: string; price: number; interval: string; startWeek: string; employee: string; category: string; egenKategoriTekst: string }[]>(
     initial?.lines?.length
-      ? initial.lines.map((l) => ({ id: l.id, description: l.description, price: l.price, interval: l.interval ?? "", startWeek: l.startWeek ?? "", employee: l.employee ?? "" }))
-      : [{ id: null, description: "", price: 0, interval: "", startWeek: "", employee: "" }],
+      ? initial.lines.map((l) => ({ id: l.id, description: l.description, price: l.price, interval: l.interval ?? "", startWeek: l.startWeek ?? "", employee: l.employee ?? "", category: l.category || "Andet", egenKategoriTekst: "" }))
+      : [{ id: null, description: "", price: 0, interval: "", startWeek: "", employee: "", category: "Andet", egenKategoriTekst: "" }],
   );
   const [standardInterval, setStandardInterval] = useState(initial?.baseInterval ?? "");
   // Ny linje arver tilbud-niveau startugen som standard, hvis den er udfyldt.
@@ -73,9 +79,13 @@ export default function TilbudForm({ contacts, employees, action, initial }: {
   // detaljesiden, PDF'en og accept-siden.
   const momsBund = aarligt != null ? tilbudMomsOgIalt(aarligt) : null;
 
-  const opdaterLinje = (i: number, felt: "description" | "price" | "interval" | "startWeek" | "employee", vaerdi: string) => {
+  const opdaterLinje = (i: number, felt: "description" | "price" | "interval" | "startWeek" | "employee" | "category" | "egenKategoriTekst", vaerdi: string) => {
     setLinjer((prev) => prev.map((l, j) => (j === i ? { ...l, [felt]: felt === "price" ? Number(vaerdi) || 0 : vaerdi } : l)));
   };
+  // Egen kategori (Thomas 2026-09-10): gemte fritekst-kategorier vises i
+  // dropdownen, så de kan genvælges (samme mønster som abonnementets
+  // TaskLineEditor) — en gemt række med "Min kategori" falder ikke tilbage til index 0.
+  const savedCatNames = [...new Set(linjer.map((l) => l.category).filter(isNewCategoryName))] as string[];
 
   return (
     // Thomas, 2026-09-11 (feedback): formularen var for klem — opgave-linjerne
@@ -312,6 +322,54 @@ export default function TilbudForm({ contacts, employees, action, initial }: {
                       onChange={(e) => opdaterLinje(i, "price", e.target.value)}
                       placeholder="Pris (u. moms)"
                     />
+                    {/* Thomas, 2026-09-18: valgfri KATEGORI PR. LINJE — SAMME
+                        kategori-dropdown/fritekst som abonnementets
+                        TaskLineEditor (CATEGORIES + "Egen kategori" fra
+                        lib/categories.ts), så tilbud og abonnement aldrig
+                        afviger. Følger med til opgaven ved konvertering
+                        (i stedet for altid "Andet"). */}
+                    <div className="tl-employee-cell">
+                      <small className="tl-field-label">Kategori</small>
+                      {l.category === EGEN_KATEGORI ? (
+                        <span style={{ display: "flex", gap: 6 }}>
+                          <input
+                            type="text"
+                            value={l.egenKategoriTekst ?? ""}
+                            onChange={(e) => opdaterLinje(i, "egenKategoriTekst", e.target.value)}
+                            className="form-control"
+                            placeholder="Skriv kategori…"
+                            aria-label="Egen kategori"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const t = (l.egenKategoriTekst ?? "").trim();
+                              if (t) { opdaterLinje(i, "category", t); opdaterLinje(i, "egenKategoriTekst", ""); }
+                            }}
+                            className="btn btn-primary btn-sm"
+                            title="Brug denne kategori"
+                          >OK</button>
+                        </span>
+                      ) : (
+                        <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                          <span
+                            className="catchip"
+                            style={{ background: chipBackground(l.category), color: chipTextColor(l.category), flexShrink: 0 }}
+                          >{(l.category[0] ?? "A").toUpperCase()}</span>
+                          <select
+                            name="taskCategory"
+                            className="form-control"
+                            value={l.category}
+                            onChange={(e) => opdaterLinje(i, "category", e.target.value)}
+                            aria-label="Kategori"
+                          >
+                            {CAT_NAMES.map((c) => <option key={c} value={c}>{c}</option>)}
+                            {savedCatNames.map((c) => <option key={c} value={c}>{c}</option>)}
+                            <option value={EGEN_KATEGORI}>Egen kategori…</option>
+                          </select>
+                        </span>
+                      )}
+                    </div>
                     {/* Valgfrit interval PR. LINJE — samme muligheder som
                         abonnementet (genbrugt BASE_INTERVALS). */}
                     <select
@@ -377,7 +435,7 @@ export default function TilbudForm({ contacts, employees, action, initial }: {
                     ) : null}
                   </div>
                 ))}
-                <button type="button" className="btn btn-outline-primary" onClick={() => setLinjer((p) => [...p, { id: null, description: "", price: 0, interval: standardInterval, startWeek: standardStartWeek, employee: "" }])}>
+                <button type="button" className="btn btn-outline-primary" onClick={() => setLinjer((p) => [...p, { id: null, description: "", price: 0, interval: standardInterval, startWeek: standardStartWeek, employee: "", category: "Andet", egenKategoriTekst: "" }])}>
                   + Tilføj opgave
                 </button>
                 {/* Thomas, 2026-09-11: medarbejder-vælgeren er INTERN — gør det

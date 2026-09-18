@@ -71,6 +71,7 @@ export default async function RetTilbudPage({ params }: { params: Promise<{ id: 
           id: l.id,
           description: l.description,
           price: l.price,
+          category: l.category || "Andet",
           interval: l.interval,
           startWeek: l.startWeek,
           employee: l.employee ? String(l.employee.id) : "",
