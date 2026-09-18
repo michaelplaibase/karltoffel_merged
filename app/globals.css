@@ -835,7 +835,7 @@ textarea.task-desc { resize: none; overflow: hidden; min-height: 58px; height: a
    Det giver det MEST skriveplads uden at klippe noget (minmax(0, …)
    bevaret overalt). */
 .tl-row-tilbud {
-  grid-template-columns: minmax(0, 0.9fr) minmax(120px, 0.9fr) minmax(110px, 0.8fr) minmax(0, 1.2fr) 36px;
+  grid-template-columns: minmax(0, 0.8fr) minmax(120px, 0.85fr) minmax(100px, 0.7fr) minmax(100px, 0.7fr) minmax(0, 1.1fr) 36px;
   min-width: 0;
 }
 .tl-row-tilbud .tl-desc { grid-column: 1 / -1; }
@@ -849,7 +849,7 @@ textarea.task-desc { resize: none; overflow: hidden; min-height: 58px; height: a
   margin: 0 0 3px;
 }
 @media (max-width: 1100px) {
-  .tl-row-tilbud { grid-template-columns: minmax(0, 0.9fr) minmax(100px, 0.9fr) minmax(100px, 0.8fr) minmax(0, 1.1fr) 32px; }
+  .tl-row-tilbud { grid-template-columns: minmax(0, 0.8fr) minmax(108px, 0.85fr) minmax(95px, 0.7fr) minmax(95px, 0.7fr) minmax(0, 1.1fr) 32px; }
 }
 @media (max-width: 860px) {
   /* Smal skærm: felter stakker pænt — titel og pris, interval og startuge,

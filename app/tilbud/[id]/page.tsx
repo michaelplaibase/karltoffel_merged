@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { getDownloadUrl } from "@vercel/blob";
 import { statusLabel, linjeKundeTekst, bygAarshjul, linjeFarve, tilbudKanRedigeres } from "@/lib/tilbud.mts";
+import { chipBackground, chipTextColor } from "@/lib/categories";
 import Aarshjul from "@/components/Aarshjul";
 import { tilbudAarsbelobSum } from "@/lib/subscription-intervals";
 import { tilbudMomsOgIalt, krMoms } from "@/lib/vat";
@@ -111,6 +112,16 @@ export default async function TilbudDetailPage({ params, searchParams }: { param
                     />
                     <span style={{ flex: 1 }}>
                     {linjeKundeTekst(l)}
+                    {/* Thomas, 2026-09-18: kategori pr. linje — vises her på
+                        teamets side, så det er tydeligt hvilken kategori hver
+                        opgave får ved konvertering til abonnement. */}
+                    <span style={{ display: "inline-flex", alignItems: "center", gap: 6, marginRight: 8 }}>
+                      <span
+                        className="catchip"
+                        style={{ background: chipBackground(l.category), color: chipTextColor(l.category) }}
+                      >{(l.category?.[0] ?? "A").toUpperCase()}</span>
+                      <small className="form-text">{l.category}</small>
+                    </span>
                     {/* Thomas, 2026-09-11: intern medarbejder-tilknytning —
                         diskret her (teamets side), IKKE i kundefacing materiale. */}
                     {l.employee ? (
