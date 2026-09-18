@@ -62,11 +62,14 @@ export default function Navbar() {
 
   return (
     <nav className="navbar" ref={ref}>
-      <Link href="/" className="navbar-brand">
-        <span className="brand-logo">
-          <i /><i /><i /><i />
-        </span>
-        Karltoffel
+      <Link href="/" className="navbar-brand" aria-label="Karltoffel">
+        <img
+          src="/karltoffel-logo-gul.svg"
+          alt="Karltoffel"
+          className="brand-logo-img"
+          width={188}
+          height={22}
+        />
       </Link>
 
       {/* ---------- desktop: vandrette menuer ---------- */}
