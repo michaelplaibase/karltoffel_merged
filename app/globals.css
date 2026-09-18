@@ -511,7 +511,7 @@ textarea.task-desc { resize: none; overflow: hidden; min-height: 58px; height: a
 }
 
 /* page frame: constrain width + breathe (the app shell only offsets the navbar) */
-.teamcal .stage { max-width: 1240px; margin: 0 auto; padding: 24px 22px 56px; }
+.teamcal .stage { max-width: 1560px; margin: 0 auto; padding: 24px 22px 56px; }
 @media (max-width: 720px) { .teamcal .stage { padding: 16px 12px 40px; } }
 
 /* card shell around a board/month view */
@@ -612,8 +612,8 @@ textarea.task-desc { resize: none; overflow: hidden; min-height: 58px; height: a
 
 /* ---------- staff panel (bemanding) ---------- */
 .teamcal .staff-panel {
-  flex: 0 0 250px;
-  width: 250px;
+  flex: 0 0 240px;
+  width: 240px;
   border-left: 1px solid var(--tc-line);
   background: var(--tc-ground);
   display: flex;
@@ -805,6 +805,40 @@ textarea.task-desc { resize: none; overflow: hidden; min-height: 58px; height: a
 .teamcal .staff-collapsed-badge {
   font-size: 10px;
   padding: 2px 5px;
+}
+
+/* Responsiv placering af bemandingspanelet:
+   På skærme under 1320px stables panelet under kalendergitteret, så det
+   aldrig stjæler kolonnebredde fra ugedagene eller dækker/klipper søndag.
+   Når det er foldet sammen, skjules baren på smalle skærme for rent kalenderview. */
+@media (max-width: 1320px) {
+  .teamcal .week-layout {
+    flex-direction: column;
+  }
+  .teamcal .staff-panel {
+    flex: 0 0 auto;
+    width: 100%;
+    border-left: none;
+    border-top: 1px solid var(--tc-line);
+  }
+  .teamcal .staff-panel.collapsed {
+    display: none;
+  }
+  .teamcal .staff-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    max-height: none;
+    padding: 8px 10px;
+    gap: 6px;
+  }
+  .teamcal .staff-row {
+    border: 1px solid var(--tc-line-soft);
+    border-radius: var(--radius-sm, 6px);
+    padding: 7px 10px;
+  }
+  .teamcal .staff-row:last-child {
+    border-bottom: 1px solid var(--tc-line-soft);
+  }
 }
 
 /* ---------- legend strip ---------- */

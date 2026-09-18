@@ -108,7 +108,7 @@ export default function TeamCalendarClient(props: Props) {
   // View state (all client-side, no reload):
   const [selectedEmp, setSelectedEmp] = useState<Set<number>>(() => new Set(employees.map((e) => e.id)));
   const [usersOpen, setUsersOpen] = useState(false);
-  const [staffOpen, setStaffOpen] = useState(true);
+  const [staffOpen, setStaffOpen] = useState(false);
   const [monthView, setMonthView] = useState<"dato" | "oversigt">("dato"); // month sub-toggle [Dato | Oversigt]
   const [notice, setNotice] = useState<string | null>(null);
   const [confirmDel, setConfirmDel] = useState<MenuTarget | null>(null);
