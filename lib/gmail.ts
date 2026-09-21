@@ -51,24 +51,36 @@ function buildRawMessage(input: SendGmailInput): string {
   }
 
   const altBoundary = boundary + "-alt";
-  const altPart = [
-    `Content-Type: multipart/alternative; boundary="${altBoundary}"`,
-    "",
+  const altBody = [
     `--${altBoundary}`,
     `Content-Type: text/plain; charset="UTF-8"`,
+    "Content-Transfer-Encoding: 8bit",
     "",
     input.text,
     `--${altBoundary}`,
     `Content-Type: text/html; charset="UTF-8"`,
+    "Content-Transfer-Encoding: 8bit",
     "",
     input.html,
     `--${altBoundary}--`,
   ].join("\r\n");
 
   if (!input.attachments?.length) {
-    const body = [...headers, "", altPart].join("\r\n");
+    const body = [
+      ...headers,
+      `Content-Type: multipart/alternative; boundary="${altBoundary}"`,
+      "",
+      altBody,
+    ].join("\r\n");
     return Buffer.from(body).toString("base64url");
   }
+
+  const altPart = [
+    `Content-Type: multipart/alternative; boundary="${altBoundary}"`,
+    "",
+    altBody,
+  ].join("\r\n");
+
   const attBoundary = boundary + "-att";
   const attParts = input.attachments.flatMap((a) => [
     `--${attBoundary}`,
