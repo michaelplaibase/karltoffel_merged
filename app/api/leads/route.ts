@@ -6,6 +6,7 @@ import { postMessage } from "@/lib/slack";
 import { buildLeadBlocks, leadFallbackText } from "@/lib/slack-lead";
 import { parseLeadPayload } from "@/lib/tilbudsmotor-pricing";
 import { parseMetaLead, sendMetaLead } from "@/lib/meta-capi";
+import { sendEmail } from "@/lib/email";
 import type { NextRequest } from "next/server";
 
 // Inbound lead webhook for the public website form. No session cookie —
@@ -274,11 +275,52 @@ export async function POST(req: NextRequest) {
     console.error(`[leads] kalender-booking exception for lead ${lead.id}:`, e);
   }
 
-  const slack = await pingSlack(lead, lead.payload);
+  // 1. Send kopi af lead til kristian@karltoffel.dk med kunden som replyTo
+  let mailSent = false;
+  try {
+    const lines = tm.services.slice(0, 15).map((s) =>
+      `• ${s.navn}${s.qty ? ` — ${DKK.format(s.qty)} ${s.enhed}` : ""}${s.freq ? ` × ${s.freq}/år` : ""}`);
+    const emailBody = [
+      `Nyt lead indsendt via hjemmesiden:`,
+      ``,
+      `Navn: ${name}`,
+      phone ? `Telefon: ${phone}` : null,
+      email ? `E-mail: ${email}` : null,
+      address ? `Adresse: ${address}` : null,
+      message ? `Besked fra kunde: ${message}` : null,
+      tm.kundetype ? `Kundetype: ${tm.kundetype === "erhverv" ? "Erhverv" : "Privat"}` : null,
+      tm.estimatMd ? `Estimat: ${DKK.format(tm.estimatMd)} kr/md` : null,
+      lines.length ? `\nValgte ydelser:\n${lines.join("\n")}` : null,
+      ``,
+      `---`,
+      `Dette er en automatisk lead-kopi fra Karltoffel CRM. Besvar denne mail for at skrive direkte til kunden.`,
+    ].filter(Boolean).join("\n");
+
+    const emailRes = await sendEmail({
+      to: "kristian@karltoffel.dk",
+      subject: `[Nyt Lead - Hjemmeside]: ${name}`,
+      text: emailBody,
+      replyTo: email || undefined,
+    });
+    mailSent = emailRes.ok;
+    if (!emailRes.ok) {
+      console.error(`[leads] Fejl ved afsendelse af lead-kopi til kristian@karltoffel.dk: ${emailRes.error}`);
+    }
+  } catch (err) {
+    console.error("[leads] Exception ved afsendelse af lead-kopi:", err);
+  }
 
   // Meta CAPI — efter at leadet er gemt; fejler stille (lib/meta-capi.ts).
   await fireCapi(meta);
   await fireCapi(metaPrior);
 
-  return json({ id: lead.id, deduplicated: false, call, slack }, 201);
+  // 2. Slack Ping: Udelukkende fail-safe advarsel hvis mail-kopien fejlede, så intet lead tabes!
+  // Normalt ping til #leads sker FØRST når mailen har ramt Kristians Gmail og udkastet er lavet.
+  let slackStatus = "deferred_to_gmail";
+  if (!mailSent) {
+    const fallbackRes = await pingSlack(lead, lead.payload, "⚠️ Nyt lead modtaget, men mail-kopi til kristian@karltoffel.dk fejlede! Tjek CRM.");
+    slackStatus = `warning_sent: ${fallbackRes}`;
+  }
+
+  return json({ id: lead.id, deduplicated: false, call, mailSent, slack: slackStatus }, 201);
 }
