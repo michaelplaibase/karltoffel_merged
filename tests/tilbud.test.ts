@@ -11,6 +11,7 @@ import { LEAD_SOURCES as LEAD_SOURCES_TILBUD } from "../lib/lead-sources.mts";
 import { LEAD_SOURCES as LEAD_SOURCES_LEADCALC } from "../lib/lead-calc";
 import {
   aarsbelob, besogPrAar, BASE_INTERVALS, tilbudLinjeAarsbelob, tilbudAarsbelobSum,
+  pauseBesogFradragPrAar,
 } from "../lib/subscription-intervals";
 import { isTilbudTableMissing, TILBUD_TABELLER_MANGLER } from "../lib/db";
 
@@ -463,4 +464,94 @@ test("bygAarshjul: rå linjer uden pause-felter viser ALLE besøg (kundevendt fl
   );
   assert.equal(hjul.reduce((n, u) => n + u.opgaver.length, 0), 13);
   assert.ok(hjul.some((u) => u.uge === 45) && hjul.some((u) => u.uge === 49));
+});
+
+// ─── ÅRSBELØB ER PAUSE-BEVIDST (Thomas, 2026-09-21) ─────────────────────────
+// Når en opgavelinje er sat på pause, reducerer "Årligt beløb" med prisen på
+// de besøg, pausevinduet fjerner i reference-året. Fradraget bruger den DELTE
+// pause-logik (lib/pause.ts) og PRÆCIS samme besøgs-placering som årshjulet
+// (bygAarshjul), så beløbet ALTID svarer til de uger, hjulet viser.
+
+test("pauseBesogFradragPrAar: pause 31/10→30/03 fra uge 29 (Hver 4. uge) fjerner 6 af 13 besøg", () => {
+  const linje = {
+    interval: "Hver 4. uge", startWeek: "Uge 29",
+    pauseActive: true, pauseStart: "2026-10-31", pauseEnd: "2027-03-30", pauseYearly: true,
+  };
+  const now = new Date("2026-09-21");
+  // Hver 4. uge → 13 besøg; 6 falder i pausevinduet (uge 45, 49 + næste års 1, 5, 9, 13)
+  assert.equal(pauseBesogFradragPrAar(linje, { now }), 6);
+  // årsbeløb = pris × (13 − 6) = pris × 7
+  assert.equal(tilbudLinjeAarsbelob({ price: 566, ...linje }, { now }), 566 * 7);
+  assert.equal(tilbudAarsbelobSum([{ price: 566, description: "Vinduer", ...linje }], { now }), 566 * 7);
+});
+
+test("pause-bevidst årsbeløb reducerer en pauset linje med pris × N", () => {
+  const now = new Date("2026-09-21");
+  const sum = tilbudAarsbelobSum([
+    { description: "Vinduer", price: 566, interval: "Hver 4. uge", startWeek: "Uge 29",
+      pauseActive: true, pauseStart: "2026-10-31", pauseEnd: "2027-03-30", pauseYearly: true },
+    { description: "Græs", price: 300, interval: "Hver 2. uge", startWeek: "Uge 2" }, // ingen pause
+  ], { now });
+  // pauset: 566×7 = 3962 · normal: 300×26 = 7800
+  assert.equal(sum, 566 * 7 + 300 * 26);
+  assert.equal(sum, 11762);
+});
+
+test("pause UDEN FOR linjens besøg reducerer intet (årsbeløb uændret)", () => {
+  const now = new Date("2026-09-21");
+  // Én gang om året i uge 29 (~juli) — pause i december rammer intet besøg.
+  const linje = {
+    interval: "1 gang om året", startWeek: "Uge 29",
+    pauseActive: true, pauseStart: "2026-12-01", pauseEnd: "2026-12-31", pauseYearly: true,
+  };
+  assert.equal(pauseBesogFradragPrAar(linje, { now }), 0);
+  assert.equal(tilbudLinjeAarsbelob({ price: 500, ...linje }, { now }), 500);
+});
+
+test("uden pause er årsbeløbet uændret (også med startuge sat)", () => {
+  const now = new Date("2026-09-21");
+  assert.equal(tilbudLinjeAarsbelob({ price: 566, interval: "Hver 4. uge", startWeek: "Uge 29" }, { now }), 566 * 13);
+  assert.equal(pauseBesogFradragPrAar({ interval: "Hver 4. uge", startWeek: "Uge 29", pauseActive: true, pauseStart: null, pauseEnd: null }, { now }), 0);
+  assert.equal(pauseBesogFradragPrAar({ interval: "Hver 4. uge", startWeek: "Uge 29", pauseActive: false, pauseStart: "2026-10-31", pauseEnd: "2027-03-30" }, { now }), 0);
+});
+
+test("pauset linje UDEN startuge reduceres ikke (kan ikke placere besøgene — aldrig gæt)", () => {
+  const now = new Date("2026-09-21");
+  assert.equal(pauseBesogFradragPrAar({ interval: "Hver 4. uge", startWeek: null, pauseActive: true, pauseStart: "2026-10-31", pauseEnd: "2027-03-30", pauseYearly: true }, { now }), 0);
+  assert.equal(tilbudLinjeAarsbelob({ price: 566, interval: "Hver 4. uge", startWeek: null, pauseActive: true, pauseStart: "2026-10-31", pauseEnd: "2027-03-30", pauseYearly: true }, { now }), 566 * 13);
+});
+
+test("pause-fradrag er KONSISTENT med bygAarshjul (fradrag + hjul-besøg == besogPrAar)", () => {
+  const now = new Date("2026-09-21");
+  const linje = {
+    description: "Vinduer", interval: "Hver 4. uge", startWeek: "Uge 29",
+    pauseActive: true, pauseStart: "2026-10-31", pauseEnd: "2027-03-30", pauseYearly: true,
+  };
+  const hjul = bygAarshjul([linje], { now });
+  const hjulBesog = hjul.reduce((n, u) => n + u.opgaver.length, 0);
+  const fradrag = pauseBesogFradragPrAar(linje, { now });
+  // årshjulet viser 7 besøg og fradraget er 6 → tilsammen 13 (hele årets rytme)
+  assert.equal(hjulBesog, 7);
+  assert.equal(fradrag, 6);
+  assert.equal(hjulBesog + fradrag, besogPrAar("Hver 4. uge"));
+  // og årsbeløbet svarer præcis til de besøg hjulet viser.
+  assert.equal(tilbudAarsbelobSum([{ price: 566, ...linje }], { now }), 566 * hjulBesog);
+});
+
+test("buildTilbudPdfData: pause føres med → Årligt beløb reduceres OG PDF-årshjulet udelader pause-besøg", () => {
+  const d = buildTilbudPdfData({
+    contact: { name: "Kunde", companyName: null, att: null },
+    title: "Tilbud", note: null,
+    lines: [{
+      description: "Vinduer", price: 566, interval: "Hver 4. uge", startWeek: "Uge 29",
+      pauseActive: true, pauseStart: "2026-10-31", pauseEnd: "2027-03-30", pauseYearly: true,
+    }],
+  });
+  // Fradraget er refYear-uafhængigt her (yearly-vinduet rammer de samme uger
+  // i ethvert år) → reduceret til 566×7 = 3962.
+  assert.equal(d.aarsbelob, 566 * 7);
+  assert.equal(d.linjer[0].pauseActive, true);
+  // PDF'ens eget årshjul (aarshjulAfsnit → bygAarshjul) udelader pause-besøgene.
+  const hjul = bygAarshjul(d.linjer);
+  assert.equal(hjul.reduce((n, u) => n + u.opgaver.length, 0), 7);
 });

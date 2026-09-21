@@ -28,7 +28,7 @@ async function loadTilbud(q?: string) {
     orderBy: { createdAt: "desc" },
     include: {
       contact: { select: { id: true, name: true, companyName: true } },
-      lines: { select: { price: true, interval: true } },
+      lines: { select: { price: true, interval: true, startWeek: true, pauseActive: true, pauseStart: true, pauseEnd: true, pauseYearly: true } },
     },
     take: 200,
   });

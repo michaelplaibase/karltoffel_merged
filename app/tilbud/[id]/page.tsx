@@ -130,9 +130,11 @@ export default async function TilbudDetailPage({ params, searchParams }: { param
                       </small>
                     ) : null}
                     {/* Thomas, 2026-09-18: sæsonpause — diskret på teamets side
-                        (vises IKKE for kunden); teamets årshjul udelader
-                        pausebesøg (bygAarshjul får pause-felterne, men PDF/
-                        accept-side sender dem ikke med). */}
+                        (teksten vises IKKE for kunden, kun i CRM'et). Teamets
+                        årshjul udelader pausebesøg. Thomas, 2026-09-21: PDF'ens
+                        og accept-sidens årshjul + "Årligt beløb" afspejler OGSÅ
+                        pausen — beløbet og hjulet kunden ser er konsistente
+                        (begge fratrækker pause-besøgene). */}
                     {l.pauseActive ? (
                       <small className="form-text" style={{ display: "block" }}>
                         På pause: {l.pauseStart ?? ""} → {l.pauseEnd ?? ""}{l.pauseYearly ? " (hvert år)" : " (kun denne sæson)"} — vises ikke for kunden

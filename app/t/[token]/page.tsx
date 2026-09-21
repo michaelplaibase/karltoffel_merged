@@ -57,7 +57,7 @@ export default async function TilbudAcceptPage({
     where: { acceptToken: token },
     include: {
       contact: { select: { name: true, companyName: true, street: true, city: true, isCompany: true } },
-      lines: { orderBy: { sort: "asc" }, select: { description: true, price: true, interval: true, startWeek: true } },
+      lines: { orderBy: { sort: "asc" }, select: { description: true, price: true, interval: true, startWeek: true, pauseActive: true, pauseStart: true, pauseEnd: true, pauseYearly: true } },
     },
   });
   }
@@ -79,6 +79,10 @@ export default async function TilbudAcceptPage({
   const total = tilbudTotal(tilbud.lines); // pris pr. gang — input til staff-mailen
   // Thomas, 2026-09-11 (korrektion): Årsbeløbet = summen PR. LINJE — kun
   // linjer med interval tæller med; linjer uden interval er engangsopgaver.
+  // Thomas, 2026-09-21 (pause-fradrag): linjerne bærer pause-felterne, så en
+  // pauset opgave reducerer det årlige beløb OG det kundevendte årshjul
+  // nedenfor udelader pause-besøgene — det beløb, kunden ser, svarer ALTID til
+  // de uger, årshjulet viser (minus pausen).
   const aarligt = tilbudAarsbelobSum(tilbud.lines);
   // Thomas, 2026-09-15: priser u. moms — moms (25%) i bunden (samme
   // lib/vat-funktion som formular, detaljeside, oversigt og PDF).
