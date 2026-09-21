@@ -482,6 +482,15 @@ model TilbudLine {
   // overføres KUN til TaskLine.employeeId, når tilbuddet konverteres.
   employee      User?    @relation(fields: [employeeId], references: [id])
   employeeId    Int?
+  // Thomas, 2026-09-18: SÆSONPAUSE PR. OPGAVELINJE — SAMME felter som
+  // abonnements-opgaverne (TaskLine.pauseActive/pauseStart/pauseEnd/pauseYearly):
+  // opgaven får IKKE besøg i pausevinduet (årshjulet udelader dem hos teamet),
+  // og pausen følger med til TaskLine ved konvertering til abonnement. Ren
+  // INTERN data — vises IKKE i PDF/accept-side (customer-facing årshjul).
+  pauseActive   Boolean  @default(false)
+  pauseStart    String?        // 'YYYY-MM-DD' — vinduet må krydse nytår
+  pauseEnd      String?        // 'YYYY-MM-DD'
+  pauseYearly   Boolean @default(true)  // true = gentag hvert år; false = kun denne sæson
   sort        Int      @default(0)
   photos      TilbudPhoto[]
 

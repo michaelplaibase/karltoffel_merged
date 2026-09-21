@@ -23,6 +23,22 @@ export type TilbudState = { error?: string; message?: string };
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 // Samme format som tilbud-niveau startuge ('Uge 29' / 'Uge 29, 2026').
 const UGE_RE = /^Uge\s+\d{1,2}(,\s*\d{4})?$/i;
+// Thomas, 2026-09-18: pause ISO-datoer 'YYYY-MM-DD' (samme format som
+// abonnementets TaskLine.pauseStart/pauseEnd).
+const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
+
+/** En læst linjes pause-værdier i den form, der skal GEMDES på TilbudLine —
+ *  pauseActive sat + gyldige datoer = aktiv pause; ellers ryddes felterne
+ *  (aldrig gem et flueben med ugyldig/rimet dato som "ikke-pauset"). */
+function linjePauseData(l: ReturnType<typeof readLines>[number]) {
+  const pauset = l.pauseActive === "1" && ISO_DATE.test(l.pauseStart) && ISO_DATE.test(l.pauseEnd);
+  return {
+    pauseActive: pauset,
+    pauseStart: pauset ? l.pauseStart : null,
+    pauseEnd: pauset ? l.pauseEnd : null,
+    pauseYearly: l.pauseYearly,
+  };
+}
 
 function readLines(formData: FormData) {
   const descs = formData.getAll("taskDescription").map(String);
@@ -41,6 +57,14 @@ function readLines(formData: FormData) {
   // abonnementets TaskLineEditor (CATEGORIES fra lib/categories.ts), tom =
   // "Andet" (det hidtidige konverterings-resultat).
   const categories = formData.getAll("taskCategory").map(String);
+  // Thomas, 2026-09-18: SÆSONPAUSE PR. LINJE — submittes som skjulte felter
+  // for HVER række (også upausede), så det positionsvise zip med
+  // taskDescription aldrig forskubbes. Samme felter som abonnementets
+  // TaskLine (pauseActive/pauseStart/pauseEnd/pauseYearly).
+  const pauseActives = formData.getAll("taskPauseActive").map(String);
+  const pauseStarts = formData.getAll("taskPauseStart").map(String);
+  const pauseEnds = formData.getAll("taskPauseEnd").map(String);
+  const pauseYearlies = formData.getAll("taskPauseYearly").map(String);
   // Thomas, 2026-09-17: redigering — hvert linjefelt bærer nu også sin
   // EKSISTERENDE TilbudLine-id (taskId, tom = NY linje). Id'et bruges af
   // updateTilbud til at OP DATERE linjen på plads (bevarer linjefotos) i
@@ -55,6 +79,10 @@ function readLines(formData: FormData) {
       interval: (intervals[i] ?? "").trim() || null,
       startWeek: (startWeeks[i] ?? "").trim() || null,
       employeeId: Number(employees[i]) || null,
+      pauseActive: pauseActives[i] || "0",
+      pauseStart: (pauseStarts[i] ?? "").trim(),
+      pauseEnd: (pauseEnds[i] ?? "").trim(),
+      pauseYearly: pauseYearlies[i] !== "0",
     }))
     .filter((l) => l.description);
 }
@@ -100,6 +128,11 @@ export async function createTilbud(_prev: TilbudState, formData: FormData): Prom
   for (const l of lines) {
     if (l.startWeek && !UGE_RE.test(l.startWeek)) {
       return { error: `Startuge for '${l.description}' skal skrives som fx 'Uge 29' eller 'Uge 29, 2026' — eller lades tom.` };
+    }
+    // Thomas, 2026-09-18: pause — et sat flueben med ryddet/ugyldig dato må
+    // aldrig stille gemmes som ikke-pauset (kunden ville få besøg i perioden).
+    if (l.pauseActive === "1" && (!ISO_DATE.test(l.pauseStart) || !ISO_DATE.test(l.pauseEnd))) {
+      return { error: `Angiv start- og slutdato for pausen på opgaven '${l.description}'.` };
     }
   }
 
@@ -154,7 +187,7 @@ export async function createTilbud(_prev: TilbudState, formData: FormData): Prom
         contactId, title, note, acceptToken: nyAcceptToken(), startWeek, baseInterval,
         // Thomas, 2026-09-12: valgfri lead-kilde (intern) — gemmes på tilbuddet.
         leadSource,
-        lines: { create: lines.map((l, i) => ({ description: l.description, price: l.price, category: l.category, interval: l.interval, startWeek: l.startWeek, employeeId: l.employeeId, sort: i })) },
+        lines: { create: lines.map((l, i) => ({ description: l.description, price: l.price, category: l.category, interval: l.interval, startWeek: l.startWeek, employeeId: l.employeeId, ...linjePauseData(l), sort: i })) },
       },
     });
   } catch (e) {
@@ -207,6 +240,11 @@ export async function updateTilbud(_prev: TilbudState, formData: FormData): Prom
   for (const l of lines) {
     if (l.startWeek && !UGE_RE.test(l.startWeek)) {
       return { error: `Startuge for '${l.description}' skal skrives som fx 'Uge 29' eller 'Uge 29, 2026' — eller lades tom.` };
+    }
+    // Thomas, 2026-09-18: pause — et sat flueben med ryddet/ugyldig dato må
+    // aldrig stille gemmes som ikke-pauset (kunden ville få besøg i perioden).
+    if (l.pauseActive === "1" && (!ISO_DATE.test(l.pauseStart) || !ISO_DATE.test(l.pauseEnd))) {
+      return { error: `Angiv start- og slutdato for pausen på opgaven '${l.description}'.` };
     }
   }
   const valgteEmployeeIds = [...new Set(lines.map((l) => l.employeeId).filter((v): v is number => v != null))];
@@ -267,11 +305,11 @@ export async function updateTilbud(_prev: TilbudState, formData: FormData): Prom
         if (l.id) {
           await tx.tilbudLine.updateMany({
             where: { id: l.id, tilbudId },
-            data: { description: l.description, price: l.price, category: l.category, interval: l.interval, startWeek: l.startWeek, employeeId: l.employeeId, sort: i },
+            data: { description: l.description, price: l.price, category: l.category, interval: l.interval, startWeek: l.startWeek, employeeId: l.employeeId, ...linjePauseData(l), sort: i },
           });
         } else {
           await tx.tilbudLine.create({
-            data: { tilbudId, description: l.description, price: l.price, category: l.category, interval: l.interval, startWeek: l.startWeek, employeeId: l.employeeId, sort: i },
+            data: { tilbudId, description: l.description, price: l.price, category: l.category, interval: l.interval, startWeek: l.startWeek, employeeId: l.employeeId, ...linjePauseData(l), sort: i },
           });
         }
       }
@@ -332,7 +370,7 @@ export async function convertTilbudToSubscription(tilbudId: number): Promise<voi
   const getTilbud = () => prisma.tilbud.findUnique({
     where: { id: tilbudId },
     include: {
-      lines: { orderBy: { sort: "asc" }, select: { description: true, price: true, category: true, interval: true, startWeek: true, employeeId: true } },
+      lines: { orderBy: { sort: "asc" }, select: { description: true, price: true, category: true, interval: true, startWeek: true, employeeId: true, pauseActive: true, pauseStart: true, pauseEnd: true, pauseYearly: true } },
       contact: { select: { id: true, isCompany: true, companyId: true, street: true, city: true } },
     },
   });
@@ -391,7 +429,7 @@ export async function convertTilbudToSubscription(tilbudId: number): Promise<voi
       baseInterval = tilbud.baseInterval?.trim() || "Hver 2. uge";
       linjeMultiplikatorer = tilbud.lines.map(() => "Hver gang");
     }
-  const lines: { description: string; price: number; category?: string | null; interval?: string | null; startWeek?: string | null; employeeId?: number | null }[] = tilbud.lines.length
+  const lines: { description: string; price: number; category?: string | null; interval?: string | null; startWeek?: string | null; employeeId?: number | null; pauseActive?: boolean; pauseStart?: string | null; pauseEnd?: string | null; pauseYearly?: boolean }[] = tilbud.lines.length
     ? tilbud.lines
     : [{ description: "Serviceaftale", price: 0, employeeId: null }]; // sikkerhedsnet — TaskLine kræver >= 1 linje
   // Thomas, 2026-09-11: intern medarbejder-tilknytning pr. linje følger med til
@@ -431,6 +469,14 @@ export async function convertTilbudToSubscription(tilbudId: number): Promise<voi
               // linjen til opgaven (TaskLine.employeeId) — KUN ved
               // konvertering; uden valg = null (vælges automatisk, som hidtil).
               employeeId: linjeMedarbejdere[i] ?? null,
+              // Thomas, 2026-09-18: sæsonpause følger linjen til opgaven —
+              // SAMME felter som TaskLine.pauseActive/pauseStart/pauseEnd/
+              // pauseYearly, så et tilbud, der er konverteret til abonnement,
+              // bevarer sit pausevindue (genereringen udelader pausebesøg).
+              pauseActive: l.pauseActive === true,
+              pauseStart: l.pauseActive === true && l.pauseStart ? l.pauseStart : null,
+              pauseEnd: l.pauseActive === true && l.pauseEnd ? l.pauseEnd : null,
+              pauseYearly: l.pauseActive === true ? (l.pauseYearly ?? true) : true,
             })),
           },
         },

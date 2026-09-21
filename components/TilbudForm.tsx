@@ -32,8 +32,45 @@ export type TilbudInitial = {
   startWeek: string | null;
   baseInterval: string | null;
   leadSource: string | null;
-  lines: { id: number; description: string; price: number; category: string; interval: string | null; startWeek: string | null; employee: string }[];
+  lines: { id: number; description: string; price: number; category: string; interval: string | null; startWeek: string | null; employee: string; pauseActive: boolean; pauseStart: string | null; pauseEnd: string | null; pauseYearly: boolean }[];
 };
+
+type TilbudLinje = {
+  id: number | null;
+  description: string;
+  price: number;
+  interval: string;
+  startWeek: string;
+  employee: string;
+  category: string;
+  egenKategoriTekst: string;
+  // Thomas, 2026-09-18: sæsonpause pr. linje (intern — vises ikke for
+  // kunden; påvirker teamets årshjul + konverteres til TaskLine-pause).
+  pauseActive: boolean;
+  pauseStart: string;
+  pauseEnd: string;
+  pauseYearly: boolean;
+};
+
+const NY_LINJE = {
+  id: null as number | null,
+  description: "", price: 0, interval: "", startWeek: "", employee: "",
+  category: "Andet", egenKategoriTekst: "",
+  pauseActive: false, pauseStart: "", pauseEnd: "", pauseYearly: true,
+};
+
+// Måneder (1-12) + wrap-bevidst "er måned i pausevinduet" — samme visning som
+// abonnementsformularens PauseSection (okt→mar dækker 10,11,12,1,2,3).
+const MÅNEDER = ["Jan", "Feb", "Mar", "Apr", "Maj", "Jun", "Jul", "Aug", "Sep", "Okt", "Nov", "Dec"];
+function maanedAf(iso?: string): number | null {
+  const m = iso?.match(/^\d{4}-(\d{2})-\d{2}$/);
+  return m ? Number(m[1]) : null;
+}
+function maanedIVindue(m: number, start?: string, end?: string): boolean {
+  const s = maanedAf(start), e = maanedAf(end);
+  if (s == null || e == null) return false;
+  return s <= e ? m >= s && m <= e : m >= s || m <= e;
+}
 
 const kr = (n: number) => n.toLocaleString("da-DK") + " kr";
 
@@ -62,10 +99,10 @@ export default function TilbudForm({ contacts, employees, action, initial }: {
   // Thomas, 2026-09-17: `id` bærer den EKSISTERENDE TilbudLine-id i edit-mode
   // (null = ny linje), så updateTilbud kan opdatere linjerne på plads (fx
   // bevarer linjefotos) i stedet for at slette + genoprette.
-  const [linjer, setLinjer] = useState<{ id: number | null; description: string; price: number; interval: string; startWeek: string; employee: string; category: string; egenKategoriTekst: string }[]>(
+  const [linjer, setLinjer] = useState<TilbudLinje[]>(
     initial?.lines?.length
-      ? initial.lines.map((l) => ({ id: l.id, description: l.description, price: l.price, interval: l.interval ?? "", startWeek: l.startWeek ?? "", employee: l.employee ?? "", category: l.category || "Andet", egenKategoriTekst: "" }))
-      : [{ id: null, description: "", price: 0, interval: "", startWeek: "", employee: "", category: "Andet", egenKategoriTekst: "" }],
+      ? initial.lines.map((l) => ({ id: l.id, description: l.description, price: l.price, interval: l.interval ?? "", startWeek: l.startWeek ?? "", employee: l.employee ?? "", category: l.category || "Andet", egenKategoriTekst: "", pauseActive: l.pauseActive, pauseStart: l.pauseStart ?? "", pauseEnd: l.pauseEnd ?? "", pauseYearly: l.pauseYearly }))
+      : [{ ...NY_LINJE }],
   );
   const [standardInterval, setStandardInterval] = useState(initial?.baseInterval ?? "");
   // Ny linje arver tilbud-niveau startugen som standard, hvis den er udfyldt.
@@ -81,6 +118,22 @@ export default function TilbudForm({ contacts, employees, action, initial }: {
 
   const opdaterLinje = (i: number, felt: "description" | "price" | "interval" | "startWeek" | "employee" | "category" | "egenKategoriTekst", vaerdi: string) => {
     setLinjer((prev) => prev.map((l, j) => (j === i ? { ...l, [felt]: felt === "price" ? Number(vaerdi) || 0 : vaerdi } : l)));
+  };
+  // Thomas, 2026-09-18: sæsonpause pr. linje — genbruger abonnementsformularens
+  // mønster (PauseSection): slå pausen til sætter et standardvindue (31/10 i år
+  // → 30/03 næste år), slå den fra nulstiller kun pauseActive (datoer bevares).
+  const opdaterPause = (i: number, patch: Partial<TilbudLinje>) =>
+    setLinjer((prev) => prev.map((l, j) => (j === i ? { ...l, ...patch } : l)));
+  const saetPause = (i: number, on: boolean) => {
+    if (!on) { opdaterPause(i, { pauseActive: false }); return; }
+    const y = new Date().getFullYear();
+    const cur = linjer[i];
+    opdaterPause(i, {
+      pauseActive: true,
+      pauseStart: cur.pauseStart || `${y}-10-31`,
+      pauseEnd: cur.pauseEnd || `${y + 1}-03-30`,
+      pauseYearly: cur.pauseYearly,
+    });
   };
   // Egen kategori (Thomas 2026-09-10): gemte fritekst-kategorier vises i
   // dropdownen, så de kan genvælges (samme mønster som abonnementets
@@ -292,6 +345,14 @@ export default function TilbudForm({ contacts, employees, action, initial }: {
                         (tom = ny linje), så updateTilbud opdaterer linjen på
                         plads og bevarer evt. linjefotos. */}
                     <input type="hidden" name="taskId" value={l.id != null ? String(l.id) : ""} />
+                    {/* Thomas, 2026-09-18: sæsonpause pr. linje — hidden-felter
+                        submittes ALTID (også upausede), så positionsvise zip i
+                        readLines aldrig forskubbes. Samme felter som
+                        abonnementets TaskLine-pause. */}
+                    <input type="hidden" name="taskPauseActive" value={l.pauseActive ? "1" : "0"} />
+                    <input type="hidden" name="taskPauseStart" value={l.pauseStart || ""} />
+                    <input type="hidden" name="taskPauseEnd" value={l.pauseEnd || ""} />
+                    <input type="hidden" name="taskPauseYearly" value={l.pauseYearly ? "1" : "0"} />
                     {/* Opgavebeskrivelsen fylder en FULD linje; slet-knappen
                         ligger i SAMME række mod højre, så hver linje har sin
                         slet-knap ensartet (øverst til højre) i stedet for at
@@ -440,6 +501,82 @@ export default function TilbudForm({ contacts, employees, action, initial }: {
                         </select>
                       </div>
                     </div>
+                    {/* Thomas, 2026-09-18: SÆSONPAUSE PR. LINJE — intern (vises
+                        ikke for kunden; teamets årshjul udelader pausebesøg), og
+                        pausen følger opgaven ved konvertering til abonnement.
+                        Samme betjening/følelse som abonnementsformularens
+                        PauseSection ("Måneder på pause"). */}
+                    <div className="pauserow" style={{ marginTop: 10 }}>
+                      <div className="pauserow-head">
+                        <span className="pauserow-name" style={{ fontWeight: 400, fontSize: 13 }}>
+                          Sæsonpause
+                          {l.pauseActive ? <span className="badge badge-soft-muted" style={{ marginLeft: 8 }}>På pause</span> : null}
+                        </span>
+                        <label className="form-check-inline" style={{ marginRight: 0 }}>
+                          <input
+                            type="checkbox"
+                            checked={l.pauseActive}
+                            onChange={(e) => saetPause(i, e.target.checked)}
+                          />
+                          Sæt på pause
+                        </label>
+                      </div>
+                      {l.pauseActive ? (
+                        <div className="pauserow-body">
+                          <div className="pausestrip" aria-label="Måneder i pausevinduet">
+                            {MÅNEDER.map((navn, mIdx) => (
+                              <span key={navn} className={`m${maanedIVindue(mIdx + 1, l.pauseStart, l.pauseEnd) ? " on" : ""}`}>
+                                {navn}
+                              </span>
+                            ))}
+                          </div>
+                          <div className="grid-2" style={{ gap: 12, marginTop: 10 }}>
+                            <div>
+                              <label className="field-label">Pause fra</label>
+                              <input
+                                type="date"
+                                className="form-control form-control-sm"
+                                value={l.pauseStart || ""}
+                                onChange={(e) => opdaterPause(i, { pauseStart: e.target.value })}
+                              />
+                            </div>
+                            <div>
+                              <label className="field-label">Pause til</label>
+                              <input
+                                type="date"
+                                className="form-control form-control-sm"
+                                value={l.pauseEnd || ""}
+                                onChange={(e) => opdaterPause(i, { pauseEnd: e.target.value })}
+                              />
+                            </div>
+                          </div>
+                          <div style={{ marginTop: 10 }}>
+                            <label className="form-check-inline" style={{ marginRight: 14 }}>
+                              <input
+                                type="radio"
+                                name={`pauseYearlyChoice-${i}`}
+                                checked={l.pauseYearly}
+                                onChange={() => opdaterPause(i, { pauseYearly: true })}
+                              />
+                              Hvert år
+                            </label>
+                            <label className="form-check-inline">
+                              <input
+                                type="radio"
+                                name={`pauseYearlyChoice-${i}`}
+                                checked={!l.pauseYearly}
+                                onChange={() => opdaterPause(i, { pauseYearly: false })}
+                              />
+                              Kun denne sæson
+                            </label>
+                          </div>
+                        </div>
+                      ) : (
+                        <small className="form-text" style={{ display: "block", marginTop: 4 }}>
+                          Sæt opgaven på pause i et vindue (fx vinter) — der vises ingen besøg for den i teamets årshjul i perioden.
+                        </small>
+                      )}
+                    </div>
                     {/* Årsbeløb PR. LINJE — kun linjer med interval tæller med. */}
                     {linjeAar[i] != null ? (
                       <small className="form-text">
@@ -448,7 +585,7 @@ export default function TilbudForm({ contacts, employees, action, initial }: {
                     ) : null}
                   </div>
                 ))}
-                <button type="button" className="btn btn-outline-primary" onClick={() => setLinjer((p) => [...p, { id: null, description: "", price: 0, interval: standardInterval, startWeek: standardStartWeek, employee: "", category: "Andet", egenKategoriTekst: "" }])}>
+                <button type="button" className="btn btn-outline-primary" onClick={() => setLinjer((p) => [...p, { ...NY_LINJE, interval: standardInterval, startWeek: standardStartWeek }])}>
                   + Tilføj opgave
                 </button>
                 {/* Thomas, 2026-09-11: medarbejder-vælgeren er INTERN — gør det
