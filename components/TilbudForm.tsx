@@ -109,7 +109,7 @@ export default function TilbudForm({ contacts, employees, action, initial }: {
   const [standardStartWeek, setStandardStartWeek] = useState(initial?.startWeek ?? "");
   // Årsbeløb pr. linje + summen af linjerne med interval (engangsopgaver uden
   // interval tæller ikke med — samme beregning som abonnementet).
-  const linjeAar = linjer.map(tilbudLinjeAarsbelob);
+  const linjeAar = linjer.map((l) => tilbudLinjeAarsbelob(l));
   const aarligt = tilbudAarsbelobSum(linjer);
   // Thomas, 2026-09-15: priser angives U. moms — moms (25%) lægges til i
   // bunden. ÉN delt funktion (lib/vat), så tallene aldrig afviger fra

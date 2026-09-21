@@ -97,7 +97,7 @@ export type TilbudPdfData = {
   note: string | null;
   startWeek: string | null; // valgfri startuge — udelades hvis tom
   baseInterval: string | null; // valgfrit tilbud-niveau interval — udelades hvis tomt
-  linjer: { description: string; price: number; interval: string | null; startWeek: string | null }[];
+  linjer: { description: string; price: number; interval: string | null; startWeek: string | null; pauseActive: boolean; pauseStart: string | null; pauseEnd: string | null; pauseYearly: boolean }[];
   /** Årligt beløb = SUMMEN PR. LINJE (pris × besøg pr. år for hver linje med
    *  interval) — KUN når mindst én linje har interval (Thomas, 2026-09-11
    *  korrektion: interval er nu pr. opgavelinje; beregningen deles med
@@ -113,7 +113,7 @@ export type TilbudInput = {
   note: string | null;
   startWeek?: string | null;
   baseInterval?: string | null;
-  lines: { description: string; price: number; interval?: string | null; startWeek?: string | null }[];
+  lines: { description: string; price: number; interval?: string | null; startWeek?: string | null; pauseActive?: boolean; pauseStart?: string | null; pauseEnd?: string | null; pauseYearly?: boolean }[];
 };
 
 export function buildTilbudPdfData(input: TilbudInput): TilbudPdfData {
@@ -126,6 +126,15 @@ export function buildTilbudPdfData(input: TilbudInput): TilbudPdfData {
     // Thomas, 2026-09-11 (korrektion 2): valgfri startuge pr. linje — vises
     // diskret på linjen ("Starter uge 29"); tom = intet vist.
     startWeek: l.startWeek?.trim() || null,
+    // Thomas, 2026-09-21: pause-felterne føres med i PDF-data (INTERN bæring),
+    // så aarsbelob nedenfor bliver pause-bevidst OG årshjulet i PDF'en
+    // (aarshjulAfsnit → bygAarshjul) udelader pause-besøgene — beløbet og det
+    // årshjul kunden ser er ét og samme tal (konsistent fradrag). Selve
+    // pause-datoerne vises IKKE som tekst i PDF'en (kun fradrag + hjul).
+    pauseActive: l.pauseActive ?? false,
+    pauseStart: l.pauseStart ?? null,
+    pauseEnd: l.pauseEnd ?? null,
+    pauseYearly: l.pauseYearly ?? true,
   }));
   return {
     kundeNavn: navn,
@@ -209,11 +218,11 @@ export function linjeFarve(index: number): string {
  *  ER PÅ PAUSE (Thomas, 2026-09-18): en opgavelinje med pauseActive + pause-
  *  vindue får sine besøg INDEN FOR vinduet UDELADT. Besøget kobles på en
  *  konkret dato (mandag i besøgets uge i reference-året, næste år for
- *  naesteAar-besøg) og testes mod den DELTE pause-logik (lib/pause.ts). Da kun
- *  team-side-fladerne sender pause-felterne med (PDF/accept-side sender kun
- *  description/price/interval/startWeek), afspejler holdets årshjul pausen,
- *  mens det kundevendte årshjul fortsat viser alle besøg (pause er INTERN
- *  data, som medarbejderen/kategorien). */
+ *  naesteAar-besøg) og testes mod den DELTE pause-logik (lib/pause.ts).
+ *  Thomas, 2026-09-21: pause-felterne sendes nu med PÅ ALLE flader (team-
+ *  årshjul, PDF og accept-side), så det kundevendte årshjul OG det viste
+ *  "Årligt beløb" begge fratrækker pause-besøgene — de to tal kan aldrig
+ *  afvige (beløb = pris × det antal besøg, hjulet viser). */
 export function bygAarshjul(
   linjer: {
     description: string;
