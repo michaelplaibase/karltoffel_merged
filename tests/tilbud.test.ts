@@ -5,6 +5,8 @@ import {
   bygAarshjul, parseUgeNr, kortNavn, tasklineMedarbejdere, tilbudLeadAcquisition,
   linjeFarve, LINJE_FARVE_TEKST,
 } from "../lib/tilbud.mts";
+// Thomas, 2026-09-18: pausevindue-logikken er DELT med abonnementet (lib/pause.ts).
+import { isPausedOnIso, isoMondayOfIsoWeek } from "../lib/pause";
 import { LEAD_SOURCES as LEAD_SOURCES_TILBUD } from "../lib/lead-sources.mts";
 import { LEAD_SOURCES as LEAD_SOURCES_LEADCALC } from "../lib/lead-calc";
 import {
@@ -407,4 +409,58 @@ test("bygAarshjul: hver opgave bærer sin linjes farve (samme linje = samme farv
   for (const [i, titel] of ["Vinduer", "Tagrender", "Algebehandling"].entries()) {
     assert.equal(farve.get(titel), linjeFarve(i));
   }
+});
+
+// ─── SÆSONPAUSE PR. OPGAVELINJE (Thomas, 2026-09-18) ─────────────────────────
+test("isPausedOnIso: yearly-vindue er wrap-bevidst og gentages hvert år", () => {
+  const p = { pauseActive: true, pauseStart: "2026-10-31", pauseEnd: "2027-03-30", pauseYearly: true };
+  assert.equal(isPausedOnIso(p, "2026-11-15"), true);
+  assert.equal(isPausedOnIso(p, "2026-12-01"), true);
+  assert.equal(isPausedOnIso(p, "2027-02-10"), true); // næste år — yearly gentager
+  assert.equal(isPausedOnIso(p, "2026-09-15"), false);
+  assert.equal(isPausedOnIso(p, "2026-10-30"), false);
+  assert.equal(isPausedOnIso(p, "2027-04-02"), false);
+  assert.equal(isPausedOnIso({ ...p, pauseActive: false }, "2026-11-15"), false);
+  assert.equal(isPausedOnIso({ ...p, pauseStart: null }, "2026-11-15"), false);
+  assert.equal(isPausedOnIso({ ...p, pauseEnd: null }, "2026-11-15"), false);
+});
+
+test("isPausedOnIso: 'kun denne sæson' (ikke-yearly) bruger absolutte datoer", () => {
+  const p = { pauseActive: true, pauseStart: "2026-10-31", pauseEnd: "2026-12-31", pauseYearly: false };
+  assert.equal(isPausedOnIso(p, "2026-11-10"), true);
+  assert.equal(isPausedOnIso(p, "2026-12-05"), true);
+  assert.equal(isPausedOnIso(p, "2027-01-05"), false);
+  assert.equal(isPausedOnIso(p, "2026-09-30"), false);
+});
+
+test("isoMondayOfIsoWeek: mandag i en ISO-uge (samme mandag-logik som abonnementet)", () => {
+  assert.equal(isoMondayOfIsoWeek(2026, 1), "2025-12-29");
+  assert.equal(isoMondayOfIsoWeek(2026, 45), "2026-11-02");
+  assert.equal(isoMondayOfIsoWeek(2027, 1), "2027-01-04");
+});
+
+test("bygAarshjul: opgave på pause udelader besøg i pausevinduet (teamets årshjul)", () => {
+  // "Hver 4. uge" fra uge 29 → 29,33,37,41,45,49,(→)1,5,9,13,17,21,25.
+  // Pause 31/10 → 30/03 (hvert år): fjerner 2026-uge 45+49 og næste års
+  // uger 1,5,9,13 (jan-mar). Tilbage: 17,21,25 (næste år) + 29,33,37,41.
+  const hjul = bygAarshjul(
+    [{
+      description: "Vinduer", interval: "Hver 4. uge", startWeek: "Uge 29",
+      pauseActive: true, pauseStart: "2026-10-31", pauseEnd: "2027-03-30", pauseYearly: true,
+    }],
+    { now: new Date("2026-09-21") },
+  );
+  assert.deepEqual(hjul.map((u) => u.uge), [17, 21, 25, 29, 33, 37, 41]);
+  // wrap-besøg (raa>52) markeres naesteAar; uge 17 er et næste-års besøg.
+  assert.equal(hjul.find((u) => u.uge === 17)?.opgaver[0].naesteAar, true);
+  assert.equal(hjul.find((u) => u.uge === 29)?.opgaver[0].naesteAar, undefined);
+});
+
+test("bygAarshjul: rå linjer uden pause-felter viser ALLE besøg (kundevendt flade)", () => {
+  const hjul = bygAarshjul(
+    [{ description: "Vinduer", interval: "Hver 4. uge", startWeek: "Uge 29" }],
+    { now: new Date("2026-09-21") },
+  );
+  assert.equal(hjul.reduce((n, u) => n + u.opgaver.length, 0), 13);
+  assert.ok(hjul.some((u) => u.uge === 45) && hjul.some((u) => u.uge === 49));
 });

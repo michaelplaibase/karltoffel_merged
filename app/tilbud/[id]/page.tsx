@@ -129,6 +129,15 @@ export default async function TilbudDetailPage({ params, searchParams }: { param
                         Intern: {(l.employee.firstName + " " + l.employee.lastName).trim()} (vises ikke for kunden)
                       </small>
                     ) : null}
+                    {/* Thomas, 2026-09-18: sæsonpause — diskret på teamets side
+                        (vises IKKE for kunden); teamets årshjul udelader
+                        pausebesøg (bygAarshjul får pause-felterne, men PDF/
+                        accept-side sender dem ikke med). */}
+                    {l.pauseActive ? (
+                      <small className="form-text" style={{ display: "block" }}>
+                        På pause: {l.pauseStart ?? ""} → {l.pauseEnd ?? ""}{l.pauseYearly ? " (hvert år)" : " (kun denne sæson)"} — vises ikke for kunden
+                      </small>
+                    ) : null}
                     </span>
                   </span>
                   <span className="num" style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 1 }}>

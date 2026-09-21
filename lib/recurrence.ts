@@ -7,6 +7,9 @@
 // the manual "Generér" button and the nightly /api/plan cron.
 import { prisma } from "./db";
 import { Prisma } from "@prisma/client";
+// Thomas, 2026-09-18: pausevindue-logikken er DELT med tilbuds-modulet
+// (lib/pause.ts) — én kilde til sandhed for, hvornår en opgave er på pause.
+import { isPausedOnIso } from "./pause";
 
 const WEEK_MS = 7 * 864e5;
 // 12-måneders horisont (Thomas, 2026-09-10: "det kunne være fest hvis den
@@ -84,23 +87,14 @@ function resolveStartAnchor(parts: { week: number; year: number | null }, hasOrd
 }
 
 /** Sæsonpause ("Måneder på pause"): er opgaven på pause i ugen med mandag `v`
- *  (ms-tidsstempel, UTC midnat)? Vinduet må krydse nytår (fx 31/10 → 30/03) —
- *  derfor sammenlignes wrap-bevidst. pauseYearly=true gentager hvert år (kun
- *  måned/dag sammenlignes); false er "kun denne sæson" (absolutte ISO-datoer). */
+ *  (ms-tidsstempel, UTC midnat)? Delegerer til den FÆLLES pause-logik
+ *  (lib/pause.ts), så abonnements-genereringen og tilbuds-årshjulet aldrig
+ *  kan være uenige. isPausedOnIso er wrap-bevidst (vinduet må krydse nytår). */
 function isPausedOn(
   t: { pauseActive: boolean; pauseStart: string | null; pauseEnd: string | null; pauseYearly: boolean },
   v: number,
 ): boolean {
-  if (!t.pauseActive || !t.pauseStart || !t.pauseEnd) return false;
-  const d = new Date(v);
-  const pad = (n: number) => String(n).padStart(2, "0");
-  const mmdd = pad(d.getUTCMonth() + 1) + "-" + pad(d.getUTCDate());
-  if (t.pauseYearly) {
-    const s = t.pauseStart.slice(5), e = t.pauseEnd.slice(5);
-    return s <= e ? mmdd >= s && mmdd <= e : mmdd >= s || mmdd <= e;
-  }
-  const iso = d.getUTCFullYear() + "-" + mmdd;
-  return iso >= t.pauseStart && iso <= t.pauseEnd;
+  return isPausedOnIso(t, new Date(v).toISOString().slice(0, 10));
 }
 
 type SubWithTasks = Awaited<ReturnType<typeof loadActiveSubs>>[number];

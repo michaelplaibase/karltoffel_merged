@@ -75,6 +75,10 @@ export default async function RetTilbudPage({ params }: { params: Promise<{ id: 
           interval: l.interval,
           startWeek: l.startWeek,
           employee: l.employee ? String(l.employee.id) : "",
+          pauseActive: l.pauseActive,
+          pauseStart: l.pauseStart,
+          pauseEnd: l.pauseEnd,
+          pauseYearly: l.pauseYearly,
         })),
       }}
     />

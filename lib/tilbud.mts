@@ -2,6 +2,9 @@
 // med node --test uden database (samme mønster som lib/maanedrapport.mts).
 import { randomBytes } from "node:crypto";
 import { tilbudAarsbelobSum, besogPrAar } from "./subscription-intervals";
+// Thomas, 2026-09-18: pausevindue-logikken er DELT med abonnements-modulet
+// (lib/pause.ts) — én kilde til sandhed for, hvornår en opgave er på pause.
+import { isPausedOnIso, isoMondayOfIsoWeek } from "./pause";
 
 export const TILBUD_STATUSES = ["udkast", "sendt", "accepteret", "afvist", "konverteret"] as const;
 export type TilbudStatus = (typeof TILBUD_STATUSES)[number];
@@ -201,10 +204,29 @@ export function linjeFarve(index: number): string {
  *  Besøg = besogPrAar(interval) (samme afrunding som årsbeløbet — "1 gang om
  *  året" → 1 besøg). Uden interval behandles linjen som EN engangsopgave på
  *  startugen. Linjer uden startuge kan ikke placeres og udelades. Besøg der
- *  ruller over uge 52 markeres naesteAar (årstalskift-note i UI/PDF). */
+ *  ruller over uge 52 markeres naesteAar (årstalskift-note i UI/PDF).
+ *
+ *  ER PÅ PAUSE (Thomas, 2026-09-18): en opgavelinje med pauseActive + pause-
+ *  vindue får sine besøg INDEN FOR vinduet UDELADT. Besøget kobles på en
+ *  konkret dato (mandag i besøgets uge i reference-året, næste år for
+ *  naesteAar-besøg) og testes mod den DELTE pause-logik (lib/pause.ts). Da kun
+ *  team-side-fladerne sender pause-felterne med (PDF/accept-side sender kun
+ *  description/price/interval/startWeek), afspejler holdets årshjul pausen,
+ *  mens det kundevendte årshjul fortsat viser alle besøg (pause er INTERN
+ *  data, som medarbejderen/kategorien). */
 export function bygAarshjul(
-  linjer: { description: string; interval?: string | null; startWeek?: string | null }[],
+  linjer: {
+    description: string;
+    interval?: string | null;
+    startWeek?: string | null;
+    pauseActive?: boolean;
+    pauseStart?: string | null;
+    pauseEnd?: string | null;
+    pauseYearly?: boolean;
+  }[],
+  opts: { now?: Date } = {},
 ): AarshjulUge[] {
+  const refYear = (opts.now ?? new Date()).getUTCFullYear();
   const perUge = new Map<number, AarshjulOpgave[]>();
   for (const [linjeIndex, l] of linjer.entries()) {
     const start = parseUgeNr(l.startWeek);
@@ -215,8 +237,17 @@ export function bygAarshjul(
     for (let i = 0; i < besog; i++) {
       const raa = start + step * i;
       const uge = ((raa - 1) % 52) + 1; // wrap over 52 → samme uge næste år
+      const naesteAar = raa > 52 || undefined;
+      // Pause: udelad besøget, hvis dets uge falder i opgavens pausevindue.
+      const iso = isoMondayOfIsoWeek(naesteAar ? refYear + 1 : refYear, uge);
+      if (isPausedOnIso({
+        pauseActive: l.pauseActive ?? false,
+        pauseStart: l.pauseStart ?? null,
+        pauseEnd: l.pauseEnd ?? null,
+        pauseYearly: l.pauseYearly ?? true,
+      }, iso)) continue;
       const liste = perUge.get(uge) ?? [];
-      liste.push({ titel: l.description, kort: kortNavn(l.description), naesteAar: raa > 52 || undefined, farve: linjeFarve(linjeIndex) });
+      liste.push({ titel: l.description, kort: kortNavn(l.description), naesteAar, farve: linjeFarve(linjeIndex) });
       perUge.set(uge, liste);
     }
   }
