@@ -220,7 +220,37 @@ export async function POST(req: NextRequest) {
     // Ingen ny kalender-booking ved dedup — det åbne lead har allerede sit opkalds-slot.
     // Slack pinges dog alligevel: kunden har rørt tilbudsmotoren igen, og det
     // nye pakkevalg kan ændre prisen på et lead Kristian allerede har set.
-    const slack = await pingSlack(merged, merged.payload, "Opfølgning på et eksisterende emne — mængder/pakkevalg kan være ændret.");
+    // Send mail copy to Kristian so Gmail is the single source of truth for Karl V2
+    let mailSent = false;
+    try {
+      const emailContent = `Opfølgning på et eksisterende lead / emne:
+Navn: ${merged.name}
+Email: ${merged.email ?? "Ikke oplyst"}
+Telefon: ${merged.phone ?? "Ikke oplyst"}
+Adresse: ${merged.address ?? "Ikke oplyst"}
+
+Besked:
+${merged.message ?? "Ingen besked"}
+
+Pakkevalg / payload:
+${JSON.stringify(merged.payload ?? {}, null, 2)}
+`;
+      await sendEmail({
+        to: "kristian@karltoffel.dk",
+        subject: `🆕 Opfølgning på lead (CRM/website): ${merged.name}`,
+        text: emailContent,
+        replyTo: email || undefined,
+      });
+      mailSent = true;
+    } catch (err) {
+      console.error("[Leads API] Failed to send update email to kristian@karltoffel.dk:", err);
+    }
+
+    let slack: any = "deferred_to_gmail";
+    if (!mailSent) {
+      slack = await pingSlack(merged, merged.payload, "⚠️ Opfølgning på lead modtaget, men mail-kopi til kristian@karltoffel.dk fejlede! Tjek CRM.");
+    }
+
     // Samme kontrakt som browser-pixelen: fbq('track') fyres ved HVER
     // indsendelse (også dedup-merges), så CAPI fyres også her.
     await fireCapi(meta);
