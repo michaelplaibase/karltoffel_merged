@@ -307,6 +307,7 @@ ${JSON.stringify(merged.payload ?? {}, null, 2)}
 
   // 1. Send kopi af lead til kristian@karltoffel.dk med kunden som replyTo
   let mailSent = false;
+  let emailError = "";
   try {
     const lines = tm.services.slice(0, 15).map((s) =>
       `• ${s.navn}${s.qty ? ` — ${DKK.format(s.qty)} ${s.enhed}` : ""}${s.freq ? ` × ${s.freq}/år` : ""}`);
@@ -334,9 +335,11 @@ ${JSON.stringify(merged.payload ?? {}, null, 2)}
     });
     mailSent = emailRes.ok;
     if (!emailRes.ok) {
+      emailError = emailRes.error || "";
       console.error(`[leads] Fejl ved afsendelse af lead-kopi til kristian@karltoffel.dk: ${emailRes.error}`);
     }
   } catch (err) {
+    emailError = err instanceof Error ? err.message : String(err);
     console.error("[leads] Exception ved afsendelse af lead-kopi:", err);
   }
 
@@ -348,7 +351,8 @@ ${JSON.stringify(merged.payload ?? {}, null, 2)}
   // Normalt ping til #leads sker FØRST når mailen har ramt Kristians Gmail og udkastet er lavet.
   let slackStatus = "deferred_to_gmail";
   if (!mailSent) {
-    const fallbackRes = await pingSlack(lead, lead.payload, "⚠️ Nyt lead modtaget, men mail-kopi til kristian@karltoffel.dk fejlede! Tjek CRM.");
+    const reason = emailError ? ` (${emailError})` : "";
+    const fallbackRes = await pingSlack(lead, lead.payload, `⚠️ Nyt lead modtaget, men mail-kopi til kristian@karltoffel.dk fejlede${reason}! Tjek CRM.`);
     slackStatus = `warning_sent: ${fallbackRes}`;
   }
 
