@@ -32,7 +32,7 @@ export async function GET(req: Request) {
   // må ALDRIG påvirke faktureringen, derfor egen try/catch.
   let maanedrapportOut: Awaited<ReturnType<typeof runMaanedrapporter>> | { error: string } = { sent: 0, skipped_no_email: 0, skipped_pilot: 0, failed: 0 };
   try {
-    maanedrapportOut = await runMaanedrapporter(new Date());
+    maanedrapportOut = await runMaanedrapporter(new Date(), new Set(result.invoicedContactIds));
   } catch (e) {
     maanedrapportOut = { error: e instanceof Error ? e.message : "Månedrapport-kørsel fejlede" };
   }

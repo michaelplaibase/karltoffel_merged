@@ -149,8 +149,11 @@ function maanedLabelDa(year: number, month: number): string {
     .replace(/^./, (c) => c.toUpperCase()) + ` ${year}`;
 }
 
-/** Kør rapporter for ALLE erhvervskunder (kaldes fra cron-flowet d. 20. efter samlefakturaerne). */
-export async function runMaanedrapporter(now: Date = new Date()): Promise<{ sent: number; skipped_no_email: number; skipped_pilot: number; failed: number }> {
+/** Kør rapporter (kaldes fra cron-flowet d. 20. efter samlefakturaerne). Kun
+ *  erhvervskunder. Valgfrit `onlyContactIds`: kun dén delmængde behandles — så
+ *  månedsrapporten kun sendes til kunder der faktisk fik en faktura i samme
+ *  kørsels-batch (Thomas 2026-09: ikke til inaktive/ikke-fakturerede kunder). */
+export async function runMaanedrapporter(now: Date = new Date(), onlyContactIds?: Set<number>): Promise<{ sent: number; skipped_no_email: number; skipped_pilot: number; failed: number }> {
   const pilotEnv = process.env.MAANEDSRAPPORT_PILOT_CONTACTS;
   const stats = { sent: 0, skipped_no_email: 0, skipped_pilot: 0, failed: 0 };
   const { period } = rapportPeriode(now);
@@ -159,6 +162,9 @@ export async function runMaanedrapporter(now: Date = new Date()): Promise<{ sent
     select: { id: true },
   });
   for (const c of erhverv) {
+    // Kun kunder der modtog en samlefaktura i denne kørsel — aldrig rapport til
+    // en kontakt der ikke blev faktureret i perioden.
+    if (onlyContactIds && !onlyContactIds.has(c.id)) continue;
     if (!contactErIPilot(c.id, pilotEnv)) { stats.skipped_pilot++; continue; }
     const status = await sendMaanedrapportTilKontakt({ contactId: c.id, period, pilotEnv });
     if (status === "skipped_pilot") stats.skipped_pilot++;

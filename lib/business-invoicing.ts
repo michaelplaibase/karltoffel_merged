@@ -54,6 +54,9 @@ const orderExtRefBatch = (contactId: number, periodStartISO: string) => `karltof
 export type BatchResult = {
   companies: number;
   invoiced: number;
+  /** Kontakt-id'er der faktisk fik en samlefaktura i denne kørsel (result.invoiced++).
+   *  Bruges af cron-flowet til kun at sende månedsrapport til fakturerede kunder. */
+  invoicedContactIds: number[];
   simulated: number;
   failed: number;
   skippedNoOrders: number;
@@ -77,7 +80,7 @@ function contactFrequencyFilter(freq: "maaned" | "kvartal") {
  * (cron, d. 20. hver måned) — se vercel.json.
  */
 export async function runBusinessBatchInvoicing(now: Date = new Date()): Promise<BatchResult> {
-  const result: BatchResult = { companies: 0, invoiced: 0, simulated: 0, failed: 0, skippedNoOrders: 0, errors: [] };
+  const result: BatchResult = { companies: 0, invoiced: 0, invoicedContactIds: [], simulated: 0, failed: 0, skippedNoOrders: 0, errors: [] };
   const cfg = await loadActiveConfig();
 
   // KVARTALS-spor (Thomas, 2026-09-03): kunder med reglen "Faktura pr. kvartal"
@@ -276,6 +279,7 @@ async function runBatchForPeriod(args: {
         data: { businessBatchInvoiceStatus: "Sent", businessBatchInvoicedAt: new Date(), businessBatchError: null },
       });
       result.invoiced++;
+      result.invoicedContactIds.push(contactId);
     } catch (e) {
       const msg = (e instanceof Error ? e.message : "Erhvervsfakturering fejlede").slice(0, 500);
       result.failed++;
