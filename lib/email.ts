@@ -53,7 +53,7 @@ export async function sendEmail({ to, subject, text, html, replyTo, from, sender
   // Gmail-transporten sender altid SOM hej@karltoffel.dk — kan ikke bruges når
   // en bestemt afsender-identitet er efterspurgt (send-som-håndværker).
   const gmailReady = !!(process.env.GMAIL_SA_EMAIL || process.env.GOOGLE_SA_EMAIL) && !!(process.env.GMAIL_SA_KEY || process.env.GOOGLE_SA_KEY);
-  if (gmailReady && !from && process.env.EMAIL_DRY_RUN !== "1") {
+  if (gmailReady && process.env.EMAIL_DRY_RUN !== "1") {
     const r = await sendGmail({ to, subject, text, html, replyTo });
     return { ...r, from: `Karltoffel <${process.env.GMAIL_IMPERSONATE?.trim() || "hej@karltoffel.dk"}>` };
   }

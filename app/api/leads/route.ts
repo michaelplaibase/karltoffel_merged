@@ -240,7 +240,6 @@ ${JSON.stringify(merged.payload ?? {}, null, 2)}
         subject: `🆕 Opfølgning på lead (CRM/website): ${merged.name}`,
         text: emailContent,
         replyTo: email || undefined,
-        from: "hej@karltoffel.dk",
       });
       mailSent = true;
     } catch (err) {
@@ -332,7 +331,6 @@ ${JSON.stringify(merged.payload ?? {}, null, 2)}
       subject: `[Nyt Lead - Hjemmeside]: ${name}`,
       text: emailBody,
       replyTo: email || undefined,
-      from: "hej@karltoffel.dk",
     });
     mailSent = emailRes.ok;
     if (!emailRes.ok) {
