@@ -223,18 +223,23 @@ export async function POST(req: NextRequest) {
     // Send mail copy to Kristian so Gmail is the single source of truth for Karl V2
     let mailSent = false;
     try {
-      const emailContent = `Opfølgning på et eksisterende lead / emne:
-Navn: ${merged.name}
-Email: ${merged.email ?? "Ikke oplyst"}
-Telefon: ${merged.phone ?? "Ikke oplyst"}
-Adresse: ${merged.address ?? "Ikke oplyst"}
-
-Besked:
-${merged.message ?? "Ingen besked"}
-
-Pakkevalg / payload:
-${JSON.stringify(merged.payload ?? {}, null, 2)}
-`;
+      const updateLines = tm.services.slice(0, 15).map((s) =>
+        `• ${s.navn}${s.qty ? ` — ${DKK.format(s.qty)} ${s.enhed}` : ""}${s.freq ? ` × ${s.freq}/år` : ""}`);
+      const emailContent = [
+        `Opfølgning på et eksisterende lead (nyt pakkevalg):`,
+        ``,
+        `Navn: ${merged.name}`,
+        merged.phone ? `Telefon: ${merged.phone}` : null,
+        merged.email ? `E-mail: ${merged.email}` : null,
+        merged.address ? `Adresse: ${merged.address}` : null,
+        merged.message ? `Besked fra kunde: ${merged.message}` : null,
+        tm.kundetype ? `Kundetype: ${tm.kundetype === "erhverv" ? "Erhverv" : "Privat"}` : null,
+        tm.estimatMd ? `Estimat: ${DKK.format(tm.estimatMd)} kr/md` : null,
+        updateLines.length ? `\nNye valgte ydelser:\n${updateLines.join("\n")}` : null,
+        ``,
+        `---`,
+        `Dette er en automatisk lead-kopi fra Karltoffel CRM. Besvar denne mail for at skrive direkte til kunden.`,
+      ].filter(Boolean).join("\n");
       await sendEmail({
         to: "kristian@karltoffel.dk",
         subject: `🆕 Opfølgning på lead (CRM/website): ${merged.name}`,
