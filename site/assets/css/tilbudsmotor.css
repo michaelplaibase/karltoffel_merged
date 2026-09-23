@@ -401,6 +401,26 @@
    så den aldrig tåges over gul. Basegælder alle breddegrader (mobil nedarver). */
 .tm-flow .pw-fradrag{font-size:11px;line-height:1.35;color:#616711;opacity:1;font-weight:600}
 
+/* Gratis-kampagnenote (gratis vinduesvask): egen fuldbred linje UNDER rækken
+   (grid-column:1/-1 → spænder hele rækkebredden på egen række i stedet for at
+   bo i den smalle pris-kolonne). Den lange 'efterfølgende besøg faktureres
+   normalt'-forklaring kan dermed ALDRIG rende ind i antal-feltet — på mobil
+   (stakket layout), tablet OG desktop. Grøn accent (Spire) som fradragsteksten. */
+.tm-flow .tm-campaign-note{
+  grid-column:1/-1;
+  display:block;
+  margin:4px 0 0;
+  padding:3px 10px;
+  border-radius:7px;
+  background:rgba(97,103,17,.12);
+  color:#616711;
+  font-size:10.5px;
+  font-weight:600;
+  line-height:1.35;
+  white-space:normal;
+  text-align:left;
+}
+
 /* Række-adskillelse: valgte rækker løftes let ved hover, fravalgte er dæmpede
    (men læsbare) og vågner ved hover/fokus. Ingen layout-spring. */
 .tm-flow .row{transition:opacity .15s ease,filter .15s ease,box-shadow .15s ease}

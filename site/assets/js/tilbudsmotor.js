@@ -1524,6 +1524,10 @@ function opdater(){
   PRODUCTS.forEach(p => {
     const el = ROOT.querySelector('.pw[data-id="' + p.id + '"]');
     if(!el) return;
+    /* Ryd evt. gratis-kampagnenote fra forrige opdater (idempotent): den
+       gen-indsættes kun når kampagnen er aktiv OG rækken er valgt. */ 
+    const row = el.closest('.row');
+    if(row){ const prior = row.querySelector('.tm-campaign-note'); if(prior) prior.remove(); }
     /* Fix 6 (UX 2026-09-08): hæk-rækken må IKKE vise et konkret pris-tal,
        før højden er valgt — neutral note (prisNote-mønsteret) indtil da.
        Efter højde-valg opdateres som normalt. */
@@ -1533,14 +1537,25 @@ function opdater(){
       delete el.dataset.val;
       return;
     }
-    /* 'Gratis vinduesvask'-kampagnen (one-off cap): linjen vises 0 kr som det
-       GRATIS 1. besøg. Ved flere besøg/år noteres ærligt at de efterfølgende
-       besøg faktureres normalt. */
-    if(p.id === "vinduer" && vindueGratis()){
-      el.innerHTML = '<b class="pw-val">0 kr</b><span class="pw-unit">gratis via kampagnen — 1. besøg'
-        + (p.freq > 1 ? ' · efterfølgende besøg faktureres normalt (' + p.freq + 'x/år)' : '')
-        + '</span>';
-      el.dataset.val = 0;
+    /* 'Gratis vinduesvask'-kampagnen (one-off cap): det 1. besøg er GRATIS.
+       freq=1 → hele året er gratis (0 kr pr. besøg). freq>1 → vises det
+       BLANDEDE pr. besøg (linje × (freq−1)/freq, fordi det ene besøg er
+       gratis), og hele nedbrydningen står i en dedikeret fuldbred note UNDER
+       rækken — aldrig i pris-kolonnen, så den ikke støder ind i antal-feltet. */
+    if(p.id === "vinduer" && p.on && vindueGratis()){
+      const vLinje = Math.max((p.pris || 0) * (p.qty || 0), p.min || 0);
+      const fri = p.freq > 1 && vLinje > 0;
+      el.innerHTML = '<b class="pw-val">' + (fri ? kr(Math.round(vLinje * (p.freq - 1) / p.freq)) : '0 kr') + '</b>'
+        + '<span class="pw-unit">gratis via kampagnen</span>';
+      el.dataset.val = fri ? Math.round(vLinje * (p.freq - 1) / p.freq) : 0;
+      const note = document.createElement("small");
+      note.className = "tm-campaign-note";
+      note.textContent = (p.freq > 1)
+        ? "Gratis via kampagnen: 1. besøg er gratis · efterfølgende besøg faktureres normalt ("
+          + p.freq + "x/år)"
+          + (vLinje > 0 ? " = " + kr(vLinje * (p.freq - 1)) + "/år" : " — prisen vises når du angiver antal")
+        : "Hele året er gratis via kampagnen";
+      row.appendChild(note);
       return;
     }
     if(p.pris == null){
