@@ -45,7 +45,7 @@ export type LeadLike = {
 
 function ydelseLinje(s: PricedService, freeVindue = false): string {
   const beloeb = (freeVindue && s.id === "vinduer")
-    ? "*gratis via kampagnen*"
+    ? (s.freq > 1 ? `${kr(linjeAar(s, freeVindue))}/år (1. besøg gratis via kampagnen)` : "*gratis via kampagnen*")
     : s.pris == null
       ? (erPakkeYdelse(s.id) ? "_indeholdt_" : "_pris ved besøg_")
       : `${kr(linjeAar(s, freeVindue))}/år`;

@@ -66,7 +66,7 @@ export type QuoteHtmlInput = {
 function linje(nr: number, s: PricedService, freeVindue = false): string {
   const aar = linjeAar(s, freeVindue);
   const beloeb = (freeVindue && s.id === "vinduer")
-    ? "Gratis via kampagnen (0 kr)"
+    ? (s.freq > 1 ? `${kr(aar)} (1. besøg gratis via kampagnen)` : "Gratis via kampagnen (0 kr)")
     : s.pris == null
       ? (erPakkeYdelse(s.id) ? "Indeholdt" : "Pris ved besøg")
       : kr(aar);
@@ -218,7 +218,7 @@ export function renderQuoteText(i: QuoteHtmlInput): string {
   const linjer = (list: PricedService[]) =>
     list.map((s, n) => {
       const beloeb = (i.freeVindue && s.id === "vinduer")
-        ? "Gratis via kampagnen (0 kr)"
+        ? (s.freq > 1 ? `${kr(linjeAar(s, i.freeVindue))} (1. besøg gratis via kampagnen)` : "Gratis via kampagnen (0 kr)")
         : s.pris == null ? (erPakkeYdelse(s.id) ? "Indeholdt" : "Pris ved besøg") : kr(linjeAar(s, i.freeVindue));
       const maengde = s.qty && s.enhed ? ` (${s.qty} ${s.enhed})` : "";
       return `${n + 1}. ${s.navn}${maengde} – ${beloeb}`;

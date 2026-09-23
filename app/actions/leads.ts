@@ -42,11 +42,33 @@ function rabatFaktor(payload: LeadPayload): number {
   return aarNet / r.aarBrutto;
 }
 
-/** Pris pr. besøg for én linje, efter rabat-faktoren. freeVindue (gratis
- *  vinduesvask-kampagne): vinduesvask-linjen er altid 0 kr. */
+/** Pris pr. besøg for én linje, efter rabat-faktoren. En ENGANGS-ordre (pr. gang)
+ *  er ét besøg = det GRATIS 1. besøg, så freeVindue (gratis vinduesvask-kampagne,
+ *  one-off cap) → vinduesvask-linjen er 0 kr. Til abonnementer, hvor linjen
+ *  gentages freq gange om året, se subscriptionLinjePris (skal fakturere freq−1
+ *  besøg over året). */
 function linjePris(s: PricedService, faktor: number, freeVindue = false): number {
   if (freeVindue && s.id === "vinduer") return 0;
   return s.pris != null && Number.isFinite(s.pris) ? Math.max(0, Math.round(s.pris * Math.max(0, Math.round(s.qty)) * faktor)) : 0;
+}
+
+/** Abonnements-linjes pris pr. besøg. 'Gratis vinduesvask'-kampagnen (one-off
+ *  cap): kun det 1. besøg om året er gratis, så abonnementet skal over året
+ *  fakturere (freq−1) besøg for vinduerne. Abonnements-linjen har ÉN fast pris
+ *  pr. gang (ingen per-besøg-overstyring), så den gratis førstegangsfaktor
+ *  amortiseres: pris pr. gang = fuld pris × (freq−1)/freq, så årssummen rammer
+ *  (freq−1) × enhedspris — aldrig alle besøg gratis, aldrig det gratis besøg
+ *  faktureret dobbelt. freq=1 → hele linjen er gratis (0 kr). */
+function subscriptionLinjePris(s: PricedService, faktor: number, freeVindue = false): number {
+  if (freeVindue && s.id === "vinduer") {
+    const f = Math.max(0, Math.round(s.freq));
+    if (f <= 1) return 0;
+    const full = s.pris != null && Number.isFinite(s.pris)
+      ? Math.max(0, Math.round(s.pris * Math.max(0, Math.round(s.qty)) * faktor))
+      : 0;
+    return Math.max(0, Math.round(full * (f - 1) / f));
+  }
+  return linjePris(s, faktor);
 }
 
 /** Byg abonnements-spec fra tilbudsmotorens payload. Frekvens-mapping:
@@ -94,7 +116,7 @@ function subscriptionSpecFromPayload(payload: LeadPayload) {
     return {
       category, letter: (category[0] ?? "A").toUpperCase(), color: categoryColor(category),
       description: `${s.navn.trim()}${qty > 0 && s.enhed ? ` — ${qty} ${s.enhed}` : ""}`,
-      price: linjePris(s, faktor * skala, payload.freeVindue),
+      price: subscriptionLinjePris(s, faktor * skala, payload.freeVindue),
       durationMin: 0,
       intervalMultiplier: m == null ? "På anmodning" : m === 1 ? "Hver gang" : `Hver ${m}. gang`,
       startWeek: null as string | null, isStandardTask: false, sort: i,

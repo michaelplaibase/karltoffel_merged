@@ -31,7 +31,9 @@ const NAMED_PACKAGES = new Set(["Villapakken", "All Inclusive", "Erhvervspakken"
 function opgaveListeText(services: PricedService[], pakkeNavn: string | null, freeVindue = false): string {
   const line = (s: PricedService, i: number) =>
     `${i + 1}. ${s.navn}${s.qty && s.enhed ? ` — ${s.qty} ${s.enhed}` : ""}${
-      freeVindue && s.id === "vinduer" ? " — GRATIS via kampagnen (0 kr)" : ` — ${krFmt(Math.round(linjeAar(s, freeVindue)))}`
+      freeVindue && s.id === "vinduer"
+        ? (s.freq > 1 ? ` — ${krFmt(Math.round(linjeAar(s, freeVindue)))} (1. besøg gratis via kampagnen)` : " — GRATIS via kampagnen (0 kr)")
+        : ` — ${krFmt(Math.round(linjeAar(s, freeVindue)))}`
     }`;
   const pakke = services.filter((s) => erPakkeYdelse(s.id));
   const ekstra = services.filter((s) => !erPakkeYdelse(s.id));
@@ -66,7 +68,9 @@ export async function buildLeadQuoteDraft(lead: LeadLike, company: QuoteCompany)
         (s): s is PricedService => !!s && typeof s.id === "string" && typeof s.navn === "string" && s.navn.trim().length > 0,
       );
       // 'Gratis vinduesvask'-kampagnen — serveren skrev flaget top-level i
-      // payloadet (app/api/leads/route.ts). Linjen regnes 0 kr i tilbuddet.
+      // payloadet (app/api/leads/route.ts). Kun det 1. besøg er gratis: linjen
+      // bidrager (freq−1)×enhedspris for året (freq>1), 0 kr ved freq=1 (se
+      // linjeAar) — så tilbuddets total er ærligt.
       freeVindue = p.freeVindue === true;
       const rawPakke = p.pakke?.trim() || null;
       pakkeNavn = rawPakke && NAMED_PACKAGES.has(rawPakke) ? rawPakke : null;
@@ -75,7 +79,7 @@ export async function buildLeadQuoteDraft(lead: LeadLike, company: QuoteCompany)
 
   const tasks: QuoteTask[] = services.map((s) => ({
     description: `${s.navn}${s.qty && s.enhed ? ` — ${s.qty} ${s.enhed}` : ""}`,
-    price: (freeVindue && s.id === "vinduer") ? 0 : (s.pris != null ? Math.max(0, Math.round(linjeAar(s, freeVindue))) : 0),
+    price: s.pris != null ? Math.max(0, Math.round(linjeAar(s, freeVindue))) : 0,
   }));
 
   const contact: QuoteContact = { name: lead.name, att: null, isCompany, email: lead.email, street, city };

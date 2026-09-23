@@ -91,8 +91,18 @@ function beregn(products){
     var p = products[i];
     if(!p.on) continue;
     count += 1;                                   /* uprisede ("indeholdt") tæller også med */
-    /* 'Gratis vinduesvask'-kampagnen: linjen tæller med i antallet, men 0 kr. */
-    if(vindueGratis() && p.id === "vinduer") continue;
+    /* 'Gratis vinduesvask'-kampagnen (one-off cap): linjen tæller med i
+       antallet, og KUN det 1. besøg er gratis. 'pr. besøg'-totalen (total)
+       viser derfor 0 kr for vinduerne (1. besøg er foranstillet gratis),
+       mens årssummen (yearTotal) bidrager (freq−1)×enhedspris, så besøg 2..N
+       faktureres normalt. freq=1 → hele linjen er gratis (0 kr). */
+    if(vindueGratis() && p.id === "vinduer"){
+      if(p.freq > 1 && p.pris != null && p.qty > 0){
+        var linje = Math.max(p.pris * p.qty, p.min || 0);
+        yearTotal += linje * (p.freq - 1);        /* resterende besøg faktureres normalt */
+      }
+      continue;
+    }
     /* Hæk før højde er besvaret: ingen konkret meterpris i totalen endnu
        (fix 6) — rækken viser neutral note, beløbet rulles ind ved svar. */
     if(p.id === "haek" && !(state.haekInfo && state.haekInfo.hoejde)) continue;
@@ -997,7 +1007,7 @@ $("btn-send").addEventListener("click", ()=>{
     } else {
       const linjer = valgt.map(p=>{
         const suffix = (vindueGratis() && p.id === "vinduer")
-                     ? " (gratis via kampagnen — 0 kr)"
+                     ? " (0 kr — gratis via kampagnen, 1. besøg" + (p.freq > 1 ? "; efterfølgende besøg faktureres normalt" : "") + ")"
                      : (p.pris == null) ? (p.prisNote ? " (vi ringer til dig og beder om et billede af hækken)" : (p.pakke ? " (indeholdt)" : " (pris ved besøg)"))
                      : (!p.qty ? " (angiv antal)" : " (" + p.freq + "x/år)");
         return esc(p.navn) + suffix;
@@ -1086,7 +1096,10 @@ function pushLeadEvent(valgt, r, totalNet, kodePct){
         price: enhedspris,
         quantity: p.qty,
         frequency_per_year: p.freq,
-        item_revenue: Math.round(linje * p.freq)   /* årligt — summer op til lead_value_total */
+        /* Gratis vinduesvask-kampagne (one-off cap): kun 1. besøg er gratis —
+           det årlige item_revenue tæller derfor kun de (freq−1) efterfølgende
+           besøg (konsistent med beregn()). freq=1 → 0. */
+        item_revenue: Math.round((vindueGratis() && p.id === "vinduer") ? linje * Math.max(0, p.freq - 1) : linje * p.freq)   /* årligt — summer op til lead_value_total */
       };
     })
   };
@@ -1520,9 +1533,13 @@ function opdater(){
       delete el.dataset.val;
       return;
     }
-    /* 'Gratis vinduesvask'-kampagnen: linjen vises med 0 kr + note. */
+    /* 'Gratis vinduesvask'-kampagnen (one-off cap): linjen vises 0 kr som det
+       GRATIS 1. besøg. Ved flere besøg/år noteres ærligt at de efterfølgende
+       besøg faktureres normalt. */
     if(p.id === "vinduer" && vindueGratis()){
-      el.innerHTML = '<b class="pw-val">0 kr</b><span class="pw-unit">gratis via kampagnen</span>';
+      el.innerHTML = '<b class="pw-val">0 kr</b><span class="pw-unit">gratis via kampagnen — 1. besøg'
+        + (p.freq > 1 ? ' · efterfølgende besøg faktureres normalt (' + p.freq + 'x/år)' : '')
+        + '</span>';
       el.dataset.val = 0;
       return;
     }

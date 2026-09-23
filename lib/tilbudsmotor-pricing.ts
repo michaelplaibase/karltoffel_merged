@@ -73,12 +73,24 @@ export function rabatPct(count: number): number {
 /** Mirror af beregn() i tilbudsmotor.js. Alle services i listen regnes som
  *  valgte (`on`) — payloadet indeholder kun de valgte. freeVindue = 'gratis
  *  vinduesvask'-kampagnen er aktiv (server-afgjort): vinduesvask-linjen tæller
- *  stadig med i antallet, men 0 kr i totalen — præcis som i klientens beregn(). */
+ *  stadig med i antallet, men kun det 1. besøg er gratis — årssummen bidrager
+ *  (freq−1)×enhedspris (freq>1), 0 kr ved freq=1 — præcis som i klientens
+ *  beregn(). */
 export function beregn(services: PricedService[], freeVindue = false): Beregning {
   let brutto = 0, count = 0, visits = 0;
   for (const p of services) {
     count += 1;                                    // uprisede ("indeholdt") tæller også med
-    if (freeVindue && p.id === "vinduer") continue; // gratis kampagne: tæller i count, 0 kr
+    if (freeVindue && p.id === "vinduer") {
+      // Gratis vinduesvask (one-off cap): tæller i count. KUN det 1. besøg er
+      // gratis — årssummen bidrager derfor (freq−1)×enhedspris, så besøg 2..N
+      // faktureres normalt. freq=1 → hele linjen er gratis (0 kr). Mirror af
+      // beregn() i tilbudsmotor.js.
+      if (p.freq > 1 && p.pris != null && p.qty > 0) {
+        const linje = Math.max(p.pris * p.qty, p.min || 0);
+        brutto += linje * (p.freq - 1);
+      }
+      continue;
+    }
     if (p.freq > visits) visits = p.freq;           // ydelser bundtes på samme besøg
     if (p.pris != null && p.qty > 0) {
       const linje = Math.max(p.pris * p.qty, p.min || 0);   // samme min-logik som motoren
@@ -94,9 +106,16 @@ export function beregn(services: PricedService[], freeVindue = false): Beregning
 }
 
 /** Årspris pr. linje inkl. moms. null-pris → 0 kr (men linjen vises stadig).
- *  freeVindue (gratis vinduesvask-kampagne): vinduesvask-linjen er altid 0 kr. */
+ *  freeVindue (gratis vinduesvask-kampagne, one-off cap): kun det 1. besøg er
+ *  gratis, så linjen bidrager (freq−1)×enhedspris for året (freq>1) og 0 kr
+ *  ved freq=1 — mirror af linjeAar-logikken i tilbudsmotor.js. */
 export function linjeAar(p: PricedService, freeVindue = false): number {
-  if (freeVindue && p.id === "vinduer") return 0;
+  if (freeVindue && p.id === "vinduer") {
+    if (p.freq > 1) {
+      return p.pris == null || !p.qty ? 0 : Math.max(p.pris * p.qty, p.min || 0) * (p.freq - 1);
+    }
+    return 0;
+  }
   return p.pris == null || !p.qty ? 0 : Math.max(p.pris * p.qty, p.min || 0) * p.freq;
 }
 
