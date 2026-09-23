@@ -1022,7 +1022,9 @@ $("btn-send").addEventListener("click", ()=>{
     } else {
       const linjer = valgt.map(p=>{
         const suffix = (vindueGratis() && p.id === "vinduer")
-                     ? " (0 kr — gratis via kampagnen, 1. besøg" + (p.freq > 1 ? "; efterfølgende besøg faktureres normalt" : "") + ")"
+                     ? (p.freq > 1
+                        ? " (1. besøg på vores regning · efterfølgende besøg faktureres normalt)"
+                        : " (0 kr — 1. besøg på vores regning)")
                      : (p.pris == null) ? (p.prisNote ? " (vi ringer til dig og beder om et billede af hækken)" : (p.pakke ? " (indeholdt)" : " (pris ved besøg)"))
                      : (!p.qty ? " (angiv antal)" : " (" + p.freq + "x/år)");
         return esc(p.navn) + suffix;
@@ -1560,16 +1562,19 @@ function opdater(){
     if(p.id === "vinduer" && p.on && vindueGratis()){
       const vLinje = Math.max((p.pris || 0) * (p.qty || 0), p.min || 0);
       const fri = p.freq > 1 && vLinje > 0;
+      /* '1. besøg på vores regning' — den ærlige fælles ramme (Noahs anti-skeptic
+         stemme). Brugt i BÅDE freq==1 og freq>1, så vi aldrig siger 'gratis' når
+         kunden faktisk betaler for efterfølgende besøg. Pris-matematikken er urørt. */
       el.innerHTML = '<b class="pw-val">' + (fri ? kr(Math.round(vLinje * (p.freq - 1) / p.freq)) : '0 kr') + '</b>'
-        + '<span class="pw-unit">gratis via kampagnen</span>';
+        + '<span class="pw-unit">1. besøg på vores regning</span>';
       el.dataset.val = fri ? Math.round(vLinje * (p.freq - 1) / p.freq) : 0;
       const note = document.createElement("small");
       note.className = "tm-campaign-note";
       note.textContent = (p.freq > 1)
-        ? "Gratis via kampagnen: 1. besøg er gratis · efterfølgende besøg faktureres normalt ("
+        ? "1. besøg er på vores regning · efterfølgende besøg faktureres normalt ("
           + p.freq + "x/år)"
           + (vLinje > 0 ? " = " + kr(vLinje * (p.freq - 1)) + "/år" : " — prisen vises når du angiver antal")
-        : "Hele året er gratis via kampagnen";
+        : "1. besøg er på vores regning";
       row.appendChild(note);
       return;
     }
