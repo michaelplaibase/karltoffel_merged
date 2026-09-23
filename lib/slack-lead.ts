@@ -13,7 +13,7 @@
 // henter altid leadet forfra og regner selv, så et manipuleret payload ikke kan
 // diktere hvad kunden får tilsendt.
 
-import { beregn, kr, linjeAar, erPakkeYdelse, medRabatkode, type LeadPayload, type PricedService } from "@/lib/tilbudsmotor-pricing";
+import { beregn, kr, linjeAar, erPakkeYdelse, medRabatkode, GRATIS_VINDUE_NOTE, type LeadPayload, type PricedService } from "@/lib/tilbudsmotor-pricing";
 
 export const ACTION_EDIT = "lead_edit_qty";
 export const ACTION_APPROVE = "lead_approve_quote";
@@ -43,10 +43,12 @@ export type LeadLike = {
   message: string | null;
 };
 
-function ydelseLinje(s: PricedService): string {
-  const beloeb = s.pris == null
-    ? (erPakkeYdelse(s.id) ? "_indeholdt_" : "_pris ved besøg_")
-    : `${kr(linjeAar(s))}/år`;
+function ydelseLinje(s: PricedService, freeVindue = false): string {
+  const beloeb = (freeVindue && s.id === "vinduer")
+    ? "*gratis via kampagnen*"
+    : s.pris == null
+      ? (erPakkeYdelse(s.id) ? "_indeholdt_" : "_pris ved besøg_")
+      : `${kr(linjeAar(s, freeVindue))}/år`;
   const maengde = s.qty ? `${DKK.format(s.qty)}${s.enhed ? " " + s.enhed : ""}` : "";
   const freq = s.freq > 1 ? ` × ${s.freq}/år` : "";
   return `• ${esc(s.navn)}${maengde ? ` — ${esc(maengde)}${freq}` : ""} · ${beloeb}`;
@@ -59,12 +61,17 @@ export function buildLeadBlocks(
   p: LeadPayload,
   opts: { advarsel?: string; låst?: string } = {},
 ): unknown[] {
-  const r = beregn(p.services);
+  const r = beregn(p.services, p.freeVindue);
   const kodePct = p.rabatOk && p.rabatPct ? p.rabatPct : 0;
   const { aarNet } = medRabatkode(r, kodePct);
 
   const pakke = p.services.filter((s) => erPakkeYdelse(s.id));
   const ekstra = p.services.filter((s) => !erPakkeYdelse(s.id));
+
+  const gratisVindue = p.freeVindue ? [{
+    type: "context",
+    elements: [{ type: "mrkdwn", text: `⭐️ *${GRATIS_VINDUE_NOTE}* — gælder fordi kunden kom fra kampagnen OG har valgt hækklipning.` }],
+  }] : [];
 
   const kontakt = [
     lead.phone ? `☎️ <tel:${esc(lead.phone)}|${esc(lead.phone)}>` : null,
@@ -94,11 +101,13 @@ export function buildLeadBlocks(
 
   if (kontakt) blocks.push({ type: "section", text: { type: "mrkdwn", text: kontakt } });
 
+  if (gratisVindue.length) blocks.push(...gratisVindue);
+
   if (pakke.length) {
-    blocks.push({ type: "section", text: { type: "mrkdwn", text: `*Villapakken*\n${pakke.map(ydelseLinje).join("\n")}`.slice(0, 3000) } });
+    blocks.push({ type: "section", text: { type: "mrkdwn", text: `*Villapakken*\n${pakke.map((s) => ydelseLinje(s, p.freeVindue)).join("\n")}`.slice(0, 3000) } });
   }
   if (ekstra.length) {
-    blocks.push({ type: "section", text: { type: "mrkdwn", text: `*Tilvalg*\n${ekstra.map(ydelseLinje).join("\n")}`.slice(0, 3000) } });
+    blocks.push({ type: "section", text: { type: "mrkdwn", text: `*Tilvalg*\n${ekstra.map((s) => ydelseLinje(s, p.freeVindue)).join("\n")}`.slice(0, 3000) } });
   }
 
   const noter = [
@@ -150,9 +159,9 @@ export function buildLeadBlocks(
 /** Notifikations-fallback. Slack viser den i push og på låseskærmen, så den skal
  *  kunne stå alene. */
 export function leadFallbackText(lead: LeadLike, p: LeadPayload): string {
-  const r = beregn(p.services);
+  const r = beregn(p.services, p.freeVindue);
   const { aarNet } = medRabatkode(r, p.rabatOk && p.rabatPct ? p.rabatPct : 0);
-  return `Nyt lead: ${lead.name}${lead.address ? ` — ${lead.address}` : ""} · ${kr(aarNet)}/år`;
+  return `Nyt lead: ${lead.name}${lead.address ? ` — ${lead.address}` : ""} · ${kr(aarNet)}/år${p.freeVindue ? " (" + GRATIS_VINDUE_NOTE + ")" : ""}`;
 }
 
 /** Rette-dialogen: ét talfelt pr. prissat ydelse. Uprisede linjer
@@ -163,7 +172,7 @@ export function leadFallbackText(lead: LeadLike, p: LeadPayload): string {
  *  regner. Det er samme grund til at prisen ikke sendes med i payloadet. */
 export function buildEditModal(lead: LeadLike, p: LeadPayload): unknown {
   const redigerbare = p.services.filter((s) => s.pris != null);
-  const r = beregn(p.services);
+  const r = beregn(p.services, p.freeVindue);
   const { aarNet } = medRabatkode(r, p.rabatOk && p.rabatPct ? p.rabatPct : 0);
 
   const blocks: unknown[] = [

@@ -15,6 +15,17 @@
 export const RABAT_PR_SERVICE = 3;
 export const RABAT_MAX = 15;
 
+/** 'Gratis vinduesvask'-kampagnen (Hero-offer, 2026-09-23). Kunden kommer ind
+ *  med ?utm_campaign=<GRATIS_VINDUE_CAMPAIGN> OG har valgt hækklipning (haek.on,
+ *  højde besvaret og under 2,2 m) → vinduesvask-linjen tæller med i antallet,
+ *  men 0 kr i total. Env-overridde: sæt GRATIS_VINDUE_CAMPAIGN til at tilsidesætte
+ *  kampagnenavnet; er den tom/udefineret, bruges konstanten. Fælles server/
+ *  klient: klienten får samme værdi injiceret via window.KARLTOFFEL
+ *  .gratisVindueCampaign (site/build.js) og matcher på PRÆCIS samme streng. */
+export const GRATIS_VINDUE_CAMPAIGN = (process.env.GRATIS_VINDUE_CAMPAIGN || "").trim() || "inkluderet-vinduesvask";
+/** Fælles besked til Slack/telefon-medarbejderen — skal ikke kunne overses. */
+export const GRATIS_VINDUE_NOTE = "GRATIS VINDUESVASK (kampagne) — ikke faktureret";
+
 /** Id'erne på Villapakkens 8 faste ydelser (pakke:true i PRODUCTS). Lead-
  *  payloadet bærer ikke `pakke`-flaget videre, så tilbudsmailen udleder
  *  gruppering herfra for at kunne dele listen i "Pakke" og "Ekstra ydelser".
@@ -60,11 +71,14 @@ export function rabatPct(count: number): number {
 }
 
 /** Mirror af beregn() i tilbudsmotor.js. Alle services i listen regnes som
- *  valgte (`on`) — payloadet indeholder kun de valgte. */
-export function beregn(services: PricedService[]): Beregning {
+ *  valgte (`on`) — payloadet indeholder kun de valgte. freeVindue = 'gratis
+ *  vinduesvask'-kampagnen er aktiv (server-afgjort): vinduesvask-linjen tæller
+ *  stadig med i antallet, men 0 kr i totalen — præcis som i klientens beregn(). */
+export function beregn(services: PricedService[], freeVindue = false): Beregning {
   let brutto = 0, count = 0, visits = 0;
   for (const p of services) {
     count += 1;                                    // uprisede ("indeholdt") tæller også med
+    if (freeVindue && p.id === "vinduer") continue; // gratis kampagne: tæller i count, 0 kr
     if (p.freq > visits) visits = p.freq;           // ydelser bundtes på samme besøg
     if (p.pris != null && p.qty > 0) {
       const linje = Math.max(p.pris * p.qty, p.min || 0);   // samme min-logik som motoren
@@ -79,8 +93,10 @@ export function beregn(services: PricedService[]): Beregning {
   };
 }
 
-/** Årspris pr. linje inkl. moms. null-pris → 0 kr (men linjen vises stadig). */
-export function linjeAar(p: PricedService): number {
+/** Årspris pr. linje inkl. moms. null-pris → 0 kr (men linjen vises stadig).
+ *  freeVindue (gratis vinduesvask-kampagne): vinduesvask-linjen er altid 0 kr. */
+export function linjeAar(p: PricedService, freeVindue = false): number {
+  if (freeVindue && p.id === "vinduer") return 0;
   return p.pris == null || !p.qty ? 0 : Math.max(p.pris * p.qty, p.min || 0) * p.freq;
 }
 
@@ -112,6 +128,21 @@ export type LeadPayload = {
    *  det åbne-leads-sæt i lib/mcp-tools.ts og dermed skjule sendte tilbud i
    *  daily_overview. */
   tilbudSendtAt: string | null;
+
+  /** Resultatet af at poste leadet til #leads (lib/slack-lead-ping.ts). Additiv
+   *  og kun sat siden 2026-09-21 — ældre leads har undefined/null. Bor i
+   *  payloadet frem for en kolonne, så der ikke skal en DB-migration til, og så
+   *  en Slack-fejl er synlig i CRM'ets Emner-liste i stedet for at forsvinde
+   *  stille i Vercels runtime-logs. */
+  slackStatus?: "posted" | "simulated" | "failed" | null;
+  slackError?: string | null;
+  slackPostedAt?: string | null;
+
+  /** 'Gratis vinduesvask'-kampagnen (Hero-offer). AFGØRES SERVER-SIDE i
+   *  app/api/leads/route.ts (utm.campaign === GRATIS_VINDUE_CAMPAIGN && haek
+   *  med qty>0 && pris!=null) — aldrig fra klientens krav. true = vinduesvask-
+   *  linjen tæller i antallet, men 0 kr. Additiv — ældre leads har undefined. */
+  freeVindue?: boolean;
 };
 
 const n = (v: unknown): number => (typeof v === "number" && Number.isFinite(v) && v >= 0 ? v : 0);
@@ -151,6 +182,10 @@ export function parseLeadPayload(raw: string | null): LeadPayload {
     rabatOk: o.rabatOk === true,
     rabatPct: typeof o.rabatPct === "number" && Number.isFinite(o.rabatPct) ? o.rabatPct : null,
     tilbudSendtAt: s(o.tilbudSendtAt) || null,
+    slackStatus: o.slackStatus === "posted" || o.slackStatus === "simulated" || o.slackStatus === "failed" ? o.slackStatus : null,
+    slackError: s(o.slackError) || null,
+    slackPostedAt: s(o.slackPostedAt) || null,
+    freeVindue: o.freeVindue === true,
   };
 }
 
@@ -158,11 +193,12 @@ export function parseLeadPayload(raw: string | null): LeadPayload {
  *  gemmes uden at tabe rabatkode/kundetype. Estimatet regnes om fra de
  *  (evt. rettede) mængder, så CRM-listen viser det samme som Slack. */
 export function serializeLeadPayload(p: LeadPayload): string {
-  const r = beregn(p.services);
+  const r = beregn(p.services, p.freeVindue);
   return JSON.stringify({
     kundetype: p.kundetype,
     betaling: p.betaling,
     services: p.services,
+    ...(p.freeVindue ? { freeVindue: true, gratis_vindue_note: GRATIS_VINDUE_NOTE } : {}),
     estimat: {
       md: Math.round(r.md), snit: Math.round(r.snit), aar: Math.round(r.aar),
       aarBrutto: Math.round(r.aarBrutto), rabatPct: r.rabatPct, rabatKr: Math.round(r.rabatKr),
@@ -170,6 +206,13 @@ export function serializeLeadPayload(p: LeadPayload): string {
     },
     ...(p.rabatkode ? { rabatkode: p.rabatkode, rabatOk: p.rabatOk, rabatPct: p.rabatPct } : {}),
     ...(p.tilbudSendtAt ? { tilbudSendtAt: p.tilbudSendtAt } : {}),
+    ...(p.slackStatus
+      ? {
+          slackStatus: p.slackStatus,
+          ...(p.slackError ? { slackError: p.slackError } : {}),
+          ...(p.slackPostedAt ? { slackPostedAt: p.slackPostedAt } : {}),
+        }
+      : {}),
   });
 }
 

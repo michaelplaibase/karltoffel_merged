@@ -49,6 +49,8 @@ export type QuoteHtmlInput = {
   rabatter?: { label: string; beloeb: number }[];
   gyldigTil: string;
   pakkeNavn?: string;
+  /** 'Gratis vinduesvask'-kampagnen: vinduesvask-linjen vises som 0 kr. */
+  freeVindue?: boolean;
   acceptUrl?: string;
   /** Ja/Måske/Nej-links (lib/quote-tokens.ts + app/api/quote-response).
    *  Har forrang over acceptUrl når sat — viser tre knapper i stedet for én. */
@@ -61,11 +63,13 @@ export type QuoteHtmlInput = {
  *  Uprisede linjer ("Indeholdt" / "Pris ved besøg") vises med tekst i stedet
  *  for et beløb — kunden skal kunne se at ydelsen er med, uden at tro den er
  *  gratis-i-tilgift. */
-function linje(nr: number, s: PricedService): string {
-  const aar = linjeAar(s);
-  const beloeb = s.pris == null
-    ? (erPakkeYdelse(s.id) ? "Indeholdt" : "Pris ved besøg")
-    : kr(aar);
+function linje(nr: number, s: PricedService, freeVindue = false): string {
+  const aar = linjeAar(s, freeVindue);
+  const beloeb = (freeVindue && s.id === "vinduer")
+    ? "Gratis via kampagnen (0 kr)"
+    : s.pris == null
+      ? (erPakkeYdelse(s.id) ? "Indeholdt" : "Pris ved besøg")
+      : kr(aar);
   const maengde = s.qty && s.enhed ? ` (${s.qty} ${esc(s.enhed)})` : "";
   return `<tr>
 <td style="padding:9px 0;border-bottom:1px solid ${C.kant};color:${C.sort};font-family:${FONT};font-size:14.5px;font-weight:700;line-height:1.35;">${nr}. ${esc(s.navn)}${maengde}</td>
@@ -87,7 +91,7 @@ export function renderQuoteHtml(i: QuoteHtmlInput): string {
   // Vises kun når der FAKTISK er en rabat — ellers er delsum og total ens, og en
   // ekstra række ville blot støje.
   const rabatter = (i.rabatter ?? []).filter((r) => r.beloeb > 0);
-  const delsum = i.services.reduce((a, s) => a + linjeAar(s), 0);
+  const delsum = i.services.reduce((a, s) => a + linjeAar(s, i.freeVindue), 0);
   const rabatRaekker = rabatter.length
     ? [
         `<tr>
@@ -103,9 +107,9 @@ export function renderQuoteHtml(i: QuoteHtmlInput): string {
 
   const raekker = [
     pakke.length ? sektionsTitel(`Pakke: ${pakkeNavn}`, true) : "",
-    ...pakke.map((s, n) => linje(n + 1, s)),
+    ...pakke.map((s, n) => linje(n + 1, s, i.freeVindue)),
     ekstra.length ? sektionsTitel("Ekstra ydelser til ekstra heldige karltofler", pakke.length === 0) : "",
-    ...ekstra.map((s, n) => linje(n + 1, s)),
+    ...ekstra.map((s, n) => linje(n + 1, s, i.freeVindue)),
     rabatRaekker,
   ].join("");
 
@@ -213,13 +217,15 @@ export function renderQuoteText(i: QuoteHtmlInput): string {
   const ekstra = i.services.filter((s) => !erPakkeYdelse(s.id));
   const linjer = (list: PricedService[]) =>
     list.map((s, n) => {
-      const beloeb = s.pris == null ? (erPakkeYdelse(s.id) ? "Indeholdt" : "Pris ved besøg") : kr(linjeAar(s));
+      const beloeb = (i.freeVindue && s.id === "vinduer")
+        ? "Gratis via kampagnen (0 kr)"
+        : s.pris == null ? (erPakkeYdelse(s.id) ? "Indeholdt" : "Pris ved besøg") : kr(linjeAar(s, i.freeVindue));
       const maengde = s.qty && s.enhed ? ` (${s.qty} ${s.enhed})` : "";
       return `${n + 1}. ${s.navn}${maengde} – ${beloeb}`;
     });
 
   const rabatter = (i.rabatter ?? []).filter((r) => r.beloeb > 0);
-  const delsum = i.services.reduce((a, s) => a + linjeAar(s), 0);
+  const delsum = i.services.reduce((a, s) => a + linjeAar(s, i.freeVindue), 0);
 
   return [
     `Hej ${i.fornavn}`,

@@ -2,9 +2,9 @@ import { prisma } from "@/lib/db";
 import { unauthorized } from "@/lib/api-auth";
 import { underLimit, recordHit } from "@/lib/rate-limit";
 import { bookCallEvent } from "@/lib/gcal";
-import { postMessage } from "@/lib/slack";
-import { buildLeadBlocks, leadFallbackText } from "@/lib/slack-lead";
-import { parseLeadPayload } from "@/lib/tilbudsmotor-pricing";
+import { pingSlack } from "@/lib/slack-lead-ping";
+import type { LeadLike } from "@/lib/slack-lead";
+import { GRATIS_VINDUE_CAMPAIGN, GRATIS_VINDUE_NOTE } from "@/lib/tilbudsmotor-pricing";
 import { parseMetaLead, sendMetaLead } from "@/lib/meta-capi";
 import type { NextRequest } from "next/server";
 
@@ -47,7 +47,11 @@ const num = (v: unknown, max: number) => (typeof v === "number" && Number.isFini
  *  ukendte/ugyldige rækker droppes. */
 type TmService = { id: string; navn: string; wm: string | null; qty: number; enhed: string; freq: number; pris: number | null };
 type Rabat = { rabatkode: string; rabatOk: boolean; rabatPct: number | null };
-function parseTmPayload(body: Record<string, unknown>, rabat: Rabat | null): { payloadJson: string | null; kundetype: string | null; services: TmService[]; estimatMd: number; naborabat: boolean } {
+function parseTmPayload(
+  body: Record<string, unknown>,
+  rabat: Rabat | null,
+  utmCampaign: string | null,
+): { payloadJson: string | null; kundetype: string | null; services: TmService[]; estimatMd: number; naborabat: boolean; freeVindue: boolean } {
   const kt = str(body.kundetype, 10).toLowerCase();
   const kundetype = kt === "privat" || kt === "erhverv" ? kt : null;
 
@@ -80,34 +84,49 @@ function parseTmPayload(body: Record<string, unknown>, rabat: Rabat | null): { p
      bestilt. Gemmes i payloadet så teamet kan se flaget. */
   const naborabat = body.naborabat === true;
 
-  const payloadJson = kundetype || betaling || services.length || rabat || naborabat
-    ? JSON.stringify({ kundetype, betaling, services, estimat, naborabat, ...(rabat ?? {}) })
+  /* 'Gratis vinduesvask'-kampagnen (Hero-offer). AFGØRES ALDRIG fra klientens
+     body.free_vindue — det flag ignoreres bevidst her (en bruger kunne ellers
+     sætte det bare for at få vinduesvask gratis). I stedet udledes det
+     SERVER-SIDE og autoritativt:
+       utm.campaign matcher kampagnekonstanten
+       && der er valgt hæk (haek i services, qty>0) og hækken har en pris
+          (pris!=null ⇒ højde besvaret OG under 2,2 m i motoren — 'Over 2,2 m'
+          sætter prisen til null).
+     Uden hæk-service, eller uden kampagne-utm, bliver freeVindue aldrig true.
+     Skrives TOP-LEVEL i payloadet (aldrig inde i services). */
+  const haek = services.find((s) => s.id === "haek");
+  const freeVindue = !!(utmCampaign && utmCampaign === GRATIS_VINDUE_CAMPAIGN && haek && haek.qty > 0 && haek.pris != null);
+
+  const payloadJson = kundetype || betaling || services.length || rabat || naborabat || freeVindue
+    ? JSON.stringify({
+        kundetype, betaling, services, estimat, naborabat,
+        ...(freeVindue ? { freeVindue: true, gratis_vindue_note: GRATIS_VINDUE_NOTE } : {}),
+        ...(rabat ?? {}),
+      })
     : null;
-  return { payloadJson, kundetype, services, estimatMd: estimat.md, naborabat };
+  return { payloadJson, kundetype, services, estimatMd: estimat.md, naborabat, freeVindue };
 }
 
 const DKK = new Intl.NumberFormat("da-DK", { maximumFractionDigits: 0 });
 
-/** Ping #leads. Må ALDRIG vælte lead-oprettelsen — samme kontrakt som
- *  kalender-bookingen og weekend-autosvaret nedenfor: alt i try/catch, fejl
- *  logges og rapporteres i svaret, men leadet er allerede gemt. */
-async function pingSlack(
-  lead: { id: number; name: string; email: string | null; phone: string | null; address: string | null; message: string | null },
-  payloadJson: string | null,
-  advarsel?: string,
-): Promise<string> {
+/** Ping #leads via lib/slack-lead-ping (retry + udfald), log fejlen, og skriv
+ *  resultatet tilbage på leadets payload, så en fejl er synlig i CRM's
+ *  Emner-liste i stedet for kun at forsvinde i runtime-logs. Må ALDRIG vælte
+ *  lead-oprettelsen — alt i try/catch, fejl logges og rapporteres i svaret,
+ *  men leadet er allerede gemt. Returnerer den status-streng svarets `slack`
+ *  felt har haft hidtil ("posted" | "simulated" | "failed: <fejl>"). */
+async function pingLead(lead: LeadLike, payloadJson: string | null, advarsel?: string): Promise<string> {
   try {
-    const p = parseLeadPayload(payloadJson);
-    const res = await postMessage({
-      text: leadFallbackText(lead, p),
-      blocks: buildLeadBlocks(lead, p, advarsel ? { advarsel } : {}),
-    });
-    if (res.simulated) return "simulated";
-    if (!res.ok) {
-      console.error(`[leads] slack-ping fejlede for lead ${lead.id}: ${res.error}`);
-      return `failed: ${res.error}`;
+    const o = await pingSlack(lead, payloadJson, advarsel);
+    if (o.status === "failed") console.error(`[leads] slack-ping fejlede for lead ${lead.id}: ${o.error}`);
+    if (o.status !== "simulated" && o.payload) {
+      try {
+        await prisma.lead.update({ where: { id: lead.id }, data: { payload: o.payload } });
+      } catch (e) {
+        console.error(`[leads] slack-status-gem fejlede for lead ${lead.id}:`, e);
+      }
     }
-    return "posted";
+    return o.status === "failed" ? `failed: ${o.error ?? "ukendt"}` : o.status;
   } catch (e) {
     console.error(`[leads] slack-ping exception for lead ${lead.id}:`, e);
     return "failed";
@@ -148,6 +167,9 @@ export async function POST(req: NextRequest) {
         }),
       ))
     : null;
+  // Kampagnenavnet bruges til den kampagne-drevne 'gratis vinduesvask' — se
+  // parseTmPayload, hvor freeVindue udledes server-side autoritativt.
+  const utmCampaign = utmIn ? str(utmIn.campaign, 100) : null;
 
   const company = await prisma.company.findFirst(); // single-tenant, same as app/actions/contacts.ts
   if (!company) return json({ error: "No company configured" }, 503);
@@ -179,7 +201,7 @@ export async function POST(req: NextRequest) {
     rabat = { rabatkode, rabatOk: !!hit, rabatPct: hit ? hit.percent : null };
   }
 
-  const tm = parseTmPayload(body, rabat);
+  const tm = parseTmPayload(body, rabat, utmCampaign);
 
   // Meta CAPI (server-side Lead-event med dedup: browserens fbq('track') og
   // dette kald deler event_id via payload.meta_capi — se lib/meta-capi.ts).
@@ -219,7 +241,7 @@ export async function POST(req: NextRequest) {
     // Ingen ny kalender-booking ved dedup — det åbne lead har allerede sit opkalds-slot.
     // Slack pinges dog alligevel: kunden har rørt tilbudsmotoren igen, og det
     // nye pakkevalg kan ændre prisen på et lead Kristian allerede har set.
-    const slack = await pingSlack(merged, merged.payload, "Opfølgning på et eksisterende emne — mængder/pakkevalg kan være ændret.");
+    const slack = await pingLead(merged, merged.payload, "Opfølgning på et eksisterende emne — mængder/pakkevalg kan være ændret.");
     // Samme kontrakt som browser-pixelen: fbq('track') fyres ved HVER
     // indsendelse (også dedup-merges), så CAPI fyres også her.
     await fireCapi(meta);
@@ -260,6 +282,7 @@ export async function POST(req: NextRequest) {
       tm.kundetype ? `Kundetype: ${tm.kundetype === "erhverv" ? "Erhverv" : "Privat"}` : null,
       tm.estimatMd ? `Estimat: ${DKK.format(tm.estimatMd)} kr/md` : null,
       tm.naborabat ? "🏷 NABORABAT: kunden har valgt naborabat (10%) — est. er med rabatten. Udmønt manuelt når naboen også har bestilt." : null,
+      tm.freeVindue ? `*${GRATIS_VINDUE_NOTE}*` : null,
       rabat ? `Rabatkode: ${rabat.rabatkode}${rabat.rabatOk ? ` (−${rabat.rabatPct}%)` : " (ugyldig)"}` : null,
       lines.length ? `` : null,
       ...lines,
@@ -274,7 +297,7 @@ export async function POST(req: NextRequest) {
     console.error(`[leads] kalender-booking exception for lead ${lead.id}:`, e);
   }
 
-  const slack = await pingSlack(lead, lead.payload);
+  const slack = await pingLead(lead, lead.payload);
 
   // Meta CAPI — efter at leadet er gemt; fejler stille (lib/meta-capi.ts).
   await fireCapi(meta);

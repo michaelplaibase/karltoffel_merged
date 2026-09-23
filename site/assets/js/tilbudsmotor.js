@@ -91,6 +91,8 @@ function beregn(products){
     var p = products[i];
     if(!p.on) continue;
     count += 1;                                   /* uprisede ("indeholdt") tæller også med */
+    /* 'Gratis vinduesvask'-kampagnen: linjen tæller med i antallet, men 0 kr. */
+    if(vindueGratis() && p.id === "vinduer") continue;
     /* Hæk før højde er besvaret: ingen konkret meterpris i totalen endnu
        (fix 6) — rækken viser neutral note, beløbet rulles ind ved svar. */
     if(p.id === "haek" && !(state.haekInfo && state.haekInfo.hoejde)) continue;
@@ -151,8 +153,27 @@ const state = {
      (syncHaekPris). udkoersel = tilvalg (Kristian 2026-09-09): intet svar =
      ingen 500-kr-gebyr. */
   haekInfo: { sidstKlippet:"", hoejde:"", sider:"", arbejde:"", udkoersel:"" },
-  ejendom: { type:"Villa, 1 fam.", grund:"827 m²", opfoert:"2007", haek:"65 m" }
+  ejendom: { type:"Villa, 1 fam.", grund:"827 m²", opfoert:"2007", haek:"65 m" },
+  /* 'Gratis vinduesvask'-kampagnen (Hero-offer). Kampagnenavnet injiceres af
+     site/build.js i window.KARLTOFFEL.gratisVindueCampaign (fra env
+     GRATIS_VINDUE_CAMPAIGN); falder tilbage til den faste konstant. Kun for
+     visning/estimat — serveren afgør freeVindue uafhængigt i /api/leads. */
+  freeVindueCampaign: (function(){
+    try { return new URLSearchParams(window.location.search).get("utm_campaign") || ""; }
+    catch(e){ return ""; }
+  })()
 };
+
+/* Samme kampagnekonstant som serveren (lib/tilbudsmotor-pricing.ts) — matcher
+   PRÆCIS, så kun kunder der kommer fra den annonce ser 0 kr. */
+var GRATIS_VINDUE_CAMPAIGN = (window.KARLTOFFEL && window.KARLTOFFEL.gratisVindueCampaign) || "inkluderet-vinduesvask";
+/* Kampagnen er aktiv: ?utm_campaign matcher AND hæk er valgt med en besvaret
+   højde der IKKE er 'Over 2,2 m' (den gør hækken til pris:null i motoren). */
+function vindueGratis(){
+  if(!state.freeVindueCampaign || state.freeVindueCampaign !== GRATIS_VINDUE_CAMPAIGN) return false;
+  const h = PRODUCTS.find(p => p.id === "haek");
+  return !!(h && h.on && state.haekInfo && state.haekInfo.hoejde && state.haekInfo.hoejde !== "Over 2,2 m");
+}
 
 /* ============ HÆK-SPØRGSMÅL + PRISAFLEDNING ============ */
 /* Kundevenlige spørgsmål på hæk-rækken (ingen forvalg). Priser:
@@ -889,6 +910,15 @@ $("btn-send").addEventListener("click", ()=>{
     services: servicesArr,
     estimat: { total: Math.round(yearNet), count: r.count }   /* årligt netto estimat */
   };
+  /* 'Gratis vinduesvask'-kampagnen: flaget + noten sendes med, men ER ALDRIG
+     autoritativt — serveren (app/api/leads/route.ts) udleder freeVindue selv
+     fra utm.campaign + hæk-valget og skriver sin egen gratis_vindue_note. */
+  if(vindueGratis()){
+    payload.free_vindue = true;
+    payload.gratis_vindue_note = "Gratis vinduesvask via kampagnen — ikke faktureret";
+  }
+  /* Send utm, så serveren kan udlede freeVindue SERVER-SIDE (og for attribuering). */
+  if(state.freeVindueCampaign) payload.utm = { campaign: state.freeVindueCampaign };
   /* Meta CAPI-dedup: tilfældig event_id deles mellem browser-pixelens
      fbq('track') og CRM'ets server-side Conversions API-kald, så Meta tæller
      konverteringen én gang. Se lib/meta-capi.ts i CRM'et. */
@@ -966,7 +996,9 @@ $("btn-send").addEventListener("click", ()=>{
       opsum.innerHTML = "<b>" + esc(state.adresse) + ktLabel + "</b><br>Du har ikke valgt nogen services endnu — vi ringer og sammensætter løsningen med dig.";
     } else {
       const linjer = valgt.map(p=>{
-        const suffix = (p.pris == null) ? (p.prisNote ? " (vi ringer til dig og beder om et billede af hækken)" : (p.pakke ? " (indeholdt)" : " (pris ved besøg)"))
+        const suffix = (vindueGratis() && p.id === "vinduer")
+                     ? " (gratis via kampagnen — 0 kr)"
+                     : (p.pris == null) ? (p.prisNote ? " (vi ringer til dig og beder om et billede af hækken)" : (p.pakke ? " (indeholdt)" : " (pris ved besøg)"))
                      : (!p.qty ? " (angiv antal)" : " (" + p.freq + "x/år)");
         return esc(p.navn) + suffix;
       });
@@ -1486,6 +1518,12 @@ function opdater(){
       const toSiderTopNote = (state.haekInfo && state.haekInfo.sider === HAEK_SP.sider.opts[1]);
       el.innerHTML = '<span class="pw-note">Ca. ' + (toSiderTopNote ? "61,88" : "33,75") + ' kr/m — afhængig af højde</span>';
       delete el.dataset.val;
+      return;
+    }
+    /* 'Gratis vinduesvask'-kampagnen: linjen vises med 0 kr + note. */
+    if(p.id === "vinduer" && vindueGratis()){
+      el.innerHTML = '<b class="pw-val">0 kr</b><span class="pw-unit">gratis via kampagnen</span>';
+      el.dataset.val = 0;
       return;
     }
     if(p.pris == null){

@@ -28,8 +28,11 @@ const NAMED_PACKAGES = new Set(["Villapakken", "All Inclusive", "Erhvervspakken"
 
 /** Plain-text mirror of renderQuoteHtml's grouping, for the `opgave_liste`
  *  template token used by the text-only body. */
-function opgaveListeText(services: PricedService[], pakkeNavn: string | null): string {
-  const line = (s: PricedService, i: number) => `${i + 1}. ${s.navn}${s.qty && s.enhed ? ` — ${s.qty} ${s.enhed}` : ""} — ${krFmt(Math.round(linjeAar(s)))}`;
+function opgaveListeText(services: PricedService[], pakkeNavn: string | null, freeVindue = false): string {
+  const line = (s: PricedService, i: number) =>
+    `${i + 1}. ${s.navn}${s.qty && s.enhed ? ` — ${s.qty} ${s.enhed}` : ""}${
+      freeVindue && s.id === "vinduer" ? " — GRATIS via kampagnen (0 kr)" : ` — ${krFmt(Math.round(linjeAar(s, freeVindue)))}`
+    }`;
   const pakke = services.filter((s) => erPakkeYdelse(s.id));
   const ekstra = services.filter((s) => !erPakkeYdelse(s.id));
   if (!pakke.length) return services.map(line).join("\n");
@@ -54,13 +57,17 @@ export async function buildLeadQuoteDraft(lead: LeadLike, company: QuoteCompany)
   let isCompany = false;
   let services: PricedService[] = [];
   let pakkeNavn: string | null = null;
+  let freeVindue = false;
   if (lead.payload) {
     try {
-      const p = JSON.parse(lead.payload) as { kundetype?: string; services?: Partial<PricedService>[]; pakke?: string };
+      const p = JSON.parse(lead.payload) as { kundetype?: string; services?: Partial<PricedService>[]; pakke?: string; freeVindue?: boolean };
       isCompany = p.kundetype === "erhverv";
       services = (p.services ?? []).filter(
         (s): s is PricedService => !!s && typeof s.id === "string" && typeof s.navn === "string" && s.navn.trim().length > 0,
       );
+      // 'Gratis vinduesvask'-kampagnen — serveren skrev flaget top-level i
+      // payloadet (app/api/leads/route.ts). Linjen regnes 0 kr i tilbuddet.
+      freeVindue = p.freeVindue === true;
       const rawPakke = p.pakke?.trim() || null;
       pakkeNavn = rawPakke && NAMED_PACKAGES.has(rawPakke) ? rawPakke : null;
     } catch { /* corrupt payload -> text-only quote */ }
@@ -68,7 +75,7 @@ export async function buildLeadQuoteDraft(lead: LeadLike, company: QuoteCompany)
 
   const tasks: QuoteTask[] = services.map((s) => ({
     description: `${s.navn}${s.qty && s.enhed ? ` — ${s.qty} ${s.enhed}` : ""}`,
-    price: s.pris != null ? Math.max(0, Math.round(linjeAar(s))) : 0,
+    price: (freeVindue && s.id === "vinduer") ? 0 : (s.pris != null ? Math.max(0, Math.round(linjeAar(s, freeVindue))) : 0),
   }));
 
   const contact: QuoteContact = { name: lead.name, att: null, isCompany, email: lead.email, street, city };
@@ -79,7 +86,7 @@ export async function buildLeadQuoteDraft(lead: LeadLike, company: QuoteCompany)
   const tpl = TEMPLATES.find((t) => t.key === "tilbud");
   const values = await getTemplateValues("tilbud");
   const vars = buildQuoteVars(contact, orderLike, company);
-  if (services.length) vars.opgave_liste = opgaveListeText(services, pakkeNavn);
+  if (services.length) vars.opgave_liste = opgaveListeText(services, pakkeNavn, freeVindue);
   const subjectTpl = values.subjects?.[0] ?? tpl?.subjects[0]?.val ?? "";
   const bodyTpl = values.body ?? tpl?.body ?? "";
   const total = tasks.reduce((a, t) => a + t.price, 0);
@@ -91,6 +98,7 @@ export async function buildLeadQuoteDraft(lead: LeadLike, company: QuoteCompany)
         total,
         gyldigTil: vars.tilbud_gyldig_til,
         pakkeNavn: pakkeNavn ?? undefined,
+        freeVindue,
         firma: { navn: company.name, telefon: company.phone, email: company.email },
       })
     : undefined;

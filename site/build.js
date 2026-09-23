@@ -141,14 +141,27 @@ function kopierDir(fra, til) {
 fs.rmSync(DIST, { recursive: true, force: true });
 fs.mkdirSync(DIST, { recursive: true });
 
+// 'Gratis vinduesvask'-kampagnen (Hero-offer): kampagnenavnet injiceres i de
+// sider der indlejrer tilbudsmotoren, SÅ KLIENTEN MATCHER PRÆCIS serverens
+// konstant (lib/tilbudsmotor-pricing.ts). Læses fra env GRATIS_VINDUE_CAMPAIGN
+// med samme fallback som serveren; tom/udefineret env → konstanten. Sættes den
+// til noget et lead aldrig bærer, er tilbuddet effektivt slukket servertungt.
+const GRATIS_VINDUE_CAMPAIGN = (process.env.GRATIS_VINDUE_CAMPAIGN || "").trim() || "inkluderet-vinduesvask";
+const GRATIS_VINDUE_INJECT = `<script>window.KARLTOFFEL=window.KARLTOFFEL||{};window.KARLTOFFEL.gratisVindueCampaign=${JSON.stringify(GRATIS_VINDUE_CAMPAIGN)};</script>`;
+
 for (const page of siderData.sider) {
   const html = renderSide(page);
+  // Injicér kampagnekonstanten lige før tilbudsmotorens scripts (som ligger i
+  // page.fil's tail.html) — men kun på sider der faktisk indlejrer motoren.
+  const outHtml = page.motor
+    ? html.replace(`<script src="/assets/js/tilbudsmotor.config.js`, GRATIS_VINDUE_INJECT + `\n\t\t<script src="/assets/js/tilbudsmotor.config.js`)
+    : html;
   const outDir = path.join(DIST, page.sti.replace(/^\//, ''));
   if (page.sti.endsWith('.html')) {
-    fs.writeFileSync(outDir, html);
+    fs.writeFileSync(outDir, outHtml);
   } else {
     fs.mkdirSync(outDir, { recursive: true });
-    fs.writeFileSync(path.join(outDir, 'index.html'), html);
+    fs.writeFileSync(path.join(outDir, 'index.html'), outHtml);
   }
 }
 

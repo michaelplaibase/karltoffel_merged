@@ -15,6 +15,8 @@ type TmPayload = {
   rabatkode?: string | null;
   rabatOk?: boolean;
   rabatPct?: number | null;
+  slackStatus?: "posted" | "simulated" | "failed" | null;
+  slackError?: string | null;
 };
 function parsePayload(raw: string | null): TmPayload | null {
   if (!raw) return null;
@@ -109,6 +111,13 @@ export default async function LeadsPage({ searchParams }: { searchParams: Promis
                           tm.rabatOk
                             ? <span className="badge badge-soft-success" style={{ marginLeft: 6 }}>Rabatkode: {tm.rabatkode}{tm.rabatPct != null ? ` (−${tm.rabatPct}%)` : ""}</span>
                             : <span className="badge badge-soft-danger" style={{ marginLeft: 6 }}>Ugyldig rabatkode: {tm.rabatkode}</span>
+                        ) : null}
+                        {tm?.slackStatus === "failed" ? (
+                          <span
+                            className="badge badge-soft-danger"
+                            style={{ marginLeft: 6 }}
+                            title={tm.slackError ? `Slack: ${tm.slackError}` : "Slack-fejl"}
+                          >⚠️ Slack fejlede</span>
                         ) : null}
                       </td>
                       <td>{[l.email, l.phone].filter(Boolean).join(" · ") || "—"}</td>

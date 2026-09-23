@@ -186,7 +186,7 @@ async function handleSubmission(p: Payload): Promise<Response> {
     });
   }
 
-  const r = beregn(services);
+  const r = beregn(services, opdateret.freeVindue);
   const { aarNet } = medRabatkode(r, opdateret.rabatOk && opdateret.rabatPct ? opdateret.rabatPct : 0);
 
   // Opdatér den oprindelige besked, så kortet viser de nye tal og knapperne
@@ -247,7 +247,7 @@ async function sendQuote(
     return ephemeral(ctx.responseUrl, "Tilbuddet er allerede ved at blive sendt (eller leadet blev lige rettet) — sender ikke igen.");
   }
 
-  const r = beregn(payload.services);
+  const r = beregn(payload.services, payload.freeVindue);
   const { aarNet } = medRabatkode(r, payload.rabatOk && payload.rabatPct ? payload.rabatPct : 0);
 
   const gyldigDage = 30;
@@ -286,6 +286,7 @@ async function sendQuote(
     gyldigTil,
     acceptUrl,
     responseUrls,
+    freeVindue: payload.freeVindue,
     firma: { navn: company.name, telefon: company.phone, email: company.email },
   };
 

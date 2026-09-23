@@ -35,15 +35,17 @@ const TM_KATEGORI: Record<string, string> = {
  *  abonnement/ordren skaleres med faktoren, så årssummen matcher det tilbud
  *  kunden accepterede — ellers faktureres brutto (op til ~31 % for meget). */
 function rabatFaktor(payload: LeadPayload): number {
-  const r = beregn(payload.services);
+  const r = beregn(payload.services, payload.freeVindue);
   if (r.aarBrutto <= 0) return 1;
   const kodePct = payload.rabatOk && payload.rabatPct ? payload.rabatPct : 0;
   const { aarNet } = medRabatkode(r, kodePct);
   return aarNet / r.aarBrutto;
 }
 
-/** Pris pr. besøg for én linje, efter rabat-faktoren. */
-function linjePris(s: PricedService, faktor: number): number {
+/** Pris pr. besøg for én linje, efter rabat-faktoren. freeVindue (gratis
+ *  vinduesvask-kampagne): vinduesvask-linjen er altid 0 kr. */
+function linjePris(s: PricedService, faktor: number, freeVindue = false): number {
+  if (freeVindue && s.id === "vinduer") return 0;
   return s.pris != null && Number.isFinite(s.pris) ? Math.max(0, Math.round(s.pris * Math.max(0, Math.round(s.qty)) * faktor)) : 0;
 }
 
@@ -92,7 +94,7 @@ function subscriptionSpecFromPayload(payload: LeadPayload) {
     return {
       category, letter: (category[0] ?? "A").toUpperCase(), color: categoryColor(category),
       description: `${s.navn.trim()}${qty > 0 && s.enhed ? ` — ${qty} ${s.enhed}` : ""}`,
-      price: linjePris(s, faktor * skala),
+      price: linjePris(s, faktor * skala, payload.freeVindue),
       durationMin: 0,
       intervalMultiplier: m == null ? "På anmodning" : m === 1 ? "Hver gang" : `Hver ${m}. gang`,
       startWeek: null as string | null, isStandardTask: false, sort: i,
@@ -118,7 +120,7 @@ function orderSpecFromPayload(payload: LeadPayload) {
     return {
       category, letter: (category[0] ?? "A").toUpperCase(), color: categoryColor(category),
       description: `${s.navn.trim()}${qty > 0 && s.enhed ? ` — ${qty} ${s.enhed}` : ""}`,
-      price: linjePris(s, faktor),
+      price: linjePris(s, faktor, payload.freeVindue),
       durationMin: 0, sort: i,
     };
   });
