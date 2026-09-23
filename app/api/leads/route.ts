@@ -4,7 +4,7 @@ import { underLimit, recordHit } from "@/lib/rate-limit";
 import { bookCallEvent } from "@/lib/gcal";
 import { pingSlack } from "@/lib/slack-lead-ping";
 import type { LeadLike } from "@/lib/slack-lead";
-import { GRATIS_VINDUE_CAMPAIGN, GRATIS_VINDUE_NOTE } from "@/lib/tilbudsmotor-pricing";
+import { GRATIS_VINDUE_CAMPAIGN, GRATIS_VINDUE_NOTE, normaliserKampagne } from "@/lib/tilbudsmotor-pricing";
 import { parseMetaLead, sendMetaLead } from "@/lib/meta-capi";
 import type { NextRequest } from "next/server";
 
@@ -95,7 +95,10 @@ function parseTmPayload(
      Uden hæk-service, eller uden kampagne-utm, bliver freeVindue aldrig true.
      Skrives TOP-LEVEL i payloadet (aldrig inde i services). */
   const haek = services.find((s) => s.id === "haek");
-  const freeVindue = !!(utmCampaign && utmCampaign === GRATIS_VINDUE_CAMPAIGN && haek && haek.qty > 0 && haek.pris != null);
+  // Kampagnenavnet sammenlignes NORMALISERET (trim + lowercase + strip
+  // efterstillet tegn — se normaliserKampagne), så en stump '*'/whitespace i
+  // UTM'en (fx 'inkluderet-vinduesvask*') stadig matcher klienten ens.
+  const freeVindue = !!(utmCampaign && normaliserKampagne(utmCampaign) === normaliserKampagne(GRATIS_VINDUE_CAMPAIGN) && haek && haek.qty > 0 && haek.pris != null);
 
   const payloadJson = kundetype || betaling || services.length || rabat || naborabat || freeVindue
     ? JSON.stringify({

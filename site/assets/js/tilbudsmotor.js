@@ -174,13 +174,25 @@ const state = {
   })()
 };
 
-/* Samme kampagnekonstant som serveren (lib/tilbudsmotor-pricing.ts) — matcher
-   PRÆCIS, så kun kunder der kommer fra den annonce ser 0 kr. */
+/* Samme kampagnekonstant som serveren (lib/tilbudsmotor-pricing.ts). Selve
+   sammenligningen er case-/tegn-tolerant via normaliserKampagne() nedenfor,
+   så en stump '*'/mellemrum i UTM'en ikke dræber kampagnen. */
+/* Normaliser et kampagnenavn FØR sammenligning: trim whitespace, små
+   bogstaver, og strip efterstillede ikke-bogstav/ciffer-tegn ('*', ' ', '!'
+   mv.). Så 'inkluderet-vinduesvask*', 'inkluderet-vinduesvask ' og
+   'Inkluderet-Vinduesvask' alle matcher — en stump '*' (eller mellemrum) i
+   enden af UTM'en må ikke stille og roligt dræbe kampagnen. Brugt af BÅDE
+   vindueGratis() og payload/utm-sendet, så klienten og serveren sammenligner
+   ens (serveren spejler funktionen i lib/tilbudsmotor-pricing.ts). */
+function normaliserKampagne(s){
+  return String(s || "").trim().toLowerCase().replace(/[^a-z0-9]+$/g, "");
+}
 var GRATIS_VINDUE_CAMPAIGN = (window.KARLTOFFEL && window.KARLTOFFEL.gratisVindueCampaign) || "inkluderet-vinduesvask";
-/* Kampagnen er aktiv: ?utm_campaign matcher AND hæk er valgt med en besvaret
-   højde der IKKE er 'Over 2,2 m' (den gør hækken til pris:null i motoren). */
+/* Kampagnen er aktiv: ?utm_campaign matcher (case-/tegn-tolerant via
+   normaliserKampagne) AND hæk er valgt med en besvaret højde der IKKE er
+   'Over 2,2 m' (den gør hækken til pris:null i motoren). */
 function vindueGratis(){
-  if(!state.freeVindueCampaign || state.freeVindueCampaign !== GRATIS_VINDUE_CAMPAIGN) return false;
+  if(!state.freeVindueCampaign || normaliserKampagne(state.freeVindueCampaign) !== normaliserKampagne(GRATIS_VINDUE_CAMPAIGN)) return false;
   const h = PRODUCTS.find(p => p.id === "haek");
   return !!(h && h.on && state.haekInfo && state.haekInfo.hoejde && state.haekInfo.hoejde !== "Over 2,2 m");
 }
@@ -927,8 +939,11 @@ $("btn-send").addEventListener("click", ()=>{
     payload.free_vindue = true;
     payload.gratis_vindue_note = "Gratis vinduesvask via kampagnen — ikke faktureret";
   }
-  /* Send utm, så serveren kan udlede freeVindue SERVER-SIDE (og for attribuering). */
-  if(state.freeVindueCampaign) payload.utm = { campaign: state.freeVindueCampaign };
+  /* Send utm, så serveren kan udlede freeVindue SERVER-SIDE (og for attribuering).
+     Kampagnen sendes NORMALISERET (trim + lowercase + strip efterstillet tegn),
+     så serveren og attribueringen ser den rene værdi og freeVindue-udledningen
+     matcher klienten ens. */
+  if(state.freeVindueCampaign) payload.utm = { campaign: normaliserKampagne(state.freeVindueCampaign) };
   /* Meta CAPI-dedup: tilfældig event_id deles mellem browser-pixelens
      fbq('track') og CRM'ets server-side Conversions API-kald, så Meta tæller
      konverteringen én gang. Se lib/meta-capi.ts i CRM'et. */

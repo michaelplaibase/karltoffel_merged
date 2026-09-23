@@ -15,14 +15,24 @@
 export const RABAT_PR_SERVICE = 3;
 export const RABAT_MAX = 15;
 
+/** Spejl af klientens normaliserKampagne() (site/assets/js/tilbudsmotor.js):
+ *  trim whitespace, små bogstaver, og strip efterstillede ikke-bogstav/
+ *  ciffer-tegn ('*', ' ', '!' mv.). Brugt til at sammenligne utm.campaign mod
+ *  GRATIS_VINDUE_CAMPAIGN, så 'inkluderet-vinduesvask*', 'inkluderet-vinduesvask '
+ *  og 'Inkluderet-Vinduesvask' alle matcher — en stump '*' i enden af UTM'en
+ *  må ikke dræbe kampagnen. */
+export const normaliserKampagne = (s: string | null | undefined): string =>
+  String(s ?? "").trim().toLowerCase().replace(/[^a-z0-9]+$/g, "");
+
 /** 'Gratis vinduesvask'-kampagnen (Hero-offer, 2026-09-23). Kunden kommer ind
  *  med ?utm_campaign=<GRATIS_VINDUE_CAMPAIGN> OG har valgt hækklipning (haek.on,
  *  højde besvaret og under 2,2 m) → vinduesvask-linjen tæller med i antallet,
  *  men 0 kr i total. Env-overridde: sæt GRATIS_VINDUE_CAMPAIGN til at tilsidesætte
  *  kampagnenavnet; er den tom/udefineret, bruges konstanten. Fælles server/
  *  klient: klienten får samme værdi injiceret via window.KARLTOFFEL
- *  .gratisVindueCampaign (site/build.js) og matcher på PRÆCIS samme streng. */
-export const GRATIS_VINDUE_CAMPAIGN = (process.env.GRATIS_VINDUE_CAMPAIGN || "").trim() || "inkluderet-vinduesvask";
+ *  .gratisVindueCampaign (site/build.js). Værdien er NORMALISERET (se
+ *  normaliserKampagne), og al matchning sker case-/tegn-tolerant. */
+export const GRATIS_VINDUE_CAMPAIGN = normaliserKampagne(process.env.GRATIS_VINDUE_CAMPAIGN) || "inkluderet-vinduesvask";
 /** Fælles besked til Slack/telefon-medarbejderen — skal ikke kunne overses. */
 export const GRATIS_VINDUE_NOTE = "GRATIS VINDUESVASK (kampagne) — ikke faktureret";
 
