@@ -842,6 +842,39 @@
    "i_sitemap": true
   },
   {
+   "sti": "/p/efteraarstilbud",
+   "fil": "p/efteraarstilbud",
+   "head": {
+    "title": "Efterårshækklipning med gratis udvendig vinduesvask | Karltoffel",
+    "description": "Bestil efterårshækklipning, og få udvendig vinduesvask på huset gratis, når vi alligevel er der. Fast pris – du betaler først, når arbejdet er gjort.",
+    "noindex_top": true,
+    "floating_linje": "",
+    "pixel": "<!-- Meta Pixel Code -->\n<script>!function(f,b,e,v,n,t,s)\n{if(f.fbq)return;n=f.fbq=function(){n.callMethod?\nn.callMethod.apply(n,arguments):n.queue.push(arguments)};\nif(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';\nn.queue=[];t=b.createElement(e);t.async=!0;\nt.src=v;s=b.getElementsByTagName(e)[0];\ns.parentNode.insertBefore(t,s)}(window, document,'script',\n'https://connect.facebook.net/en_US/fbevents.js');\nfbq('init', '1574687980856727');\nfbq('track', 'PageView');\n</script>\n<noscript><img height=\"1\" width=\"1\" style=\"display:none\"\nsrc=\"https://www.facebook.com/tr?id=1574687980856727&amp;ev=PageView&amp;noscript=1\"\n/></noscript>\n<!-- End Meta Pixel Code -->\n",
+    "og_html": "\n\t<meta property=\"og:title\" content=\"Efterårshækklipning med gratis udvendig vinduesvask | Karltoffel\">\n\t<meta property=\"og:description\" content=\"Bestil efterårshækklipning, og få udvendig vinduesvask på huset gratis, når vi alligevel er der. Fast pris – du betaler først, når arbejdet er gjort.\">\n\t<meta property=\"og:url\" content=\"https://karltoffel.dk/p/efteraarstilbud\">\n\n\t"
+   },
+   "body_tag": "<body class=\"\" data-link=\"/p/efteraarstilbud\">",
+   "header": {
+    "fixed": true,
+    "nav_active": "",
+    "cta_href": "#tilbudsmotor"
+   },
+   "footer": {
+    "cta_href": "#tilbudsmotor",
+    "em_paragraf": false,
+    "social": "alle"
+   },
+   "motor": {
+    "type": "standard",
+    "sub_tekst": "Tast din adresse. Så graver vi tallene frem, finder din hæk – og din gratis udvendige vinduesvask."
+   },
+   "ydelseskort": null,
+   "faq": false,
+   "faq_ekstra_fil": null,
+   "floating_cta": null,
+   "noindex": true,
+   "i_sitemap": false
+  },
+  {
    "sti": "/p/aarshjul",
    "fil": "p/aarshjul",
    "head": {
