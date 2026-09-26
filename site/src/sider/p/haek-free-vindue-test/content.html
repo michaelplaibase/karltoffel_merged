@@ -1,28 +1,38 @@
 <main class="campaign" id="campaign">
   <section class="campaign-hero" aria-labelledby="campaign-title">
     <div class="campaign-copy">
-      <p class="campaign-kicker">EFTERÅRSTILBUD · KARLTOFFEL</p>
+      <p class="campaign-kicker">KARLTOFFEL · HÆKKEKLIPNING</p>
       <p class="campaign-price">Hækkeklipning fra <strong>999 kr.</strong></p>
-      <h1 id="campaign-title">Vi klipper hækken.<br><span>Vinduerne tager vi med.</span></h1>
-      <p class="campaign-offer">Bestil hækkeklipning, og få <strong>vinduesvasken gratis første gang</strong>, når vi alligevel er der.</p>
-      <p class="campaign-note">1. besøg på vores regning</p>
-      <a class="campaign-button" href="#saadan">Se hvordan det fungerer <span aria-hidden="true">↓</span></a>
-      <p class="campaign-footnote">Uforpligtende forespørgsel · Vi bekræfter pris og opgavens omfang, før du beslutter dig.</p>
+      <h1 id="campaign-title">Vi klipper hækken.<br><span>Vinduerne tager vi med på vores regning.</span></h1>
+      <p class="campaign-offer">Bestil hækkeklipning — så tager vi vinduesvasken med.</p>
+      <a class="campaign-button" href="#forespoergsel">Få et tilbud på telefonen <span aria-hidden="true">↓</span></a>
+      <p class="campaign-footnote">Uforpligtende forespørgsel. Vi ringer med et tilbud.</p>
     </div>
     <div class="campaign-image" role="img" aria-label="Hæk klippes ved et hus">
-      <div class="campaign-sticker"><span>Hækklipning</span><b>+</b><span>Vinduesvask</span><strong>GRATIS<br>1. GANG</strong></div>
+      <div class="campaign-sticker"><span>Du bestiller</span><strong>HÆKKEKLIP</strong><b>+</b><span>Vi tager med</span><strong>VINDUESVASK</strong><small>På vores regning</small></div>
     </div>
   </section>
 
-  <section class="campaign-how" id="saadan" aria-labelledby="how-title">
-    <p class="campaign-kicker">ÉT BESØG. LIDT MINDRE BØVL.</p>
-    <h2 id="how-title">Hæk pæn. Vinduer rene.</h2>
-    <div class="campaign-steps">
-      <article><span>01</span><h3>Send os en forespørgsel</h3><p>Fortæl os, hvor hækken er. Vi vender tilbage med en pris og afklarer opgaven.</p></article>
-      <article><span>02</span><h3>Vi aftaler en dag</h3><p>Du får prisen og omfanget bekræftet, før du siger ja.</p></article>
-      <article><span>03</span><h3>Vi ordner begge dele</h3><p>Vi klipper hækken, rydder op og tager den almindelige vinduesvask med gratis første gang.</p></article>
-    </div>
-    <a class="campaign-button campaign-button--dark" href="tel:+4522223833">Ring og hør mere · 22 22 38 33</a>
-    <p class="campaign-disclaimer">Testudkast: Kampagnevilkår, dækningsområde og den endelige pris skal bekræftes, før siden bruges live.</p>
+  <section class="campaign-form-section" id="forespoergsel" aria-labelledby="form-title">
+    <div class="campaign-form-intro"><p class="campaign-kicker">NEMT OG UFORPLIGTENDE</p><h2 id="form-title">Få et tilbud på telefonen</h2><p>Fortæl os lidt om hækken. Så ringer vi med et tilbud.</p><a class="campaign-phone" href="tel:+4522223833">Eller ring til os · 22 22 38 33</a></div>
+    <form class="campaign-form" id="haek-campaign-form" novalidate>
+      <div class="form-grid">
+        <label>Navn<input name="name" type="text" autocomplete="name" required></label>
+        <label>Telefonnummer<input name="phone" type="tel" autocomplete="tel" inputmode="tel" required></label>
+        <label>E-mail<input name="email" type="email" autocomplete="email" required></label>
+        <label>Adresse<input name="address" type="text" autocomplete="street-address" required></label>
+      </div>
+      <fieldset class="hedge-questions"><legend>Lidt om hækken</legend>
+        <label>Ca. længde <span class="optional">(meter)</span><input name="meter" type="number" min="1" inputmode="numeric" placeholder="Fx 25"></label>
+        <label>Ca. højde<select name="height"><option value="">Vælg højde</option><option>Under 1,5 m</option><option>1,5–2,2 m</option><option>Over 2,2 m</option><option>Ved ikke</option></select></label>
+        <label>Hvor mange sider skal klippes?<select name="sides"><option value="">Vælg</option><option>Én side og top</option><option>Begge sider og top</option><option>Ved ikke</option></select></label>
+        <label class="wide">Noget vi skal vide? <span class="optional">(valgfrit)</span><textarea name="details" rows="2" maxlength="700" placeholder="Fx adgang, affald eller særlige forhold"></textarea></label>
+      </fieldset>
+      <p class="campaign-form-error" id="form-error" role="alert" hidden></p>
+      <button class="campaign-button campaign-submit" type="submit">Bed om et tilbud <span aria-hidden="true">→</span></button>
+      <p class="form-privacy">Vi bruger kun oplysningerne til at kontakte dig om dit tilbud.</p>
+    </form>
+    <div class="campaign-thanks" id="form-thanks" role="status" hidden><h2>Tak for din forespørgsel</h2><p>Vi ringer til dig med et tilbud.</p></div>
   </section>
 </main>
+<script src="/assets/js/haek-free-vindue-form.js?v=1" defer></script>

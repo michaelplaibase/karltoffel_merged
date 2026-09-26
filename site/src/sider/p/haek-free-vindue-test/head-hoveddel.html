@@ -25,14 +25,26 @@
   .campaign-image{position:relative;min-height:420px;background:linear-gradient(0deg,rgba(35,25,11,.18),rgba(35,25,11,.05)),url('/assets/img/thumb/7003eec2b574d33c9aba448120234c65665a4922_w1500_q78.webp') center/cover no-repeat}
   .campaign-sticker{position:absolute;right:clamp(18px,5vw,60px);bottom:30px;display:flex;flex-direction:column;align-items:center;gap:4px;padding:16px 22px;border:2px solid var(--brown);border-radius:16px;background:var(--lime);color:var(--brown);box-shadow:0 10px 30px #0003;font-size:14px;font-weight:800;text-align:center;transform:rotate(3deg)}
   .campaign-sticker b{font-size:22px;line-height:1}.campaign-sticker strong{margin-top:5px;font-size:19px;line-height:1.05}
-  .campaign-how{padding:70px 24px 76px;background:var(--cream);text-align:center}
-  .campaign-how h2{margin:0 0 38px;font-family:snaga-unicase-display,sans-serif;font-size:clamp(30px,4vw,46px);line-height:1.1}
-  .campaign-steps{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px;max-width:1040px;margin:0 auto 28px;text-align:left}
-  .campaign-steps article{padding:24px;border:1px solid #d8d1c1;border-radius:14px;background:#fff}
-  .campaign-steps article>span{display:inline-grid;width:34px;height:34px;place-items:center;border-radius:50%;background:var(--lime);font-size:12px;font-weight:900}
-  .campaign-steps h3{margin:15px 0 8px;font-size:20px}.campaign-steps p{margin:0;color:#534b3b;line-height:1.55}
-  .campaign-button--dark{background:var(--brown);color:var(--lime)}
-  .campaign-disclaimer{max-width:680px;margin:22px auto 0;color:#665d4a;font-size:12px;line-height:1.5}
-  @media(max-width:760px){.campaign-hero{grid-template-columns:1fr;min-height:0}.campaign-copy{padding:46px 24px 38px}.campaign-image{min-height:280px}.campaign-steps{grid-template-columns:1fr;max-width:500px}.campaign-how{padding:52px 20px 58px}.campaign-how h2{margin-bottom:26px}}
+  .campaign-form-section{display:grid;grid-template-columns:minmax(240px,.8fr) minmax(0,1.2fr);gap:26px 48px;max-width:1100px;margin:auto;padding:64px 28px 76px;background:var(--cream)}
+  .campaign-form-intro h2,.campaign-thanks h2{margin:0 0 12px;font-family:snaga-unicase-display,sans-serif;font-size:clamp(30px,4vw,42px);line-height:1.08}
+  .campaign-form-intro>p:not(.campaign-kicker){max-width:340px;font-size:18px;line-height:1.45}
+  .campaign-phone{display:inline-block;margin-top:14px;color:var(--brown);font-weight:800;text-underline-offset:3px}
+  .campaign-form{padding:24px;border:1px solid #ded8c8;border-radius:16px;background:#fff}
+  .campaign-form label{display:block;font-size:13px;font-weight:750;color:var(--brown)}
+  .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  .campaign-form input,.campaign-form select,.campaign-form textarea{display:block;width:100%;min-height:48px;margin-top:6px;padding:11px 12px;border:1px solid #bcb4a2;border-radius:8px;background:#fff;color:var(--brown);font:inherit;font-size:16px}
+  .campaign-form textarea{resize:vertical}
+  .campaign-form input:focus,.campaign-form select:focus,.campaign-form textarea:focus{outline:3px solid #d3ce68;outline-offset:1px;border-color:var(--brown)}
+  .hedge-questions{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:22px 0 0;padding:0;border:0}
+  .hedge-questions legend{grid-column:1/-1;margin-bottom:2px;font-weight:850;font-size:17px}
+  .hedge-questions .wide{grid-column:1/-1}
+  .optional{font-weight:400;color:#6a6253}
+  .campaign-submit{border:0;cursor:pointer;font:inherit;font-weight:800}
+  .campaign-submit:disabled{opacity:.65;cursor:wait}
+  .form-privacy{margin:10px 0 0;color:#655d4e;font-size:12px;line-height:1.4}
+  .campaign-form-error{margin:14px 0 0;padding:10px 12px;border-radius:8px;background:#fbe9e5;color:#822b1c;font-weight:700}
+  .campaign-thanks{grid-column:1/-1;padding:32px;border-radius:16px;background:#fff}
+  .campaign-thanks[hidden],.campaign-form-error[hidden]{display:none}
+  @media(max-width:760px){.campaign-hero{grid-template-columns:1fr;min-height:0}.campaign-copy{padding:38px 22px 32px}.campaign-image{min-height:250px}.campaign h1{font-size:clamp(34px,9vw,48px)}.campaign-form-section{grid-template-columns:1fr;gap:22px;padding:42px 18px 52px}.campaign-form-intro h2{font-size:34px}.campaign-form{padding:18px}.form-grid,.hedge-questions{grid-template-columns:1fr;gap:12px}.hedge-questions .wide{grid-column:auto}.campaign-sticker{right:20px;bottom:18px}.campaign-button{width:100%;justify-content:center;text-align:center}}
   @media(prefers-reduced-motion:reduce){.campaign-button{transition:none}}
 </style>
