@@ -942,6 +942,35 @@
    "floating_cta": "/p/kontakt",
    "noindex": true,
    "i_sitemap": false
+  },
+  {
+   "sti": "/p/haek-free-vindue-test",
+   "fil": "p/haek-free-vindue-test",
+   "head": {
+    "title": "Test: Hækkeklipning + gratis vinduesvask | Karltoffel",
+    "description": "Testside for kampagnen: bestil hækkeklipning og få vinduesvask gratis første gang.",
+    "noindex_top": true,
+    "floating_linje": "",
+    "pixel": "",
+    "og_html": ""
+   },
+   "body_tag": "<body class=\"campaign-test\" data-link=\"/p/haek-free-vindue-test\">",
+   "header": {
+    "fixed": true,
+    "nav_active": "",
+    "cta_href": "#campaign"
+   },
+   "footer": {
+    "cta_href": "#campaign",
+    "em_paragraf": false,
+    "social": "kun-facebook"
+   },
+   "motor": null,
+   "ydelseskort": null,
+   "faq": false,
+   "faq_ekstra_fil": null,
+   "noindex": true,
+   "i_sitemap": false
   }
  ]
 }
