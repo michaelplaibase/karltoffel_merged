@@ -686,6 +686,36 @@
    "i_sitemap": true
   },
   {
+   "sti": "/p/giveaway-oktober",
+   "fil": "p/giveaway-oktober",
+   "head": {
+    "title": "Vind en havenulstilling til 12.000 kr. | Karltoffel",
+    "description": "Tilmeld dig senest 14. oktober 2026, og vær med i lodtrækningen om en havenulstilling til 12.000 kr. Karltoffel trækker 3 vindere.",
+    "noindex_top": true,
+    "floating_linje": "",
+    "pixel": "",
+    "og_html": "\n\t<meta property=\"og:title\" content=\"Vind en havenulstilling til 12.000 kr. | Karltoffel\">\n\t<meta property=\"og:description\" content=\"Tilmeld dig senest 14. oktober 2026, og vær med i lodtrækningen om en havenulstilling til 12.000 kr. Karltoffel trækker 3 vindere.\">\n\t<meta property=\"og:url\" content=\"https://karltoffel.dk/p/giveaway-oktober\">\n\t"
+   },
+   "body_tag": "<body class=\"giveaway-page\" data-link=\"/p/giveaway-oktober\">",
+   "header": {
+    "fixed": false,
+    "nav_active": "",
+    "cta_href": "#giveaway-form"
+   },
+   "footer": {
+    "cta_href": "#giveaway-form",
+    "em_paragraf": false,
+    "social": "ingen"
+   },
+   "motor": null,
+   "ydelseskort": null,
+   "faq": false,
+   "faq_ekstra_fil": null,
+   "floating_cta": null,
+   "noindex": true,
+   "i_sitemap": false
+  },
+  {
    "sti": "/p/haveservice-horsens",
    "fil": "p/haveservice-horsens",
    "head": {
