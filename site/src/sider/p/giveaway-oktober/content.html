@@ -5,7 +5,7 @@
       <div class="giveaway__content-inner">
       <p class="giveaway__eyebrow">Bliv en heldig karltoffel</p>
       <h1 id="giveaway-title">Vind en havenulstilling til 12.000 kr.</h1>
-      <p class="giveaway__subline">Vi trækker 3 vindere blandt tilmeldte i Karltoffels serviceområder. Tilmeld dig senest 14. oktober 2026.</p>
+      <p class="giveaway__subline">Tre heldige vindere får hver en havenulstilling til en værdi af 12.000 kr. Tilmeld dig senest 14. oktober 2026. Deltagelse kræver samtykke til e-mailtilbud fra Karltoffel.</p>
 
       <form class="giveaway__form" id="giveaway-form">
         <label for="giveaway-name">Navn</label>
@@ -19,10 +19,10 @@
 
         <label class="giveaway__consent" for="giveaway-consent">
           <input id="giveaway-consent" name="consent" type="checkbox" required>
-          <span>Jeg accepterer konkurrencereglerne og giver samtykke til markedsføring fra Karltoffel via e-mail om haveservice og vinduesvask. Jeg kan til enhver tid trække samtykket tilbage via afmeldingslinket i e-mailen.</span>
+          <span>Jeg siger ja til at få havenulstillet, hvis jeg vinder. Tilmelding indebærer, at jeg giver Karltoffel samtykke til at sende markedsføring om haveservice og vinduesvask via e-mail. Jeg kan når som helst trække samtykket tilbage via afmeldingslinket.</span>
         </label>
         <button class="giveaway__submit" type="submit">Deltag i lodtrækningen</button>
-        <p class="giveaway__note">Testversion: tilmeldinger gemmes ikke.</p>
+        <p class="giveaway__note">Deltagere skal bo i et område, Karltoffel dækker. Se vilkår.</p>
         <p class="giveaway__form-error" id="giveaway-error" role="alert" hidden>Markér samtykket for at kunne deltage.</p>
       </form>
       </div>
@@ -38,10 +38,10 @@
   <section class="giveaway__rules" id="giveaway-rules">
     <h2>Konkurrencevilkår — testudkast</h2>
     <ul>
-      <li>Konkurrencen er for personer i Karltoffels aktuelle serviceområder. Postnummer kontrolleres ved tilmelding.</li>
-      <li>Tilmeldingsfrist: 14. oktober 2026. Tre vindere trækkes blandt gyldige tilmeldinger og kontaktes på e-mail.</li>
-      <li>Hver vinder får én havenulstilling med en oplyst værdi på 12.000 kr. Hvis en vinder er inviteret via et personligt link, får én direkte invitør også en havenulstilling.</li>
-      <li>Præmiens indhold, præcis trækningsdato, geografisk afgrænsning, inviteringsmekanik og eventuelle begrænsninger skal bekræftes, før konkurrencen lanceres.</li>
+      <li>Konkurrencen er for personer i Karltoffels aktuelle serviceområder. Den konkrete liste over dækkede postnumre skal bekræftes før lancering.</li>
+      <li>Tilmeldingsfrist: 14. oktober 2026. Tre vindere trækkes efter fristen blandt gyldige tilmeldinger og kontaktes på e-mail.</li>
+      <li>Hver vinder får én havenulstilling med en oplyst værdi på 12.000 kr. Hvis en vinder er inviteret af en anden deltager, får én direkte invitør også en havenulstilling.</li>
+      <li>Præmiens konkrete indhold, trækningsdato, postnummerafgrænsning og inviteringslink/sporing skal bekræftes og være på plads, før konkurrencen lanceres. Inviteringslink er ikke aktivt i denne testversion.</li>
       <li>Ikke-vindere får tilbud om første vinduesvask gratis via e-mail. Vilkår og gyldighedsperiode for tilbuddet skal bekræftes før lancering.</li>
       <li>Samtykke til markedsføring på e-mail er en betingelse for deltagelse. Samtykket kan trækkes tilbage via afmeldingslink i e-mails fra Karltoffel.</li>
     </ul>
@@ -83,11 +83,16 @@
 (function(){
   var form=document.getElementById('giveaway-form');
   if(!form)return;
+  // Testversionen indsamler ikke tilmeldinger og håndhæver derfor ikke dækningsområde.
+  // Den endelige postnummerliste skal bekræftes af Karltoffel før lancering.
+  var error=document.getElementById('giveaway-error');
+  var consent=document.getElementById('giveaway-consent');
+  consent.addEventListener('change',function(){if(consent.checked)error.hidden=true;});
+  consent.addEventListener('invalid',function(){error.hidden=false;});
+  form.addEventListener('input',function(){if(error.textContent==='Markér samtykket for at kunne deltage.')error.hidden=true;});
   form.addEventListener('submit',function(event){
     event.preventDefault();
-    var consent=document.getElementById('giveaway-consent');
-    var error=document.getElementById('giveaway-error');
-    if(!consent.checked){error.hidden=false;consent.focus();return;}
+    if(!form.reportValidity())return;
     window.alert('Tak for interessen. Dette er en testversion, så din tilmelding er ikke gemt.');
   });
 })();
