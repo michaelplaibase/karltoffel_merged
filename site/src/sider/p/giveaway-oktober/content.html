@@ -22,6 +22,21 @@
       <p class="giveaway__form-error" id="giveaway-error" role="alert" hidden>Markér samtykket for at kunne deltage.</p>
     </form>
   </section>
+  <section class="giveaway__included" aria-labelledby="giveaway-included-title">
+    <div class="giveaway__included-inner">
+      <p class="giveaway__eyebrow">Godt med hjem fra haven</p>
+      <h2 id="giveaway-included-title">Hvad er en havenulstilling?</h2>
+      <p>Vi gennemgår haven sammen med vinderen og aftaler, hvad der trænger mest. Havenulstillingen til 12.000 kr. bruges på de opgaver, I vælger sammen.</p>
+      <ul class="giveaway__included-list">
+        <li><span aria-hidden="true">✓</span><span>Hækklipning</span></li>
+        <li><span aria-hidden="true">✓</span><span>Beskæring af buske og mindre træer</span></li>
+        <li><span aria-hidden="true">✓</span><span>Ukrudtsbekæmpelse</span></li>
+        <li><span aria-hidden="true">✓</span><span>Græspleje</span></li>
+        <li><span aria-hidden="true">✓</span><span>Oprydning og bortkørsel af haveaffald</span></li>
+      </ul>
+      <p class="giveaway__included-note">Opgaver og omfang aftales efter gennemgangen af haven. Listen er eksempler på mulige ydelser, ikke en fast pakke.</p>
+    </div>
+  </section>
   <section class="giveaway__details" aria-label="Kort om konkurrencen"><p><strong>Tag venner og naboer med.</strong> Hvis en person, du har inviteret direkte, vinder, vinder du også.</p><p>Ikke-vindere får en e-mail med tilbud om den første vinduesvask gratis som tak for deltagelsen.</p></section>
   <section class="giveaway__rules" id="giveaway-rules"><h2>Konkurrencevilkår — testudkast</h2><ul>
     <li>Konkurrencen er for personer i Karltoffels aktuelle serviceområder. Den konkrete liste over dækkede postnumre skal bekræftes før lancering.</li>
@@ -51,9 +66,10 @@
 .giveaway__consent{display:flex;align-items:flex-start;gap:10px;margin:18px 0 12px;color:var(--gw-dark);font-size:13px;line-height:1.45}.giveaway__consent input{width:20px;height:20px;flex:0 0 20px;margin:0;accent-color:var(--gw-accent)}.giveaway__consent span{display:block;flex:1}
 .giveaway__form-actions{display:flex;align-items:center;justify-content:space-between;gap:20px}.giveaway__note{margin:0;color:#5d574b;font-size:12px;line-height:1.4}.giveaway__note a,.giveaway__rules a{color:var(--gw-brown);font-weight:700}
 .giveaway__submit{min-height:52px;border:0;border-radius:7px;background:var(--gw-yellow);color:var(--gw-brown);font:800 16px "Hanken Grotesk",Arial,sans-serif;padding:13px 22px;cursor:pointer;white-space:nowrap}.giveaway__submit:hover{filter:brightness(.97)}.giveaway__form-error{margin:10px 0 0;color:#8e2619;font-size:14px}
+.giveaway__included{padding:clamp(38px,6vw,76px) 24px;background:#f2eddd;color:var(--gw-brown)}.giveaway__included-inner{width:min(1120px,100%);margin:0 auto}.giveaway__included h2{font-family:"Snaga Uni Display",Georgia,serif;font-size:clamp(32px,4vw,46px);line-height:1.05;margin:0 0 14px;color:var(--gw-brown)}.giveaway__included-inner>p:not(.giveaway__eyebrow):not(.giveaway__included-note){max-width:68ch;line-height:1.55;margin:0 0 24px}.giveaway__included-list{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px 24px}.giveaway__included-list li{display:flex;align-items:flex-start;gap:11px;padding:16px 18px;border-radius:12px;background:#fff;color:var(--gw-brown);font-weight:700;line-height:1.4}.giveaway__included-list li span:first-child{display:grid;place-items:center;flex:0 0 23px;width:23px;height:23px;border-radius:50%;background:var(--gw-yellow);color:var(--gw-brown);font-size:14px;font-weight:800}.giveaway__included-note{margin:18px 0 0;color:#5d574b;font-size:13px;line-height:1.5}
 .giveaway__details{display:flex;align-items:center;justify-content:center;gap:clamp(18px,4vw,56px);flex-wrap:wrap;padding:26px max(24px,calc((100vw - 1160px)/2));background:var(--gw-yellow);color:var(--gw-brown)}.giveaway__details p{max-width:42ch;margin:0;line-height:1.45}
 .giveaway__rules{max-width:900px;margin:0 auto;padding:44px 24px 60px;font-size:14px;line-height:1.6}.giveaway__rules h2{font-family:"Snaga Uni Display",Georgia,serif;color:var(--gw-brown);font-size:32px}.giveaway__rules li{margin-bottom:8px}
-@media(max-width:800px){.giveaway__hero{grid-template-columns:minmax(0,1fr);grid-template-areas:"content" "visual" "form";padding:28px 20px 30px;row-gap:24px}.giveaway__content{max-width:none}.giveaway h1{font-size:clamp(42px,11.5vw,58px)}.giveaway__subline{font-size:17px}.giveaway__prize-note{margin-top:18px}.giveaway__visual{margin:0 7px 17px 4px}.giveaway__visual:before{inset:13px -7px -11px 12px;border-radius:18px 18px 64px 18px}.giveaway__visual img{border-radius:18px 18px 64px 18px}.giveaway__visual figcaption{top:12px;right:-3px;font-size:12px;max-width:185px}.giveaway__form{padding:18px;border-radius:14px}.giveaway__fields{grid-template-columns:minmax(0,1fr);gap:12px}.giveaway__form-actions{align-items:stretch;flex-direction:column;gap:13px}.giveaway__submit{width:100%}.giveaway__details{align-items:flex-start;flex-direction:column;padding:22px}.giveaway__rules{padding:34px 22px 44px}}
+@media(max-width:800px){.giveaway__hero{grid-template-columns:minmax(0,1fr);grid-template-areas:"content" "visual" "form";padding:28px 20px 30px;row-gap:24px}.giveaway__content{max-width:none}.giveaway h1{font-size:clamp(42px,11.5vw,58px)}.giveaway__subline{font-size:17px}.giveaway__prize-note{margin-top:18px}.giveaway__visual{margin:0 7px 17px 4px}.giveaway__visual:before{inset:13px -7px -11px 12px;border-radius:18px 18px 64px 18px}.giveaway__visual img{border-radius:18px 18px 64px 18px}.giveaway__visual figcaption{top:12px;right:-3px;font-size:12px;max-width:185px}.giveaway__form{padding:18px;border-radius:14px}.giveaway__fields{grid-template-columns:minmax(0,1fr);gap:12px}.giveaway__form-actions{align-items:stretch;flex-direction:column;gap:13px}.giveaway__submit{width:100%}.giveaway__included{padding:36px 20px}.giveaway__included-list{grid-template-columns:minmax(0,1fr);gap:9px}.giveaway__included-list li{padding:13px 15px}.giveaway__details{align-items:flex-start;flex-direction:column;padding:22px}.giveaway__rules{padding:34px 22px 44px}}
 @media(min-width:560px) and (max-width:800px){.giveaway__fields{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(prefers-reduced-motion:reduce){.giveaway *{scroll-behavior:auto!important}}
 </style>
