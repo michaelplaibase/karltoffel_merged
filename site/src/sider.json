@@ -626,6 +626,50 @@
    "i_sitemap": true
   },
   {
+   "sti": "/p/vinduesvask-gratis-indvendig",
+   "fil": "p/vinduesvask-gratis-indvendig",
+   "head": {
+    "title": "Bestil vinduesvask – få indvendig pudsning med | Karltoffel",
+    "description": "Bestil udvendig vinduesvask og få indvendig vinduespudsning med uden ekstra beregning. Vejledende værdi ca. 300–400 kr. Uforpligtende forespørgsel.",
+    "noindex_top": false,
+    "floating_linje": "",
+    "pixel": "",
+    "og_html": "\n\t<link rel=\"canonical\" href=\"https://karltoffel.dk/p/vinduesvask-gratis-indvendig\">\n\t<meta property=\"og:title\" content=\"Bestil vinduesvask – få indvendig pudsning med | Karltoffel\">\n\t<meta property=\"og:description\" content=\"Bestil udvendig vinduesvask og få indvendig vinduespudsning med uden ekstra beregning. Vejledende værdi ca. 300–400 kr. Uforpligtende forespørgsel.\">\n\t<meta property=\"og:url\" content=\"https://karltoffel.dk/p/vinduesvask-gratis-indvendig\">\n\t<meta property=\"og:image\" content=\"https://karltoffel.dk/assets/img/thumb/1cab000e9b684c1490a3b6c2c423c3b045ee4d88_w2000_q78.webp\">\n\t"
+   },
+   "body_tag": "<body class=\"\" data-link=\"/p/vinduesvask-gratis-indvendig\">",
+   "header": {"fixed": true,"nav_active": "","cta_href": "#vindue-hero"},
+   "footer": {"cta_href": "#vindue-hero","em_paragraf": false,"social": "kun-facebook"},
+   "motor": null,
+   "ydelseskort": null,
+   "faq": false,
+   "faq_ekstra_fil": null,
+   "floating_cta": null,
+   "noindex": true,
+   "i_sitemap": false
+  },
+  {
+   "sti": "/p/tagrenderens-landing",
+   "fil": "p/tagrenderens-landing",
+   "head": {
+    "title": "Tagrenderens, der giver blikke over hækken | Karltoffel",
+    "description": "Få et uforpligtende tilbud på tagrenderens. Send din adresse, så afklarer vi opgaven og prisen med dig.",
+    "noindex_top": false,
+    "floating_linje": "",
+    "pixel": "",
+    "og_html": "\n\t<link rel=\"canonical\" href=\"https://karltoffel.dk/p/tagrenderens-landing\">\n\t<meta property=\"og:title\" content=\"Tagrenderens, der giver blikke over hækken | Karltoffel\">\n\t<meta property=\"og:description\" content=\"Få et uforpligtende tilbud på tagrenderens. Send din adresse, så afklarer vi opgaven og prisen med dig.\">\n\t<meta property=\"og:url\" content=\"https://karltoffel.dk/p/tagrenderens-landing\">\n\t<meta property=\"og:image\" content=\"https://karltoffel.dk/assets/img/thumb/7c77e75a933c2940f28a0f1404b7a2ad72837aa6_w1600_q78.webp\">\n\t"
+   },
+   "body_tag": "<body class=\"\" data-link=\"/p/tagrenderens-landing\">",
+   "header": {"fixed": true,"nav_active": "","cta_href": "#tag-hero"},
+   "footer": {"cta_href": "#tag-hero","em_paragraf": false,"social": "kun-facebook"},
+   "motor": null,
+   "ydelseskort": null,
+   "faq": false,
+   "faq_ekstra_fil": null,
+   "floating_cta": null,
+   "noindex": true,
+   "i_sitemap": false
+  },
+  {
    "sti": "/p/haekklipning-landing",
    "fil": "p/haekklipning-landing",
    "head": {

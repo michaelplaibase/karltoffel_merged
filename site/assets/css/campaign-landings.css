@@ -1,0 +1,29 @@
+/* Isolated campaign landing pages, aligned to Karltoffel's service redesign. */
+#vindue-hero-grid,#tag-hero-grid{padding-top:150px;align-items:center}
+.vindue-campaign-header{position:absolute;top:0;left:0;right:0;z-index:20;background:rgba(28,20,11,.35)}
+.vindue-header-cta{display:inline-block;padding:12px 20px;border-radius:999px;background:#FFF87B;color:#4C3718;font-weight:800;text-decoration:none}
+#vindue-hero-grid .sp-hero__text,#tag-hero-grid .sp-hero__text{max-width:620px}
+#vindue-hero-grid h1,#tag-hero-grid h1{font-size:clamp(38px,7vw,64px)}
+.vindue-value{display:flex;flex-direction:column;gap:4px;margin:24px 0 0;padding:16px 20px;border-left:5px solid #FFF87B;background:rgba(28,20,11,.48);color:#FFFFF0;border-radius:0 12px 12px 0}
+.vindue-value strong{font-size:18px;color:#FFF87B}
+.vindue-value span{font-size:14px}
+.vindue-eyebrow{margin:0 0 12px;color:#8A6931;font-size:13px;font-weight:800;letter-spacing:.09em;text-transform:uppercase}
+.vindue-intro{max-width:780px;font-size:18px;line-height:1.55}
+.vindue-steps{background:#4C3718;color:#FFFFF0}
+.vindue-steps .sp-step{min-height:200px}
+.vindue-faq{max-width:900px}
+.vindue-faq h2{font-family:snaga-unicase-display,sans-serif;font-size:clamp(30px,5vw,44px);color:#4C3718;text-transform:uppercase;line-height:1;margin:0 0 24px}
+.vindue-faq details{padding:18px 0;border-bottom:1px solid rgba(76,55,24,.22);color:#4C3718}
+.vindue-faq summary{font-size:17px;font-weight:800;cursor:pointer}
+.vindue-faq details p{max-width:720px;margin:12px 0 0;line-height:1.55}
+.vindue-final-cta{padding:64px 0;background:#FFF87B;color:#4C3718}
+.vindue-final-cta .grid-container{display:flex;align-items:center;justify-content:space-between;gap:32px}
+.vindue-final-cta h2{max-width:720px;margin:0 0 12px;font-family:snaga-unicase-display,sans-serif;font-size:clamp(30px,5vw,48px);line-height:1;text-transform:uppercase}
+.vindue-final-cta p{margin:0 0 8px}
+.vindue-final-cta .sp-form__submit{display:inline-block;width:auto;text-decoration:none;white-space:nowrap}
+.vindue-form-status{margin-top:16px;padding:16px;border-radius:12px;background:#e7efd5;color:#4C3718;font-weight:700}
+.vindue-form-status[data-error="true"]{background:#fff1e8;color:#8b2f18}
+.vindue-lead-form [required]:invalid:focus{outline:2px solid #AE8642}
+.vindue-lead-form button:disabled{opacity:.7;cursor:wait}
+@media(max-width:899px){#vindue-hero-grid,#tag-hero-grid{padding-top:100px;padding-bottom:32px}.vindue-final-cta .grid-container{display:block}.vindue-final-cta .sp-form__submit{margin-top:20px}.vindue-header-cta{font-size:12px;padding:10px 12px}.vindue-campaign-header .header__logo{max-width:170px}.vindue-campaign-header .header__logo img{width:100%;height:auto}}
+@media(min-width:1024px){#vindue-hero-grid,#tag-hero-grid{grid-template-columns:minmax(0,1fr) minmax(360px,440px);gap:48px}}
