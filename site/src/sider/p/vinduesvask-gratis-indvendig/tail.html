@@ -2,6 +2,32 @@
 	</div>
 	<script src="/assets/js/swiper.js"></script>
 	<script src="/assets/js/site.js?v=2"></script>
+	<script>
+	(function(){
+		var params=new URLSearchParams(location.search),preview=params.get('preview')==='1';
+		document.querySelectorAll('[data-preview-note]').forEach(function(el){el.hidden=!preview;});
+		document.querySelectorAll('.vindue-lead-form').forEach(function(form){
+			form.addEventListener('submit',async function(e){
+				e.preventDefault();
+				var button=form.querySelector('button[type="submit"]'),status=form.parentElement.querySelector('.vindue-form-status');
+				if(button.disabled)return;
+				button.disabled=true;
+				var d=new FormData(form),address=String(d.get('address')||'').trim()+', '+String(d.get('postcode')||'').trim();
+				try{(window.dataLayer=window.dataLayer||[]).push({event:'generate_lead',lead_source:form.dataset.contentName,lead_kundetype:'privat'});}catch(_e){}
+				if(preview){status.hidden=false;status.textContent='Preview-test: formularen er afprøvet. Ingen oplysninger er gemt eller sendt.';button.disabled=false;return;}
+				button.textContent='Sender…';
+				var prior=null;try{var pending=sessionStorage.getItem('ktMetaPendingLead');if(pending){prior=JSON.parse(pending);sessionStorage.removeItem('ktMetaPendingLead');}}catch(_e){}
+				var contentName=(prior&&prior.content_name)||form.dataset.contentName;
+				var id=(prior&&prior.event_id)||('vask-'+(window.crypto&&crypto.randomUUID?crypto.randomUUID():Date.now().toString(36)));
+				var payload={name:String(d.get('name')||'').trim(),phone:String(d.get('phone')||'').trim(),email:'',kundetype:'privat',source:'vinduesvask-gratis-indvendig',message:'Kampagneforespørgsel. Udvendig vinduesvask med indvendig vinduespudsning uden ekstra beregning. Vejledende værdi ca. 300–400 kr. Adresse: '+address,services:[{id:'vinduer',navn:'Udvendig vinduesvask',qty:1,enhed:'glas',freq:1,pris:17},{id:'vinduerind',navn:'Indvendig vinduespudsning (kampagnetilbud)',qty:1,enhed:'glas',freq:1,pris:0}],estimat:{md:0,aar:0,visits:1,count:2},meta_capi:{event_id:id,content_name:contentName}};
+				if(prior&&prior.event_id)payload.meta_capi_prior=prior;
+				try{var response=await fetch('/api/lead',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(payload)});if(!response.ok)throw new Error('HTTP '+response.status);form.hidden=true;status.hidden=false;status.textContent='Tak. Vi vender tilbage med pris og aftaler næste skridt.';try{if(typeof window.fbq==='function')window.fbq('track','Lead',{content_name:contentName,content_type:'form'},{eventID:id});}catch(_e){}}
+				catch(_err){status.hidden=false;status.dataset.error='true';status.textContent='Vi kunne ikke sende forespørgslen lige nu. Prøv igen eller ring 22 22 38 33.';button.disabled=false;button.textContent='Få et uforpligtende tilbud';}
+			});
+		});
+	})();
+	</script>
+
 
 	</body>
 </html>
