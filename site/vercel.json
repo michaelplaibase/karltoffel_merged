@@ -8,6 +8,8 @@
     { "source": "/p/forside", "destination": "/", "permanent": true },
     { "source": "/p/faa-et-tilbud", "destination": "/#tilbudsmotor", "permanent": true },
     { "source": "/p/faa-et-tilbud/", "destination": "/#tilbudsmotor", "permanent": true },
+    { "source": "/p/tagrenderens-landing", "destination": "/p/tagrenderens-vinduesvask", "permanent": true },
+    { "source": "/p/tagrenderens-landing/", "destination": "/p/tagrenderens-vinduesvask", "permanent": true },
     { "source": "/erhverv", "destination": "/p/erhverv", "permanent": true },
     { "source": "/erhverv/", "destination": "/p/erhverv", "permanent": true },
     { "source": "/c/det-vi-ordner/soignering-af-bede", "destination": "/p/det-vi-ordner", "permanent": true },
