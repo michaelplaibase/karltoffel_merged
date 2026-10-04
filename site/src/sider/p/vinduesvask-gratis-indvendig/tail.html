@@ -13,7 +13,6 @@
 				if(button.disabled)return;
 				button.disabled=true;
 				var d=new FormData(form),address=String(d.get('address')||'').trim()+', '+String(d.get('postcode')||'').trim();
-				try{(window.dataLayer=window.dataLayer||[]).push({event:'generate_lead',lead_source:form.dataset.contentName,lead_kundetype:'privat'});}catch(_e){}
 				if(preview){status.hidden=false;status.textContent='Preview-test: formularen er afprøvet. Ingen oplysninger er gemt eller sendt.';button.disabled=false;return;}
 				button.textContent='Sender…';
 				var prior=null;try{var pending=sessionStorage.getItem('ktMetaPendingLead');if(pending){prior=JSON.parse(pending);sessionStorage.removeItem('ktMetaPendingLead');}}catch(_e){}
