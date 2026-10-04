@@ -5,6 +5,12 @@
 .kampagne-koncept__copy p:not(.vindue-eyebrow){max-width:640px;margin:0 auto 18px;line-height:1.6}
 .kampagne-koncept__copy .vindue-eyebrow{color:#FFF87B}
 .kampagne-koncept__copy a{display:inline-flex;align-items:center;justify-content:center;min-height:48px;padding:12px 22px;border-radius:999px;background:#FFF87B;color:#4C3718;font-weight:800;text-decoration:none}
+.koncept-video{max-width:420px;margin:26px auto;border-radius:20px;overflow:hidden;background:#1C140B;box-shadow:0 16px 38px rgba(0,0,0,.24)}
+.koncept-video video{display:block;width:100%;height:auto;aspect-ratio:9/16;object-fit:cover;background:#1C140B}
+.koncept-video video:focus-visible{outline:4px solid #FFF87B;outline-offset:3px}
+.kampagne-koncept__copy>a{margin:2px auto 0}
+@media(max-width:600px){.koncept-video{width:min(100%,340px);margin:22px auto;border-radius:16px}.kampagne-koncept__copy>a{width:100%}}
+@media(prefers-reduced-motion:reduce){.koncept-video video{scroll-behavior:auto}}
 @media(max-width:600px){.kampagne-koncept{padding:36px 0}.kampagne-koncept__copy{text-align:left}.kampagne-koncept__copy p:not(.vindue-eyebrow){margin-left:0;margin-right:0}}
 #vindue-hero-grid,#tag-hero-grid{padding-top:150px;align-items:center}
 .vindue-campaign-header{position:absolute;top:0;left:0;right:0;z-index:20;background:rgba(28,20,11,.35)}
