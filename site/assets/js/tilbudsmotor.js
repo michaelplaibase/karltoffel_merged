@@ -30,7 +30,7 @@ const PRODUCTS = [
      (state.haekInfo, se syncHaekPris). wm-navnene er UÆNDREDE (samme
      WorkMaker-produkt for begge priser indtil nyt produkt findes i CSV). */
   {id:"haek",     navn:"Hækklipning",                    enhed:"m hæk",      pris:33.75, min:1350, note:"Trimning — hæk under 220 cm",            qty:0,  freq:1,  fmax:3,  on:false, pakke:true, kat:"pakke", wm:"Hækklipning 1 side pr meter Under 220 cm"},
-  {id:"green",    navn:"Greenkeeper græspleje",          enhed:"m² plæne",   pris:4.00, min:699, note:"Gødning og pleje af plænen",      qty:0, freq:3,  fmax:6,  on:false, pakke:true, kat:"pakke", wm:"Greenkeeper græspleje"},
+  {id:"green",    navn:"Greenkeeper græspleje",          enhed:"m² plæne",   pris:4.00, min:600, note:"Gødning og pleje af plænen",      qty:0, freq:3,  fmax:6,  on:false, pakke:true, kat:"pakke", wm:"Greenkeeper græspleje"},
   {id:"alge",     navn:"Algebehandling af tag",          enhed:"m² tag",     pris:9.80,  min:950,  note:"Mos og alger, beregnet på skråt tagareal", qty:0, freq:1, fmax:2, on:false, pakke:true, kat:"pakke", wm:"Algebehandling af tag"},
   {id:"tagrender",navn:"Tagrenderens",                   enhed:"m tagrende", pris:21.60, note:"Stueplan / 1-plans hus",          qty:0,  freq:1,  fmax:2,  on:false, pakke:true, kat:"pakke", wm:"Tagrenderens Stueplan / 1-plans hus"},
 

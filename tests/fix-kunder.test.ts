@@ -81,7 +81,7 @@ test("lead-konvertering bruger tilbuddets rabatkæde (mængderabat + rabatkode)"
   assert.match(leads, /aarNet \/ r\.aarBrutto/);
 });
 
-test("Greenkeeper-græspleje bruger 4 kr/m² og 699 kr minimum i begge priskilder og leadpayload", async () => {
+test("Greenkeeper-græspleje bruger 4 kr/m² og 600 kr minimum i begge priskilder og leadpayload", async () => {
   const motor = await src("site/assets/js/tilbudsmotor.js");
   const side = await src("site/src/sider/c/det-vi-ordner/graespleje/tail.html");
   const route = await src("app/api/leads/route.ts");
