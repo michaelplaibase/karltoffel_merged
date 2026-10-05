@@ -81,6 +81,25 @@ test("lead-konvertering bruger tilbuddets rabatkæde (mængderabat + rabatkode)"
   assert.match(leads, /aarNet \/ r\.aarBrutto/);
 });
 
+test("Greenkeeper-græspleje bruger 4 kr/m² og 600 kr minimum i begge priskilder og leadpayload", async () => {
+  const motor = await src("site/assets/js/tilbudsmotor.js");
+  const side = await src("site/src/sider/c/det-vi-ordner/graespleje/tail.html");
+  const route = await src("app/api/leads/route.ts");
+  const data = JSON.parse(await src("site/src/data/ydelser.json")) as { slug: string; pris: string }[];
+  const green = data.find((item) => item.slug === "graespleje");
+  assert.ok(motor.includes('{id:"green",    navn:"Greenkeeper græspleje",          enhed:"m² plæne",   pris:4.00, min:600'));
+  assert.ok(side.includes('Math.max(4*f.m2,600)'));
+  assert.ok(side.includes('pris:4,min:600'));
+  assert.equal(green?.pris, "600");
+  assert.ok(route.includes('min: typeof s.min === "number" && Number.isFinite(s.min) && s.min >= 0 ? Math.min(s.min, 1_000_000) : null'));
+
+  const { beregn, parseLeadPayload } = await import("../lib/tilbudsmotor-pricing");
+  const payload = parseLeadPayload(JSON.stringify({ services: [{ id: "green", navn: "Greenkeeper græspleje", wm: "Greenkeeper græspleje", qty: 100, enhed: "m² plæne", freq: 1, pris: 4, min: 600 }] }));
+  assert.equal(payload.services[0]?.min, 600);
+  assert.equal(beregn(payload.services).aarBrutto, 600);
+  assert.equal(beregn([{ ...payload.services[0], qty: 200 }]).aarBrutto, 800);
+});
+
 test("rabatkæden skalerer linjepriserne så årssummen matcher det accepterede tilbud", () => {
   // 5 services → 15 % mængderabat; gyldig rabatkode −10 % oven på.
   const services: PricedService[] = [
