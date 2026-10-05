@@ -46,7 +46,7 @@ const num = (v: unknown, max: number) => (typeof v === "number" && Number.isFini
 /** Tilbudsmotorens payload: valgte services + estimat + kundetype (+ evt.
  *  valideret rabatkode). Alt er valgfrit og valideres felt for felt —
  *  ukendte/ugyldige rækker droppes. */
-type TmService = { id: string; navn: string; wm: string | null; qty: number; enhed: string; freq: number; pris: number | null };
+type TmService = { id: string; navn: string; wm: string | null; qty: number; enhed: string; freq: number; pris: number | null; min: number | null };
 type Rabat = { rabatkode: string; rabatOk: boolean; rabatPct: number | null };
 function parseTmPayload(body: Record<string, unknown>, rabat: Rabat | null): { payloadJson: string | null; kundetype: string | null; services: TmService[]; estimatMd: number; naborabat: boolean } {
   const kt = str(body.kundetype, 10).toLowerCase();
@@ -70,6 +70,7 @@ function parseTmPayload(body: Record<string, unknown>, rabat: Rabat | null): { p
       enhed: str(s.enhed, 40),
       freq: num(s.freq, 366),
       pris: typeof s.pris === "number" && Number.isFinite(s.pris) && s.pris >= 0 ? Math.min(s.pris, 1_000_000) : null,
+      min: typeof s.min === "number" && Number.isFinite(s.min) && s.min >= 0 ? Math.min(s.min, 1_000_000) : null,
     }];
   });
 
