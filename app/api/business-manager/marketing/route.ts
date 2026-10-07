@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSessionUser } from "@/lib/api-auth";
-import { prisma } from "@/lib/db";
 import { getInsights } from "@/lib/meta-ads";
 
 export const dynamic = "force-dynamic";
@@ -24,53 +23,54 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "Vælg en gyldig periode på højst 90 dage." }, { status: 400 });
   }
 
-  const channels = new Map([["Google Ads", blankChannel("Google Ads", "Google Ads API ikke tilsluttet")], ["Meta Ads", blankChannel("Meta Ads", "Meta Ads Insights")], ["Organisk / andet", blankChannel("Organisk / andet", "CRM-attribution")]]);
-  const notes = ["Google Ads og GA4 er ikke forbundet til denne server.", "Meta Insights hentes live fra Karltoffel.dk-annoncekontoen; platformens rapportering kan være forsinket.", "Leads fordeles via CRM-kilden og gemte UTM-data; eksisterende leads kan mangle annonceattribution.", "ROAS/CLV kræver sikker kobling til kundeomsætning. Afvisningsprocent kræver GA4."];
+  const channels = [
+    blankChannel("Google Ads", "Ingen Google Ads-konto tilsluttet"),
+    blankChannel("Meta Ads", "Meta Ads Insights"),
+  ];
+  const meta = channels[1];
   let metaLive = false;
   let metaFailed = false;
-
   if (process.env.META_ACCESS_TOKEN) {
     try {
-      const insight = await getInsights({ objectId: process.env.META_AD_ACCOUNT_ID || "act_2067372627323557", since: from, until: to, level: "account" }) as { data?: Array<Record<string, unknown>> };
-      const channel = channels.get("Meta Ads")!;
-      for (const row of insight.data ?? []) {
-        channel.spend += Number(row.spend) || 0;
-        channel.impressions += Number(row.impressions) || 0;
-        channel.clicks += Number(row.clicks) || 0;
+      const result = await getInsights({
+        objectId: process.env.META_AD_ACCOUNT_ID || "act_2067372627323557",
+        since: from,
+        until: to,
+        level: "account",
+      }) as { data?: Array<Record<string, unknown>> };
+      for (const row of result.data ?? []) {
+        meta.spend += Number(row.spend) || 0;
+        meta.impressions += Number(row.impressions) || 0;
+        meta.clicks += Number(row.clicks) || 0;
         const actions = Array.isArray(row.actions) ? row.actions as Array<Record<string, unknown>> : [];
-        const leadActionTypes = new Set(["lead", "onsite_web_lead", "onsite_conversion.lead_grouped", "offsite_conversion.fb_pixel_lead"]);
-        channel.leads += actions.filter(a => leadActionTypes.has(String(a.action_type))).reduce((sum, a) => sum + (Number(a.value) || 0), 0);
+        // Meta reports overlapping action types. Count one canonical `lead` metric only.
+        const canonicalLead = actions.find(action => action.action_type === "lead");
+        meta.leads += Number(canonicalLead?.value) || 0;
       }
       metaLive = true;
-    } catch { metaFailed = true; }
-  } else {
-    notes[1] = "Meta-forbindelse mangler i deploymentmiljøet; Meta Insights er derfor ikke live endnu.";
+      meta.source = "Live Meta Insights — platformens lead-event";
+      meta.cpl = meta.leads ? meta.spend / meta.leads : null;
+      meta.conversionRate = meta.clicks ? meta.leads / meta.clicks * 100 : null;
+    } catch {
+      metaFailed = true;
+    }
   }
 
-  const leads = await prisma.lead.findMany({
-    where: { createdAt: { gte: new Date(`${from}T00:00:00.000Z`), lte: new Date(`${to}T23:59:59.999Z`) } },
-    select: { status: true, source: true, utm: true, contactId: true },
-  });
-  for (const lead of leads) {
-    const raw = `${lead.source} ${lead.utm || ""}`.toLowerCase();
-    const channel = /google|adwords|gclid/.test(raw) ? channels.get("Google Ads")! : /facebook|instagram|meta|fbclid/.test(raw) ? channels.get("Meta Ads")! : channels.get("Organisk / andet")!;
-    channel.leads++;
-    if (lead.status === "converted" && lead.contactId) channel.customers++;
-  }
+  const spend = channels.reduce((sum, channel) => sum + channel.spend, 0);
+  const clicks = channels.reduce((sum, channel) => sum + channel.clicks, 0);
+  const leads = channels.reduce((sum, channel) => sum + channel.leads, 0);
+  const status = metaLive ? "partial" : "unavailable";
+  const notes = [
+    "Meta Ads er koblet live. Lead- og klik-tal følger Meta-platformens events og kan afvige fra CRM-leads.",
+    "Google Ads er ikke forbundet: der blev ikke fundet en Google Ads API-konto eller annonce-API credentials i de tilgængelige integrationer.",
+    "CRM-leads og kundeomsætning læses ikke i denne testvisning; der læses ingen CRM-produktionsdata.",
+    "GA4 er ikke forbundet. Afvisningsprocent, CRM-attribution, ROAS og CLV afventer derfor integration.",
+  ];
+  if (!metaLive) notes.unshift(metaFailed ? "Meta Ads kunne ikke hentes — kontrollér kontoens læseadgang." : "Meta Ads-adgang mangler i previewmiljøet.");
 
-  const rows = [...channels.values()];
-  for (const channel of rows) {
-    channel.cpl = channel.leads ? channel.spend / channel.leads : null;
-    channel.conversionRate = channel.clicks ? channel.leads / channel.clicks * 100 : null;
-  }
-  const sum = (key: "spend" | "impressions" | "clicks" | "leads" | "customers" | "revenue") => rows.reduce((total, row) => total + row[key], 0);
-  const spend = sum("spend"), clicks = sum("clicks"), leadCount = sum("leads"), revenue = sum("revenue");
-  const status = metaLive ? "partial" : "demo";
-  if (metaFailed) notes.push("Meta-API-kaldet fejlede; kontrollér kontoens læseadgang.");
-  if (!metaLive) notes.unshift("Meta-tal mangler — annonceforbrug/kampagnedata kan ikke bekræftes som live.");
   return NextResponse.json({
-    status, updatedAt: now.toISOString(), from, to, channels: rows,
-    totals: { spend, impressions: sum("impressions"), clicks, leads: leadCount, customers: sum("customers"), revenue, roas: null, cpl: leadCount ? spend / leadCount : null, conversionRate: clicks ? leadCount / clicks * 100 : null, bounceRate: null },
+    status, updatedAt: now.toISOString(), from, to, channels,
+    totals: { spend, impressions: channels.reduce((sum, channel) => sum + channel.impressions, 0), clicks, leads, customers: 0, revenue: 0, roas: null, cpl: leads ? spend / leads : null, conversionRate: clicks ? leads / clicks * 100 : null, bounceRate: null },
     notes,
   }, { headers: { "Cache-Control": "no-store" } });
 }
