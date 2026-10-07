@@ -19,11 +19,13 @@ const pct = (n: number | null) => n == null ? "—" : `${n.toLocaleString("da-DK
 export default function MarketingDashboard() {
   const [days, setDays] = useState(30);
   const [data, setData] = useState<DashboardData | null>(null);
+  const [demoPreview, setDemoPreview] = useState(false);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const from = useMemo(() => { const d = new Date(); d.setDate(d.getDate() - days + 1); return d.toISOString().slice(0, 10); }, [days]);
   const [refreshKey, setRefreshKey] = useState(0);
   useEffect(() => {
+    if (demoPreview) return;
     const load = async () => {
       setBusy(true); setError("");
       try {
@@ -37,8 +39,15 @@ export default function MarketingDashboard() {
     const handle = window.setTimeout(() => void load(), 0);
     const timer = window.setInterval(() => void load(), 5 * 60 * 1000);
     return () => { window.clearTimeout(handle); window.clearInterval(timer); };
-  }, [from, refreshKey]);
-  const refresh = () => setRefreshKey(key => key + 1);
+  }, [from, refreshKey, demoPreview]);
+  const refresh = () => { setDemoPreview(false); setRefreshKey(key => key + 1); };
+  const showSample = () => {
+    setData({ status: "demo", updatedAt: new Date().toISOString(), from, to: new Date().toISOString().slice(0, 10), channels: [
+      { name: "Google Ads", source: "Fiktive eksempeldata", spend: 8400, impressions: 48700, clicks: 740, leads: 18, customers: 4, revenue: 0, roas: null, cpl: 466.67, conversionRate: 2.43, bounceRate: null },
+      { name: "Meta Ads", source: "Fiktive eksempeldata", spend: 6200, impressions: 83600, clicks: 1120, leads: 23, customers: 5, revenue: 0, roas: null, cpl: 269.57, conversionRate: 2.05, bounceRate: null },
+    ], totals: { spend: 14600, impressions: 132300, clicks: 1860, leads: 41, customers: 9, revenue: 0, roas: null, cpl: 356.1, conversionRate: 2.2, bounceRate: null }, notes: ["FIKTIVE DEMOTAL — ikke Karltoffels faktiske performance.", "Google Ads API/GA4 er ikke tilsluttet. Live Meta-opslag fejlede eller mangler i preview-miljøet.", "Testvisningen bruger ikke CRM-produktionsdata."] });
+    setDemoPreview(true);
+  };
 
   const metrics = data ? [
     ["Spend", kr(data.totals.spend), "Annonceforbrug i perioden"],
@@ -52,9 +61,9 @@ export default function MarketingDashboard() {
   return <section className="marketing-dashboard" aria-busy={busy}>
     <style>{styles}</style>
     <div className="md-head"><div><h2>Marketingperformance</h2><p>Google Ads, Meta og website — med synlig datadækning.</p></div>
-      <div className="md-controls"><label>Periode <select value={days} onChange={e => setDays(Number(e.target.value))}><option value={7}>Seneste 7 dage</option><option value={30}>Seneste 30 dage</option><option value={90}>Seneste 90 dage</option></select></label><button type="button" className="md-refresh" onClick={refresh} disabled={busy}>{busy ? "Opdaterer…" : "Opdatér nu"}</button></div>
+      <div className="md-controls"><label>Periode <select value={days} onChange={e => setDays(Number(e.target.value))}><option value={7}>Seneste 7 dage</option><option value={30}>Seneste 30 dage</option><option value={90}>Seneste 90 dage</option></select></label><button type="button" className="md-refresh" onClick={showSample}>Vis demovisning</button><button type="button" className="md-refresh" onClick={refresh} disabled={busy}>{busy ? "Opdaterer…" : "Opdatér data"}</button></div>
     </div>
-    <div className={`md-status ${data?.status === "live" ? "is-live" : "is-demo"}`}><span className="md-dot" />{data?.status === "live" ? "Live data" : data?.status === "partial" ? "Delvise live data" : "Demo — syntetiske tal"}<span className="md-updated">{data ? `Sidst opdateret ${new Date(data.updatedAt).toLocaleString("da-DK")}` : "Indlæser…"} · Automatisk opdatering hvert 5. minut</span></div>
+    <div className={`md-status ${data?.status === "live" ? "is-live" : "is-demo"}`}><span className="md-dot" />{data?.status === "live" ? "Live data" : data?.status === "partial" ? "Delvise live data" : demoPreview ? "DEMO — fiktive eksempeldata" : "Liveopslag / integration mangler"}<span className="md-updated">{data ? `Sidst opdateret ${new Date(data.updatedAt).toLocaleString("da-DK")}` : "Indlæser…"} · Automatisk opdatering hvert 5. minut</span></div>
     {error && <div className="md-error" role="alert">{error}</div>}
     <div className="md-kpis">{metrics.map(([label, value, detail]) => <article className="md-kpi" key={label}><span>{label}</span><strong>{value}</strong><small>{detail}</small></article>)}</div>
     <div className="md-grid">
