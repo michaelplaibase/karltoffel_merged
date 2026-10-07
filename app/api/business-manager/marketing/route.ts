@@ -5,8 +5,15 @@ import { getInsights } from "@/lib/meta-ads";
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
-const validDate = (value: string) => /^\d{4}-\d{2}-\d{2}$/.test(value) && new Date(`${value}T00:00:00.000Z`).toISOString().slice(0, 10) === value;
-const blankChannel = (name: string, source: string) => ({ name, source, spend: 0, impressions: 0, clicks: 0, leads: 0, customers: 0, revenue: 0, roas: null as number | null, cpl: null as number | null, conversionRate: null as number | null, bounceRate: null as number | null });
+const validDate = (value: string) => {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+  const timestamp = Date.parse(`${value}T00:00:00.000Z`);
+  return Number.isFinite(timestamp) && new Date(timestamp).toISOString().slice(0, 10) === value;
+};
+const blankChannel = (name: string, source: string) => ({
+  name, source, spend: 0, impressions: 0, clicks: 0, leads: 0, customers: 0, revenue: 0,
+  roas: null as number | null, cpl: null as number | null, conversionRate: null as number | null, bounceRate: null as number | null,
+});
 
 export async function GET(req: NextRequest) {
   const user = await getSessionUser();
@@ -28,8 +35,14 @@ export async function GET(req: NextRequest) {
     blankChannel("Meta Ads", "Meta Ads Insights"),
   ];
   const meta = channels[1];
+  const notes = [
+    "Google Ads API-adgang mangler; Google Ads-data vises ikke som live-tal.",
+    "GA4 mangler; afvisningsprocent kan ikke vises endnu.",
+    "ROAS og CLV kræver kobling til verificeret kundeomsætning.",
+  ];
   let metaLive = false;
   let metaFailed = false;
+
   if (process.env.META_ACCESS_TOKEN) {
     try {
       const result = await getInsights({
@@ -43,7 +56,7 @@ export async function GET(req: NextRequest) {
         meta.impressions += Number(row.impressions) || 0;
         meta.clicks += Number(row.clicks) || 0;
         const actions = Array.isArray(row.actions) ? row.actions as Array<Record<string, unknown>> : [];
-        // Meta reports overlapping action types. Count one canonical `lead` metric only.
+        // Meta action types overlap; count only the canonical lead event once.
         const canonicalLead = actions.find(action => action.action_type === "lead");
         meta.leads += Number(canonicalLead?.value) || 0;
       }
@@ -60,17 +73,30 @@ export async function GET(req: NextRequest) {
   const clicks = channels.reduce((sum, channel) => sum + channel.clicks, 0);
   const leads = channels.reduce((sum, channel) => sum + channel.leads, 0);
   const status = metaLive ? "partial" : "unavailable";
-  const notes = [
-    "Meta Ads er koblet live. Lead- og klik-tal følger Meta-platformens events og kan afvige fra CRM-leads.",
-    "Google Ads er ikke forbundet: der blev ikke fundet en Google Ads API-konto eller annonce-API credentials i de tilgængelige integrationer.",
-    "CRM-leads og kundeomsætning læses ikke i denne testvisning; der læses ingen CRM-produktionsdata.",
-    "GA4 er ikke forbundet. Afvisningsprocent, CRM-attribution, ROAS og CLV afventer derfor integration.",
-  ];
-  if (!metaLive) notes.unshift(metaFailed ? "Meta Ads kunne ikke hentes — kontrollér kontoens læseadgang." : "Meta Ads-adgang mangler i previewmiljøet.");
+  if (metaFailed) notes.unshift("Meta Ads kunne ikke hentes — kontrollér kontoens læseadgang.");
+  else if (!metaLive) notes.unshift("Meta Ads-token er ikke tilgængeligt i dette miljø.");
+  if (process.env.VERCEL_ENV === "preview") {
+    notes.push("Preview bruger kun aggregerede annonceplatformstal; CRM-produktionsleads og kundeoplysninger læses ikke.");
+  }
 
   return NextResponse.json({
-    status, updatedAt: now.toISOString(), from, to, channels,
-    totals: { spend, impressions: channels.reduce((sum, channel) => sum + channel.impressions, 0), clicks, leads, customers: 0, revenue: 0, roas: null, cpl: leads ? spend / leads : null, conversionRate: clicks ? leads / clicks * 100 : null, bounceRate: null },
+    status,
+    updatedAt: now.toISOString(),
+    from,
+    to,
+    channels,
+    totals: {
+      spend,
+      impressions: channels.reduce((sum, channel) => sum + channel.impressions, 0),
+      clicks,
+      leads,
+      customers: 0,
+      revenue: 0,
+      roas: null,
+      cpl: leads ? spend / leads : null,
+      conversionRate: clicks ? leads / clicks * 100 : null,
+      bounceRate: null,
+    },
     notes,
   }, { headers: { "Cache-Control": "no-store" } });
 }
