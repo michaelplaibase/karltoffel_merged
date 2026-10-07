@@ -307,10 +307,14 @@ export async function getInsights(a: {
   timeRange?: string;
   level?: string;
   datePreset?: string;
+  since?: string;
+  until?: string;
 }) {
+  const hasExplicitRange = Boolean(a.since && a.until);
   return graphFetch(`${a.objectId}/insights`, {
     fields: "campaign_name,adset_name,ad_name,impressions,clicks,spend,cpc,ctr,reach,actions",
     level: a.level,
-    date_preset: a.datePreset || a.timeRange || "last_30d",
+    date_preset: hasExplicitRange ? undefined : a.datePreset || a.timeRange || "last_30d",
+    time_range: hasExplicitRange ? { since: a.since, until: a.until } : undefined,
   });
 }

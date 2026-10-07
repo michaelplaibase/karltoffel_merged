@@ -27,6 +27,7 @@ export default async function BusinessManagerLayout({ children }: { children: Re
       <p className="page-desc">
         Selskabets økonomi samlet: kostpriser, dækning, budget vs. realiseret — bygget på jeres
         egne tal i CRM (ordrer, løn, faste udgifter) plus biler og maskiner, I selv udfylder.
+        Marketingfanen samler annonce- og leaddata med tydelig markering af integrationer, der mangler.
       </p>
       <BusinessManagerTabs />
       {children}
