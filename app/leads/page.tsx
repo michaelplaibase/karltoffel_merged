@@ -2,6 +2,9 @@ import Link from "next/link";
 import { prisma } from "@/lib/db";
 import RowMenu, { type RowMenuItem } from "@/components/RowMenu";
 import { markLeadContacted, rejectLead, convertLead } from "@/app/actions/leads";
+import { telHref } from "@/components/ui";
+import CopyLeadSmsButton from "@/components/CopyLeadSmsButton";
+import { facebookLeadSmsMessage, isFacebookLeadSource } from "@/lib/facebook-lead-contact";
 
 export const metadata = { title: "Emner · Karltoffel Business Manager" };
 
@@ -68,6 +71,8 @@ export default async function LeadsPage({ searchParams }: { searchParams: Promis
                   <tr><td colSpan={8}><div className="table-empty">Ingen emner</div></td></tr>
                 ) : leads.map((l) => {
                   const tm = parsePayload(l.payload);
+                  const phoneHref = telHref(l.phone);
+                  const isFacebookLead = isFacebookLeadSource(l.source);
                   const items: RowMenuItem[] = [
                     ...(l.contactId ? [{ label: "Vis kunde", href: `/customers/${l.contactId}` }] : []),
                     ...(l.status !== "converted"
@@ -111,7 +116,15 @@ export default async function LeadsPage({ searchParams }: { searchParams: Promis
                             : <span className="badge badge-soft-danger" style={{ marginLeft: 6 }}>Ugyldig rabatkode: {tm.rabatkode}</span>
                         ) : null}
                       </td>
-                      <td>{[l.email, l.phone].filter(Boolean).join(" · ") || "—"}</td>
+                      <td>
+                        {[l.email, l.phone].filter(Boolean).join(" · ") || "—"}
+                        {isFacebookLead && phoneHref ? (
+                          <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 6 }}>
+                            <a className="btn btn-light btn-sm" href={phoneHref}>Ring</a>
+                            <CopyLeadSmsButton message={facebookLeadSmsMessage(l.name)} />
+                          </div>
+                        ) : null}
+                      </td>
                       <td>
                         {tm?.services?.length ? (
                           <details>
