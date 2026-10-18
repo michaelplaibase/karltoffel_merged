@@ -629,12 +629,12 @@
    "sti": "/p/vinduesvask-gratis-indvendig",
    "fil": "p/vinduesvask-gratis-indvendig",
    "head": {
-    "title": "Vinduesabonnement med gratis indvendig pudsning | Karltoffel",
-    "description": "Opret abonnement på udvendig vinduesvask og få indvendig pudsning gratis med. Kun ved abonnement, ikke enkeltstående vask. Vejledende værdi ca. 300–400 kr.",
+    "title": "Gør vinduerne klare inde og ude | Karltoffel",
+    "description": "Indvendig vinduespudsning er gratis første gang, når du opretter et abonnement på udvendig vinduesvask. Efterfølgende indvendig pudsning og enkeltstående vaske er ikke omfattet. Vejledende værdi ca. 300–400 kr.",
     "noindex_top": false,
     "floating_linje": "",
     "pixel": "<script>!function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,document,'script','https://connect.facebook.net/en_US/fbevents.js');fbq('init','1574687980856727');fbq('track','PageView');</script>",
-    "og_html": "\n\t<link rel=\"canonical\" href=\"https://karltoffel.dk/p/vinduesvask-gratis-indvendig\">\n\t<meta property=\"og:title\" content=\"Vinduesabonnement med gratis indvendig pudsning | Karltoffel\">\n\t<meta property=\"og:description\" content=\"Opret abonnement på udvendig vinduesvask og få indvendig pudsning gratis med. Kun ved abonnement, ikke enkeltstående vask. Vejledende værdi ca. 300–400 kr.\">\n\t<meta property=\"og:url\" content=\"https://karltoffel.dk/p/vinduesvask-gratis-indvendig\">\n\t<meta property=\"og:image\" content=\"https://karltoffel.dk/assets/img/thumb/1cab000e9b684c1490a3b6c2c423c3b045ee4d88_w2000_q78.webp\">\n\t"
+    "og_html": "\n\t<link rel=\"canonical\" href=\"https://karltoffel.dk/p/vinduesvask-gratis-indvendig\">\n\t<meta property=\"og:title\" content=\"Gør vinduerne klare inde og ude | Karltoffel\">\n\t<meta property=\"og:description\" content=\"Indvendig vinduespudsning er gratis første gang, når du opretter et abonnement på udvendig vinduesvask. Efterfølgende indvendig pudsning og enkeltstående vaske er ikke omfattet. Vejledende værdi ca. 300–400 kr.\">\n\t<meta property=\"og:url\" content=\"https://karltoffel.dk/p/vinduesvask-gratis-indvendig\">\n\t<meta property=\"og:image\" content=\"https://karltoffel.dk/assets/img/thumb/1cab000e9b684c1490a3b6c2c423c3b045ee4d88_w2000_q78.webp\">\n\t"
    },
    "body_tag": "<body class=\"\" data-link=\"/p/vinduesvask-gratis-indvendig\">",
    "header": {"fixed": true,"nav_active": "","cta_href": "#vindue-hero"},
